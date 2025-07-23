@@ -1,0 +1,34 @@
+To optimize your recipe generator and ensure the advanced filters (Recipe Type, Cuisine, Diet Restrictions, Cooking Time, Available/Exclude Ingredients) have a real impact on the YouTube search, while leveraging NLP and workflow improvements, here’s a tailored recommendation:
+
+### Optimized Workflow with NLP and Query Engineering
+1. **User Input & Difficulty Assessment**
+   - Keep the current step but enhance the query with advanced filter inputs. Use NLP to parse user input and filter selections (e.g., "apple pie" + "25 min" + "vegetarian") into a structured query.
+   - Example NLP enhancement: Use a pre-trained model (e.g., spaCy or BERT) to extract entities like cuisine ("Italian"), diet ("vegan"), and time ("30 min") from free-text input.
+
+2. **YouTube Video Selection**
+   - **Query Engineering**: Modify the YouTube API search query to incorporate advanced filters dynamically. For example:
+     - Base query: `"[recipe] recipe how to make"`
+     - Enhanced query: `"[recipe] recipe how to make [cuisine] [diet] [cooking time] [available ingredients] -[exclude ingredients]"`
+     - Example: `"apple pie recipe how to make vegetarian 25min chicken -nutshell -mushrooms"`
+   - **Scoring Adjustment**: Update video scoring to prioritize:
+     - View count (primary factor)
+     - Title/Description matching filter keywords (e.g., +5 points for "vegetarian" if selected)
+     - Duration metadata (via YouTube API) aligning with Cooking Time filter (e.g., +3 points if video length ≤ 25 min)
+   - Limit fetch to top 3 videos initially to reduce API usage, expanding to 5 only if scores are close.
+
+3. **Recipe Extraction (LLaVA-Chef Method)**
+   - Enhance NLP pattern recognition with filter-aware extraction. For example, prioritize ingredients matching "Available Ingredients" and skip those in "Exclude Ingredients."
+   - Use a fine-tuned LLaVA-Chef model to detect cooking time hints in video descriptions and validate against the user’s Cooking Time filter.
+
+4. **Fallback Processing**
+   - If extraction fails, use Grok AI with filter context (e.g., "Generate vegetarian apple pie ingredients in 25 min") to ensure fallback aligns with user preferences.
+
+5. **Nutrition Calculation & Recipe Assembly**
+   - No change needed here, but ensure parallel processing scales with filter complexity (e.g., more ingredients from diverse cuisines).
+
+### Key Recommendations
+- **NLP Integration**: Train or fine-tune an NLP model to weigh filter keywords in the YouTube query and extraction process, ensuring relevance (e.g., boost "vegan" videos for vegan queries).
+- **Workflow Adjustment**: Move filter application to the query stage (Step 2) rather than post-extraction, reducing irrelevant video fetches.
+- **API Optimization**: Monitor YouTube API usage per filter combination and cache results for frequent queries (e.g., "chicken 25min") to stay within 1-3 units per recipe.
+
+This approach should ensure the best video matches user filters, improving success rate and reducing generation time. Would you like to implement these changes or focus on a specific step further?

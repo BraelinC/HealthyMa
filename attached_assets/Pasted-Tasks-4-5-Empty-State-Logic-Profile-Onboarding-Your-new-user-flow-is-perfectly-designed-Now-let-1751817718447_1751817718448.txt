@@ -1,0 +1,48 @@
+Tasks 4-5: Empty State Logic & Profile Onboarding
+Your new user flow is perfectly designed! Now let's tackle the next critical piece - what happens when they click "Create Your First Plan."
+Based on your PRD, this triggers the profile/onboarding flow. Let me ask specific questions about Task 5: Pre-meal plan onboarding:
+Profile Setup Trigger & Flow:
+When Profile Setup Happens: You mentioned "if no profile exists, show pop-up/onboarding screen." Should this be:
+Immediate modal when they click "Create Plan"?
+Separate page they're redirected to?
+Slide-in panel over the main page?
+Individual vs Family Choice: This seems like the most important decision. How should you present this?
+Two big cards: "Plan for Myself" vs "Plan for My Family"?
+Simple toggle switch?
+Radio buttons with explanations?
+Family Profile Specifics:
+Adding Family Members: For the family option, what's the UX?
+Modal with "Add Family Member" button?
+Pre-set slots (Parent 1, Parent 2, Child 1, etc.)?
+Flexible list where they add as many as needed?
+Family Member Info: What do you need to collect for each person?
+Name + Age (for nutrition calculations)?
+Dietary restrictions per person?
+Avatars/characters for gamification?
+Goals Setting: You mentioned shared vs individual goals. How complex should this be?
+Simple checkboxes: "Save money," "Eat healthier," "Reduce stress"?
+More specific: "Save $X per month," "Eat vegetables X times per week"?
+Free text input?
+Profile Completion & Transition:
+Onboarding Length: How many steps/screens should this be?
+Single screen with all info?
+Multi-step wizard (Individual/Family → Family Members → Goals → Summary)?
+Progressive disclosure (start simple, add details later)?
+Skip vs Required: Can users skip profile setup and go straight to meal planning?
+Skip button with "Complete later" option?
+Required for meal generation to work properly?
+Partial skip (just need Individual/Family choice)?
+Post-Profile Flow: After profile completion, where do they go?
+Straight to AI meal planner?
+Back to main page with profile complete?
+Confirmation screen first?
+Cultural/Personal Touch:
+Avatar/Character Selection: You mentioned choosing avatars. What style?
+Diverse family representations?
+Fun cartoon characters?
+Simple color/icon combinations?
+Motivational Messaging: What tone for the profile setup?
+"Let's get to know your family so we can plan the perfect meals"?
+"Tell us about yourself so we can save you the most money"?
+More casual/conversational?
+Which aspect should we dive into first? The Individual vs Family choice presentation, the family member setup flow, or the goals/preferences collection?

@@ -1,0 +1,123 @@
+mproved Dynamic Prompt Builder
+Here’s a more flexible version, with comments so you can tweak it for your needs:
+
+js
+Copy Code
+function buildPrompt(filters) {
+  let prompt = "Create a personalized plan";
+
+  if (filters.type) prompt += ` for ${filters.type}`;
+  if (filters.duration) prompt += ` over ${filters.duration} days`;
+  if (filters.mealsPerDay) prompt += ` with ${filters.mealsPerDay} meals per day`;
+  if (filters.goal) prompt += ` to achieve ${filters.goal}`;
+
+  // Ingredient flexibility
+  if (filters.availableIngredients && filters.availableIngredients.length) {
+    const percent = filters.availableIngredientUsagePercent || 50;
+    prompt += `. Use these available ingredients in at least ${percent}% of the meals: ${filters.availableIngredients.join(", ")}. You may suggest other ingredients for variety or to complete the plan.`;
+  }
+
+  if (filters.avoidIngredients && filters.avoidIngredients.length)
+    prompt += `. Avoid these ingredients: ${filters.avoidIngredients.join(", ")}`;
+  if (filters.cuisine) prompt += `. Cuisine preference: ${filters.cuisine}`;
+  if (filters.allergies && filters.allergies.length)
+    prompt += `. Allergies: ${filters.allergies.join(", ")}`;
+  if (filters.macros) prompt += `. Macros: ${filters.macros}`;
+  if (filters.specialInstructions) prompt += `. Special instructions: ${filters.specialInstructions}`;
+
+  // Encourage ingredient overlap for cost savings
+  if (filters.encourageOverlap) {
+    prompt += " Try to overlap ingredients across meals to minimize shopping costs and reduce waste.";
+  }
+
+  prompt += ".";
+  return prompt;
+}
+How to Use the New Features
+Ingredient usage percent: Add availableIngredientUsagePercent to your filters (e.g., 50 for 50%).
+Encourage overlap: Add encourageOverlap: true to your filters if you want ChatGPT to try to reuse ingredients.
+Everything else stays dynamic: Only the filters you set will be included in the prompt.
+Example Usage
+js
+Copy Code
+const filters = {
+  type: "meal plan",
+  duration: 5,
+  mealsPerDay: 3,
+  goal: "muscle gain",
+  availableIngredients: ["chicken", "rice", "broccoli"],
+  availableIngredientUsagePercent: 60,
+  avoidIngredients: ["shellfish", "nuts"],
+  encourageOverlap: true,
+  specialInstructions: "high protein, easy to prep"
+};
+
+console.log(buildPrompt(filters));
+Resulting prompt:
+
+Create a personalized plan for meal plan over 5 days with 3 meals per day to achieve muscle gain. Use these available ingredients in at least 60% of the meals: chicken, rice, broccoli. You may suggest other ingredients for variety or to complete the plan. Avoid these ingredients: shellfish, nuts. Special instructions: high protein, easy to prep. Try to overlap ingredients across meals to minimize shopping costs and reduce waste.
+
+You Can Easily Adjust:
+The percentage of meals using available ingredients (availableIngredientUsagePercent)
+Whether to encourage overlap (encourageOverlap)
+Any other filter or instruction
+If you want to make this even more dynamic (e.g., let users set the overlap percentage, or add more custom instructions), just add more fields to your filters object and update the function accordingly.
+
+Let me know if you want this in another language, or if you want to see how to connect this to your app’s UI or backend!
+
+
+how do i choose that maybe. i wa thinking on anotehr page o have goal bascailly save oney or eat better gauin muslce it proptizes that over all. baisaclly menaing if thry choose sabve money than ingredient that overlap increses
+
+RouteLLM
+Routing to GPT-4.1
+That’s a great idea! You can add a “primary goal” page or step in your app where users pick what matters most to them—like “Save Money,” “Eat Healthier,” or “Gain Muscle.” Based on their choice, your system can automatically adjust how it builds the prompt for ChatGPT.
+
+Here’s how you can do it:
+
+1. Add a “Primary Goal” Selection
+On a separate page or as the first step, let users pick one main goal:
+
+Save Money
+Eat Healthier
+Gain Muscle
+(Add more as needed)
+2. Map Each Goal to Prompt Behavior
+For example:
+
+Save Money: Set encourageOverlap: true and a high availableIngredientUsagePercent (e.g., 80%).
+Eat Healthier: Add more emphasis on nutrition, variety, and maybe stricter on avoid ingredients.
+Gain Muscle: Emphasize high protein, larger portions, and possibly moderate overlap.
+3. Automatically Adjust Filters
+When the user picks a primary goal, your code sets the right filters before building the prompt.
+
+Example Logic (Pseudocode/JS):
+js
+Copy Code
+function setFiltersBasedOnPrimaryGoal(primaryGoal, filters) {
+  if (primaryGoal === "Save Money") {
+    filters.encourageOverlap = true;
+    filters.availableIngredientUsagePercent = 80;
+    filters.specialInstructions = (filters.specialInstructions || "") + " Please prioritize reusing ingredients to minimize cost.";
+  } else if (primaryGoal === "Eat Healthier") {
+    filters.encourageOverlap = false;
+    filters.availableIngredientUsagePercent = 50;
+    filters.specialInstructions = (filters.specialInstructions || "") + " Focus on nutrition and variety.";
+  } else if (primaryGoal === "Gain Muscle") {
+    filters.encourageOverlap = true;
+    filters.availableIngredientUsagePercent = 60;
+    filters.specialInstructions = (filters.specialInstructions || "") + " Focus on high protein and larger portions.";
+  }
+  // Add more goals as needed
+  return filters;
+}
+4. How It Works in Your App
+User picks a primary goal on the new page.
+Your app sets the filters accordingly.
+The prompt builder uses these filters to generate the best prompt for ChatGPT.
+Example Flow
+User selects “Save Money.”
+Your app sets encourageOverlap: true and availableIngredientUsagePercent: 80.
+The prompt builder generates a prompt that tells ChatGPT to reuse ingredients as much as possible.
+This approach keeps your system flexible and user-friendly, and you can always add more goals or tweak the logic as you learn what your users want!
+
+If you want, I can help you write the full code for this flow, or show you how to connect it to your UI. Just let me know your tech stack or what you want to see next!

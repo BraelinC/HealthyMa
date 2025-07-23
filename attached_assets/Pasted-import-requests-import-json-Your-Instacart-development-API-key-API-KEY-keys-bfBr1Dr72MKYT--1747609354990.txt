@@ -1,0 +1,161 @@
+import requests
+import json
+
+# Your Instacart development API key
+API_KEY = "keys.bfBr1Dr72MKYT-ZXhWKykL-CXwvlOo0gf8FLDuGR6N0"  # Replace with your actual key
+
+def create_recipe_page(api_key, recipe_data):
+    """Create a shoppable recipe page using Instacart Developer Platform API"""
+    url = "https://connect.dev.instacart.tools/idp/v1/products/recipe"
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=recipe_data)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as err:
+        print(f"HTTP Error: {err}")
+        if response.status_code == 401:
+            print("Check your API key. It may be invalid or expired.")
+        elif response.status_code == 404:
+            print("Endpoint not found. Verify the API URL.")
+        elif response.status_code == 429:
+            print("Rate limit exceeded. Try again later.")
+        print(f"Response: {response.text}")
+        return None
+    except requests.exceptions.RequestException as err:
+        print(f"Request Error: {err}")
+        return None
+
+# Example recipe data
+recipe = {
+    "title": "Simple Pasta with Cherry Tomatoes",
+    "image_url": "https://d3s8tbcesxr4jm.cloudfront.net/recipe-images/v3/pasta-cherry-tomatoes/0_medium.jpg",
+    "link_type": "recipe",
+    "instructions": [
+        "Bring a large pot of salted water to a boil and cook spaghetti according to package instructions.",
+        "While pasta cooks, halve cherry tomatoes and mince garlic.",
+        "Heat olive oil in a large skillet over medium heat. Add garlic and cook for 30 seconds.",
+        "Add cherry tomatoes and cook for 2-3 minutes until slightly softened.",
+        "Drain pasta, reserving 1/4 cup pasta water.",
+        "Add pasta to the skillet with tomatoes, along with reserved pasta water.",
+        "Toss to combine, season with salt and pepper, and garnish with fresh basil."
+    ],
+    "ingredients": [
+        {
+            "name": "spaghetti",
+            "display_text": "Spaghetti",
+            "measurements": [
+                {
+                    "quantity": 200,
+                    "unit": "g"
+                }
+            ]
+        },
+        {
+            "name": "cherry tomatoes",
+            "display_text": "Cherry tomatoes",
+            "measurements": [
+                {
+                    "quantity": 1,
+                    "unit": "pint"
+                }
+            ]
+        },
+        {
+            "name": "olive oil",
+            "display_text": "Olive oil",
+            "measurements": [
+                {
+                    "quantity": 2,
+                    "unit": "tablespoon"
+                }
+            ]
+        },
+        {
+            "name": "garlic",
+            "display_text": "Garlic cloves",
+            "measurements": [
+                {
+                    "quantity": 2,
+                    "unit": "clove"
+                }
+            ]
+        },
+        {
+            "name": "fresh basil",
+            "display_text": "Fresh basil leaves",
+            "measurements": [
+                {
+                    "quantity": 0.25,
+                    "unit": "cup"
+                }
+            ]
+        },
+        {
+            "name": "salt",
+            "display_text": "Salt",
+            "measurements": [
+                {
+                    "quantity": 0.5,
+                    "unit": "teaspoon"
+                }
+            ]
+        },
+        {
+            "name": "black pepper",
+            "display_text": "Black pepper",
+            "measurements": [
+                {
+                    "quantity": 0.25,
+                    "unit": "teaspoon"
+                }
+            ]
+        }
+    ],
+    "landing_page_configuration": {
+        "partner_linkback_url": "https://example.com/recipes",
+        "enable_pantry_items": True
+    }
+}
+
+# Execute the request
+print("Creating shoppable recipe page...")
+result = create_recipe_page(API_KEY, recipe)
+
+if result and "products_link_url" in result:
+    print(f"\nSuccess! Recipe page created.")
+    print(f"Share this URL with your users: {result['products_link_url']}")
+else:
+    print("\nFailed to create recipe page. Check API key or request format.")
+
+# To find nearby retailers (optional)
+def get_nearby_retailers(api_key, postal_code, country_code="US"):
+    """Find nearby retailers that can fulfill the recipe ingredients"""
+    url = f"https://connect.dev.instacart.tools/idp/v1/retailers?postal_code={postal_code}&country_code={country_code}"
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as err:
+        print(f"Error getting retailers: {err}")
+        return None
+
+# Uncomment to find nearby retailers
+# postal_code = "94105"  # Example postal code
+# retailers = get_nearby_retailers(API_KEY, postal_code)
+# if retailers:
+#     print("\nNearby retailers:")
+#     for retailer in retailers:
+#         print(f"- {retailer['name']} (retailer_key: {retailer['retailer_key']})") this code works help me do what i want based off this code. 

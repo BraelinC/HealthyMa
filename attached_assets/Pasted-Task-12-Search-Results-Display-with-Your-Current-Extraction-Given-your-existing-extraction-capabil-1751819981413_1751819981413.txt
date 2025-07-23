@@ -1,0 +1,67 @@
+Task 12: Search Results Display with Your Current Extraction
+Given your existing extraction capabilities, let me ask specific questions about presenting YouTube search results:
+Search Results Integration with Existing Extraction:
+Extraction Preview Strategy: Since you have working extraction but no preview system:
+Should users see extracted ingredients before adding to meal plan?
+Or add first, then show extraction results for review/editing?
+Quick "Preview Recipe" button that calls your existing extraction?
+Loading States: Your extraction happens on-demand, so:
+Show "Extracting ingredients..." spinner when user clicks preview?
+How long should users wait for extraction (your current timeout)?
+Fallback display if extraction takes too long?
+Action Button Strategy:
+Primary Action Flow: Based on your current system:
+"Add to Meal Plan" → trigger extraction → show results → confirm?
+"Preview Recipe" → extract → show preview → then "Add to Plan"?
+Direct add without preview (faster but riskier)?
+Extraction Confidence Display: Since you track extraction source:
+Show confidence indicators ("Extracted from description" vs "AI generated")?
+Visual differences between high/low confidence extractions?
+Warning for AI-generated ingredients?
+Mobile-First Results Layout:
+Card Information Hierarchy: For busy mothers on phones, what's most important?
+Video title and thumbnail first?
+Channel credibility indicators?
+Quick metadata (duration, views) visible immediately?
+Action buttons prominence?
+Extraction Status Integration: How should extraction status appear in cards?
+Badge showing "Recipe available" for successfully extracted videos?
+"May need manual entry" warning for likely extraction failures?
+Hide videos where extraction definitely won't work?
+Integration with Your Current AI Fallbacks:
+AI Generation Preview: Since you use Grok for ingredient generation:
+Show users when ingredients are AI-generated vs extracted?
+Option to "Try extracting from video" vs "Use AI generation"?
+Confidence levels for different generation methods?
+LLaVA-Chef Integration: For instruction extraction:
+Preview instructions in search results?
+Show instruction quality indicator?
+Option to regenerate instructions with different methods?
+Error Handling with Current System:
+Extraction Failure Display: When your 3-source hierarchy fails:
+How to communicate this to users in search results?
+Still allow adding with manual entry option?
+Alternative video suggestions?
+Partial Extraction Results: When you get <5 ingredients:
+Show partial results with "Complete manually" option?
+Indicate extraction confidence level?
+Allow user to decide if it's sufficient?
+Performance with Current Architecture:
+On-Demand Extraction Cost: Since extraction happens per request:
+Limit preview extractions per search session?
+Cache extraction results within search session?
+Background extraction for top search results?
+Search Result Freshness: With your current no-caching approach:
+How often to refresh search results?
+When to trigger re-extraction for previously extracted videos?
+Handle videos that become unavailable?
+Building on Your Strengths:
+Multi-Source Display: Since you use description → comments → AI:
+Show users which source was successful?
+Option to "Try different extraction method"?
+Transparency about extraction source for trust?
+Your Current AI Integration: With LLaVA-Chef and Grok:
+How to position AI-generated content vs extracted content?
+User preference for extraction vs generation?
+Quality comparison between methods?
+Given your current working extraction system, which aspect of the search results display should we focus on first? The extraction preview strategy, the action button flow, or the mobile-first layout integration?

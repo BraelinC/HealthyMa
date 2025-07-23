@@ -1,0 +1,71 @@
+The above error occurred in the <RecipeCard> component:
+
+    at RecipeCard (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/RecipeCard.tsx:22:3)
+    at div
+    at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PGB5EC7Y.js?v=dd402974:42:13
+    at Presence (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-QIJ7ISS5.js?v=dd402974:24:11)
+    at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=dd402974:385:13
+    at _c5 (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/ui/tabs.tsx:72:12)
+    at div
+    at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PGB5EC7Y.js?v=dd402974:42:13
+    at Provider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7ZKHW5FC.js?v=dd402974:38:15)
+    at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=dd402974:263:7
+    at div
+    at _c9 (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at div
+    at div
+    at div
+    at Search (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/pages/Search.tsx:43:29)
+    at Route (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=dd402974:323:16)
+    at Switch (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=dd402974:379:17)
+    at main
+    at div
+    at Router (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/App.tsx?v=wfIJqXXn_EyqOC97cSpRD:300:49)
+    at Provider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7ZKHW5FC.js?v=dd402974:38:15)
+    at TooltipProvider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=dd402974:61:5)
+    at AuthProvider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/hooks/useAuth.tsx:21:32)
+    at QueryClientProvider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=dd402974:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+at RecipeCard (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/RecipeCard.tsx:22:3)
+at div
+at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PGB5EC7Y.js?v=dd402974:42:13
+at Presence (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-QIJ7ISS5.js?v=dd402974:24:11)
+at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=dd402974:385:13
+at _c5 (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/ui/tabs.tsx:72:12)
+at div
+at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PGB5EC7Y.js?v=dd402974:42:13
+at Provider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7ZKHW5FC.js?v=dd402974:38:15)
+at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=dd402974:263:7
+at div
+at _c9 (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/ui/card.tsx:114:12)
+at div
+at _c (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/ui/card.tsx:20:11)
+at div
+at div
+at div
+at div
+at Search (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/pages/Search.tsx:43:29)
+at Route (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=dd402974:323:16)
+at Switch (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=dd402974:379:17)
+at main
+at div
+at Router (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/App.tsx?v=wfIJqXXn_EyqOC97cSpRD:300:49)
+at Provider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7ZKHW5FC.js?v=dd402974:38:15)
+at TooltipProvider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=dd402974:61:5)
+at AuthProvider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/hooks/useAuth.tsx:21:32)
+at QueryClientProvider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=dd402974:2805:3)
+at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+at t.value (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

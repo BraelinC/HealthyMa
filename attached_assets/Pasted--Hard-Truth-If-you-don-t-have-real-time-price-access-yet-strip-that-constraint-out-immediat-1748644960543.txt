@@ -1,0 +1,80 @@
+✅ **Hard Truth**: If you don't have real-time price access yet, **strip that constraint out immediately** or you'll waste compute and get unreliable outputs. You're feeding noise into your model.
+
+---
+
+### 🔄 UPDATE: CLEANED-UP VERSION (No Price Constraint)
+
+Here’s your **lean, high-impact prompt engineering system** WITHOUT the budget/cost components:
+
+---
+
+## 📦 UPDATED PROMPT TEMPLATE
+
+```text
+Create a meal aligned with the following user goals: longevity, fat loss, and metabolic health.  
+Prioritize: high protein, low glycemic index, anti-inflammatory ingredients.  
+Constraints: gluten-free, dairy-free, <10 min prep.  
+Return:  
+1. Dish Name  
+2. Ingredients with amounts  
+3. Macros (Protein/Fat/Carbs)  
+4. Simple 2-step prep instructions  
+```
+
+---
+
+## 🧠 REPLIT-READY PYTHON (NO COST)
+
+Paste this into Replit:
+
+```python
+# --- Step 1: Simulated UI Inputs ---
+user_goals = ["longevity", "fat loss", "metabolic health"]
+macro_targets = ["high protein", "low glycemic index", "anti-inflammatory"]
+restrictions = ["gluten-free", "dairy-free"]
+prep_time = "<10 minutes"
+
+# --- Step 2: Dynamic Prompt Generator ---
+def generate_prompt(goals, macros, restrictions, prep):
+    return f"""
+Create a meal aligned with the following user goals: {", ".join(goals)}.
+Prioritize: {", ".join(macros)}.
+Constraints: {", ".join(restrictions)}, {prep} prep.
+Return:
+1. Dish Name
+2. Ingredients with amounts
+3. Macros (Protein/Fat/Carbs)
+4. Simple 2-step prep instructions
+""".strip()
+
+# --- Step 3: Output Prompt for Mistral ---
+prompt = generate_prompt(user_goals, macro_targets, restrictions, prep_time)
+
+print("Prompt to Send into Mistral-7B:\n")
+print(prompt)
+```
+
+---
+
+### 🔁 Workflow Summary
+
+```
+[Slider Inputs] → [Python Prompt Generator] → [Mistral-7B] → [Meal Plan]
+```
+
+---
+
+## 🎯 Action Step:
+
+1. ✅ Run the above code to see the generated prompt.
+2. 🔌 Drop the prompt into your Mistral inference setup (local or API).
+3. 🔄 Replace mocked slider data with actual frontend data when ready.
+4. 🧱 Use this scaffolding to scale prompt complexity later (e.g., add caloric target, remove food groups, etc.)
+
+---
+
+## 🔥 Final Note
+
+Until your **real-time price** module is complete (via Walmart/Instacart API), **DO NOT** include pricing in any prompt or UI component. You're training your system (and users) on inaccurate assumptions — that kills trust and usability.
+
+Want me to help you wire this directly into your current UI backend next? Drop the slider variables and I’ll write the full handler for you.

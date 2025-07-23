@@ -1,0 +1,449 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Enhance Cultural Cuisine Integration",
+        "description": "Improve the cultural cuisine data management and recommendations system based on recent development focus",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Based on recent commits, enhance the cultural cuisine caching system (cultureCacheManager.ts), improve the NLP culture parser (nlpCultureParser.ts), and optimize cultural meal recommendations. This includes improving the cultural_cuisine_masterlist.json data structure and the intelligent prompt builder for better cultural integration.",
+        "testStrategy": "Test cultural cuisine recommendations with various ethnic backgrounds, validate caching performance, and ensure accurate cultural meal suggestions",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Refactor and Enhance Cultural Cuisine Caching System",
+            "description": "Improve the efficiency and scalability of the cultureCacheManager.ts module to better handle cultural cuisine data retrieval and updates.",
+            "dependencies": [],
+            "details": "Analyze the current caching logic in cultureCacheManager.ts. Refactor the code to support more granular cache invalidation, batch updates, and improved cache hit rates. Ensure the system can scale with increased data volume and support future growth. Consider leveraging modular and scalable design patterns for maintainability.",
+            "status": "done",
+            "testStrategy": "Benchmark cache performance before and after changes. Simulate high-load scenarios and validate cache consistency and data freshness."
+          },
+          {
+            "id": 2,
+            "title": "Improve NLP Culture Parser for Accurate Cuisine Recognition",
+            "description": "Enhance the nlpCultureParser.ts to more accurately parse and identify cultural cues from user input for better cuisine matching.",
+            "dependencies": [
+              1
+            ],
+            "details": "Review and update the NLP models and parsing logic in nlpCultureParser.ts. Incorporate additional training data or rules for underrepresented cultures. Optimize entity extraction and intent recognition to improve cultural cuisine identification. Ensure the parser integrates seamlessly with the updated caching system.",
+            "status": "done",
+            "testStrategy": "Test with diverse user inputs representing various cultures. Measure parsing accuracy and recall for cultural cuisine identification."
+          },
+          {
+            "id": 3,
+            "title": "Redesign cultural_cuisine_masterlist.json Data Structure",
+            "description": "Revise the structure and content of cultural_cuisine_masterlist.json to support richer metadata, improved searchability, and easier integration with other modules.",
+            "dependencies": [
+              2
+            ],
+            "details": "Analyze current data fields and identify gaps in cultural representation and metadata. Add or restructure fields to include cuisine origins, dietary restrictions, regional variations, and cross-references. Ensure the new structure is backward compatible or provide migration scripts. Document the schema for future maintainers.",
+            "status": "done",
+            "testStrategy": "Validate data integrity and completeness. Test integration with both the caching system and NLP parser for correct data retrieval and usage."
+          },
+          {
+            "id": 4,
+            "title": "Optimize Cultural Meal Recommendation Algorithms",
+            "description": "Enhance the recommendation logic to provide more relevant and culturally accurate meal suggestions based on improved data and parsing.",
+            "dependencies": [
+              3
+            ],
+            "details": "Update the recommendation engine to leverage the enriched masterlist and improved NLP outputs. Implement logic to handle edge cases, such as mixed cultural backgrounds or dietary restrictions. Optimize for performance and scalability. Ensure recommendations reflect authentic cultural practices and preferences.",
+            "status": "done",
+            "testStrategy": "Run end-to-end tests with user profiles from various cultural backgrounds. Measure recommendation relevance and user satisfaction."
+          },
+          {
+            "id": 5,
+            "title": "Upgrade Intelligent Prompt Builder for Cultural Integration",
+            "description": "Refine the intelligentPromptBuilder.ts to generate more context-aware and culturally sensitive prompts for meal planning and recommendations.",
+            "dependencies": [
+              4
+            ],
+            "details": "Analyze current prompt generation logic and identify areas for cultural context enhancement. Integrate outputs from the improved NLP parser and masterlist. Add logic to dynamically adjust prompts based on user cultural background, preferences, and dietary needs. Ensure prompts are clear, respectful, and engaging.",
+            "status": "done",
+            "testStrategy": "Test prompt outputs across a range of cultural scenarios. Validate that prompts are accurate, culturally appropriate, and improve user engagement."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Optimize Shopping List Generation",
+        "description": "Enhance the shopping list creation and Instacart integration based on recent improvements. Incorporate advanced ingredient price matching, department organization, bulk buying logic, and high-value prioritization. Ensure the system provides accurate cost calculations, department-organized lists, smart bulk buying recommendations, enhanced savings calculations, improved Instacart API integration, and actionable shopping tips.",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "The smart ingredient optimizer (smartIngredientOptimizer.ts) now uses fuzzy matching and Levenshtein distance for ingredient price matching, leveraging an expanded price database (40+ items, multi-category). Bulk buying recommendations are sophisticated and tailored by ingredient type and storage. Shopping lists are organized by store department (produce, meat, dairy, pantry) for efficiency. High-value items are prioritized for maximum savings, and savings calculations now reflect up to 45% savings for high-reuse items. Instacart integration is enhanced with improved ingredient parsing and formatting, and a new API endpoint (/api/shopping-list/optimize) provides comprehensive optimization. The system also delivers shopping recommendations and efficiency tips for optimal grocery runs. Ready for frontend integration.",
+        "testStrategy": "Test shopping list generation with various meal plans, validate advanced cost and savings calculations (including high-reuse scenarios), and ensure department-based organization. Confirm Instacart API integration with proper ingredient formatting and parsing. Test the /api/shopping-list/optimize endpoint for comprehensive optimization. Validate that shopping tips and recommendations are generated and relevant.",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Polish Meal Plan Editor Interface",
+        "description": "Enhance the drag-and-drop meal plan editing interface and user experience",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Improve the EditableMealPlanner.tsx and Home.tsx components based on recent UI enhancements. Focus on mobile responsiveness, drag-and-drop functionality, and the meal plan editing workflow. Add better error handling and loading states.",
+        "testStrategy": "Test drag-and-drop functionality across devices, validate mobile experience, and ensure smooth meal plan editing workflow"
+      },
+      {
+        "id": 4,
+        "title": "Implement Advanced Nutrition Analytics",
+        "description": "Enhance nutrition calculation and tracking features with detailed analytics",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "medium",
+        "details": "Expand the nutritionCalculator.ts and nutritionParser.ts modules to provide detailed nutrition analytics, goal tracking, and progress monitoring. Add macro/micro nutrient breakdowns and personalized nutrition recommendations.",
+        "testStrategy": "Validate nutrition calculations against USDA data, test goal tracking accuracy, and ensure proper nutrition analytics display"
+      },
+      {
+        "id": 5,
+        "title": "Enhance YouTube Recipe Extraction",
+        "description": "Improve the YouTube video recipe extraction and processing system",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Optimize the videoRecipeExtractor.ts system for better recipe extraction accuracy. Improve the YouTube API integration in youtubeUtils.ts and enhance the recipe quality validation. Add fallback mechanisms for extraction failures.",
+        "testStrategy": "Test recipe extraction accuracy across various YouTube cooking channels, validate extraction quality, and ensure proper fallback handling"
+      },
+      {
+        "id": 6,
+        "title": "Implement User Feedback and Rating System",
+        "description": "Add recipe rating, reviews, and user feedback mechanisms",
+        "status": "pending",
+        "dependencies": [
+          3
+        ],
+        "priority": "medium",
+        "details": "Create database schema for user ratings and reviews, implement frontend components for rating recipes and meal plans, and add feedback collection mechanisms. Include rating aggregation and recommendation improvements based on user feedback.",
+        "testStrategy": "Test rating submission and display, validate feedback collection, and ensure proper rating aggregation"
+      },
+      {
+        "id": 7,
+        "title": "Enhance Mobile Experience",
+        "description": "Optimize the entire application for mobile devices and touch interactions",
+        "status": "done",
+        "dependencies": [
+          3
+        ],
+        "priority": "high",
+        "details": "Improve mobile responsiveness across all components, optimize touch interactions for drag-and-drop features, enhance mobile navigation, and improve performance on mobile devices. Focus on the tab bar navigation and mobile-first design principles.",
+        "testStrategy": "Test on various mobile devices and screen sizes, validate touch interactions, and ensure optimal mobile performance"
+      },
+      {
+        "id": 8,
+        "title": "Implement Advanced Caching Strategy",
+        "description": "Enhance caching systems for better performance and cost optimization",
+        "status": "pending",
+        "dependencies": [
+          1,
+          2
+        ],
+        "priority": "medium",
+        "details": "Improve the mealPlanCache.ts system, enhance cultural cuisine caching in cultureCacheManager.ts, and implement intelligent cache invalidation strategies. Add cache analytics and monitoring.",
+        "testStrategy": "Test cache performance, validate cache hit rates, and ensure proper cache invalidation"
+      },
+      {
+        "id": 9,
+        "title": "Enhance AI Prompt Engineering",
+        "description": "Improve AI prompt building and meal plan generation quality",
+        "status": "pending",
+        "dependencies": [
+          1
+        ],
+        "priority": "medium",
+        "details": "Optimize the intelligentPromptBuilder.ts system for better meal plan generation. Improve context awareness, cultural sensitivity, and personalization in AI prompts. Enhance the integration with user profiles and preferences.",
+        "testStrategy": "Test meal plan quality across different user profiles, validate cultural accuracy, and ensure consistent AI responses"
+      },
+      {
+        "id": 10,
+        "title": "Implement Subscription Model",
+        "description": "Add subscription management and billing features beyond the founders offer",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "details": "Extend the existing Stripe integration to support recurring subscriptions, add subscription management UI, implement usage tracking and limits for different tiers, and add subscription lifecycle management.",
+        "testStrategy": "Test subscription creation and management, validate billing accuracy, and ensure proper usage limit enforcement"
+      },
+      {
+        "id": 11,
+        "title": "Add Social Sharing Features",
+        "description": "Implement meal plan and recipe sharing capabilities",
+        "status": "pending",
+        "dependencies": [
+          6
+        ],
+        "priority": "low",
+        "details": "Add sharing functionality for meal plans and recipes, implement social media integration, create shareable meal plan links, and add community features for recipe discovery.",
+        "testStrategy": "Test sharing functionality across platforms, validate shared content display, and ensure proper privacy controls"
+      },
+      {
+        "id": 12,
+        "title": "Implement Advanced Search and Filtering",
+        "description": "Enhance recipe search with advanced filtering and AI-powered recommendations",
+        "status": "pending",
+        "dependencies": [
+          5,
+          9
+        ],
+        "priority": "medium",
+        "details": "Improve the Search.tsx component with advanced filtering options, AI-powered search suggestions, and semantic search capabilities. Add search analytics and recommendation algorithms.",
+        "testStrategy": "Test search accuracy and performance, validate filtering functionality, and ensure relevant search results"
+      },
+      {
+        "id": 13,
+        "title": "Add Meal Prep Scheduling",
+        "description": "Implement meal prep planning and scheduling features",
+        "status": "pending",
+        "dependencies": [
+          2,
+          4
+        ],
+        "priority": "low",
+        "details": "Create meal prep scheduling interface, add batch cooking suggestions, implement prep time optimization, and create meal prep shopping lists with timing recommendations.",
+        "testStrategy": "Test meal prep scheduling accuracy, validate time optimization suggestions, and ensure proper scheduling interface"
+      },
+      {
+        "id": 14,
+        "title": "Implement Analytics Dashboard",
+        "description": "Create comprehensive analytics and reporting dashboard for users",
+        "status": "pending",
+        "dependencies": [
+          4,
+          6
+        ],
+        "priority": "low",
+        "details": "Build analytics dashboard showing nutrition trends, cost savings, meal plan success rates, and usage patterns. Add data visualization components and export capabilities.",
+        "testStrategy": "Test analytics accuracy, validate data visualization, and ensure proper dashboard performance"
+      },
+      {
+        "id": 15,
+        "title": "Enhance Error Handling and Monitoring",
+        "description": "Improve error handling, logging, and application monitoring",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Implement comprehensive error handling across the application, add structured logging, implement health checks, and add performance monitoring. Enhance the existing error boundaries and add user-friendly error messages.",
+        "testStrategy": "Test error scenarios, validate error reporting, and ensure proper application monitoring and alerting"
+      },
+      {
+        "id": 16,
+        "title": "Intelligent Cooking Time & Difficulty Calculation System",
+        "description": "Research and build comprehensive algorithm for smart cooking time estimation and difficulty scoring",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Research Spoonacular API limitations for prep time data. Build comprehensive algorithm based on ingredient count + cooking method (oven, stovetop, etc.). Integrate smart timing into intelligentPromptBuilder.ts for better meal plan generation. Create difficulty scoring system based on prep complexity and ingredient count. Develop easy method alternatives for mini generator suggestions.",
+        "testStrategy": "Test timing accuracy across different recipe types, validate difficulty scoring against real recipes, benchmark against Spoonacular data where available"
+      },
+      {
+        "id": 17,
+        "title": "Smart Filter Consolidation with Advanced Dropdown",
+        "description": "Redesign meal planner filters to condensed UI with advanced options dropdown",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Redesign MealPlannerNew.tsx filter UI to condensed dropdown format. Move max cook time and difficulty to advanced filter section. Auto-show calendar date picker on page load for immediate interaction. Consolidate main goal and nutrition goal into single intelligent selection. Implement filter state persistence and smart defaults based on user profile.",
+        "testStrategy": "User testing for filter discoverability, validate auto-save functionality, test advanced filters performance"
+      },
+      {
+        "id": 18,
+        "title": "Complete Healthy Mama Rebrand",
+        "description": "Replace NutriMa branding with Healthy Mama across entire codebase",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Replace all instances of 'NutriMa' with 'Healthy Mama' across codebase including UI text, page titles, component names, and comments. Update database references, API endpoints, and configuration files. Modify package.json, README, and all documentation. Update meta tags and SEO-related content. Ensure no branding inconsistencies remain.",
+        "testStrategy": "Comprehensive text search to verify complete rebrand, test all functionality after changes, validate SEO and meta tag updates"
+      },
+      {
+        "id": 19,
+        "title": "Cultural & Dietary Integration with Conflict Resolution",
+        "description": "Build intelligent conflict resolution for dietary restrictions and cultural preferences using enhanced structured cuisine data, with robust UI selection handling and improved Perplexity research integration",
+        "status": "in-progress",
+        "dependencies": [
+          1
+        ],
+        "priority": "medium",
+        "details": "Leverage new structured cuisine data system to build comprehensive conflict resolution logic. Utilize enhanced CuisineData objects containing staple dishes, proteins, meal structures, healthy swaps, and regional flavor profiles. Integrate with updated nlpCultureParser.ts and resolveConflictsWithCuisineData() function to generate culturally authentic alternatives. System should:\n\n- Process comprehensive cuisine information including staple dishes, ingredients, and cooking methods\n- Generate alternatives based on detailed regional flavor profiles and seasonings\n- Respect cultural dietary traditions while accommodating restrictions\n- Suggest healthy swaps and lighter versions when appropriate\n- Maintain meal structure integrity across breakfast, lunch, dinner categories\n- Handle 80% of common conflicts automatically with culturally authentic substitutions\n- Provide data-driven fallback suggestions for edge cases\n- Ensure reliable persistence of cuisine selections with separated selection and research flows\n- Manage staggered Perplexity API research calls to prevent interference with UI state\n- Maintain proper selection state regardless of research status",
+        "testStrategy": "- Validate conflict resolution using new CuisineData structure\n- Test scenarios across major dietary restrictions with enhanced cultural data\n- Verify cultural authenticity of suggestions using expanded cuisine profiles\n- Measure conflict resolution success rate with new structured data\n- Test healthy swap suggestions and lighter alternatives\n- Validate meal structure preservation\n- Verify regional flavor profile matching\n- Test integration with updated nlpCultureParser.ts and resolveConflictsWithCuisineData()\n- Verify cuisine selection persistence in CulturalCuisineDropdown component\n- Test race conditions between blur and selection events\n- Validate selection state management across UI interactions\n- Test Perplexity API integration and research flow\n- Verify proper handling of multiple concurrent research requests\n- Validate selection persistence during research operations",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Fix CulturalCuisineDropdown Selection Issues",
+            "description": "",
+            "status": "done",
+            "dependencies": [],
+            "details": "Resolved critical UI bug in cuisine selection persistence:\n- Added isSelecting state flag\n- Changed onClick to onMouseDown for proper event timing\n- Implemented selection timing logic\n- Updated client/src/components/CulturalCuisineDropdown.tsx",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Core Conflict Resolution Logic",
+            "description": "",
+            "status": "in-progress",
+            "dependencies": [],
+            "details": "Build main conflict resolution engine using CuisineData structure and cultural profiles",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Add Selection State Testing",
+            "description": "",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Create comprehensive test suite for cuisine selection state management and UI interactions",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Separated Selection and Research Flows",
+            "description": "",
+            "status": "in-progress",
+            "dependencies": [],
+            "details": "Modify handleSaveChanges to separate cuisine selection and research processes:\n- Implement immediate selection saving\n- Add staggered timing for research triggers\n- Implement automatic research for new cuisines\n- Add comprehensive debug logging\n- Handle duplicate research prevention",
+            "testStrategy": "- Verify selection persistence during research\n- Test multiple concurrent research requests\n- Validate debug logging output\n- Test automatic research triggers"
+          },
+          {
+            "id": 5,
+            "title": "Enhance Research State Management",
+            "description": "",
+            "status": "pending",
+            "dependencies": [],
+            "details": "Improve handling of research state and API interactions:\n- Add checks for existing research data\n- Implement proper API request queuing\n- Handle repeat calls for same cuisine\n- Add research state persistence",
+            "testStrategy": "- Test API endpoint reliability\n- Verify research data storage\n- Validate request queuing behavior\n- Test duplicate request handling"
+          }
+        ]
+      },
+      {
+        "id": 20,
+        "title": "Auto-scroll Animation for Generated Meal Plans",
+        "description": "Implement smooth auto-scroll to display generated meal plans effectively",
+        "status": "pending",
+        "dependencies": [
+          18
+        ],
+        "priority": "medium",
+        "details": "Implement smooth scroll animation that triggers when meal plan generation completes. Scroll to first day of generated plan and ensure it's opened/expanded for immediate viewing. Add gradual animation timing that feels natural and responsive. Integrate with existing meal plan generation workflow in MealPlannerNew.tsx. Ensure compatibility across different screen sizes and devices.",
+        "testStrategy": "Test scroll behavior on various devices and screen sizes, validate animation timing feels natural, ensure accessibility compliance"
+      },
+      {
+        "id": 21,
+        "title": "Home Page Visual Enhancement with Money Goal Tracker",
+        "description": "Add visual improvements including savings tracker and meal icons to home page",
+        "status": "done",
+        "dependencies": [
+          18
+        ],
+        "priority": "medium",
+        "details": "Add circular progress bar for savings goal at top of Home.tsx (e.g., $100/$120 saved). Implement icon library system for meal visualization using symbol matching (stir fry, pasta, etc.). Create/store reusable food icons in simple color scheme to avoid AI color inconsistencies. Add symbol search algorithm that matches meal types to appropriate icons. Enhance overall visual appeal with better colors and improved layout.",
+        "testStrategy": "Test icon matching accuracy across meal types, validate savings tracker calculations, user feedback on visual improvements"
+      },
+      {
+        "id": 22,
+        "title": "Mini Meal Swap Generator on Home Page",
+        "description": "Add quick meal replacement feature directly on home page meal cards",
+        "status": "pending",
+        "dependencies": [
+          18,
+          19
+        ],
+        "priority": "medium",
+        "details": "Add 'Meal Swap' button to each meal card in home page meal plan view. Create compact meal generator with profile-based defaults and current preferences pre-filled. Generate 1-2 meal options based on API cost efficiency. Maintain all dietary restrictions and cultural preferences from user profile. Consider time slot context (breakfast vs dinner) when generating suggestions. Show filter checkboxes for transparency.",
+        "testStrategy": "Test swap suggestions maintain dietary requirements, validate API usage efficiency, ensure cultural appropriateness of swaps"
+      },
+      {
+        "id": 23,
+        "title": "Advanced Shopping List with Cost Estimation",
+        "description": "Build intelligent cost estimation system for shopping lists with savings tracking",
+        "status": "pending",
+        "dependencies": [
+          18,
+          2
+        ],
+        "priority": "medium",
+        "details": "Build ingredient cost database with 2-week update cycle for price freshness. Implement Perplexity API integration for new ingredient price research. Create cost estimation algorithm that calculates shopping list totals. Integrate with existing Instacart shopping functionality seamlessly. Add visual cost display and savings calculation. Build pre-populated database that grows as users add new ingredients.",
+        "testStrategy": "Validate cost estimation accuracy against real prices, test database update cycle performance, verify Instacart integration remains functional"
+      },
+      {
+        "id": 24,
+        "title": "Serving Size Multiplier with Smart Conversion",
+        "description": "Add family-based serving size adjustments with intelligent ingredient scaling",
+        "status": "pending",
+        "dependencies": [
+          5,
+          18
+        ],
+        "priority": "medium",
+        "details": "Add toggle tabs for original vs multiplied serving sizes in Search.tsx and recipe views. Build JSON conversion system for ingredient amounts (½ cup → 1 cup, etc.). Create smart algorithm for measurement conversions and scaling. Default multiplier based on family size from user profile. Integrate with YouTube recipe scaling functionality. Handle complex measurements and fractional conversions intelligently.",
+        "testStrategy": "Test measurement conversion accuracy, validate family size integration, ensure proper scaling across recipe types"
+      },
+      {
+        "id": 25,
+        "title": "Firebase Analytics & User Behavior Tracking",
+        "description": "Implement comprehensive user analytics alongside existing database",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Set up Firebase Analytics integration alongside existing Neon PostgreSQL setup. Track all user interactions: clicks, scrolls, page time, feature usage, meal generations, and shopping list creations. Implement privacy-compliant data collection with user consent. Create backend analytics dashboard for user behavior insights. Store engagement metrics for app optimization and feature usage analysis.",
+        "testStrategy": "Validate privacy compliance, test analytics data accuracy, ensure no performance impact on existing functionality"
+      },
+      {
+        "id": 26,
+        "title": "Achievement System Implementation",
+        "description": "Create gamification system with achievements and progress tracking",
+        "status": "pending",
+        "dependencies": [
+          25
+        ],
+        "priority": "low",
+        "details": "Design achievement categories including meal plans created, money saved, healthy eating streaks, and feature usage milestones. Create badge/progress tracking system integrated with user profiles. Add motivational UI elements and progress indicators. Integrate with analytics data for automatic achievement unlocking. Plan foundation for future social/sharing features while keeping current implementation private.",
+        "testStrategy": "Test achievement triggers fire correctly, validate progress tracking accuracy, user feedback on motivational impact"
+      },
+      {
+        "id": 27,
+        "title": "Enhance Recipe Time and Complexity Intelligence System",
+        "description": "Implement an advanced recipe analysis system to improve cooking time predictions and complexity scoring accuracy from 60-70% to 85-95%, utilizing machine learning and historical data patterns for GPT-4 prompt optimization.",
+        "details": "1. Extend intelligentPromptBuilder.ts to include new RecipeAnalyzer class:\n- Implement ML-based time prediction using features like ingredient count, preparation steps, cooking methods, and historical user completion data\n- Create ComplexityScorer utilizing factors: technique difficulty, concurrent steps, equipment requirements, ingredient prep complexity\n- Develop TimePatternAnalyzer to process historical recipe completion data\n- Add prompt enhancement pipeline:\n  * Pre-analysis phase using RecipeAnalyzer results\n  * Dynamic prompt template generation based on complexity scores\n  * Context-aware time adjustments using cultural cuisine patterns\n  * Ingredient preparation time calculations\n\n2. Database schema updates:\n- Add recipeTimeMetrics table for storing historical completion times\n- Create complexityFactors table for scoring components\n- Implement timeAdjustmentRules collection for cultural/seasonal modifications\n\n3. Integration points:\n- Connect with nutritionCalculator.ts for ingredient prep time analysis\n- Integrate with cultural cuisine system for cuisine-specific time patterns\n- Implement feedback loop system for continuous accuracy improvement\n\n4. Optimization strategies:\n- Use batch processing for historical data analysis\n- Implement caching for commonly used complexity calculations\n- Add real-time prompt adjustment based on user feedback\n\nTechnical considerations:\n- Use TensorFlow.js for time prediction models\n- Implement rate limiting for GPT-4 API calls\n- Add error handling for edge cases in time calculations\n- Ensure proper type safety with TypeScript\n- Follow SOLID principles for maintainable code structure",
+        "testStrategy": "1. Automated Testing:\n- Unit tests for each component of RecipeAnalyzer\n- Integration tests for prompt generation pipeline\n- Performance benchmarking of time prediction accuracy\n- Load testing for batch processing capabilities\n\n2. Accuracy Validation:\n- Compare predicted vs actual completion times across 1000+ recipes\n- Validate complexity scores against user feedback\n- Test accuracy improvements across different cuisine types\n- Measure prompt quality using GPT-4 response consistency\n\n3. Real-world Testing:\n- Conduct A/B testing with old vs new prompt system\n- Monitor accuracy improvements over time\n- Validate time predictions across different user skill levels\n- Test edge cases with complex multi-step recipes\n\n4. Metrics Collection:\n- Track prediction accuracy improvement metrics\n- Monitor system performance and response times\n- Measure user satisfaction with time estimates\n- Document complexity score correlation with user feedback\n\n5. Regression Testing:\n- Ensure compatibility with existing meal planning features\n- Validate cultural cuisine time adjustments\n- Test caching system effectiveness\n- Verify prompt generation speed and quality",
+        "status": "done",
+        "dependencies": [
+          1,
+          4,
+          9
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "Implement Goal-Specific Meal Plan Prompt Templates",
+        "description": "Create structured, goal-specific prompt templates for six distinct health objectives (muscle building, weight loss, healthy eating, budget-friendly, energy optimization, and digestive health) to generate targeted meal plans with specialized formatting and guidance.",
+        "details": "1. Create new GoalPromptTemplate class in promptTemplates.ts:\n- Define base template interface with common elements\n- Implement specialized templates for each health goal\n- Include goal-specific macronutrient ratios, portion guidelines, and timing recommendations\n\n2. Enhance intelligentPromptBuilder.ts:\n- Add goal-specific context injection\n- Implement prompt assembly pipeline with goal-based customization\n- Create specialized formatters for each goal's output structure\n\n3. Specific implementations per goal:\n- Muscle Building: Include protein timing, post-workout meals, portion scaling\n- Weight Loss: Implement satiety scoring, calorie deficit calculations\n- Healthy Eating: Add food diversity metrics, whole food percentage tracking\n- Budget: Integrate ingredient cost analysis, overlap optimization\n- Energy: Include glycemic index consideration, energy impact scoring\n- Digestive Health: Add FODMAPs awareness, digestibility ratings\n\n4. Create goalSpecificValidators.ts:\n- Implement validation rules for each goal type\n- Add nutritional requirement checkers\n- Create portion and timing validators\n\n5. Update the prompt generation workflow:\n- Add goal selection interface\n- Implement goal-specific user input collection\n- Create specialized response parsers for each goal type\n\n6. Integration with existing systems:\n- Connect with nutrition analytics for goal-specific tracking\n- Integrate with recipe complexity scoring for appropriate difficulty matching\n- Add goal-specific caching strategies",
+        "testStrategy": "1. Unit Testing:\n- Test each goal-specific template independently\n- Validate prompt generation for all health objectives\n- Verify macronutrient calculations and portion guidance\n- Test goal-specific validation rules\n\n2. Integration Testing:\n- Verify integration with nutrition analytics\n- Test goal-specific caching behavior\n- Validate meal plan generation pipeline\n- Check cross-goal consistency\n\n3. Validation Testing:\n- Compare generated meal plans against goal requirements\n- Verify portion and timing recommendations\n- Test budget calculations for cost-effective plans\n- Validate digestive health considerations\n\n4. User Acceptance Testing:\n- Test goal selection interface\n- Verify prompt clarity and completeness\n- Validate meal plan formatting\n- Test goal-specific customization options\n\n5. Performance Testing:\n- Measure prompt generation speed\n- Test caching efficiency for each goal type\n- Verify response parsing performance\n- Monitor system resource usage",
+        "status": "pending",
+        "dependencies": [
+          9,
+          4,
+          27
+        ],
+        "priority": "high",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "projectName": "Healthy Mama",
+      "totalTasks": 26,
+      "sourceFile": "/home/runner/workspace/.taskmaster/docs/nutrima_prd.md",
+      "generatedAt": "2025-07-18",
+      "generatedBy": "Claude Code",
+      "basedOnRecentCommits": true,
+      "created": "2025-07-18T20:19:51.575Z",
+      "description": "Tasks for master context",
+      "updated": "2025-07-22T21:28:06.392Z"
+    }
+  }
+}

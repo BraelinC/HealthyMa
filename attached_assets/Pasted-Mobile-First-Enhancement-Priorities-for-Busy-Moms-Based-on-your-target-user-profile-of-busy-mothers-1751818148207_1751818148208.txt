@@ -1,0 +1,124 @@
+Mobile-First Enhancement Priorities for Busy Moms
+Based on your target user profile of busy mothers using meal planning apps, here's my analysis of which enhancements will deliver the biggest impact for your mobile-first approach.
+
+Top Priority: Quick Templates + Visual Hierarchy
+For busy moms juggling kids and meal planning on their phones, Quick Templates combined with Visual Hierarchy should be your first enhancement. Here's why:
+
+Quick Templates: Immediate Impact
+"Quick Weeknight Meals" (30min, easy, family-friendly)
+
+"Healthy & Budget-Friendly"
+
+"Sunday Meal Prep"
+
+These templates eliminate the cognitive load of setting multiple filters while kids are demanding attention. A mother can tap one button and get relevant results instantly.
+
+Visual Hierarchy: Surface Critical Filters First
+Priority order for busy moms:
+
+Quick Templates (top position)
+
+Dietary restrictions (safety-critical)
+
+Cook time (practical constraint)
+
+Family size/members (portion planning)
+
+Everything else (collapsed initially)
+
+Mobile Interface Decisions
+Keep Manual Trigger Approach ✅
+Your manual trigger is absolutely correct for busy moms:
+
+Cost efficiency supports your $99/year pricing model
+
+Prevents accidental generations when kids grab the phone
+
+Allows complete filter setup before committing to AI generation
+
+Reduces frustration from unwanted results
+
+Diet Restrictions: Checkboxes Win
+For your target audience, checkboxes are far superior to free text:
+
+One-handed operation while holding a child
+
+No typing errors when distracted
+
+Faster selection during brief windows of attention
+
+Mobile-friendly touch targets
+
+Cover 90% of common restrictions with checkboxes, add "Other" with optional text field for edge cases.
+
+Bottom Sheet Filters: Essential
+Bottom sheet implementation is critical because:
+
+Thumb-reachable on large phones
+
+Natural swipe gesture for busy moms
+
+Doesn't obscure content when partially expanded
+
+Easy to dismiss if interrupted
+
+Progressive Disclosure Strategy
+Simple Mode by Default
+Start users in Simple Mode showing only:
+
+Quick Templates (prominent buttons)
+
+Dietary restrictions (safety checkboxes)
+
+Cook time slider (visual, easy to adjust)
+
+"More Options" toggle
+
+Advanced Mode reveals additional filters for power users, but most busy moms will stick with Simple Mode for speed.
+
+Filter Persistence Rules
+Smart Persistence Strategy:
+Dietary restrictions: Always persist (safety-critical)
+
+Cook time/difficulty: Remember for session, reset weekly
+
+Ingredient preferences: Persist but allow easy override
+
+Quick template usage: Track for personalized suggestions
+
+Implementation Roadmap
+Phase 1: Biggest Impact
+Quick Templates - immediate value for time-pressed users
+
+Visual hierarchy - surface templates and critical filters first
+
+Bottom sheet interface - mobile-optimized filter access
+
+Phase 2: Refinement
+Checkbox diet restrictions - replace free text
+
+Smart persistence - implement selective memory
+
+Progressive disclosure - Simple/Advanced modes
+
+Phase 3: Optimization
+Custom template creation - let users save their own combinations
+
+Usage-based personalization - surface most-used filters first
+
+One-tap meal planning - ultimate goal for returning users
+
+Why This Approach Works for Busy Moms
+Real-world scenario: Mom planning dinner while kids are asking for snacks, homework help, and attention. She needs:
+
+3-second access to relevant meal plans
+
+No complex decisions when mentally overloaded
+
+Reliable results that work for her family
+
+Easy recovery if interrupted mid-task
+
+Quick Templates with prominent visual hierarchy delivers exactly this experience, making your app the go-to solution when time and attention are limited.
+
+Recommendation: Start with Quick Templates + Visual Hierarchy as your MVP enhancement. This single change will dramatically improve the user experience for your target demographic while maintaining cost efficiency and technical simplicity.

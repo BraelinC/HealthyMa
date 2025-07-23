@@ -1,0 +1,52 @@
+Desired Changes (Generalized with All Filters)
+I want to generalize the workflow for any recipe query and apply all advanced filters in the YouTube search, with Spoonacular enforcing the Cooking Time filter. Here’s the updated workflow:
+
+User Input & Filter Parsing
+Parse user input (e.g., "apple pie", "chicken curry") and all filters from the UI:
+Query: Dynamic user input (e.g., "chicken curry").
+Cooking Time: e.g., "20 min" (stored as cookingTime = 20).
+Cuisine: e.g., "Indian" (or "Any Cuisine").
+Diet Restrictions: e.g., "Vegetarian" (or "None").
+Available Ingredients: e.g., "chicken, rice" (or empty).
+Exclude Ingredients: e.g., "nuts" (or empty).
+Query Spoonacular API to Enforce Cooking Time
+Use https://api.spoonacular.com/recipes/complexSearch with:
+query: User’s dynamic query (e.g., "chicken curry").
+maxReadyTime: Cooking Time filter (e.g., "20" for 20 min).
+cuisine: Cuisine filter (e.g., "Indian"; skip if "Any Cuisine").
+diet: Diet Restrictions (e.g., "Vegetarian"; skip if "None").
+includeIngredients: Available Ingredients (e.g., "chicken,rice"; skip if empty).
+excludeIngredients: Exclude Ingredients (e.g., "nuts"; skip if empty).
+number: 3 (fetch top 3 recipes).
+Select the recipe whose title most closely matches the user query (e.g., prioritize "Chicken Curry" over "Quick Chicken Curry" using a keyword match).
+Extract the title (e.g., "Chicken Curry") and readyInMinutes (e.g., 18 min).
+YouTube Video Selection with All Filters
+Construct the YouTube query using the user query and all filters (except cooking time):
+Query format: "[query] recipe how to make [cuisine] [diet] [available ingredients] -[exclude ingredients]".
+Example: "chicken curry recipe how to make Indian vegetarian chicken,rice -nuts".
+Skip filter terms if "Any Cuisine," "None," or empty (e.g., omit "-nuts" if Exclude Ingredients is empty).
+Fetch top 3 videos.
+Score videos:
+View count: Primary factor.
+Title or description contains the query (e.g., +5 points for "chicken curry," +3 for partial match).
+Video duration ≤ Cooking Time (e.g., +3 points if ≤ 20 min, using YouTube API’s videoDuration).
+Description mentions cooking time ≤ Cooking Time (regex \d+\s*(min|minute|hour); +2 points).
+Select the highest-scoring video, prioritizing query relevance over slight time deviations (e.g., 21 min if no 20-min video matches).
+Recipe Extraction & Assembly
+Use Spoonacular’s readyInMinutes (e.g., 18 min) as the cooking time.
+Extract ingredients/instructions from the YouTube video.
+If no video matches the filters within the Cooking Time, return the Spoonacular recipe with a message: "No video found matching your filters and time, but here’s a recipe."
+Additional Requirements
+Error Handling: If Spoonacular API fails, fall back to the current YouTube-only workflow with a message: "Unable to fetch recipe data; using video search only."
+API Usage: Log Spoonacular calls (aim for 1-2 units per recipe; free tier: 150 calls/day).
+Performance: Keep generation time under 15 seconds.
+Example Input/Output
+Input: Query: "chicken curry", Cooking Time: "20 min", Cuisine: "Indian", Diet: "Vegetarian", Available: "chicken,rice", Exclude: "nuts".
+
+Output: A recipe object with:
+
+Title: "Indian Chicken Curry".
+Cooking Time: 18 min (from Spoonacular).
+Ingredients/Instructions: From a YouTube video titled "Vegetarian Chicken Curry Recipe" (duration ~18-20 min).
+Video Link: Matching YouTube video.
+Please update videoRecipeExtractor.ts.bak to implement these changes. Add dependencies (e.g., axios for API calls) if needed, handle errors, and log API usage. Test with the example input and ensure the workflow generalizes for any query with all filters applied in the YouTube search, while Spoonacular enforces the Cooking Time filter. Let me know if you need more details!"**

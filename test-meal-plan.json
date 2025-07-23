@@ -1,0 +1,46 @@
+{
+  "name": "Debug Test Plan",
+  "description": "Test meal plan for debugging",
+  "meal_plan": {
+    "day_1": {
+      "breakfast": {
+        "title": "Oatmeal with Berries",
+        "cook_time_minutes": 10,
+        "difficulty": 2,
+        "ingredients": ["oats", "berries", "milk"]
+      },
+      "lunch": {
+        "title": "Grilled Chicken Salad", 
+        "cook_time_minutes": 15,
+        "difficulty": 3,
+        "ingredients": ["chicken", "lettuce", "tomatoes"]
+      },
+      "dinner": {
+        "title": "Pasta with Marinara",
+        "cook_time_minutes": 20,
+        "difficulty": 2,
+        "ingredients": ["pasta", "marinara sauce", "parmesan"]
+      }
+    },
+    "day_2": {
+      "breakfast": {
+        "title": "Scrambled Eggs",
+        "cook_time_minutes": 8,
+        "difficulty": 1,
+        "ingredients": ["eggs", "butter", "cheese"]
+      },
+      "lunch": {
+        "title": "Turkey Sandwich",
+        "cook_time_minutes": 5,
+        "difficulty": 1,
+        "ingredients": ["bread", "turkey", "lettuce"]
+      },
+      "dinner": {
+        "title": "Baked Salmon",
+        "cook_time_minutes": 25,
+        "difficulty": 3,
+        "ingredients": ["salmon", "lemon", "herbs"]
+      }
+    }
+  }
+}

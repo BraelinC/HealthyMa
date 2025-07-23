@@ -1,0 +1,131 @@
+
+🧱 MAIN MODULE: Hybrid Cultural Input Field
+
+
+---
+
+🔹 Task 1: Create the Searchable Smart Dropdown (Structured Input)
+
+1.1 Create cultural_cuisine_masterlist.json
+
+Include ~500 entries (want me to generate the starter list?)
+
+Each entry should have:
+
+
+{
+  "label": "Southern US",
+  "aliases": ["Soul Food", "African-American Southern", "Southern Comfort Food"]
+}
+
+1.2 Build dropdown component
+
+Multi-select support
+
+Autocomplete as user types
+
+Pull data from cultural_cuisine_masterlist.json
+
+Normalize alias matches back to canonical label
+
+
+1.3 On select, push labels into:
+
+user_profile.cultural_background = [selected_tags]
+
+
+---
+
+🔹 Task 2: Build the Free-Text Input Fallback (Unstructured Input)
+
+2.1 Add "Can't find your culture? Type it here" input field
+
+Appears below dropdown
+
+Accepts free-form string
+
+
+2.2 On submit, send to nlp_culture_parser(text_input)
+
+
+---
+
+🔹 Task 3: NLP Culture Parser (Perplexity Hook)
+
+3.1 Build nlp_culture_parser(text_input: string) -> string[]
+
+3.2 Prompt Perplexity with:
+
+> “Map this raw user input to up to 3 cultural cuisine tags from global food systems. Input: [text]”
+
+
+
+3.3 If Perplexity returns matches:
+
+Add tags to user_profile.cultural_background
+
+Normalize structure (deduped, lowercase, canonicalized)
+
+
+3.4 If ambiguous:
+
+Flag to manual_review_queue[] or mark user_profile.needs_culture_confirmation = true
+
+
+
+---
+
+🔹 Task 4: Activate Culture-Aware Mode
+
+4.1 If user_profile.cultural_background.length > 0
+→ set culture_enabled = true
+
+4.2 Automatically trigger downstream data fetch from Perplexity (see next section)
+
+
+---
+
+🤖 BACKEND MODULE: Perplexity Cultural Meal Generator
+
+
+---
+
+🔹 Task 5: Build Culture-to-Meal Perplexity Trigger
+
+5.1 For each tag in user_profile.cultural_background, send:
+
+> "Give me a JSON list of the 5 most culturally authentic but healthy meals from [culture]. Include common cooking techniques, top healthy ingredients, and key nutrient info."
+
+
+
+5.2 Store output in:
+
+culture_dish_cache[user_id][culture_tag] = {
+  meals: [...],
+  styles: [...],
+  key_ingredients: [...]
+}
+
+5.3 Validate data format:
+
+Meals must include: name, description, healthy_mods, macros
+
+Fallback to [] if Perplexity fails
+
+
+
+---
+
+🔹 Task 6: Local Cache & Reuse
+
+6.1 Add cache-check logic:
+
+If culture_dish_cache[user_id][tag] exists → skip API call
+
+
+6.2 Connect cache to main meal planner:
+
+On low-filter mode (≤ 3 filters)
+
+Inject cultural meals into 50% of recommendations
+

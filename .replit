@@ -1,0 +1,86 @@
+modules = ["nodejs-20", "web", "postgresql-16"]
+run = "npm run dev"
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["openssh"]
+
+[deployment]
+deploymentTarget = "autoscale"
+build = ["npm", "run", "build"]
+run = ["npm", "run", "start"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 35199
+externalPort = 3002
+exposeLocalhost = true
+
+[[ports]]
+localPort = 38239
+externalPort = 6000
+exposeLocalhost = true
+
+[[ports]]
+localPort = 40245
+externalPort = 3001
+exposeLocalhost = true
+
+[[ports]]
+localPort = 41599
+externalPort = 5173
+exposeLocalhost = true
+
+[[ports]]
+localPort = 42925
+externalPort = 4200
+exposeLocalhost = true
+
+[[ports]]
+localPort = 43227
+externalPort = 5000
+exposeLocalhost = true
+
+[[ports]]
+localPort = 44399
+externalPort = 3000
+exposeLocalhost = true
+
+[[ports]]
+localPort = 45079
+externalPort = 3003
+exposeLocalhost = true
+
+[workflows]
+runButton = "NutriMa Server"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "NutriMa Server"
+author = 42644888
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"

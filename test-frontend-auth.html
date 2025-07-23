@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Auth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+        button { padding: 8px 16px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Frontend Authentication Test</h1>
+    
+    <div class="section">
+        <h2>Current Auth Status</h2>
+        <button onclick="checkAuthStatus()">Check Auth Status</button>
+        <div id="authStatus" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>Login Test</h2>
+        <input type="email" id="loginEmail" value="debugtest2@example.com" placeholder="Email">
+        <input type="password" id="loginPassword" value="test12345" placeholder="Password">
+        <button onclick="testLogin()">Login</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>Meal Plans Test</h2>
+        <button onclick="fetchSavedPlans()">Fetch Saved Plans</button>
+        <button onclick="saveTestPlan()">Save Test Plan</button>
+        <div id="mealPlansResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>LocalStorage Debug</h2>
+        <button onclick="debugLocalStorage()">Check LocalStorage</button>
+        <button onclick="clearAuth()">Clear Auth</button>
+        <div id="localStorageResult" class="result"></div>
+    </div>
+
+    <script>
+        function log(message, isError = false) {
+            console.log(message);
+            const div = document.createElement('div');
+            div.textContent = typeof message === 'object' ? JSON.stringify(message, null, 2) : message;
+            div.className = isError ? 'error' : 'success';
+            return div;
+        }
+
+        async function checkAuthStatus() {
+            const resultDiv = document.getElementById('authStatus');
+            resultDiv.innerHTML = '';
+            
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                resultDiv.appendChild(log('No auth token found', true));
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/user', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    resultDiv.appendChild(log(`Authenticated as: ${user.user.full_name} (ID: ${user.user.id})`));
+                    resultDiv.appendChild(log(`Token: ${token.substring(0, 30)}...`));
+                } else {
+                    resultDiv.appendChild(log(`Auth failed: ${response.status}`, true));
+                }
+            } catch (error) {
+                resultDiv.appendChild(log(`Error: ${error.message}`, true));
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('loginResult');
+            resultDiv.innerHTML = '';
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('auth_token', data.token);
+                    resultDiv.appendChild(log(`Login successful! User: ${data.user.full_name}`));
+                    resultDiv.appendChild(log(`Token saved to localStorage`));
+                } else {
+                    const error = await response.text();
+                    resultDiv.appendChild(log(`Login failed: ${error}`, true));
+                }
+            } catch (error) {
+                resultDiv.appendChild(log(`Error: ${error.message}`, true));
+            }
+        }
+
+        async function fetchSavedPlans() {
+            const resultDiv = document.getElementById('mealPlansResult');
+            resultDiv.innerHTML = '';
+            
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                resultDiv.appendChild(log('No auth token - please login first', true));
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/meal-plans/saved', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const plans = await response.json();
+                    resultDiv.appendChild(log(`Found ${plans.length} saved meal plans:`));
+                    plans.forEach((plan, index) => {
+                        resultDiv.appendChild(log(`${index + 1}. ${plan.name} (ID: ${plan.id}) - Created: ${new Date(plan.createdAt).toLocaleString()}`));
+                    });
+                } else {
+                    const error = await response.text();
+                    resultDiv.appendChild(log(`Failed to fetch plans: ${error}`, true));
+                }
+            } catch (error) {
+                resultDiv.appendChild(log(`Error: ${error.message}`, true));
+            }
+        }
+
+        async function saveTestPlan() {
+            const resultDiv = document.getElementById('mealPlansResult');
+            
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                resultDiv.appendChild(log('No auth token - please login first', true));
+                return;
+            }
+
+            const testPlan = {
+                name: `Frontend Test Plan ${Date.now()}`,
+                description: 'Test plan from frontend',
+                meal_plan: {
+                    day_1: {
+                        breakfast: {
+                            title: 'Frontend Test Breakfast',
+                            cook_time_minutes: 10,
+                            difficulty: 2,
+                            ingredients: ['test', 'ingredients']
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch('/api/meal-plans', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(testPlan)
+                });
+
+                if (response.ok) {
+                    const savedPlan = await response.json();
+                    resultDiv.appendChild(log(`Plan saved successfully! ID: ${savedPlan.id}`));
+                    // Refresh the saved plans
+                    setTimeout(fetchSavedPlans, 500);
+                } else {
+                    const error = await response.text();
+                    resultDiv.appendChild(log(`Failed to save plan: ${error}`, true));
+                }
+            } catch (error) {
+                resultDiv.appendChild(log(`Error: ${error.message}`, true));
+            }
+        }
+
+        function debugLocalStorage() {
+            const resultDiv = document.getElementById('localStorageResult');
+            resultDiv.innerHTML = '';
+            
+            resultDiv.appendChild(log(`LocalStorage contents:`));
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                resultDiv.appendChild(log(`${key}: ${value?.substring(0, 50)}${value?.length > 50 ? '...' : ''}`));
+            }
+        }
+
+        function clearAuth() {
+            localStorage.removeItem('auth_token');
+            document.getElementById('localStorageResult').appendChild(log('Auth token cleared'));
+        }
+
+        // Auto-check status on load
+        window.onload = () => {
+            checkAuthStatus();
+            debugLocalStorage();
+        };
+    </script>
+</body>
+</html>

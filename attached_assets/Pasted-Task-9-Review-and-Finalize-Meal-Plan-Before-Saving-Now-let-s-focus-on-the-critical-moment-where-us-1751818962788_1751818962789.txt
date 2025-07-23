@@ -1,0 +1,65 @@
+Task 9: Review and Finalize Meal Plan Before Saving
+Now let's focus on the critical moment where users review their generated meal plan and decide to commit to it. This is where they transition from "exploring" to "using" your app.
+Review Experience & Layout:
+Review Page Structure: After meal generation, what should users see first?
+Full week overview with all meals visible?
+Day-by-day breakdown with expandable sections?
+Summary stats (total cost, prep time, nutrition) at the top?
+Missing Information Handling: What constitutes an "incomplete" plan?
+Empty meal slots that weren't filled by AI?
+Missing family assignments for specific meals?
+Unresolved dietary restriction conflicts?
+Visual Plan Summary: What key information should be immediately visible?
+Ingredient overlap indicators ("Tomatoes used in 3 meals")?
+Weekly cost projection ("Estimated grocery cost: $127")?
+Prep time distribution ("Monday: 45min, Tuesday: 20min")?
+Edit Capabilities During Review:
+Quick Edits vs Deep Edits: What level of editing should be available?
+Quick swaps: "Try Different Meal" buttons on each slot?
+Deep edits: Adjust ingredients, modify recipes, change portions?
+Family reassignment: Change who's eating what meals?
+Bulk Actions: For efficiency, what bulk operations should you offer?
+"Replace all breakfasts" with different options?
+"Make Monday vegetarian" for all meals that day?
+"Remove dairy from all meals" when restrictions change?
+Undo/Redo System: How should users handle mistakes during review?
+Simple undo for last action?
+Revert to original generated plan?
+Save draft states so they can try different modifications?
+Psychological Commitment:
+Confidence Building: How do you make users feel good about their plan?
+Savings preview: "This plan will save you $73 vs. your usual shopping"?
+Achievement indicators: "✅ All dietary restrictions met"?
+Effort preview: "Total weekly prep time: 3.5 hours"?
+Decision Fatigue Prevention: How do you avoid overwhelming busy mothers?
+Progressive disclosure: Hide advanced editing initially?
+Good defaults: Make the generated plan immediately usable?
+Clear next steps: Obvious path from review to action?
+Save Flow & Confirmation:
+Save Button Prominence: Where and how should the save action appear?
+Floating save button always visible?
+Save at bottom after full review?
+Save with preview ("Save Plan" → shows what they're saving)?
+Post-Save Experience: After saving, what happens next?
+Success celebration (confetti, savings confirmation)?
+Immediate next action (generate grocery list, set reminders)?
+Return to main dashboard with new plan visible?
+Shopping List Integration:
+Grocery List Preview: Should shopping list be visible during review?
+Side panel showing ingredients updating as they edit?
+Separate tab they can switch to?
+Summary view ("23 ingredients, estimated $84")?
+Shopping Optimization: How should you handle shopping list efficiency?
+Consolidate ingredients across meals automatically?
+Show store sections (Produce, Dairy, etc.)?
+Quantity optimization ("Buy large tomato pack for 3 meals")?
+Mobile Review Experience:
+Mobile Navigation: How should review work on phones?
+Swipe between days horizontally?
+Vertical scroll through all meals?
+Tab navigation (Overview, Day 1, Day 2, etc.)?
+Mobile Editing: What's the easiest way to edit on mobile?
+Tap to edit individual meals?
+Long press for quick actions menu?
+Slide gestures for common actions?
+Which aspect of the review and finalize flow should we focus on first? The review experience layout, the editing capabilities, or the save/confirmation flow?
