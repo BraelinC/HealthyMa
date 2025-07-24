@@ -46,6 +46,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", loginUser);
   app.get("/api/auth/user", authenticateToken, getCurrentUser);
 
+  // Test user routes
+  app.post("/api/auth/test-login", async (req, res) => {
+    try {
+      // Login with test user credentials
+      const testEmail = "test@example.com";
+      const testPassword = "testuser123";
+
+      const user = await storage.getUserByEmail(testEmail);
+      if (!user) {
+        // Create test user if it doesn't exist
+        const { hashPassword } = await import("./auth");
+        const hashedPassword = await hashPassword(testPassword);
+        
+        const newUser = await storage.createUser({
+          email: testEmail,
+          phone: "555-TEST-USER",
+          password_hash: hashedPassword,
+          full_name: "Test User"
+        });
+
+        const { generateToken } = await import("./auth");
+        const token = generateToken(newUser.id.toString());
+
+        const { password_hash, ...userWithoutPassword } = newUser;
+        return res.json({
+          user: userWithoutPassword,
+          token,
+          message: "Test user created and logged in successfully"
+        });
+      }
+
+      // User exists, generate token
+      const { generateToken } = await import("./auth");
+      const token = generateToken(user.id.toString());
+
+      const { password_hash, ...userWithoutPassword } = user;
+      res.json({
+        user: userWithoutPassword,
+        token,
+        message: "Test user login successful"
+      });
+
+    } catch (error: any) {
+      console.error("Test login error:", error);
+      res.status(500).json({ message: "Test login failed" });
+    }
+  });
+
+  app.post("/api/auth/reset-test-user", async (req, res) => {
+    try {
+      const testEmail = "test@example.com";
+      
+      // Check if test user exists
+      const existingUser = await storage.getUserByEmail(testEmail);
+      if (!existingUser) {
+        return res.status(404).json({ message: "Test user not found" });
+      }
+
+      // Reset password to default
+      const { hashPassword } = await import("./auth");
+      const defaultPassword = "testuser123";
+      const hashedPassword = await hashPassword(defaultPassword);
+
+      // Update user password in database
+      await storage.updateUser(existingUser.id, {
+        password_hash: hashedPassword
+      });
+      
+      res.json({ 
+        message: "Test user reset successfully. Password is now 'testuser123'",
+        email: testEmail 
+      });
+
+    } catch (error: any) {
+      console.error("Test user reset error:", error);
+      res.status(500).json({ message: "Failed to reset test user" });
+    }
+  });
+
   // Stripe payment routes
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
@@ -1165,6 +1244,190 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
     }
   });
 
+  // Weight-based meal plan generation
+  app.post("/api/meal-plan/generate-weight-based", authenticateToken, async (req: AuthRequest, res) => {
+    const startTime = Date.now();
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Check rate limit
+      if (!rateLimiter.isAllowed(userId.toString())) {
+        return res.status(429).json({
+          message: "Rate limit exceeded. Please try again later.",
+          remainingRequests: rateLimiter.getRemainingRequests(userId.toString()),
+          resetTime: rateLimiter.getResetTime(userId.toString())
+        });
+      }
+
+      const {
+        numDays,
+        mealsPerDay,
+        goalWeights,
+        dietaryRestrictions = [],
+        culturalBackground = [],
+        availableIngredients = "",
+        excludeIngredients = "",
+        familySize = 2
+      } = req.body;
+
+      // Get weight-based profile
+      let weightBasedProfile = null;
+      try {
+        const profile = await storage.getProfile(Number(userId));
+        if (profile && profile.profile_type === 'weight-based') {
+          // Parse goal weights from stored goals
+          const storedGoalWeights: any = {};
+          if (profile.goals && Array.isArray(profile.goals)) {
+            profile.goals.forEach((goal: string) => {
+              const [key, value] = goal.split(':');
+              storedGoalWeights[key] = parseFloat(value) || 0.5;
+            });
+          }
+          
+          weightBasedProfile = {
+            profileName: profile.profile_name,
+            familySize: profile.family_size,
+            goalWeights: storedGoalWeights,
+            dietaryRestrictions: profile.preferences || [],
+            culturalBackground: profile.cultural_background || []
+          };
+        }
+      } catch (error) {
+        console.log('Could not fetch weight-based profile, using request data. Error:', error);
+      }
+
+      // Use profile data or fallback to request data
+      const finalGoalWeights = goalWeights || weightBasedProfile?.goalWeights || {
+        cost: 0.5, health: 0.5, cultural: 0.5, variety: 0.5, time: 0.5
+      };
+      const finalDietaryRestrictions = dietaryRestrictions.length > 0 ? 
+        dietaryRestrictions : (weightBasedProfile?.dietaryRestrictions || []);
+      const finalCulturalBackground = culturalBackground.length > 0 ? 
+        culturalBackground : (weightBasedProfile?.culturalBackground || []);
+      const finalFamilySize = familySize || weightBasedProfile?.familySize || 2;
+
+      // Initialize weight-based meal planner
+      const { WeightBasedMealPlanner } =  await import('./WeightBasedMealPlanner');
+      const planner = new WeightBasedMealPlanner();
+
+      // Get hero ingredients for cost optimization
+      let heroIngredients: string[] = [];
+      if (finalGoalWeights.cost > 0.6) {
+        const { HeroIngredientManager } = await import('./HeroIngredientManager');
+        const heroManager = new HeroIngredientManager();
+        const heroSelection = await heroManager.selectHeroIngredients(
+          finalCulturalBackground,
+          availableIngredients.split(',').map(i => i.trim()).filter(Boolean),
+          finalGoalWeights.cost,
+          finalDietaryRestrictions
+        );
+        heroIngredients = heroSelection.ingredients;
+        console.log('Selected hero ingredients:', heroIngredients);
+      }
+
+      // Build weight-based prompt
+      const mealContext = {
+        numDays,
+        mealsPerDay,
+        availableIngredients,
+        excludeIngredients,
+        familySize: finalFamilySize
+      };
+
+      const prompt = planner.buildWeightBasedPrompt(
+        finalGoalWeights,
+        heroIngredients,
+        mealContext,
+        finalDietaryRestrictions,
+        finalFamilySize
+      );
+
+      console.log('Generated weight-based prompt');
+      console.log('Goal weights:', finalGoalWeights);
+      console.log('Hero ingredients:', heroIngredients);
+
+      // Generate meal plan using OpenAI
+      const openai = new (await import('openai')).OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: 'system',
+            content: `You are a weight-based meal planning expert. Generate exactly the requested number of days with the specified priority weights. Always return valid JSON.`
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+        max_tokens: 4000
+      });
+
+      let mealPlan;
+      try {
+        mealPlan = JSON.parse(completion.choices[0].message.content || '{}');
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', parseError);
+        throw new Error('Invalid response format from AI');
+      }
+
+      // Validate and enhance meal plan with cultural meal integration
+      if (finalGoalWeights.cultural > 0.3 && finalCulturalBackground.length > 0) {
+        const { SmartCulturalMealSelector } = await import('./SmartCulturalMealSelector');
+        const culturalSelector = new SmartCulturalMealSelector();
+        
+        try {
+          const culturalMeals = await culturalSelector.getCompatibleCulturalMeals(
+            Number(userId),
+            finalCulturalBackground,
+            finalDietaryRestrictions
+          );
+          
+          if (culturalMeals.length > 0) {
+            // Integrate cultural meals into the plan
+            const enhancedPlan = await culturalSelector.integrateCulturalMeals(
+              mealPlan,
+              culturalMeals,
+              finalGoalWeights,
+              { numDays, mealsPerDay }
+            );
+            mealPlan = enhancedPlan;
+            console.log('Enhanced meal plan with cultural integration');
+          }
+        } catch (culturalError) {
+          console.log('Cultural meal integration failed, using basic plan:', culturalError);
+        }
+      }
+
+      // Add metadata about the weight-based generation
+      const finalMealPlan = {
+        ...mealPlan,
+        generation_metadata: {
+          type: 'weight-based',
+          goal_weights: finalGoalWeights,
+          hero_ingredients: heroIngredients,
+          cultural_integration: finalGoalWeights.cultural > 0.3,
+          generation_time_ms: Date.now() - startTime
+        }
+      };
+
+      console.log(`✅ Generated weight-based meal plan in ${Date.now() - startTime}ms`);
+      res.json(finalMealPlan);
+
+    } catch (error) {
+      console.error("Error generating weight-based meal plan:", error);
+      res.status(500).json({ message: "Failed to generate weight-based meal plan" });
+    }
+  });
+
   // Cache statistics endpoint
   app.get("/api/cache/stats", (req, res) => {
     // Temporary mock stats while caching is disabled
@@ -1454,6 +1717,118 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
     } catch (error) {
       console.error("Error updating profile:", error);
       res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Weight-based profile routes
+  app.get("/api/profile/weight-based", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Try to get existing profile first
+      const existingProfile = await storage.getProfile(Number(userId));
+      
+      if (existingProfile) {
+        // Convert existing profile to weight-based format
+        const weightBasedProfile = {
+          profileName: existingProfile.profile_name || 'My Profile',
+          familySize: existingProfile.family_size || 2,
+          goalWeights: {
+            cost: 0.5,
+            health: 0.5,
+            cultural: 0.5,
+            variety: 0.5,
+            time: 0.5
+          },
+          dietaryRestrictions: existingProfile.preferences || [],
+          culturalBackground: existingProfile.cultural_background || []
+        };
+        
+        res.json(weightBasedProfile);
+      } else {
+        res.json(null);
+      }
+    } catch (error) {
+      console.error("Error fetching weight-based profile:", error);
+      res.status(500).json({ message: "Failed to fetch weight-based profile" });
+    }
+  });
+
+  app.post("/api/profile/weight-based", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground } = req.body;
+
+      // Create profile using existing schema structure
+      const profileData = {
+        user_id: Number(userId),
+        profile_name: profileName,
+        primary_goal: 'Weight-Based Planning',
+        family_size: familySize,
+        members: [], // Empty for weight-based approach
+        profile_type: 'weight-based',
+        preferences: dietaryRestrictions,
+        goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
+        cultural_background: culturalBackground
+      };
+
+      const profile = await storage.createProfile(profileData);
+      res.json({
+        profileName: profile.profile_name,
+        familySize: profile.family_size,
+        goalWeights,
+        dietaryRestrictions: profile.preferences,
+        culturalBackground: profile.cultural_background
+      });
+    } catch (error) {
+      console.error("Error creating weight-based profile:", error);
+      res.status(500).json({ message: "Failed to create weight-based profile" });
+    }
+  });
+
+  app.put("/api/profile/weight-based", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground } = req.body;
+
+      // Update profile using existing schema structure
+      const profileData = {
+        profile_name: profileName,
+        primary_goal: 'Weight-Based Planning',
+        family_size: familySize,
+        members: [],
+        profile_type: 'weight-based',
+        preferences: dietaryRestrictions,
+        goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
+        cultural_background: culturalBackground
+      };
+
+      const profile = await storage.updateProfile(Number(userId), profileData);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      res.json({
+        profileName: profile.profile_name,
+        familySize: profile.family_size,
+        goalWeights,
+        dietaryRestrictions: profile.preferences,
+        culturalBackground: profile.cultural_background
+      });
+    } catch (error) {
+      console.error("Error updating weight-based profile:", error);
+      res.status(500).json({ message: "Failed to update weight-based profile" });
     }
   });
 

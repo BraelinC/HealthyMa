@@ -16,6 +16,9 @@ import type { Profile, FamilyMember } from '@shared/schema';
 import CulturalCuisineDropdown from '@/components/CulturalCuisineDropdown';
 import CulturalFreeTextInput from '@/components/CulturalFreeTextInput';
 import SmartCulturalPreferenceEditor from '@/components/SmartCulturalPreferenceEditor';
+import ProfileSystemToggle from '@/components/ProfileSystemToggle';
+import WeightBasedProfile from '@/components/WeightBasedProfile';
+import { useProfileSystem } from '@/hooks/useProfileSystem';
 
 const commonGoals = [
   'Lose Weight',
@@ -80,6 +83,9 @@ export default function Profile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Profile system selection hook
+  const { isSmartProfileEnabled, isLoading: profileSystemLoading, toggleProfileSystem } = useProfileSystem();
 
   const [isEditing, setIsEditing] = useState(false);
   const [profileType, setProfileType] = useState<'individual' | 'family'>('family');
@@ -503,12 +509,29 @@ export default function Profile() {
     setMembers(members.filter((_, i) => i !== index));
   };
 
-  if (isLoading) {
+  if (isLoading || profileSystemLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If smart profile is enabled, render the WeightBasedProfile component
+  if (isSmartProfileEnabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50">
+        <div className="container mx-auto p-4 max-w-4xl">
+          <ProfileSystemToggle 
+            isSmartProfileEnabled={isSmartProfileEnabled}
+            onToggleChange={(enabled) => toggleProfileSystem(enabled ? 'smart' : 'traditional')}
+          />
+          <div className="mt-6">
+            <WeightBasedProfile />
+          </div>
         </div>
       </div>
     );
@@ -537,8 +560,13 @@ export default function Profile() {
           )}
         </div>
 
+        <ProfileSystemToggle 
+          isSmartProfileEnabled={isSmartProfileEnabled}
+          onToggleChange={(enabled) => toggleProfileSystem(enabled ? 'smart' : 'traditional')}
+        />
+
         {!profile && !isEditing && !showProfileTypeSelection && (
-          <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg">
+          <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg mt-6">
             <CardContent className="p-8 text-center">
               <div className="bg-gradient-to-r from-purple-100 to-emerald-100 p-6 rounded-full w-fit mx-auto mb-6">
                 <ChefHat className="h-16 w-16 text-purple-600 mx-auto" />
@@ -558,7 +586,7 @@ export default function Profile() {
         )}
 
         {!profile && !isEditing && showProfileTypeSelection && (
-          <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg">
+          <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg mt-6">
             <CardContent className="p-8">
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-emerald-600 bg-clip-text text-transparent">
@@ -667,7 +695,7 @@ export default function Profile() {
         )}
 
         {(isEditing || profile) && (
-          <div className="space-y-6">
+          <div className="space-y-6 mt-6">
             <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

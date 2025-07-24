@@ -1,23 +1,78 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { HandPlatter, CheckCircle, ChefHat, Heart, DollarSign, Info, Check, X } from "lucide-react";
+import { HandPlatter, CheckCircle, ChefHat, Heart, DollarSign, Info, Check, X, User, RotateCcw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface LandingPageProps {
   onGetStarted: () => void;
   onStartPayment: (paymentType: 'founders' | 'trial') => void;
+  onTestLogin?: (user: any, token: string) => void;
 }
 
-export function LandingPage({ onGetStarted, onStartPayment }: LandingPageProps) {
+export function LandingPage({ onGetStarted, onStartPayment, onTestLogin }: LandingPageProps) {
   const [currentFounders, setCurrentFounders] = useState(0);
   const totalFounders = 1000;
+  const [isTestLoading, setIsTestLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const { toast } = useToast();
   
   // TODO: This will be updated with real user count from database
   // For now, starts at 0 and will increment with each new user signup
   
   const progressPercentage = (currentFounders / totalFounders) * 100;
+
+  const handleTestLogin = async () => {
+    if (!onTestLogin) return;
+    
+    setIsTestLoading(true);
+    try {
+      const response = await apiRequest("/api/auth/test-login", {
+        method: "POST",
+        body: JSON.stringify({})
+      });
+      
+      onTestLogin(response.user, response.token);
+      toast({
+        title: "Test login successful",
+        description: "Welcome! You're now logged in as the test user.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Test login failed",
+        description: error.message || "Failed to log in as test user",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestLoading(false);
+    }
+  };
+
+  const handleResetTestUser = async () => {
+    setResetLoading(true);
+    try {
+      await apiRequest("/api/auth/reset-test-user", {
+        method: "POST",
+        body: JSON.stringify({})
+      });
+      
+      toast({
+        title: "Test user reset",
+        description: "Test user has been reset. You can now log in with fresh data.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Reset failed",
+        description: error.message || "Failed to reset test user",
+        variant: "destructive",
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50">
@@ -45,6 +100,42 @@ export function LandingPage({ onGetStarted, onStartPayment }: LandingPageProps) 
             Transform your family's meals with AI-powered planning that saves time and money while keeping everyone healthy and happy.
           </p>
         </div>
+
+        {/* Test User Login Section */}
+        {false && onTestLogin && (
+          <div className="text-center mb-8">
+            <Card className="max-w-md mx-auto border-2 border-green-200 bg-green-50/50 backdrop-blur-sm shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 justify-center mb-4">
+                  <User className="w-5 h-5 text-green-600" />
+                  <h3 className="text-lg font-semibold text-green-800">Test User Access</h3>
+                </div>
+                <p className="text-sm text-green-700 mb-4">
+                  Try the app instantly without creating an account
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button 
+                    onClick={handleTestLogin}
+                    disabled={isTestLoading}
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                  >
+                    <User className="w-4 h-4" />
+                    {isTestLoading ? "Logging in..." : "Login as Test User"}
+                  </Button>
+                  <Button 
+                    onClick={handleResetTestUser}
+                    disabled={resetLoading}
+                    variant="outline"
+                    className="border-green-300 text-green-700 hover:bg-green-100 flex items-center gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    {resetLoading ? "Resetting..." : "Reset User"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Tabbed Offers */}
         <div className="text-center mb-6">

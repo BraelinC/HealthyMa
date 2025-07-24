@@ -32,6 +32,20 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateUser(id: number, userData: Partial<{
+    email: string;
+    phone?: string;
+    password_hash: string;
+    full_name: string;
+  }>): Promise<User | null> {
+    const [user] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return user || null;
+  }
+
   // Recipe methods
   async createRecipe(recipe: InsertRecipe): Promise<Recipe> {
     const [createdRecipe] = await db

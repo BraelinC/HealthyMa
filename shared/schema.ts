@@ -85,6 +85,64 @@ export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type Profile = typeof profiles.$inferSelect;
 export type FamilyMember = z.infer<typeof familyMemberSchema>;
 
+// Weight-Based Profile System - Simplified approach for better meal planning
+export const goalWeightsSchema = z.object({
+  cost: z.number().min(0).max(1).default(0.5),        // Save money priority (0-1)
+  health: z.number().min(0).max(1).default(0.5),      // Nutrition/wellness priority (0-1)
+  cultural: z.number().min(0).max(1).default(0.5),    // Cultural cuisine priority (0-1)
+  variety: z.number().min(0).max(1).default(0.5),     // Meal diversity priority (0-1)
+  time: z.number().min(0).max(1).default(0.5),        // Quick/easy meal priority (0-1)
+});
+
+export const simplifiedUserProfileSchema = z.object({
+  // Mandatory (100% compliance)
+  dietaryRestrictions: z.array(z.string()).default([]),
+  
+  // Weight-based priorities
+  goalWeights: goalWeightsSchema,
+  
+  // Basic info
+  culturalBackground: z.array(z.string()).default([]),
+  familySize: z.number().min(1).max(12).default(1),
+  availableIngredients: z.array(z.string()).optional(),
+});
+
+export const mealPlanRequestSchema = z.object({
+  profile: simplifiedUserProfileSchema,
+  numDays: z.number().min(1).max(14).default(7),
+  mealsPerDay: z.number().min(1).max(4).default(3),
+  maxCookTime: z.number().min(10).max(180).optional(),
+  maxDifficulty: z.number().min(1).max(5).optional(),
+});
+
+export const weightBasedMealSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  ingredients: z.array(z.string()),
+  instructions: z.array(z.string()),
+  nutrition: z.object({
+    calories: z.number(),
+    protein_g: z.number(),
+    carbs_g: z.number(),
+    fat_g: z.number(),
+  }),
+  cook_time_minutes: z.number(),
+  difficulty: z.number(),
+  
+  // Weight-based metadata
+  objectiveOverlap: z.array(z.string()).default([]),      // Which objectives this meal satisfies
+  heroIngredients: z.array(z.string()).default([]),       // Which hero ingredients used
+  culturalSource: z.string().optional(),                  // If from predetermined cultural meals
+  weightSatisfaction: goalWeightsSchema,                   // How well it satisfies each weight
+  adaptationNotes: z.array(z.string()).optional(),        // If meal was adapted from predetermined
+});
+
+export type GoalWeights = z.infer<typeof goalWeightsSchema>;
+export type SimplifiedUserProfile = z.infer<typeof simplifiedUserProfileSchema>;
+export type MealPlanRequest = z.infer<typeof mealPlanRequestSchema>;
+export type WeightBasedMeal = z.infer<typeof weightBasedMealSchema>;
+
 // Recipe model
 export const recipes = pgTable("recipes", {
   id: serial("id").primaryKey(),
@@ -205,6 +263,12 @@ export interface IStorage {
     password_hash: string;
     full_name: string;
   }): Promise<User>;
+  updateUser(id: number, userData: Partial<{
+    email: string;
+    phone?: string;
+    password_hash: string;
+    full_name: string;
+  }>): Promise<User | null>;
   
   // Recipe methods
   createRecipe(recipe: InsertRecipe): Promise<Recipe>;
