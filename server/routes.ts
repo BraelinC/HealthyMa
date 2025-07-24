@@ -1273,30 +1273,43 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         familySize = 2
       } = req.body;
 
-      // Get weight-based profile
+      // Get weight-based profile and user profile for advanced prompt integration
       let weightBasedProfile = null;
+      let userProfile = null;
+      let culturalCuisineData = null;
+      
       try {
-        const profile = await storage.getProfile(Number(userId));
-        if (profile && profile.profile_type === 'weight-based') {
+        userProfile = await storage.getProfile(Number(userId));
+        console.log('Retrieved user profile for weight-based system:', userProfile?.profile_name);
+        
+        if (userProfile && userProfile.profile_type === 'weight-based') {
           // Parse goal weights from stored goals
           const storedGoalWeights: any = {};
-          if (profile.goals && Array.isArray(profile.goals)) {
-            profile.goals.forEach((goal: string) => {
+          if (userProfile.goals && Array.isArray(userProfile.goals)) {
+            userProfile.goals.forEach((goal: string) => {
               const [key, value] = goal.split(':');
               storedGoalWeights[key] = parseFloat(value) || 0.5;
             });
           }
           
           weightBasedProfile = {
-            profileName: profile.profile_name,
-            familySize: profile.family_size,
+            profileName: userProfile.profile_name,
+            familySize: userProfile.family_size,
             goalWeights: storedGoalWeights,
-            dietaryRestrictions: profile.preferences || [],
-            culturalBackground: profile.cultural_background || []
+            dietaryRestrictions: userProfile.preferences || [],
+            culturalBackground: userProfile.cultural_background || []
           };
         }
+
+        // Get cultural cuisine data if user has cultural preferences (for advanced prompt integration)
+        if (userProfile && userProfile.cultural_background && Array.isArray(userProfile.cultural_background) && userProfile.cultural_background.length > 0) {
+          console.log('Weight-based system: User has cultural background:', userProfile.cultural_background);
+          const { getCachedCulturalCuisine } = await import('./cultureCacheManager');
+          culturalCuisineData = await getCachedCulturalCuisine(Number(userId), userProfile.cultural_background);
+          console.log(`Weight-based system: Retrieved cultural cuisine data for: ${userProfile.cultural_background.join(', ')}`);
+        }
       } catch (error) {
-        console.log('Could not fetch weight-based profile, using request data. Error:', error);
+        console.log('Could not fetch user profile for weight-based system, using request data. Error:', error);
       }
 
       // Use profile data or fallback to request data
@@ -1328,26 +1341,74 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         console.log('Selected hero ingredients:', heroIngredients);
       }
 
-      // Build weight-based prompt
-      const mealContext = {
-        numDays,
-        mealsPerDay,
-        availableIngredients,
-        excludeIngredients,
-        familySize: finalFamilySize
-      };
+      // V2 INTEGRATION: Use Prompt Builder V2 with main goal + weight-based enhancement
+      let prompt: string;
+      
+      // Extract main goal from profile for advanced prompt integration
+      const primaryGoal = userProfile?.primary_goal || 'Weight-Based Planning';
+      console.log('Weight-based system: Processing main goal:', primaryGoal);
+      
+      try {
+        // Import V2 prompt builder with weight-based intelligence
+        const { buildWeightBasedIntelligentPrompt } = await import('./intelligentPromptBuilderV2');
+        
+        // Build advanced filters for V2 prompt builder
+        const advancedFilters = {
+          numDays,
+          mealsPerDay,
+          cookTime: 45, // Default reasonable cook time
+          difficulty: 3, // Default moderate difficulty  
+          primaryGoal,
+          familySize: finalFamilySize,
+          familyMembers: Array.isArray(userProfile?.members) ? userProfile.members : [],
+          profileType: userProfile?.profile_type as 'individual' | 'family' || 'individual',
+          dietaryRestrictions: finalDietaryRestrictions.join(', '),
+          culturalBackground: finalCulturalBackground,
+          culturalCuisineData: culturalCuisineData,
+          availableIngredients,
+          excludeIngredients,
+          // Weight-based enhancements
+          goalWeights: finalGoalWeights,
+          heroIngredients,
+          weightBasedEnhanced: true
+        };
+        
+        // Generate prompt using V2 system (main goals + weight-based intelligence)
+        prompt = await buildWeightBasedIntelligentPrompt(
+          advancedFilters,
+          finalGoalWeights,
+          heroIngredients
+        );
+        
+        console.log('✅ Generated V2 weight-based prompt with main goal integration');
+        console.log('Main goal:', primaryGoal);
+        console.log('Goal weights:', finalGoalWeights);
+        console.log('Hero ingredients:', heroIngredients);
+        
+      } catch (error) {
+        console.error('V2 prompt builder failed, falling back to original weight-based prompt:', error);
+        
+        // Fallback to original weight-based prompt system
+        const mealContext = {
+          numDays,
+          mealsPerDay,
+          availableIngredients,
+          excludeIngredients,
+          familySize: finalFamilySize
+        };
 
-      const prompt = planner.buildWeightBasedPrompt(
-        finalGoalWeights,
-        heroIngredients,
-        mealContext,
-        finalDietaryRestrictions,
-        finalFamilySize
-      );
-
-      console.log('Generated weight-based prompt');
-      console.log('Goal weights:', finalGoalWeights);
-      console.log('Hero ingredients:', heroIngredients);
+        prompt = planner.buildWeightBasedPrompt(
+          finalGoalWeights,
+          heroIngredients,
+          mealContext,
+          finalDietaryRestrictions,
+          finalFamilySize
+        );
+        
+        console.log('⚠️ Using fallback weight-based prompt');
+        console.log('Goal weights:', finalGoalWeights);
+        console.log('Hero ingredients:', heroIngredients);
+      }
 
       // Generate meal plan using OpenAI
       const openai = new (await import('openai')).OpenAI({
@@ -1359,7 +1420,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         messages: [
           {
             role: 'system',
-            content: `You are a weight-based meal planning expert. Generate exactly the requested number of days with the specified priority weights. Always return valid JSON.`
+            content: `You are an advanced meal planning expert with weight-based intelligence. You understand main goals (like "${primaryGoal}") and can apply weight-based priorities to refine decisions. Generate exactly the requested number of days following the main goal guidance first, then using weights to resolve conflicts. Always return valid JSON with proper day structure.`
           },
           {
             role: 'user',
@@ -1407,14 +1468,17 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         }
       }
 
-      // Add metadata about the weight-based generation
+      // Add metadata about the V2 weight-based generation
       const finalMealPlan = {
         ...mealPlan,
         generation_metadata: {
-          type: 'weight-based',
+          type: 'weight-based-v2',
+          main_goal: primaryGoal,
           goal_weights: finalGoalWeights,
           hero_ingredients: heroIngredients,
           cultural_integration: finalGoalWeights.cultural > 0.3,
+          advanced_prompt_used: true,
+          prompt_builder_version: 'V2',
           generation_time_ms: Date.now() - startTime
         }
       };
