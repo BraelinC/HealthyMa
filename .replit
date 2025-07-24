@@ -55,10 +55,6 @@ localPort = 45079
 externalPort = 3003
 exposeLocalhost = true
 
-[[ports]]
-localPort = 54545
-externalPort = 6800
-
 [workflows]
 runButton = "NutriMa Server"
 
