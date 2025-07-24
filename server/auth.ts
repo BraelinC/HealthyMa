@@ -51,7 +51,7 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
   }
 
   try {
-    const user = await storage.getUser(decoded.userId);
+    const user = await storage.getUser(Number(decoded.userId));
     if (!user) {
       return res.status(403).json({ message: "User not found" });
     }
@@ -86,7 +86,7 @@ export async function registerUser(req: Request, res: Response) {
     });
 
     // Generate token
-    const token = generateToken(user.id);
+    const token = generateToken(user.id.toString());
 
     // Return user data (without password) and token
     const { password_hash, ...userWithoutPassword } = user;
@@ -126,7 +126,7 @@ export async function loginUser(req: Request, res: Response) {
     }
 
     // Generate token
-    const token = generateToken(user.id);
+    const token = generateToken(user.id.toString());
 
     // Return user data (without password) and token
     const { password_hash, ...userWithoutPassword } = user;
