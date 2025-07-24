@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "task-master-ai": {
+      "command": "npx",
+      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
+      "env": {
+        "ANTHROPIC_API_KEY": "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",
+        "PERPLEXITY_API_KEY": "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",
+        "OPENAI_API_KEY": "",
+        "GOOGLE_API_KEY": "",
+        "XAI_API_KEY": "",
+        "OPENROUTER_API_KEY": "",
+        "MISTRAL_API_KEY": "",
+        "AZURE_OPENAI_API_KEY": "",
+        "OLLAMA_API_KEY": ""
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/runner/workspace"]
+    }
+  }
+}
