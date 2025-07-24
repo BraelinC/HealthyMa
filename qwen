@@ -1,0 +1,37 @@
+#!/bin/bash
+# Qwen 3 Coder CLI Wrapper Script
+# Usage: ./qwen "Your coding question"
+
+# Check if we have arguments
+if [ $# -eq 0 ]; then
+    echo "🤖 Qwen 3 Coder CLI"
+    echo "=================="
+    echo "Usage: ./qwen \"Your coding question\""
+    echo ""
+    echo "Examples:"
+    echo "  ./qwen \"Write a Python function to sort a list\""
+    echo "  ./qwen \"Create a React component for a button\""
+    echo "  ./qwen \"Debug this error: Cannot read property 'length' of undefined\""
+    echo ""
+    echo "Setup (one-time):"
+    echo "  1. Get token from https://huggingface.co/settings/tokens"
+    echo "  2. Run: export HUGGINGFACE_TOKEN='your_token_here'"
+    echo ""
+    exit 0
+fi
+
+# Check if Python 3 is available
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Python 3 is not installed"
+    exit 1
+fi
+
+# Check if the CLI script exists
+if [ ! -f "qwen3_simple_cli.py" ]; then
+    echo "❌ qwen3_simple_cli.py not found in current directory"
+    echo "Make sure you're running this from the correct directory"
+    exit 1
+fi
+
+# Run the Qwen CLI with all arguments
+python3 qwen3_simple_cli.py "$@"
