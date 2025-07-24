@@ -19,6 +19,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import PastGenerations from "@/components/PastGenerations";
 import MealPlanDebugger from "@/components/MealPlanDebugger";
 import QuickAuthDebug from "@/components/QuickAuthDebug";
+import { useProfileSystem } from "@/hooks/useProfileSystem";
+import ProfileSystemIndicator from "@/components/ProfileSystemIndicator";
 import { 
   generateMealPlanName, 
   generateMealPlanDescription, 
@@ -68,6 +70,9 @@ interface PlanResponse {
 }
 
 export default function MealPlanner() {
+  // Profile system detection
+  const { isSmartProfileEnabled } = useProfileSystem();
+  
   const [cookTime, setCookTime] = useState([30]);
   const [difficulty, setDifficulty] = useState([3.0]);
   const [nutritionGoal, setNutritionGoal] = useState("");
@@ -178,28 +183,57 @@ export default function MealPlanner() {
     }
 
     setIsGenerating(true);
+    
+    console.log(`🔄 Generating meal plan using ${isSmartProfileEnabled ? 'SMART' : 'TRADITIONAL'} profile system`);
+    
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/meal-plan/generate', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify({
-          numDays: numDays[0],
-          mealsPerDay: mealsPerDay[0],
-          cookTime: cookTime[0],
-          difficulty: difficulty[0],
-          nutritionGoal,
-          dietaryRestrictions,
-          availableIngredients,
-          excludeIngredients,
-          primaryGoal,
-          selectedFamilyMembers,
-          useIntelligentPrompt: true
-        })
-      });
+      let response;
+      
+      if (isSmartProfileEnabled) {
+        // SMART PROFILE SYSTEM - Use weight-based endpoint
+        console.log('🎯 Using weight-based meal planning system');
+        
+        response = await fetch('/api/meal-plan/generate-weight-based', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          },
+          body: JSON.stringify({
+            numDays: numDays[0],
+            mealsPerDay: mealsPerDay[0],
+            maxCookTime: cookTime[0],
+            maxDifficulty: difficulty[0] / 5, // Convert to 0-1 scale
+            familySize: selectedFamilyMembers.length || 2,
+            // dietaryRestrictions and goalWeights are fetched from user's weight-based profile
+          }),
+        });
+      } else {
+        // TRADITIONAL PROFILE SYSTEM - Use original endpoint (unchanged)
+        console.log('👨‍👩‍👧‍👦 Using traditional family-based meal planning system');
+        
+        response = await fetch('/api/meal-plan/generate', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          },
+          body: JSON.stringify({
+            numDays: numDays[0],
+            mealsPerDay: mealsPerDay[0],
+            cookTime: cookTime[0],
+            difficulty: difficulty[0],
+            nutritionGoal,
+            dietaryRestrictions,
+            availableIngredients,
+            excludeIngredients,
+            primaryGoal,
+            selectedFamilyMembers,
+            useIntelligentPrompt: true
+          })
+        });
+      }
 
       if (!response.ok) throw new Error('Failed to generate meal plan');
       
@@ -482,6 +516,9 @@ export default function MealPlanner() {
         <p className="text-muted-foreground text-sm sm:text-lg">
           Get personalized meal plans with smart shopping lists
         </p>
+        <div className="flex justify-center mt-3">
+          <ProfileSystemIndicator />
+        </div>
       </div>
 
 
