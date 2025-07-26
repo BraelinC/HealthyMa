@@ -15,10 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import type { Profile, FamilyMember } from '@shared/schema';
 import CulturalCuisineDropdown from '@/components/CulturalCuisineDropdown';
 import CulturalFreeTextInput from '@/components/CulturalFreeTextInput';
-import SmartCulturalPreferenceEditor from '@/components/SmartCulturalPreferenceEditor';
 
-import WeightBasedProfile from '@/components/WeightBasedProfile';
-import { useProfileSystem } from '@/hooks/useProfileSystem';
+
+
 import AchievementsContainer from '@/components/AchievementsContainer';
 import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
 import ProfilePromptPreview from '@/components/ProfilePromptPreview';
@@ -103,8 +102,7 @@ export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Profile system selection hook
-  const { isSmartProfileEnabled, isLoading: profileSystemLoading, toggleProfileSystem } = useProfileSystem();
+
 
   const [isEditing, setIsEditing] = useState(false);
   const [profileType, setProfileType] = useState<'individual' | 'family'>('family');
@@ -570,7 +568,7 @@ export default function Profile() {
     setMembers(members.filter((_, i) => i !== index));
   };
 
-  if (isLoading || profileSystemLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50 flex items-center justify-center">
         <div className="text-center">
@@ -581,19 +579,7 @@ export default function Profile() {
     );
   }
 
-  // If smart profile is enabled, render the WeightBasedProfile component
-  if (isSmartProfileEnabled) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50">
-        <div className="container mx-auto p-4 max-w-4xl">
 
-          <div className="mt-6">
-            <WeightBasedProfile />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50">

@@ -11,10 +11,10 @@ import Search from "@/pages/Search";
 import EditableMealPlanner from "@/pages/EditableMealPlanner";
 import MealPlanner from "@/pages/MealPlannerNew";
 import Profile from "@/pages/Profile";
-import WeightBasedProfile from "@/components/WeightBasedProfile";
+
 import { TestingPage } from "@/pages/TestingPage";
 import IconShowcase from "@/pages/IconShowcase";
-import { HandPlatter, BookOpen, ChefHat, Menu, LogOut, User, CalendarDays, TestTube, Palette, Target, Settings } from "lucide-react";
+import { HandPlatter, BookOpen, ChefHat, Menu, LogOut, User, CalendarDays, TestTube, Palette, Settings } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -117,7 +117,7 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
     { icon: <HandPlatter className="w-5 h-5" />, label: "Search", path: "/search" },
     { icon: <ChefHat className="w-5 h-5" />, label: "Home", path: "/" },
     { icon: <ChefHat className="w-5 h-5" />, label: "Meal Planner", path: "/meal-planner" },
-    { icon: <Target className="w-5 h-5" />, label: "Smart Profile", path: "/smart-profile" },
+
     { icon: <TestTube className="w-5 h-5" />, label: "Test Features", path: "/testing" },
     { icon: <Palette className="w-5 h-5" />, label: "Food Icons", path: "/icons" },
   ];
@@ -238,7 +238,7 @@ function Router() {
           <Route path="/search" component={Search} />
           <Route path="/meal-planner" component={MealPlanner} />
           <Route path="/profile" component={Profile} />
-          <Route path="/smart-profile" component={WeightBasedProfile} />
+
           <Route path="/testing" component={TestingPage} />
           <Route path="/icons" component={IconShowcase} />
           <Route component={NotFound} />
