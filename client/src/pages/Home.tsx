@@ -46,7 +46,9 @@ import {
   Beer,
   Cake,
   Croissant,
-  Milk
+  Milk,
+  Check,
+  CheckCircle
 } from "lucide-react";
 
 // Import React Icons for more specific food types
@@ -64,6 +66,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
 interface Meal {
@@ -96,6 +99,18 @@ interface MealPlan {
   updatedAt: string;
 }
 
+interface MealCompletion {
+  id: number;
+  user_id: number;
+  meal_plan_id: number;
+  day_key: string;
+  meal_type: string;
+  is_completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function Home() {
   const [currentPlan, setCurrentPlan] = useState<MealPlan | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -105,6 +120,7 @@ export default function Home() {
   const [draggedDay, setDraggedDay] = useState<{ dayKey: string; dayMeals: DayMeals } | null>(null);
   const [dayOrder, setDayOrder] = useState<string[]>([]);
   const [findButtonLoading, setFindButtonLoading] = useState<string | null>(null); // STEP 4.1: Loading state for Find button
+  const [completions, setCompletions] = useState<MealCompletion[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -113,21 +129,49 @@ export default function Home() {
     queryKey: ['/api/meal-plans/saved'],
   });
 
-  // Set the current plan to the most recent one
+  // Fetch meal completions for the current plan
+  const { data: mealCompletions } = useQuery({
+    queryKey: [`/api/meal-plans/${currentPlan?.id}/completions`],
+    enabled: !!currentPlan?.id,
+  });
+
+  // Set the current plan to the most recent one (excluding completed plans)
   useEffect(() => {
     if (mealPlans && Array.isArray(mealPlans) && mealPlans.length > 0) {
-      const plan = mealPlans[0];
-      // Fix the data structure - convert meal_plan to mealPlan for consistency
-      const normalizedPlan = {
-        ...plan,
-        mealPlan: plan.meal_plan || plan.mealPlan || {}
-      };
-      setCurrentPlan(normalizedPlan);
-      // Initialize day order
-      const days = Object.keys(normalizedPlan.mealPlan).sort();
-      setDayOrder(days);
+      // Filter out completed plans
+      const incompletePlans = mealPlans.filter(plan => {
+        const normalizedPlan = {
+          ...plan,
+          mealPlan: plan.meal_plan || plan.mealPlan || {}
+        };
+        return !isMealPlanCompleted(normalizedPlan);
+      });
+      
+      if (incompletePlans.length > 0) {
+        const plan = incompletePlans[0];
+        // Fix the data structure - convert meal_plan to mealPlan for consistency
+        const normalizedPlan = {
+          ...plan,
+          mealPlan: plan.meal_plan || plan.mealPlan || {}
+        };
+        setCurrentPlan(normalizedPlan);
+        // Initialize day order
+        const days = Object.keys(normalizedPlan.mealPlan).sort();
+        setDayOrder(days);
+      } else {
+        // All plans are completed
+        setCurrentPlan(null);
+        setDayOrder([]);
+      }
     }
-  }, [mealPlans]);
+  }, [mealPlans, mealCompletions]);
+
+  // Update completions when data changes
+  useEffect(() => {
+    if (mealCompletions && Array.isArray(mealCompletions)) {
+      setCompletions(mealCompletions);
+    }
+  }, [mealCompletions]);
 
   // Update meal plan mutation
   const updateMealPlanMutation = useMutation({
@@ -153,6 +197,51 @@ export default function Home() {
     },
   });
 
+  // Toggle meal completion mutation
+  const toggleMealCompletionMutation = useMutation({
+    mutationFn: async ({ dayKey, mealType }: { dayKey: string; mealType: string }) => {
+      if (!currentPlan?.id) throw new Error("No meal plan selected");
+      return await safeApiRequest(`/api/meal-plans/${currentPlan.id}/completions/toggle`, {
+        method: 'POST',
+        body: JSON.stringify({ dayKey, mealType }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/meal-plans/${currentPlan?.id}/completions`] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update meal completion",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Complete entire meal plan mutation - REMOVED per user request
+  // const completeMealPlanMutation = useMutation({
+  //   mutationFn: async () => {
+  //     if (!currentPlan?.id) throw new Error("No meal plan selected");
+  //     return await safeApiRequest(`/api/meal-plans/${currentPlan.id}/complete`, {
+  //       method: 'POST',
+  //     });
+  //   },
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['/api/meal-plans/saved'] });
+  //     toast({
+  //       title: "Plan Completed! 🎉",
+  //       description: "Congratulations! Your meal plan has been completed and removed from your active plans.",
+  //     });
+  //   },
+  //   onError: (error) => {
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to complete meal plan",
+  //       variant: "destructive",
+  //     });
+  //   },
+  // });
+
   const handleSavePlan = async () => {
     if (!currentPlan) return;
 
@@ -164,6 +253,81 @@ export default function Home() {
     });
 
     setIsEditing(false);
+  };
+
+  // Helper function to check if a meal is completed
+  const isMealCompleted = (dayKey: string, mealType: string): boolean => {
+    return completions.some(completion => 
+      completion.day_key === dayKey && 
+      completion.meal_type === mealType && 
+      completion.is_completed
+    );
+  };
+
+  // Helper function to check if all meals in a day are completed
+  const isDayCompleted = (dayKey: string, dayMeals: DayMeals): boolean => {
+    const mealTypes = Object.keys(dayMeals);
+    if (mealTypes.length === 0) return false;
+    
+    return mealTypes.every(mealType => isMealCompleted(dayKey, mealType));
+  };
+
+  // Helper function to get completion count for a day
+  const getDayCompletionCount = (dayKey: string, dayMeals: DayMeals): { completed: number; total: number } => {
+    const mealTypes = Object.keys(dayMeals);
+    const completed = mealTypes.filter(mealType => isMealCompleted(dayKey, mealType)).length;
+    return { completed, total: mealTypes.length };
+  };
+
+  // Helper function to check if entire meal plan is completed
+  const isMealPlanCompleted = (plan: MealPlan): boolean => {
+    if (!plan?.mealPlan) return false;
+    
+    const allDays = Object.keys(plan.mealPlan);
+    if (allDays.length === 0) return false;
+    
+    return allDays.every(dayKey => {
+      const dayMeals = plan.mealPlan[dayKey];
+      return isDayCompleted(dayKey, dayMeals);
+    });
+  };
+
+  // Handle toggling meal completion
+  const handleToggleMealCompletion = async (dayKey: string, mealType: string) => {
+    await toggleMealCompletionMutation.mutateAsync({ dayKey, mealType });
+    
+    // Check if this completion means the day is now complete
+    if (currentPlan) {
+      const dayMeals = currentPlan.mealPlan[dayKey];
+      if (dayMeals) {
+        const willBeCompleted = !isMealCompleted(dayKey, mealType);
+        const otherMealsCompleted = Object.keys(dayMeals)
+          .filter(mt => mt !== mealType)
+          .every(mt => isMealCompleted(dayKey, mt));
+        
+        if (willBeCompleted && otherMealsCompleted) {
+          toast({
+            title: "Day Complete! 🎉",
+            description: `All meals for ${dayKey.replace('_', ' ')} are now completed!`,
+          });
+          
+          // Check if this was the last day needed to complete the entire plan
+          setTimeout(() => {
+            const allDaysCompleted = Object.keys(currentPlan.mealPlan).every(dk => {
+              if (dk === dayKey) return true; // This day just got completed
+              return isDayCompleted(dk, currentPlan.mealPlan[dk]);
+            });
+            
+            if (allDaysCompleted) {
+              toast({
+                title: "Meal Plan Complete! 🎊",
+                description: "Congratulations! You've completed your entire meal plan.",
+              });
+            }
+          }, 500);
+        }
+      }
+    }
   };
 
   // Comprehensive 200+ emoji food icon system - Priority: Meal Name → Meat → Vegetable
@@ -596,16 +760,36 @@ export default function Home() {
   }
 
   if (!currentPlan) {
+    // Check if there are any plans at all (completed or not)
+    const hasAnyPlans = mealPlans && Array.isArray(mealPlans) && mealPlans.length > 0;
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 pb-20">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">No Meal Plans Found</h1>
-            <p className="text-muted-foreground mb-6">Create your first meal plan to get started.</p>
-            <Button onClick={() => window.location.href = '/meal-planner'}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Meal Plan
-            </Button>
+            {hasAnyPlans ? (
+              <>
+                <div className="text-6xl mb-4">🎉</div>
+                <h1 className="text-3xl font-bold mb-4">All Meal Plans Complete!</h1>
+                <p className="text-muted-foreground mb-6">
+                  Congratulations! You've completed all your meal plans. 
+                  Time to create a new one for your next cooking adventure.
+                </p>
+                <Button onClick={() => window.location.href = '/meal-planner'}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Meal Plan
+                </Button>
+              </>
+            ) : (
+              <>
+                <h1 className="text-3xl font-bold mb-4">No Meal Plans Found</h1>
+                <p className="text-muted-foreground mb-6">Create your first meal plan to get started.</p>
+                <Button onClick={() => window.location.href = '/meal-planner'}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Meal Plan
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -632,21 +816,25 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
+              {/* Complete Plan Button - REMOVED per user request */}
+
               <Button
                 variant={isEditing ? "default" : "outline"}
                 onClick={() => setIsEditing(!isEditing)}
-                className={`${isEditing ? "bg-purple-600 hover:bg-purple-700 shadow-lg" : "border-purple-600 text-purple-600 hover:bg-purple-50 shadow-md"} transition-all duration-200 px-6 py-2.5 font-medium rounded-lg`}
+                className={`${isEditing ? "bg-purple-600 hover:bg-purple-700 shadow-lg" : "border-purple-600 text-purple-600 hover:bg-purple-50 shadow-md"} transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium rounded-lg text-sm sm:text-base flex-1 sm:flex-none`}
               >
                 {isEditing ? (
                   <>
                     <Save className="w-4 h-4 mr-2" />
-                    Save Changes
+                    <span className="hidden sm:inline">Save Changes</span>
+                    <span className="sm:hidden">Save</span>
                   </>
                 ) : (
                   <>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Plan
+                    <span className="hidden sm:inline">Edit Plan</span>
+                    <span className="sm:hidden">Edit</span>
                   </>
                 )}
               </Button>
@@ -708,6 +896,35 @@ export default function Home() {
                       <span className="bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                         {dayKey.replace('_', ' ')}
                       </span>
+                      
+                      {/* Day completion status */}
+                      {(() => {
+                        const { completed, total } = getDayCompletionCount(dayKey, dayMeals);
+                        const isComplete = isDayCompleted(dayKey, dayMeals);
+                        return (
+                          <Badge 
+                            variant={isComplete ? "default" : "outline"}
+                            className={`ml-2 text-xs font-medium ${
+                              isComplete 
+                                ? 'bg-green-100 text-green-700 border-green-200' 
+                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                            }`}
+                          >
+                            {isComplete ? (
+                              <>
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Day Complete!
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3 h-3 mr-1" />
+                                {completed}/{total} meals
+                              </>
+                            )}
+                          </Badge>
+                        );
+                      })()}
+
                       {isEditing && (
                         <Badge 
                           variant="secondary" 
@@ -774,14 +991,50 @@ export default function Home() {
                           <CardContent className="pt-0">
                             {meal ? (
                               <div className="space-y-3">
+                                {/* Improved layout: Checkbox separate from clickable content */}
+                                {!isEditing && (
+                                  <div className="flex items-center justify-between pb-2 border-b border-muted/20">
+                                    <div 
+                                      className="flex items-center gap-3 p-2 -m-2 cursor-pointer hover:bg-muted/10 rounded-md transition-colors min-h-[44px]"
+                                      onClick={(e) => {
+                                        e.stopPropagation(); // Prevent triggering meal details
+                                        handleToggleMealCompletion(dayKey, mealType);
+                                      }}
+                                    >
+                                      <Checkbox
+                                        checked={isMealCompleted(dayKey, mealType)}
+                                        onCheckedChange={() => handleToggleMealCompletion(dayKey, mealType)}
+                                        className="h-5 w-5" // Larger checkbox for better touch
+                                        disabled={toggleMealCompletionMutation.isPending}
+                                      />
+                                      <span className="text-sm text-muted-foreground font-medium select-none">
+                                        {isMealCompleted(dayKey, mealType) ? 'Completed' : 'Mark as done'}
+                                      </span>
+                                    </div>
+                                    {isMealCompleted(dayKey, mealType) && (
+                                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                        <Check className="w-3 h-3 mr-1" />
+                                        Done
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {/* Meal content - clickable to view details */}
                                 <div 
-                                  className={`cursor-pointer ${!isEditing ? 'hover:bg-muted/20 p-2 rounded -m-2' : ''}`}
+                                  className={`cursor-pointer ${!isEditing ? 'hover:bg-muted/20 p-2 rounded-md -m-2 transition-colors' : ''}`}
                                   onClick={() => handleMealClick(dayKey, mealType)}
                                 >
                                   {/* Food Icon and Title */}
                                   <div className="flex items-center gap-2 mb-2">
                                     {getFoodIcon(meal, mealType)}
-                                    <h4 className="font-semibold text-sm text-gray-800 leading-tight">{meal.title}</h4>
+                                    <h4 className={`font-semibold text-sm leading-tight ${
+                                      isMealCompleted(dayKey, mealType) 
+                                        ? 'text-green-700 line-through' 
+                                        : 'text-gray-800'
+                                    }`}>
+                                      {meal.title}
+                                    </h4>
                                   </div>
                                   
                                   {/* Enhanced Badges Row */}

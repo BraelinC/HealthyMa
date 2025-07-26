@@ -19,6 +19,9 @@ import SmartCulturalPreferenceEditor from '@/components/SmartCulturalPreferenceE
 import ProfileSystemToggle from '@/components/ProfileSystemToggle';
 import WeightBasedProfile from '@/components/WeightBasedProfile';
 import { useProfileSystem } from '@/hooks/useProfileSystem';
+import AchievementsContainer from '@/components/AchievementsContainer';
+import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
+import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 
 const commonGoals = [
   'Lose Weight',
@@ -44,7 +47,9 @@ const familyRoles = [
 
 // Avatar generator using DiceBear API
 const generateAvatar = (seed: string, style: string = 'fun-emoji'): string => {
-  return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=transparent`;
+  const avatar = `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}&backgroundColor=transparent`;
+  console.log('Generated avatar URL:', avatar);
+  return avatar;
 };
 
 const avatarStyles = [
@@ -52,20 +57,34 @@ const avatarStyles = [
 ];
 
 const commonPreferences = [
+  'Loves Italian',
+  'Enjoys Asian',
+  'Mexican Food Fan',
+  'Mediterranean',
+  'Comfort Food',
+  'Adventurous Eater',
+  'Prefers Simple',
+  'No Spicy Food',
+  'Sweet Tooth',
+  'Savory Lover'
+];
+
+const commonDietaryRestrictions = [
   'Vegetarian',
   'Vegan',
   'Gluten-Free',
   'Dairy-Free',
-  'Keto',
-  'Paleo',
-  'Low-Carb',
-  'High-Protein',
+  'Nut-Free',
+  'Egg-Free',
+  'Soy-Free',
+  'Shellfish Allergy',
+  'Fish Allergy',
   'Halal',
   'Kosher',
-  'Nut-Free',
-  'Soy-Free',
   'Low-Sodium',
-  'Organic'
+  'Diabetic',
+  'Keto',
+  'Paleo'
 ];
 
 const personalGoals = [
@@ -103,10 +122,13 @@ export default function Profile() {
   const [isParsingCulture, setIsParsingCulture] = useState(false);
   const [isCachingCuisines, setIsCachingCuisines] = useState(false);
   const [showCachedData, setShowCachedData] = useState(false);
+  const [showPerplexityCache, setShowPerplexityCache] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [newMember, setNewMember] = useState<any>({
     name: '',
     ageGroup: undefined,
     preferences: [],
+    dietaryRestrictions: [],
     goals: [],
     avatar: '',
     role: '',
@@ -118,7 +140,7 @@ export default function Profile() {
     enabled: !!user,
     retry: 2,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes to prevent conflicts
-    cacheTime: 10 * 60 * 1000 // Keep in cache for 10 minutes
+    gcTime: 10 * 60 * 1000 // Keep in cache for 10 minutes (formerly cacheTime)
   });
 
   // Log profile data for debugging
@@ -134,6 +156,7 @@ export default function Profile() {
     mutationFn: async (data: any) => {
       console.log('=== CREATE PROFILE MUTATION CALLED ===');
       console.log('Data being sent:', data);
+      setSaveStatus('saving');
       
       try {
         const result = await apiRequest('/api/profile', {
@@ -143,22 +166,28 @@ export default function Profile() {
         return result;
       } catch (error: any) {
         console.error('Create profile API error:', error);
+        setSaveStatus('idle');
         throw new Error(error.message || 'Failed to create profile');
       }
     },
     onSuccess: (data) => {
       console.log('=== CREATE PROFILE SUCCESS ===');
       console.log('Response data:', data);
+      setSaveStatus('saved');
       toast({
-        title: "Success",
+        title: "Success",  
         description: "Profile created successfully!"
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      
+      // Reset to idle after showing saved state
+      setTimeout(() => setSaveStatus('idle'), 2000);
     },
     onError: (error: any) => {
       console.error('=== CREATE PROFILE ERROR ===');
       console.error('Error details:', error);
+      setSaveStatus('idle');
 
       let errorMessage = "Failed to create profile. Please try again.";
       if (error?.message) {
@@ -179,6 +208,7 @@ export default function Profile() {
     mutationFn: async (data: any) => {
       console.log('=== UPDATE PROFILE MUTATION CALLED ===');
       console.log('Data being sent:', data);
+      setSaveStatus('saving');
       
       try {
         const result = await apiRequest('/api/profile', {
@@ -188,20 +218,26 @@ export default function Profile() {
         return result;
       } catch (error: any) {
         console.error('Update profile API error:', error);
+        setSaveStatus('idle');
         throw new Error(error.message || 'Failed to update profile');
       }
     },
     onSuccess: () => {
+      setSaveStatus('saved');
       toast({
         title: "Success", 
         description: "Profile updated successfully!"
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      
+      // Reset to idle after showing saved state
+      setTimeout(() => setSaveStatus('idle'), 2000);
     },
     onError: (error: any) => {
       console.error('=== UPDATE PROFILE ERROR ===');
       console.error('Error details:', error);
+      setSaveStatus('idle');
 
       let errorMessage = "Failed to update profile. Please try again.";
       if (error?.message) {
@@ -222,23 +258,37 @@ export default function Profile() {
   useEffect(() => {
     if (profile) {
       const profileData = profile as any;
+      console.log('Loading profile data:', profileData);
+      console.log('Profile members:', profileData.members);
       setProfileName(profileData.profile_name || '');
       setPrimaryGoal(profileData.primary_goal || '');
       setFamilySize(profileData.family_size || 1);
       setMembers(profileData.members || []);
 
       // Detect profile type based on data
-      if (profileData.family_size === 1 && (!profileData.members || profileData.members.length === 0)) {
-        setProfileType('individual');
-        // Load individual preferences if they exist
+      // If profile has an explicit profile_type field, use that
+      if (profileData.profile_type) {
+        setProfileType(profileData.profile_type);
+      } else {
+        // Fall back to legacy detection logic
+        // Only consider it individual if explicitly no members AND family_size is 1
+        // This allows single-parent families (family_size = 1 with members)
+        if (profileData.family_size === 1 && (!profileData.members || profileData.members.length === 0)) {
+          setProfileType('individual');
+        } else {
+          setProfileType('family');
+        }
+      }
+      
+      // Load individual preferences if they exist (for individual profiles)
+      if (profileType === 'individual' || 
+          (profileData.family_size === 1 && (!profileData.members || profileData.members.length === 0))) {
         if (profileData.preferences) {
           setIndividualPreferences(profileData.preferences);
         }
         if (profileData.goals) {
           setIndividualGoals(profileData.goals);
         }
-      } else {
-        setProfileType('family');
       }
 
       // Load cultural background for all profile types
@@ -284,6 +334,7 @@ export default function Profile() {
     console.log('Profile type:', profileType);
     console.log('Members count:', members.length);
     console.log('Members:', members);
+    console.log('Members with avatars:', members.map(m => ({ name: m.name, avatar: m.avatar, dietaryRestrictions: m.dietaryRestrictions })));
     console.log('Existing profile:', profile);
 
     // Validate required fields
@@ -447,6 +498,7 @@ export default function Profile() {
         name: '', 
         ageGroup: undefined, 
         preferences: [], 
+        dietaryRestrictions: [],
         goals: [],
         avatar: '',
         role: '',
@@ -476,6 +528,15 @@ export default function Profile() {
       setNewMember({
         ...newMember,
         preferences: [...newMember.preferences, preference]
+      });
+    }
+  };
+
+  const addDietaryRestriction = (restriction: string) => {
+    if (!newMember.dietaryRestrictions.includes(restriction)) {
+      setNewMember({
+        ...newMember,
+        dietaryRestrictions: [...newMember.dietaryRestrictions, restriction]
       });
     }
   };
@@ -525,10 +586,13 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50">
         <div className="container mx-auto p-4 max-w-4xl">
-          <ProfileSystemToggle 
-            isSmartProfileEnabled={isSmartProfileEnabled}
-            onToggleChange={(enabled) => toggleProfileSystem(enabled ? 'smart' : 'traditional')}
-          />
+          {/* Profile System Toggle - Should be visible at the top */}
+          <div className="mb-6">
+            <ProfileSystemToggle 
+              isSmartProfileEnabled={isSmartProfileEnabled}
+              onToggleChange={(enabled) => toggleProfileSystem(enabled ? 'smart' : 'traditional')}
+            />
+          </div>
           <div className="mt-6">
             <WeightBasedProfile />
           </div>
@@ -716,6 +780,47 @@ export default function Profile() {
                       className="mt-1"
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="profileType">Profile Type</Label>
+                    {isEditing ? (
+                      <Select 
+                        value={profileType} 
+                        onValueChange={(value: 'individual' | 'family') => {
+                          setProfileType(value);
+                          // Clear members when switching to individual
+                          if (value === 'individual') {
+                            setMembers([]);
+                            setFamilySize(1);
+                          }
+                        }}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select profile type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="individual">Individual Profile</SelectItem>
+                          <SelectItem value="family">Family Profile</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md">
+                        <span className="flex items-center gap-2">
+                          {profileType === 'individual' ? (
+                            <>
+                              <User className="h-4 w-4 text-blue-600" />
+                              Individual Profile
+                            </>
+                          ) : (
+                            <>
+                              <Users className="h-4 w-4 text-emerald-600" />
+                              Family Profile
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   {profileType === 'family' && (
                     <div>
                       <Label htmlFor="familySize">Family Size</Label>
@@ -853,7 +958,7 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            {/* Smart Cultural Preference Editor - Always visible */}
+            {/* Smart Cultural Preference Editor - Always visible for both individual and family profiles */}
             <SmartCulturalPreferenceEditor
               culturalBackground={culturalBackground}
               onCulturalBackgroundChange={setCulturalBackground}
@@ -861,6 +966,12 @@ export default function Profile() {
               isSaving={updateProfileMutation.isPending}
               showPreviewData={false}
             />
+
+            {/* Achievements Section - Show for both individual and family profiles when not editing */}
+            {!isEditing && (profile || profileType === 'individual') && (
+              <AchievementsContainer />
+            )}
+
 
             {profileType === 'family' && (
               <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg">
@@ -872,8 +983,12 @@ export default function Profile() {
                 </CardHeader>
               <CardContent className="space-y-4">
                 {members.map((member: any, index: number) => {
+                  console.log(`DEBUG Member ${index}:`, member); // Debug log
                   const roleInfo = familyRoles.find(r => r.value === member.role);
                   const RoleIcon = roleInfo?.icon || User;
+                  
+                  // Ensure avatar is generated if missing
+                  const memberAvatar = member.avatar || generateAvatar(member.name || `member-${index}`, member.avatarStyle || 'fun-emoji');
 
                   return (
                     <Card key={index} className="bg-gradient-to-r from-purple-50 to-emerald-50 border-0 shadow-sm">
@@ -881,9 +996,15 @@ export default function Profile() {
                         <div className="flex items-start gap-4">
                           <div className="relative">
                             <img 
-                              src={member.avatar || generateAvatar(member.name)}
-                              alt={member.name}
+                              src={memberAvatar}
+                              alt={member.name || `Member ${index + 1}`}
                               className="w-16 h-16 rounded-full bg-white border-2 border-purple-200"
+                              onError={(e) => {
+                                console.log('Avatar failed to load:', memberAvatar);
+                                // Fallback to a different avatar if the first one fails
+                                const fallbackAvatar = generateAvatar(`fallback-${member.name || index}-${Date.now()}`, 'avataaars');
+                                (e.target as HTMLImageElement).src = fallbackAvatar;
+                              }}
                             />
                             {isEditing && (
                               <Button
@@ -923,7 +1044,7 @@ export default function Profile() {
 
                             {member.preferences && Array.isArray(member.preferences) && member.preferences.length > 0 && (
                               <div className="mb-3">
-                                <Label className="text-sm font-medium">Dietary Preferences:</Label>
+                                <Label className="text-sm font-medium">Preferences:</Label>
                                 <div className="flex flex-wrap gap-2 mt-1">
                                   {member.preferences.map((pref: string) => (
                                     <Badge key={pref} variant="outline" className="flex items-center gap-1">
@@ -932,6 +1053,33 @@ export default function Profile() {
                                         <button
                                           onClick={() => removePreference(index, pref)}
                                           className="ml-1 text-red-500 hover:text-red-700"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      )}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {member.dietaryRestrictions && Array.isArray(member.dietaryRestrictions) && member.dietaryRestrictions.length > 0 && (
+                              <div className="mb-3">
+                                <Label className="text-sm font-medium text-red-600">Dietary Restrictions (Mandatory):</Label>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {member.dietaryRestrictions.map((restriction: string) => (
+                                    <Badge key={restriction} variant="destructive" className="flex items-center gap-1">
+                                      {restriction}
+                                      {isEditing && (
+                                        <button
+                                          onClick={() => {
+                                            const updatedMembers = [...members];
+                                            updatedMembers[index].dietaryRestrictions = updatedMembers[index].dietaryRestrictions.filter(
+                                              (r: string) => r !== restriction
+                                            );
+                                            setMembers(updatedMembers);
+                                          }}
+                                          className="ml-1 text-white hover:text-gray-200"
                                         >
                                           <X className="h-3 w-3" />
                                         </button>
@@ -1089,6 +1237,45 @@ export default function Profile() {
                             </div>
 
                             <div>
+                              <Label className="flex items-center gap-2">
+                                <span className="text-red-500">*</span>
+                                Dietary Restrictions
+                                <span className="text-xs text-gray-500">(Mandatory - 100% compliance)</span>
+                              </Label>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {commonDietaryRestrictions.map(restriction => (
+                                  <Button
+                                    key={restriction}
+                                    onClick={() => addDietaryRestriction(restriction)}
+                                    variant={newMember.dietaryRestrictions.includes(restriction) ? "destructive" : "outline"}
+                                    size="sm"
+                                    className="text-xs"
+                                  >
+                                    {restriction}
+                                  </Button>
+                                ))}
+                              </div>
+                              {newMember.dietaryRestrictions.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {newMember.dietaryRestrictions.map((restriction: string) => (
+                                    <Badge key={restriction} variant="destructive" className="flex items-center gap-1">
+                                      {restriction}
+                                      <button
+                                        onClick={() => setNewMember({
+                                          ...newMember,
+                                          dietaryRestrictions: newMember.dietaryRestrictions.filter((r: string) => r !== restriction)
+                                        })}
+                                        className="ml-1 text-white hover:text-gray-200"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            <div>
                               <Label>Personal Goals</Label>
                               <div className="flex flex-wrap gap-2 mt-2">
                                 {personalGoals.map(goal => (
@@ -1142,19 +1329,39 @@ export default function Profile() {
               </Card>
             )}
 
+            {/* Prompt Preview Section */}
+            <ProfilePromptPreview 
+              profile={profile} 
+              familyMembers={members}
+            />
+
             {isEditing && (
               <div className="flex gap-4 justify-end">
                 <Button onClick={() => setIsEditing(false)} variant="outline">
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={createProfileMutation.isPending || updateProfileMutation.isPending} className="bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0">
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={saveStatus === 'saving'} 
+                  className={`text-white border-0 transition-all duration-300 ${
+                    saveStatus === 'saved' 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' 
+                      : 'bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600'
+                  }`}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  {createProfileMutation.isPending || updateProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
+                  {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save Profile'}
                 </Button>
               </div>
             )}
           </div>
         )}
+
+        {/* Perplexity Cache Viewer */}
+        <PerplexityCacheViewer
+          isVisible={showPerplexityCache}
+          onToggleVisibility={() => setShowPerplexityCache(!showPerplexityCache)}
+        />
       </div>
     </div>
   );

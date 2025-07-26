@@ -560,6 +560,20 @@
             "testStrategy": "Conduct A/B testing and analyze quantitative and qualitative results to validate superiority of the new system."
           }
         ]
+      },
+      {
+        "id": 30,
+        "title": "Profile Page Achievement System Integration",
+        "description": "Create and integrate an AchievementsContainer component into the profile page, implementing a comprehensive achievement system with medal-style badges, progress tracking, and detailed achievement information using extracted logic from the existing achievements page.",
+        "details": "1. Component Architecture:\n- Create new AchievementsContainer.tsx as a reusable component\n- Implement AchievementGrid, AchievementBadge, and AchievementModal components\n- Use React Context for achievement state management\n- Implement lazy loading for optimal performance\n\n2. Data Structure:\n```typescript\ninterface Achievement {\n  id: string;\n  type: 'consistency' | 'health' | 'milestone' | 'efficiency' | 'creativity' | 'budget' | 'special';\n  rarity: 'common' | 'rare' | 'epic' | 'legendary';\n  title: string;\n  description: string;\n  progress: number;\n  maxProgress: number;\n  points: number;\n  unlocked: boolean;\n  unlockedDate?: Date;\n  icon: string;\n}\n```\n\n3. UI Implementation:\n- Use CSS Grid for responsive achievement layout\n- Implement virtual scrolling for large achievement lists\n- Create medal components with dynamic gradient backgrounds based on rarity\n- Use Framer Motion for smooth animations and transitions\n- Implement skeleton loading states\n\n4. Achievement Logic:\n- Extract and refactor achievement calculation logic from achievements-page.tsx\n- Implement progress tracking using Firebase Analytics data\n- Create achievement unlocking notifications system\n- Add memoization for performance optimization\n\n5. Styling:\n- Use CSS modules or styled-components\n- Implement theme-consistent gradients (purple/emerald)\n- Ensure accessibility with proper contrast ratios\n- Add responsive breakpoints for mobile optimization\n\n6. Profile Integration:\n- Add achievements section to Profile.tsx\n- Implement proper data fetching and caching\n- Add achievement stats summary section\n- Ensure consistent styling with existing profile components\n\n7. Performance Considerations:\n- Implement code splitting for modal views\n- Use IntersectionObserver for lazy loading\n- Optimize re-renders with useMemo and useCallback\n- Implement proper error boundaries",
+        "testStrategy": "1. Unit Testing:\n- Test individual achievement components using React Testing Library\n- Verify achievement calculation logic\n- Test progress tracking accuracy\n- Validate rarity calculations and point systems\n- Test modal interaction and state management\n\n2. Integration Testing:\n- Verify proper integration with Profile page\n- Test achievement data fetching and caching\n- Validate achievement unlocking flow\n- Test responsive design across breakpoints\n- Verify proper theme integration\n\n3. Performance Testing:\n- Measure and optimize component render performance\n- Test lazy loading implementation\n- Verify memory usage with large achievement sets\n- Measure initial load time impact\n\n4. User Acceptance Testing:\n- Verify achievement display matches designs\n- Test achievement interaction flow\n- Validate achievement information clarity\n- Test accessibility using screen readers\n- Verify color contrast ratios\n\n5. Cross-browser Testing:\n- Test in Chrome, Firefox, Safari, and Edge\n- Verify mobile responsiveness\n- Test touch interactions on mobile devices",
+        "status": "pending",
+        "dependencies": [
+          26,
+          25
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
@@ -571,7 +585,7 @@
       "basedOnRecentCommits": true,
       "created": "2025-07-18T20:19:51.575Z",
       "description": "Tasks for master context",
-      "updated": "2025-07-24T14:27:13.760Z"
+      "updated": "2025-07-24T21:21:05.045Z"
     }
   }
 }

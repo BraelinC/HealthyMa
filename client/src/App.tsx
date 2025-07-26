@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import AchievementNotification from "@/components/AchievementNotification";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
@@ -13,7 +14,7 @@ import Profile from "@/pages/Profile";
 import WeightBasedProfile from "@/components/WeightBasedProfile";
 import { TestingPage } from "@/pages/TestingPage";
 import IconShowcase from "@/pages/IconShowcase";
-import { HandPlatter, BookOpen, ChefHat, Menu, LogOut, User, CalendarDays, TestTube, Palette, Target } from "lucide-react";
+import { HandPlatter, BookOpen, ChefHat, Menu, LogOut, User, CalendarDays, TestTube, Palette, Target, Settings } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -244,6 +245,7 @@ function Router() {
         </Switch>
       </main>
       <AppTabBar />
+      <AchievementNotification />
     </div>
   );
 }

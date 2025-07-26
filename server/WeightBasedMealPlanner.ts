@@ -77,11 +77,36 @@ export class WeightBasedMealPlanner {
     mealAdaptationEngine?: any;
     heroIngredientManager?: any;
   }) {
-    // Initialize with provided dependencies or create minimal defaults
-    this.smartCulturalSelector = dependencies?.smartCulturalSelector || new MockCulturalSelector();
-    this.predeterminedMealLibrary = dependencies?.predeterminedMealLibrary || new MockMealLibrary();
-    this.mealAdaptationEngine = dependencies?.mealAdaptationEngine || new MockAdaptationEngine();
-    this.heroIngredientManager = dependencies?.heroIngredientManager || new MockHeroIngredientManager();
+    // Initialize with provided dependencies or create real implementations
+    this.smartCulturalSelector = dependencies?.smartCulturalSelector;
+    this.predeterminedMealLibrary = dependencies?.predeterminedMealLibrary;
+    this.mealAdaptationEngine = dependencies?.mealAdaptationEngine;
+    this.heroIngredientManager = dependencies?.heroIngredientManager;
+    
+    // Lazy load real implementations if not provided
+    if (!this.smartCulturalSelector) {
+      import('./SmartCulturalSelector').then(module => {
+        this.smartCulturalSelector = new module.SmartCulturalSelector();
+      }).catch(() => {
+        this.smartCulturalSelector = new MockCulturalSelector();
+      });
+    }
+    
+    if (!this.mealAdaptationEngine) {
+      import('./MealAdaptationEngine').then(module => {
+        this.mealAdaptationEngine = new module.MealAdaptationEngine();
+      }).catch(() => {
+        this.mealAdaptationEngine = new MockAdaptationEngine();
+      });
+    }
+    
+    // Use mock implementations for missing components
+    if (!this.predeterminedMealLibrary) {
+      this.predeterminedMealLibrary = new MockMealLibrary();
+    }
+    if (!this.heroIngredientManager) {
+      this.heroIngredientManager = new MockHeroIngredientManager();
+    }
   }
 
   /**
@@ -587,15 +612,56 @@ export class WeightBasedMealPlanner {
 
     // Validate dietary restrictions compliance
     if (request.profile.dietaryRestrictions.length > 0) {
-      const restrictionCompliance = this.checkDietaryCompliance(
-        validatedMeal.ingredients,
-        request.profile.dietaryRestrictions
-      );
-      
-      if (!restrictionCompliance.isCompliant) {
-        console.warn('Meal may not comply with dietary restrictions:', restrictionCompliance.violations);
-        validatedMeal.dietary_warnings = restrictionCompliance.violations;
+      // Use the meal adaptation engine for proper validation
+      if (this.mealAdaptationEngine && this.mealAdaptationEngine.validateCompliance) {
+        const compliance = this.mealAdaptationEngine.validateCompliance(
+          validatedMeal,
+          request.profile.dietaryRestrictions
+        );
+        
+        if (!compliance.isCompliant) {
+          console.warn('❌ Meal violates dietary restrictions:', compliance.violations);
+          console.log('Attempting to adapt meal for compliance...');
+          
+          // Try to adapt the meal
+          const adaptationResult = await this.mealAdaptationEngine.adaptMealIfNeeded(
+            validatedMeal,
+            request.profile.dietaryRestrictions,
+            request.profile.goalWeights
+          );
+          
+          if (adaptationResult.isAdapted) {
+            console.log('✅ Meal successfully adapted:', adaptationResult.adaptations);
+            return {
+              ...adaptationResult.meal,
+              adaptationNotes: adaptationResult.adaptations,
+              dietary_compliant: true
+            };
+          } else {
+            // If adaptation failed, mark as non-compliant
+            validatedMeal.dietary_warnings = compliance.violations;
+            validatedMeal.dietary_compliant = false;
+          }
+        } else {
+          validatedMeal.dietary_compliant = true;
+        }
+      } else {
+        // Fallback to basic compliance check
+        const restrictionCompliance = this.checkDietaryCompliance(
+          validatedMeal.ingredients,
+          request.profile.dietaryRestrictions
+        );
+        
+        if (!restrictionCompliance.isCompliant) {
+          console.warn('Meal may not comply with dietary restrictions:', restrictionCompliance.violations);
+          validatedMeal.dietary_warnings = restrictionCompliance.violations;
+          validatedMeal.dietary_compliant = false;
+        } else {
+          validatedMeal.dietary_compliant = true;
+        }
       }
+    } else {
+      validatedMeal.dietary_compliant = true;
     }
 
     // Enhance with hero ingredients if available

@@ -181,10 +181,10 @@ export function PastGenerations({ onLoadPlan }: PastGenerationsProps) {
 
   return (
     <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="flex items-center justify-between text-lg sm:text-xl">
           <div className="flex items-center gap-2">
-            <History className="h-5 w-5" style={{ color: '#50C878' }} />
+            <History className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: '#50C878' }} />
             Past Generations
           </div>
           <Button
@@ -210,12 +210,12 @@ export function PastGenerations({ onLoadPlan }: PastGenerationsProps) {
             <p className="text-xs">Generate your first meal plan to see it here!</p>
           </div>
         ) : (
-          <ScrollArea className="h-64">
-            <div className="space-y-3">
+          <ScrollArea className="h-48 sm:h-64">
+            <div className="space-y-2 sm:space-y-3">
               {allPlans.map((plan) => (
                 <Card 
                   key={plan.id} 
-                  className={`p-3 hover:shadow-md transition-shadow ${
+                  className={`p-2 sm:p-3 hover:shadow-md transition-shadow ${
                     'isSessionCache' in plan && plan.isSessionCache 
                       ? 'border-l-2 border-l-yellow-200 bg-yellow-50/30' 
                       : (plan as any).isAutoSaved 

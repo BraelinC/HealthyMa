@@ -12,13 +12,11 @@ import { CustomCalendar } from "@/components/ui/custom-calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDays, Clock, ChefHat, ShoppingCart, Target, ChevronDown, ChevronRight, Calendar as CalendarIcon, List, Save, Home, Users } from "lucide-react";
+import { CalendarDays, Clock, ChefHat, ShoppingCart, Target, ChevronDown, ChevronRight, Calendar as CalendarIcon, List, Save, Home, Users, Settings } from "lucide-react";
 import { format, addDays, differenceInDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import PastGenerations from "@/components/PastGenerations";
-import MealPlanDebugger from "@/components/MealPlanDebugger";
-import QuickAuthDebug from "@/components/QuickAuthDebug";
 import { useProfileSystem } from "@/hooks/useProfileSystem";
 import ProfileSystemIndicator from "@/components/ProfileSystemIndicator";
 import { 
@@ -34,6 +32,7 @@ import {
   initializeSessionCache,
   type SessionCachedPlan 
 } from "@/lib/sessionCache";
+import { achievementService } from "@/lib/achievementService";
 // import { DateRange } from "react-day-picker";
 
 interface DateRange {
@@ -102,6 +101,7 @@ export default function MealPlanner() {
   const [primaryGoal, setPrimaryGoal] = useState("");
   const [userProfile, setUserProfile] = useState<any>(null);
   const [selectedFamilyMembers, setSelectedFamilyMembers] = useState<string[]>([]);
+  const [planTargets, setPlanTargets] = useState<string[]>(["Everyone"]); // Who this meal plan is specifically for
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(true); // Auto-show calendar on page load
 
@@ -130,16 +130,35 @@ export default function MealPlanner() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        // Try both possible token names
+        let token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+        console.log('🔍 Checking for tokens:', {
+          token: localStorage.getItem('token') ? 'found' : 'not found',
+          auth_token: localStorage.getItem('auth_token') ? 'found' : 'not found'
+        });
         
+        if (!token) {
+          console.log('❌ No token found, cannot fetch profile');
+          return;
+        }
+        
+        console.log('🚀 Fetching profile with token:', token.substring(0, 10) + '...');
         const response = await fetch('/api/profile', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
+        
+        console.log('📡 Profile response status:', response.status);
+        
         if (response.ok) {
           const profile = await response.json();
+          console.log('✅ Profile data received:', {
+            profile_type: profile.profile_type,
+            has_members: profile.members ? profile.members.length : 0,
+            member_names: profile.members ? profile.members.map((m: any) => m.name) : []
+          });
+          
           setUserProfile(profile);
           // If it's a family profile, pre-select all family members
           if (profile.profile_type === 'family' && profile.members) {
@@ -154,9 +173,11 @@ export default function MealPlanner() {
               setNutritionGoal(matchedGoal.nutritionFocus);
             }
           }
+        } else {
+          console.error('❌ Profile fetch failed:', response.status, response.statusText);
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('❌ Error fetching profile:', error);
       }
     };
 
@@ -206,6 +227,7 @@ export default function MealPlanner() {
             maxCookTime: cookTime[0],
             maxDifficulty: difficulty[0] / 5, // Convert to 0-1 scale
             familySize: selectedFamilyMembers.length || 2,
+            planTargets: planTargets, // Who this meal plan is specifically designed for
             // dietaryRestrictions and goalWeights are fetched from user's weight-based profile
           }),
         });
@@ -230,6 +252,7 @@ export default function MealPlanner() {
             excludeIngredients,
             primaryGoal,
             selectedFamilyMembers,
+            planTargets: planTargets, // Who this meal plan is specifically designed for
             useIntelligentPrompt: true
           })
         });
@@ -245,6 +268,20 @@ export default function MealPlanner() {
       setOpenDays(new Set());
       setExpandedMeals(new Set());
       setGeneratedPlan(data);
+      
+      // Check if this is the user's first generated meal plan and unlock achievement
+      console.log('🎯 Checking for First Steps achievement unlock...');
+      try {
+        const firstStepsAchievement = await achievementService.getAchievement('first_steps');
+        if (firstStepsAchievement && !firstStepsAchievement.isUnlocked) {
+          console.log('🏆 First meal plan generated - unlocking First Steps achievement');
+          await achievementService.trackMealPlanCreated();
+        } else {
+          console.log('ℹ️ First Steps achievement already unlocked or not found');
+        }
+      } catch (error) {
+        console.error('Error checking achievements:', error);
+      }
       
       // Auto-save the generated meal plan
       console.log('Triggering auto-save in 500ms...');
@@ -280,7 +317,7 @@ export default function MealPlanner() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate meal plans cache so the UI updates
       queryClient.invalidateQueries({ queryKey: ['/api/meal-plans/saved'] });
       
@@ -507,9 +544,9 @@ export default function MealPlanner() {
   };
 
   return (
-    <div className="p-3 sm:p-6 max-w-6xl mx-auto space-y-4 sm:space-y-6">
+    <div className="p-2 sm:p-6 max-w-6xl mx-auto space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-1 sm:space-y-2">
         <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent" style={{ background: 'linear-gradient(to right, #50C878, #45B369)', WebkitBackgroundClip: 'text', backgroundClip: 'text' }}>
           AI Weekly Meal Planner
         </h1>
@@ -566,7 +603,7 @@ export default function MealPlanner() {
         </Card>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-3 sm:gap-6">
         {/* Planning Controls */}
         <Card className="shadow-lg">
           <CardHeader>
@@ -575,7 +612,7 @@ export default function MealPlanner() {
               Plan Your Week
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4">
             {/* Auto-shown Calendar Date Range - Primary Filter */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -738,14 +775,17 @@ export default function MealPlanner() {
               </CollapsibleContent>
             </Collapsible>
 
-            <Button 
-              onClick={handleGeneratePlan} 
-              disabled={isGenerating || !startDate || !endDate}
-              className="w-full hover:opacity-90"
-              style={{ background: 'linear-gradient(to right, #50C878, #45B369)' }}
-            >
-              {isGenerating ? "Generating Plan..." : "Generate Meal Plan"}
-            </Button>
+            <div className="space-y-2">
+              <Button 
+                onClick={handleGeneratePlan} 
+                disabled={isGenerating || !startDate || !endDate}
+                className="w-full hover:opacity-90"
+                style={{ background: 'linear-gradient(to right, #50C878, #45B369)' }}
+              >
+                {isGenerating ? "Generating Plan..." : "Generate Meal Plan"}
+              </Button>
+              
+            </div>
           </CardContent>
         </Card>
 
@@ -986,13 +1026,6 @@ export default function MealPlanner() {
       </div>
 
       {/* Past Generations */}
-      {/* Debug Section - Remove this in production */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <QuickAuthDebug />
-        <div>
-          <MealPlanDebugger />
-        </div>
-      </div>
 
       <PastGenerations onLoadPlan={(mealPlan) => {
         // TODO: Implement loading a past plan into the current form

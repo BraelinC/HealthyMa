@@ -55,6 +55,7 @@ export default function WeightBasedProfile() {
   });
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [culturalBackground, setCulturalBackground] = useState<string[]>([]);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['/api/profile/weight-based'],
@@ -66,21 +67,32 @@ export default function WeightBasedProfile() {
 
   const createProfileMutation = useMutation({
     mutationFn: async (data: Partial<SimplifiedUserProfile>) => {
-      const result = await apiRequest('/api/profile/weight-based', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
-      return result;
+      setSaveStatus('saving');
+      try {
+        const result = await apiRequest('/api/profile/weight-based', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        return result;
+      } catch (error) {
+        setSaveStatus('idle');
+        throw error;
+      }
     },
     onSuccess: () => {
+      setSaveStatus('saved');
       toast({
         title: "Success",
         description: "Weight-based profile created successfully!"
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile/weight-based'] });
+      
+      // Reset to idle after showing saved state
+      setTimeout(() => setSaveStatus('idle'), 2000);
     },
     onError: (error: any) => {
+      setSaveStatus('idle');
       toast({
         title: "Error",
         description: error.message || "Failed to create profile. Please try again.",
@@ -91,21 +103,32 @@ export default function WeightBasedProfile() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: Partial<SimplifiedUserProfile>) => {
-      const result = await apiRequest('/api/profile/weight-based', {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
-      return result;
+      setSaveStatus('saving');
+      try {
+        const result = await apiRequest('/api/profile/weight-based', {
+          method: 'PUT',
+          body: JSON.stringify(data)
+        });
+        return result;
+      } catch (error) {
+        setSaveStatus('idle');
+        throw error;
+      }
     },
     onSuccess: () => {
+      setSaveStatus('saved');
       toast({
         title: "Success", 
         description: "Profile updated successfully!"
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile/weight-based'] });
+      
+      // Reset to idle after showing saved state
+      setTimeout(() => setSaveStatus('idle'), 2000);
     },
     onError: (error: any) => {
+      setSaveStatus('idle');
       toast({
         title: "Error",
         description: error.message || "Failed to update profile. Please try again.",
@@ -375,27 +398,81 @@ export default function WeightBasedProfile() {
               <CardContent className="space-y-6">
                 {Object.entries(goalWeights).map(([goal, weight]) => {
                   const Icon = goalIcons[goal as keyof GoalWeights];
+                  const percentage = Math.round(weight * 100);
+                  
+                  // Determine priority level and colors
+                  const getPriorityInfo = (weight: number) => {
+                    if (weight >= 0.7) return { level: 'Very High', color: 'bg-red-500', textColor: 'text-red-700', bgColor: 'bg-red-50' };
+                    if (weight >= 0.5) return { level: 'High', color: 'bg-orange-500', textColor: 'text-orange-700', bgColor: 'bg-orange-50' };
+                    if (weight >= 0.3) return { level: 'Medium', color: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50' };
+                    return { level: 'Low', color: 'bg-gray-400', textColor: 'text-gray-600', bgColor: 'bg-gray-50' };
+                  };
+                  
+                  const priorityInfo = getPriorityInfo(weight);
+                  
                   return (
-                    <div key={goal} className="space-y-2">
+                    <div key={goal} className={`space-y-3 p-4 rounded-lg border-2 transition-all ${priorityInfo.bgColor} ${weight >= 0.5 ? 'border-purple-200' : 'border-gray-200'}`}>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-purple-600" />
-                          <Label className="capitalize font-medium">{goal}</Label>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-full ${priorityInfo.bgColor}`}>
+                            <Icon className={`h-5 w-5 ${priorityInfo.textColor}`} />
+                          </div>
+                          <div>
+                            <Label className="capitalize font-semibold text-gray-800">{goal}</Label>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs font-medium ${priorityInfo.textColor} border-current`}
+                              >
+                                {priorityInfo.level} Priority
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
-                        <Badge variant="outline" className="min-w-[60px] text-center">
-                          {Math.round(weight * 100)}%
-                        </Badge>
+                        <div className="text-right">
+                          <div className={`text-2xl font-bold ${priorityInfo.textColor}`}>
+                            {percentage}%
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Weight Value
+                          </div>
+                        </div>
                       </div>
-                      <Slider
-                        value={[weight]}
-                        onValueChange={(value) => updateGoalWeight(goal as keyof GoalWeights, value)}
-                        max={1}
-                        min={0}
-                        step={0.1}
-                        disabled={!isEditing}
-                        className="flex-1"
-                      />
-                      <p className="text-xs text-gray-500">
+                      
+                      {/* Visual Progress Bar */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>Not Important</span>
+                          <span>Very Important</span>
+                        </div>
+                        <div className="relative">
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div 
+                              className={`h-3 rounded-full transition-all duration-300 ${priorityInfo.color}`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <div 
+                            className="absolute top-0 w-1 h-3 bg-white border border-gray-400 rounded-sm"
+                            style={{ left: `${Math.max(0, Math.min(percentage - 0.5, 98))}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Slider for editing */}
+                      {isEditing && (
+                        <Slider
+                          value={[weight]}
+                          onValueChange={(value) => updateGoalWeight(goal as keyof GoalWeights, value)}
+                          max={1}
+                          min={0}
+                          step={0.1}
+                          disabled={!isEditing}
+                          className="flex-1"
+                        />
+                      )}
+                      
+                      <p className="text-sm text-gray-600 leading-relaxed">
                         {goalDescriptions[goal as keyof typeof goalDescriptions]}
                       </p>
                     </div>
@@ -475,11 +552,15 @@ export default function WeightBasedProfile() {
                 </Button>
                 <Button 
                   onClick={handleSubmit} 
-                  disabled={createProfileMutation.isPending || updateProfileMutation.isPending} 
-                  className="bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0"
+                  disabled={saveStatus === 'saving'}
+                  className={`text-white border-0 transition-all duration-300 ${
+                    saveStatus === 'saved' 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' 
+                      : 'bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600'
+                  }`}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {createProfileMutation.isPending || updateProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
+                  {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save Profile'}
                 </Button>
               </div>
             )}

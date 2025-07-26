@@ -341,10 +341,13 @@ const Search = () => {
       const data = await response.json();
 
       if (response.ok && data.shopping_url) {
-        window.open(data.shopping_url, '_blank');
+        // Use window.location.href instead of window.open to avoid popup blockers
+        window.location.href = data.shopping_url;
+        // Note: The toast might not be visible since we're navigating away
+        // But we can still set it in case the navigation fails
         toast({
-          title: "Shopping List Created!",
-          description: "Your Instacart shopping list has been created and opened.",
+          title: "Redirecting to Instacart...",
+          description: "Creating your shopping list on Instacart.",
         });
       } else {
         console.error("Failed to create shopping list:", data);

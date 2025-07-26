@@ -52,10 +52,43 @@ export default function SmartCulturalPreferenceEditor({
   const [showResearch, setShowResearch] = useState(false);
   const [pendingCuisines, setPendingCuisines] = useState<string[]>([]);
   const [savingMeals, setSavingMeals] = useState<{ [cuisine: string]: boolean }>({});
+  const [savedMeals, setSavedMeals] = useState<{ [cuisine: string]: boolean }>(() => {
+    // Load saved meals state from localStorage
+    try {
+      const saved = localStorage.getItem('cultural-meals-saved-state');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   
   // Simple cache for research data (in memory)
   const researchCache = useState(new Map<string, CuisineResearchData>())[0];
   const { toast } = useToast();
+
+  // Function to update saved meals state and persist to localStorage
+  const updateSavedMealsState = (cuisine: string, saved: boolean) => {
+    setSavedMeals(prev => {
+      const newState = { ...prev, [cuisine]: saved };
+      // Persist to localStorage
+      try {
+        localStorage.setItem('cultural-meals-saved-state', JSON.stringify(newState));
+      } catch (error) {
+        console.error('Failed to save cultural meals state to localStorage:', error);
+      }
+      return newState;
+    });
+  };
+
+  // Utility function to clear all saved states (for debugging/reset)
+  // Can be called from browser console: window.clearAllCulturalMealSavedStates()
+  if (typeof window !== 'undefined') {
+    (window as any).clearAllCulturalMealSavedStates = () => {
+      setSavedMeals({});
+      localStorage.removeItem('cultural-meals-saved-state');
+      console.log('All cultural meal saved states cleared');
+    };
+  }
 
   // Current display cuisines: saved + pending
   const displayedCuisines = [...culturalBackground, ...pendingCuisines.filter(c => !culturalBackground.includes(c))];
@@ -142,11 +175,14 @@ export default function SmartCulturalPreferenceEditor({
         throw new Error(`Failed to save meals: ${response.statusText}`);
       }
       
+      updateSavedMealsState(cuisine, true);
       toast({
         title: "Meals Saved!",
         description: `${cuisine} meals have been saved to your profile`,
         variant: "default"
       });
+      
+      // Don't reset the saved state - keep it persistent so users can see what's been saved
       
     } catch (error) {
       console.error(`Error saving ${cuisine} meals:`, error);
@@ -173,17 +209,41 @@ export default function SmartCulturalPreferenceEditor({
   };
 
   const handleAddQuickCuisine = async (cuisine: string) => {
-    // Exit editing mode if we're in it
-    if (isEditing) {
-      setIsEditing(false);
-      setEditingCuisines([]);
+    if (!culturalBackground.includes(cuisine)) {
+      try {
+        const newCuisines = [...culturalBackground, cuisine];
+        onCulturalBackgroundChange(newCuisines);
+        await onSave(newCuisines);
+        
+        toast({
+          title: "Added Successfully",
+          description: `${cuisine} cuisine has been added to your preferences.`
+        });
+      } catch (error) {
+        toast({
+          title: "Failed to Add",
+          description: `Could not add ${cuisine}. Please try again.`,
+          variant: "destructive"
+        });
+      }
     }
-    
-    if (!displayedCuisines.includes(cuisine)) {
-      setPendingCuisines([...pendingCuisines, cuisine]);
+  };
+
+  const handleQuickRemoveCuisine = async (cuisine: string) => {
+    try {
+      const newCuisines = culturalBackground.filter(c => c !== cuisine);
+      onCulturalBackgroundChange(newCuisines);
+      await onSave(newCuisines);
+      
       toast({
-        title: "Added",
-        description: `${cuisine} cuisine added to your preferences! Click "Save Changes" to save.`
+        title: "Removed Successfully",
+        description: `${cuisine} cuisine has been removed from your preferences.`
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Remove",
+        description: `Could not remove ${cuisine}. Please try again.`,
+        variant: "destructive"
       });
     }
   };
@@ -201,6 +261,30 @@ export default function SmartCulturalPreferenceEditor({
       const cachedData = researchCache.get(cuisine)!;
       setResearchData(prev => ({ ...prev, [cuisine]: cachedData }));
       setShowResearch(true);
+      
+      // Log cache hit in localStorage
+      try {
+        const existingHistory = localStorage.getItem('perplexity-search-history') || '[]';
+        const history = JSON.parse(existingHistory);
+        const searchEntry = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          query: `Cultural cuisine research: ${cuisine} (cached)`,
+          timestamp: new Date().toISOString(),
+          responseSize: JSON.stringify(cachedData).length,
+          cached: true,
+          category: 'cultural-cuisine',
+          responsePreview: `Loaded cached data for ${cuisine} cuisine with ${cachedData.meals?.length || 0} dishes`,
+          fullResponse: cachedData
+        };
+        history.unshift(searchEntry);
+        if (history.length > 50) {
+          history.splice(50);
+        }
+        localStorage.setItem('perplexity-search-history', JSON.stringify(history));
+      } catch (storageError) {
+        console.error('Failed to store cached search in localStorage:', storageError);
+      }
+      
       toast({
         title: "Research Loaded",
         description: `Using cached data for ${cuisine} cuisine.`
@@ -238,6 +322,30 @@ export default function SmartCulturalPreferenceEditor({
       setResearchData(prev => ({ ...prev, [cuisine]: enhancedData }));
       researchCache.set(cuisine, enhancedData);
       setShowResearch(true);
+      
+      // Also store in localStorage for Perplexity cache viewing
+      try {
+        const existingHistory = localStorage.getItem('perplexity-search-history') || '[]';
+        const history = JSON.parse(existingHistory);
+        const searchEntry = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          query: `Cultural cuisine research: ${cuisine}`,
+          timestamp: new Date().toISOString(),
+          responseSize: JSON.stringify(enhancedData).length,
+          cached: false,
+          category: 'cultural-cuisine',
+          responsePreview: `Found ${enhancedData.meals?.length || 0} authentic dishes from ${cuisine} cuisine`,
+          fullResponse: enhancedData
+        };
+        history.unshift(searchEntry);
+        // Keep only last 50 entries
+        if (history.length > 50) {
+          history.splice(50);
+        }
+        localStorage.setItem('perplexity-search-history', JSON.stringify(history));
+      } catch (storageError) {
+        console.error('Failed to store search in localStorage:', storageError);
+      }
       
       toast({
         title: "Research Complete",
@@ -308,31 +416,17 @@ export default function SmartCulturalPreferenceEditor({
     'Greek', 'Korean', 'Lebanese', 'Peruvian', 'Vietnamese', 'Southern US'
   ];
 
-  // Use the current displayed cuisines for quick add buttons
-  const currentDisplayedCuisines = isEditing ? editingCuisines : displayedCuisines;
-  const availableQuickCuisines = popularCuisines.filter(c => !currentDisplayedCuisines.includes(c));
+  // Use the current saved cuisines for quick add buttons  
+  const availableQuickCuisines = popularCuisines.filter(c => !culturalBackground.includes(c));
   
 
 
   return (
     <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-emerald-600" />
-            Cultural Cuisine Preferences
-          </div>
-          {!isEditing && culturalBackground.length > 0 && (
-            <Button
-              onClick={handleStartEditing}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Edit3 className="h-4 w-4" />
-              Edit
-            </Button>
-          )}
+        <CardTitle className="flex items-center gap-2">
+          <Globe className="h-5 w-5 text-emerald-600" />
+          Cultural Cuisine Preferences
         </CardTitle>
       </CardHeader>
       
@@ -341,9 +435,9 @@ export default function SmartCulturalPreferenceEditor({
         <div>
           <div className="flex items-center justify-between mb-2">
             <Label className="text-sm font-medium">
-              Your Cultural Cuisines {culturalBackground.length > 0 && `(${culturalBackground.length} saved)`}:
+              Your Cultural Cuisines {culturalBackground.length > 0 && `(${culturalBackground.length})`}:
             </Label>
-            {!isEditing && culturalBackground.length > 0 && (
+            {culturalBackground.length > 0 && (
               <Button
                 onClick={() => setShowResearch(!showResearch)}
                 variant="outline"
@@ -356,102 +450,86 @@ export default function SmartCulturalPreferenceEditor({
             )}
           </div>
           
-          {/* Show current cuisines: saved + pending when not editing, editing cuisines when editing */}
-          {(isEditing ? editingCuisines : displayedCuisines).length > 0 ? (
+          {/* Show current cuisines with easy remove */}
+          {culturalBackground.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-2">
-              {(isEditing ? editingCuisines : displayedCuisines).map((cuisine: string, index: number) => (
+              {culturalBackground.map((cuisine: string, index: number) => (
                 <div key={`${cuisine}-${index}`} className="flex items-center gap-1">
                   <Badge 
                     variant="outline" 
-                    className={`${
-                      isEditing 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                        : culturalBackground.includes(cuisine)
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                    } flex items-center gap-1`}
+                    className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2 pr-1 pl-3 py-1"
                   >
-                    {cuisine}
-                    {!culturalBackground.includes(cuisine) && !isEditing && (
-                      <span className="text-xs ml-1">(pending)</span>
-                    )}
-                    {(isEditing || !culturalBackground.includes(cuisine)) && (
-                      <X
-                        size={14}
-                        className="cursor-pointer hover:text-red-500 ml-1"
-                        onClick={() => handleRemoveCuisine(cuisine)}
-                      />
-                    )}
-                  </Badge>
-                  {!isEditing && (
-                    <Button
-                      onClick={() => handleResearchCuisine(cuisine)}
-                      disabled={loadingResearch[cuisine]}
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 hover:bg-emerald-100"
-                      title={`Research ${cuisine} cuisine details`}
+                    <span>{cuisine}</span>
+                    <button
+                      onClick={() => handleQuickRemoveCuisine(cuisine)}
+                      className="hover:bg-red-100 rounded-full p-0.5 transition-colors"
+                      title={`Remove ${cuisine}`}
                     >
-                      {loadingResearch[cuisine] ? (
-                        <div className="animate-spin h-3 w-3 border border-emerald-500 border-t-transparent rounded-full" />
-                      ) : (
-                        <ExternalLink className="h-3 w-3 text-emerald-600" />
-                      )}
-                    </Button>
-                  )}
+                      <X size={12} className="text-red-500 hover:text-red-700" />
+                    </button>
+                  </Badge>
+                  <Button
+                    onClick={() => handleResearchCuisine(cuisine)}
+                    disabled={loadingResearch[cuisine]}
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-emerald-100"
+                    title={`Research ${cuisine} cuisine details`}
+                  >
+                    {loadingResearch[cuisine] ? (
+                      <div className="animate-spin h-3 w-3 border border-emerald-500 border-t-transparent rounded-full" />
+                    ) : (
+                      <ExternalLink className="h-3 w-3 text-emerald-600" />
+                    )}
+                  </Button>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-gray-500 text-sm">
-              {isEditing ? 'Add cultural cuisines below...' : 'No cultural cuisines added yet. Add some below!'}
+              No cultural cuisines added yet. Add some below!
             </div>
           )}
         </div>
 
-        {/* Save Changes Button - Shows when there are unsaved changes */}
-        {!isEditing && hasUnsavedChanges && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium text-amber-800">Unsaved Changes</Label>
-                <p className="text-xs text-amber-700 mt-1">You have unsaved cuisine preferences.</p>
-
-              </div>
-              <Button
-                onClick={handleSaveChanges}
-                disabled={isSaving}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white flex items-center gap-2"
-              >
-                <Check className="h-4 w-4" />
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
+        {/* Quick Add Interface */}
+        {!isEditing && (
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Add New Cuisine:</Label>
+            <CulturalCuisineDropdown
+              selectedCuisines={culturalBackground}
+              onCuisineChange={async (newCuisines) => {
+                // Find the newly added cuisine
+                const addedCuisine = newCuisines.find(c => !culturalBackground.includes(c));
+                if (addedCuisine) {
+                  await handleAddQuickCuisine(addedCuisine);
+                }
+              }}
+              placeholder="Search and instantly add cuisines..."
+            />
           </div>
         )}
 
 
 
         {/* Quick Add Popular Cuisines */}
-        {!isEditing && availableQuickCuisines.length > 0 && (
+        {availableQuickCuisines.length > 0 && (
           <div>
             <Label className="text-sm font-medium">Quick Add Popular Cuisines:</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {availableQuickCuisines.slice(0, 6).map((cuisine, index) => (
+              {availableQuickCuisines.slice(0, 8).map((cuisine, index) => (
                 <Button
                   key={`${cuisine}-${index}`}
                   onClick={() => handleAddQuickCuisine(cuisine)}
                   variant="outline"
                   size="sm"
-                  className="text-xs flex items-center gap-1"
+                  className="text-xs flex items-center gap-1 hover:bg-emerald-50 hover:border-emerald-300"
                 >
                   <Plus className="h-3 w-3" />
                   {cuisine}
                 </Button>
               ))}
-
             </div>
-
           </div>
         )}
 
@@ -494,21 +572,14 @@ export default function SmartCulturalPreferenceEditor({
           </div>
         )}
 
-        {/* Add First Cuisine */}
-        {!isEditing && culturalBackground.length === 0 && (
+        {/* Empty State */}
+        {culturalBackground.length === 0 && (
           <div className="text-center py-6 border-2 border-dashed border-gray-300 rounded-lg">
             <Globe className="h-12 w-12 text-gray-400 mx-auto mb-3" />
             <h3 className="text-lg font-medium text-gray-600 mb-2">Add Your Cultural Cuisines</h3>
             <p className="text-sm text-gray-500 mb-4">
               Tell us about your cultural background to get personalized meal recommendations
             </p>
-            <Button
-              onClick={handleStartEditing}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Cultural Preferences
-            </Button>
           </div>
         )}
 
@@ -529,14 +600,36 @@ export default function SmartCulturalPreferenceEditor({
                       {cuisine} Cuisine Details
                     </CardTitle>
                     <Button
-                      onClick={() => handleSaveMeals(cuisine)}
+                      onClick={() => {
+                        if (savedMeals[cuisine]) {
+                          // Double-click to reset saved state
+                          updateSavedMealsState(cuisine, false);
+                          toast({
+                            title: "Reset Saved State",
+                            description: `${cuisine} meals save status has been reset`,
+                            variant: "default"
+                          });
+                        } else {
+                          handleSaveMeals(cuisine);
+                        }
+                      }}
                       disabled={savingMeals[cuisine]}
                       variant="outline"
                       size="sm"
-                      className="border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                      className={`transition-all duration-300 ${
+                        savedMeals[cuisine]
+                          ? 'border-green-400 text-green-700 bg-green-50 hover:bg-green-100 cursor-pointer'
+                          : 'border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+                      }`}
+                      title={savedMeals[cuisine] ? 'Click to reset saved status' : 'Save meals to your profile'}
                     >
                       {savingMeals[cuisine] ? (
                         <div className="animate-spin h-4 w-4 border border-emerald-500 border-t-transparent rounded-full" />
+                      ) : savedMeals[cuisine] ? (
+                        <>
+                          <Check className="h-4 w-4 mr-1" />
+                          ✓ Saved (Click to Reset)
+                        </>
                       ) : (
                         <>
                           <Check className="h-4 w-4 mr-1" />

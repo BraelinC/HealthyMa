@@ -32,17 +32,22 @@ __export(schema_exports, {
   familyMemberSchema: () => familyMemberSchema,
   goalWeightsSchema: () => goalWeightsSchema,
   insertCulturalCuisineCacheSchema: () => insertCulturalCuisineCacheSchema,
+  insertMealCompletionSchema: () => insertMealCompletionSchema,
   insertProfileSchema: () => insertProfileSchema,
   insertRecipeSchema: () => insertRecipeSchema,
+  insertUserAchievementSchema: () => insertUserAchievementSchema,
   insertUserSavedCulturalMealsSchema: () => insertUserSavedCulturalMealsSchema,
   insertUserSchema: () => insertUserSchema,
   loginSchema: () => loginSchema,
+  mealCompletions: () => mealCompletions,
   mealPlanRequestSchema: () => mealPlanRequestSchema,
   mealPlans: () => mealPlans,
+  mergeFamilyDietaryRestrictions: () => mergeFamilyDietaryRestrictions,
   profiles: () => profiles,
   recipes: () => recipes,
   registerSchema: () => registerSchema,
   simplifiedUserProfileSchema: () => simplifiedUserProfileSchema,
+  userAchievements: () => userAchievements,
   userSavedCulturalMeals: () => userSavedCulturalMeals,
   users: () => users,
   weightBasedMealSchema: () => weightBasedMealSchema
@@ -50,7 +55,37 @@ __export(schema_exports, {
 import { pgTable, text, serial, integer, boolean, json, timestamp, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var users, insertUserSchema, loginSchema, registerSchema, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema;
+function mergeFamilyDietaryRestrictions(members) {
+  console.log("\u{1F517} Merging family dietary restrictions from", members.length, "members");
+  const allRestrictions = /* @__PURE__ */ new Set();
+  members.forEach((member, index2) => {
+    console.log(`   Member ${index2 + 1} (${member.name || "Unnamed"}):`, {
+      dietaryRestrictions: member.dietaryRestrictions || [],
+      preferences: member.preferences || []
+    });
+    if (member.dietaryRestrictions && Array.isArray(member.dietaryRestrictions)) {
+      member.dietaryRestrictions.forEach((restriction) => {
+        if (restriction && restriction.trim()) {
+          allRestrictions.add(restriction.trim());
+          console.log(`     \u2705 Added restriction: "${restriction.trim()}"`);
+        }
+      });
+    }
+    if (member.preferences && Array.isArray(member.preferences)) {
+      member.preferences.forEach((pref) => {
+        const lowerPref = pref.toLowerCase().trim();
+        if (lowerPref.includes("allerg") || lowerPref.includes("intoleran") || lowerPref.includes("free") || lowerPref.includes("vegan") || lowerPref.includes("vegetarian") || lowerPref.includes("kosher") || lowerPref.includes("halal") || lowerPref.includes("diet")) {
+          allRestrictions.add(pref.trim());
+          console.log(`     \u26A0\uFE0F Found dietary restriction in preferences: "${pref.trim()}"`);
+        }
+      });
+    }
+  });
+  const finalRestrictions = Array.from(allRestrictions);
+  console.log("\u{1F517} Final merged restrictions:", finalRestrictions);
+  return finalRestrictions;
+}
+var users, insertUserSchema, loginSchema, registerSchema, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -107,6 +142,8 @@ var init_schema = __esm({
       ageGroup: z.enum(["Child", "Teen", "Adult"]).optional(),
       preferences: z.array(z.string()).default([]),
       // dietary preferences, allergies, dislikes
+      dietaryRestrictions: z.array(z.string()).default([]),
+      // mandatory dietary restrictions for this member
       goals: z.array(z.string()).default([])
       // individual goals
     });
@@ -274,6 +311,61 @@ var init_schema = __esm({
       custom_name: true,
       notes: true
     });
+    userAchievements = pgTable("user_achievements", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").notNull().references(() => users.id),
+      achievement_id: text("achievement_id").notNull(),
+      title: text("title").notNull(),
+      description: text("description").notNull(),
+      category: text("category").notNull(),
+      is_unlocked: boolean("is_unlocked").default(false),
+      progress: integer("progress").default(0),
+      max_progress: integer("max_progress").notNull(),
+      points: integer("points").notNull(),
+      rarity: text("rarity").notNull(),
+      // "common", "rare", "epic", "legendary"
+      unlocked_date: timestamp("unlocked_date"),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      userAchievementIdx: index("user_achievement_idx").on(table.user_id, table.achievement_id)
+    }));
+    insertUserAchievementSchema = createInsertSchema(userAchievements).pick({
+      user_id: true,
+      achievement_id: true,
+      title: true,
+      description: true,
+      category: true,
+      is_unlocked: true,
+      progress: true,
+      max_progress: true,
+      points: true,
+      rarity: true,
+      unlocked_date: true
+    });
+    mealCompletions = pgTable("meal_completions", {
+      id: serial("id").primaryKey(),
+      user_id: integer("user_id").notNull().references(() => users.id),
+      meal_plan_id: integer("meal_plan_id").notNull().references(() => mealPlans.id),
+      day_key: text("day_key").notNull(),
+      // e.g., "day_1", "day_2"
+      meal_type: text("meal_type").notNull(),
+      // "breakfast", "lunch", "dinner", "snack"
+      is_completed: boolean("is_completed").default(false),
+      completed_at: timestamp("completed_at"),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      userMealIdx: index("user_meal_idx").on(table.user_id, table.meal_plan_id, table.day_key, table.meal_type)
+    }));
+    insertMealCompletionSchema = createInsertSchema(mealCompletions).pick({
+      user_id: true,
+      meal_plan_id: true,
+      day_key: true,
+      meal_type: true,
+      is_completed: true,
+      completed_at: true
+    });
   }
 });
 
@@ -281,7 +373,7 @@ var init_schema = __esm({
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
-var pool, db2;
+var pool, db;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
@@ -298,7 +390,7 @@ var init_db = __esm({
       idleTimeoutMillis: 3e4,
       connectionTimeoutMillis: 1e4
     });
-    db2 = drizzle(pool, { schema: schema_exports });
+    db = drizzle(pool, { schema: schema_exports });
   }
 });
 
@@ -313,15 +405,15 @@ var init_dbStorage = __esm({
     DatabaseStorage = class {
       // User methods
       async getUser(id) {
-        const [user] = await db2.select().from(users).where(eq(users.id, id));
+        const [user] = await db.select().from(users).where(eq(users.id, id));
         return user;
       }
       async getUserByEmail(email) {
-        const [user] = await db2.select().from(users).where(eq(users.email, email));
+        const [user] = await db.select().from(users).where(eq(users.email, email));
         return user;
       }
       async createUser(userData) {
-        const [user] = await db2.insert(users).values({
+        const [user] = await db.insert(users).values({
           email: userData.email,
           phone: userData.phone,
           password_hash: userData.password_hash,
@@ -330,26 +422,26 @@ var init_dbStorage = __esm({
         return user;
       }
       async updateUser(id, userData) {
-        const [user] = await db2.update(users).set(userData).where(eq(users.id, id)).returning();
+        const [user] = await db.update(users).set(userData).where(eq(users.id, id)).returning();
         return user || null;
       }
       // Recipe methods
       async createRecipe(recipe) {
-        const [createdRecipe] = await db2.insert(recipes).values(recipe).returning();
+        const [createdRecipe] = await db.insert(recipes).values(recipe).returning();
         return createdRecipe;
       }
       async getRecipe(id) {
-        const [recipe] = await db2.select().from(recipes).where(eq(recipes.id, id));
+        const [recipe] = await db.select().from(recipes).where(eq(recipes.id, id));
         return recipe;
       }
       async getPopularRecipes() {
-        const baselineRecipes = await db2.select().from(recipes).where(eq(recipes.id, 210));
-        const recipe211 = await db2.select().from(recipes).where(eq(recipes.id, 211));
-        const recipe212 = await db2.select().from(recipes).where(eq(recipes.id, 212));
-        const recipe213 = await db2.select().from(recipes).where(eq(recipes.id, 213));
+        const baselineRecipes = await db.select().from(recipes).where(eq(recipes.id, 210));
+        const recipe211 = await db.select().from(recipes).where(eq(recipes.id, 211));
+        const recipe212 = await db.select().from(recipes).where(eq(recipes.id, 212));
+        const recipe213 = await db.select().from(recipes).where(eq(recipes.id, 213));
         let result = [...baselineRecipes, ...recipe211, ...recipe212, ...recipe213];
         if (result.length < 6) {
-          const otherRecipes = await db2.select().from(recipes).orderBy(desc(recipes.created_at)).limit(6 - result.length);
+          const otherRecipes = await db.select().from(recipes).orderBy(desc(recipes.created_at)).limit(6 - result.length);
           const filteredOthers = otherRecipes.filter(
             (recipe) => !result.some((existing) => existing.id === recipe.id)
           );
@@ -359,19 +451,19 @@ var init_dbStorage = __esm({
       }
       async getSavedRecipes(userId) {
         if (userId) {
-          return await db2.select().from(recipes).where(and(eq(recipes.is_saved, true), eq(recipes.user_id, userId))).orderBy(desc(recipes.created_at));
+          return await db.select().from(recipes).where(and(eq(recipes.is_saved, true), eq(recipes.user_id, userId))).orderBy(desc(recipes.created_at));
         }
-        return await db2.select().from(recipes).where(eq(recipes.is_saved, true)).orderBy(desc(recipes.created_at));
+        return await db.select().from(recipes).where(eq(recipes.is_saved, true)).orderBy(desc(recipes.created_at));
       }
       async getGeneratedRecipes(userId) {
         if (userId) {
-          return await db2.select().from(recipes).where(and(eq(recipes.is_saved, false), eq(recipes.user_id, userId))).orderBy(desc(recipes.created_at));
+          return await db.select().from(recipes).where(and(eq(recipes.is_saved, false), eq(recipes.user_id, userId))).orderBy(desc(recipes.created_at));
         }
-        return await db2.select().from(recipes).where(eq(recipes.is_saved, false)).orderBy(desc(recipes.created_at));
+        return await db.select().from(recipes).where(eq(recipes.is_saved, false)).orderBy(desc(recipes.created_at));
       }
       async getRecipeById(recipeId) {
         try {
-          const recipe = await db2.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
+          const recipe = await db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
           return recipe.length > 0 ? recipe[0] : null;
         } catch (error) {
           console.error("Error getting recipe by ID:", error);
@@ -387,7 +479,7 @@ var init_dbStorage = __esm({
             return null;
           }
           console.log(`DatabaseStorage: Found recipe ${recipeId}, updating is_saved to true`);
-          await db2.update(recipes).set({ is_saved: true }).where(eq(recipes.id, recipeId));
+          await db.update(recipes).set({ is_saved: true }).where(eq(recipes.id, recipeId));
           console.log(`DatabaseStorage: Successfully updated recipe ${recipeId}`);
           const updatedRecipe = { ...existingRecipe, is_saved: true };
           return updatedRecipe;
@@ -399,7 +491,7 @@ var init_dbStorage = __esm({
       async unsaveRecipe(recipeId) {
         try {
           console.log(`DatabaseStorage: Unsaving recipe ${recipeId}`);
-          const result = await db2.update(recipes).set({ is_saved: false }).where(eq(recipes.id, recipeId));
+          const result = await db.update(recipes).set({ is_saved: false }).where(eq(recipes.id, recipeId));
           console.log(`DatabaseStorage: Successfully unsaved recipe ${recipeId}`);
         } catch (error) {
           console.error("DatabaseStorage: Error unsaving recipe:", error);
@@ -409,7 +501,7 @@ var init_dbStorage = __esm({
       // Meal plan operations
       async getSavedMealPlans(userId) {
         try {
-          const plans = await db2.select().from(mealPlans).where(eq(mealPlans.userId, userId)).orderBy(desc(mealPlans.updatedAt));
+          const plans = await db.select().from(mealPlans).where(eq(mealPlans.userId, userId)).orderBy(desc(mealPlans.updatedAt));
           console.log("Database returned meal plans:", plans?.length || 0);
           return Array.isArray(plans) ? plans : [];
         } catch (error) {
@@ -418,7 +510,7 @@ var init_dbStorage = __esm({
         }
       }
       async saveMealPlan(data) {
-        const [savedPlan] = await db2.insert(mealPlans).values({
+        const [savedPlan] = await db.insert(mealPlans).values({
           userId: data.userId,
           name: data.name,
           description: data.description,
@@ -432,7 +524,7 @@ var init_dbStorage = __esm({
       async updateMealPlan(planId, userId, data) {
         try {
           console.log("Updating meal plan in database:", { planId, userId, dataKeys: Object.keys(data) });
-          const [updatedPlan] = await db2.update(mealPlans).set({
+          const [updatedPlan] = await db.update(mealPlans).set({
             name: data.name,
             description: data.description,
             mealPlan: data.mealPlan,
@@ -446,13 +538,13 @@ var init_dbStorage = __esm({
         }
       }
       async getMealPlan(planId, userId) {
-        const [plan] = await db2.select().from(mealPlans).where(eq(mealPlans.id, planId));
+        const [plan] = await db.select().from(mealPlans).where(eq(mealPlans.id, planId));
         return plan || null;
       }
       async deleteMealPlan(planId, userId) {
         try {
           console.log("Deleting meal plan from database:", { planId, userId });
-          const result = await db2.delete(mealPlans).where(eq(mealPlans.id, planId)).returning();
+          const result = await db.delete(mealPlans).where(eq(mealPlans.id, planId)).returning();
           const success = result.length > 0;
           console.log("Database delete result:", success ? "success" : "no rows affected");
           return success;
@@ -463,13 +555,13 @@ var init_dbStorage = __esm({
       }
       // Profile methods
       async getProfile(userId) {
-        const [profile] = await db2.select().from(profiles).where(eq(profiles.user_id, userId));
+        const [profile] = await db.select().from(profiles).where(eq(profiles.user_id, userId));
         return profile;
       }
       async createProfile(profile) {
         try {
           console.log("DatabaseStorage: Creating profile with data:", profile);
-          const [createdProfile] = await db2.insert(profiles).values({
+          const [createdProfile] = await db.insert(profiles).values({
             user_id: profile.user_id,
             profile_name: profile.profile_name,
             primary_goal: profile.primary_goal,
@@ -489,7 +581,7 @@ var init_dbStorage = __esm({
       }
       async updateProfile(userId, profile) {
         try {
-          const [updatedProfile] = await db2.update(profiles).set({
+          const [updatedProfile] = await db.update(profiles).set({
             profile_name: profile.profile_name,
             primary_goal: profile.primary_goal,
             family_size: profile.family_size,
@@ -503,6 +595,166 @@ var init_dbStorage = __esm({
           return updatedProfile || null;
         } catch (error) {
           console.error("Database error updating profile:", error);
+          return null;
+        }
+      }
+      // Achievement methods
+      async getUserAchievements(userId) {
+        const achievements = await db.select().from(userAchievements).where(eq(userAchievements.user_id, userId)).orderBy(desc(userAchievements.created_at));
+        return achievements;
+      }
+      async initializeUserAchievements(userId) {
+        const achievementDefinitions = [
+          {
+            achievement_id: "first_steps",
+            title: "First Steps",
+            description: "Generate your first meal plan",
+            category: "cooking",
+            max_progress: 1,
+            points: 100,
+            rarity: "common"
+          },
+          {
+            achievement_id: "meal_master",
+            title: "Meal Master",
+            description: "Generate 10 meal plans",
+            category: "cooking",
+            max_progress: 10,
+            points: 500,
+            rarity: "rare"
+          },
+          {
+            achievement_id: "healthy_start",
+            title: "Healthy Start",
+            description: "Save your first healthy meal plan",
+            category: "wellness",
+            max_progress: 1,
+            points: 150,
+            rarity: "common"
+          }
+        ];
+        const insertData = achievementDefinitions.map((def) => ({
+          user_id: userId,
+          achievement_id: def.achievement_id,
+          title: def.title,
+          description: def.description,
+          category: def.category,
+          is_unlocked: false,
+          progress: 0,
+          max_progress: def.max_progress,
+          points: def.points,
+          rarity: def.rarity,
+          unlocked_date: null
+        }));
+        const createdAchievements = await db.insert(userAchievements).values(insertData).returning();
+        return createdAchievements;
+      }
+      async updateUserAchievement(userId, achievementId, data) {
+        const [updatedAchievement] = await db.update(userAchievements).set({
+          progress: data.progress,
+          is_unlocked: data.is_unlocked,
+          unlocked_date: data.unlocked_date,
+          updated_at: /* @__PURE__ */ new Date()
+        }).where(and(
+          eq(userAchievements.user_id, userId),
+          eq(userAchievements.achievement_id, achievementId)
+        )).returning();
+        return updatedAchievement || null;
+      }
+      async getUserAchievement(userId, achievementId) {
+        const [achievement] = await db.select().from(userAchievements).where(and(
+          eq(userAchievements.user_id, userId),
+          eq(userAchievements.achievement_id, achievementId)
+        ));
+        return achievement || null;
+      }
+      // Meal completion methods
+      async getMealCompletions(userId, mealPlanId) {
+        const completions = await db.select().from(mealCompletions).where(and(
+          eq(mealCompletions.user_id, userId),
+          eq(mealCompletions.meal_plan_id, mealPlanId)
+        ));
+        return completions;
+      }
+      async toggleMealCompletion(userId, mealPlanId, dayKey, mealType) {
+        const [existing] = await db.select().from(mealCompletions).where(and(
+          eq(mealCompletions.user_id, userId),
+          eq(mealCompletions.meal_plan_id, mealPlanId),
+          eq(mealCompletions.day_key, dayKey),
+          eq(mealCompletions.meal_type, mealType)
+        ));
+        if (existing) {
+          const [updated] = await db.update(mealCompletions).set({
+            is_completed: !existing.is_completed,
+            completed_at: !existing.is_completed ? /* @__PURE__ */ new Date() : null,
+            updated_at: /* @__PURE__ */ new Date()
+          }).where(and(
+            eq(mealCompletions.user_id, userId),
+            eq(mealCompletions.meal_plan_id, mealPlanId),
+            eq(mealCompletions.day_key, dayKey),
+            eq(mealCompletions.meal_type, mealType)
+          )).returning();
+          return updated;
+        } else {
+          const [created] = await db.insert(mealCompletions).values({
+            user_id: userId,
+            meal_plan_id: mealPlanId,
+            day_key: dayKey,
+            meal_type: mealType,
+            is_completed: true,
+            completed_at: /* @__PURE__ */ new Date()
+          }).returning();
+          return created;
+        }
+      }
+      async getMealCompletion(userId, mealPlanId, dayKey, mealType) {
+        const [completion] = await db.select().from(mealCompletions).where(and(
+          eq(mealCompletions.user_id, userId),
+          eq(mealCompletions.meal_plan_id, mealPlanId),
+          eq(mealCompletions.day_key, dayKey),
+          eq(mealCompletions.meal_type, mealType)
+        ));
+        return completion || null;
+      }
+      async completeMealPlan(userId, mealPlanId) {
+        try {
+          console.log(`\u{1F50D} COMPLETE PLAN DEBUG: Starting for user ${userId}, plan ${mealPlanId}`);
+          const [plan] = await db.select().from(mealPlans).where(and(
+            eq(mealPlans.id, mealPlanId),
+            eq(mealPlans.userId, userId)
+          ));
+          if (!plan) {
+            console.log(`\u274C COMPLETE PLAN DEBUG: No meal plan found for user ${userId} and plan ${mealPlanId}`);
+            return null;
+          }
+          console.log(`\u2705 COMPLETE PLAN DEBUG: Found meal plan ${mealPlanId} for user ${userId}`);
+          const existingCompletions = await db.select().from(mealCompletions).where(and(
+            eq(mealCompletions.meal_plan_id, mealPlanId),
+            eq(mealCompletions.user_id, userId)
+          ));
+          console.log(`\u{1F4CA} COMPLETE PLAN DEBUG: Found ${existingCompletions.length} completions to delete`);
+          return await db.transaction(async (tx) => {
+            console.log(`\u{1F504} COMPLETE PLAN DEBUG: Starting transaction for plan ${mealPlanId}`);
+            const deletedCompletions = await tx.delete(mealCompletions).where(and(
+              eq(mealCompletions.meal_plan_id, mealPlanId),
+              eq(mealCompletions.user_id, userId)
+            ));
+            console.log(`\u{1F5D1}\uFE0F COMPLETE PLAN DEBUG: Deleted meal completions for plan ${mealPlanId}:`, deletedCompletions);
+            const remainingCompletions = await tx.select().from(mealCompletions).where(eq(mealCompletions.meal_plan_id, mealPlanId));
+            console.log(`\u{1F50D} COMPLETE PLAN DEBUG: Remaining completions after deletion: ${remainingCompletions.length}`);
+            if (remainingCompletions.length > 0) {
+              console.log(`\u26A0\uFE0F COMPLETE PLAN DEBUG: Still found completions:`, remainingCompletions);
+            }
+            console.log(`\u{1F5D1}\uFE0F COMPLETE PLAN DEBUG: Now deleting meal plan ${mealPlanId}`);
+            const deletedPlan = await tx.delete(mealPlans).where(and(
+              eq(mealPlans.id, mealPlanId),
+              eq(mealPlans.userId, userId)
+            ));
+            console.log(`\u2705 COMPLETE PLAN DEBUG: Successfully deleted meal plan ${mealPlanId}:`, deletedPlan);
+            return plan;
+          });
+        } catch (error) {
+          console.error("\u274C COMPLETE PLAN DEBUG: Database error completing meal plan:", error);
           return null;
         }
       }
@@ -1103,7 +1355,7 @@ async function authenticateToken(req, res, next) {
     return res.status(403).json({ message: "Invalid token" });
   }
   try {
-    const user = await storage.getUser(decoded.userId);
+    const user = await storage.getUser(Number(decoded.userId));
     if (!user) {
       return res.status(403).json({ message: "User not found" });
     }
@@ -1127,7 +1379,7 @@ async function registerUser(req, res) {
       password_hash: hashedPassword,
       full_name: validatedData.full_name
     });
-    const token = generateToken(user.id);
+    const token = generateToken(user.id.toString());
     const { password_hash, ...userWithoutPassword } = user;
     res.status(201).json({
       user: userWithoutPassword,
@@ -1155,7 +1407,7 @@ async function loginUser(req, res) {
     if (!user.password_hash || !await verifyPassword(validatedData.password, user.password_hash)) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-    const token = generateToken(user.id);
+    const token = generateToken(user.id.toString());
     const { password_hash, ...userWithoutPassword } = user;
     res.json({
       user: userWithoutPassword,
@@ -2723,6 +2975,169 @@ var init_dietaryValidationService = __esm({
   }
 });
 
+// server/perplexitySearchLogger.ts
+var perplexitySearchLogger_exports = {};
+__export(perplexitySearchLogger_exports, {
+  logPerplexitySearch: () => logPerplexitySearch,
+  perplexityLogger: () => perplexityLogger
+});
+import fs from "fs/promises";
+import path from "path";
+async function logPerplexitySearch(query, response, category = "general", cached = false, userId, executionTime) {
+  return perplexityLogger.logSearch(query, response, category, cached, userId, executionTime);
+}
+var PerplexitySearchLogger, perplexityLogger;
+var init_perplexitySearchLogger = __esm({
+  "server/perplexitySearchLogger.ts"() {
+    "use strict";
+    PerplexitySearchLogger = class {
+      logFile;
+      maxEntries = 1e3;
+      maxFileSize = 10 * 1024 * 1024;
+      // 10MB
+      constructor() {
+        this.logFile = path.join(__dirname, "../logs/perplexity-searches.json");
+        this.ensureLogDirectory();
+      }
+      async ensureLogDirectory() {
+        const logDir = path.dirname(this.logFile);
+        try {
+          await fs.mkdir(logDir, { recursive: true });
+        } catch (error) {
+          console.error("Failed to create log directory:", error);
+        }
+      }
+      generateId() {
+        return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      }
+      truncateText(text2, maxLength = 200) {
+        if (text2.length <= maxLength) return text2;
+        return text2.substring(0, maxLength) + "...";
+      }
+      async logSearch(query, response, category = "general", cached = false, userId, executionTime) {
+        const searchEntry = {
+          id: this.generateId(),
+          query: this.truncateText(query, 500),
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          responseSize: JSON.stringify(response).length,
+          cached,
+          category,
+          responsePreview: this.extractPreview(response),
+          fullResponse: response,
+          userId,
+          executionTime
+        };
+        try {
+          await this.saveEntry(searchEntry);
+          console.log(`\u{1F4DD} Logged Perplexity search: ${category} - ${this.truncateText(query, 50)}`);
+          return searchEntry.id;
+        } catch (error) {
+          console.error("Failed to log Perplexity search:", error);
+          return "";
+        }
+      }
+      extractPreview(response) {
+        if (!response) return "Empty response";
+        if (typeof response === "string") {
+          return this.truncateText(response, 300);
+        }
+        if (response.meals && Array.isArray(response.meals)) {
+          const mealNames = response.meals.slice(0, 3).map((meal) => meal.name || "Unnamed dish");
+          return `Found ${response.meals.length} dishes: ${mealNames.join(", ")}${response.meals.length > 3 ? "..." : ""}`;
+        }
+        if (response.message) {
+          return this.truncateText(response.message, 300);
+        }
+        if (response.content) {
+          return this.truncateText(response.content, 300);
+        }
+        return this.truncateText(JSON.stringify(response), 300);
+      }
+      async saveEntry(entry) {
+        let existingEntries = [];
+        try {
+          const fileContent = await fs.readFile(this.logFile, "utf-8");
+          existingEntries = JSON.parse(fileContent);
+        } catch (error) {
+          existingEntries = [];
+        }
+        existingEntries.unshift(entry);
+        if (existingEntries.length > this.maxEntries) {
+          existingEntries = existingEntries.slice(0, this.maxEntries);
+        }
+        const content = JSON.stringify(existingEntries, null, 2);
+        if (content.length > this.maxFileSize) {
+          await this.rotateLog();
+          existingEntries = existingEntries.slice(0, Math.floor(this.maxEntries / 2));
+        }
+        await fs.writeFile(this.logFile, content, "utf-8");
+      }
+      async rotateLog() {
+        const timestamp2 = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+        const rotatedFile = this.logFile.replace(".json", `-${timestamp2}.json`);
+        try {
+          await fs.rename(this.logFile, rotatedFile);
+          console.log(`\u{1F4E6} Rotated Perplexity log to: ${rotatedFile}`);
+        } catch (error) {
+          console.error("Failed to rotate log file:", error);
+        }
+      }
+      async getSearchHistory(limit = 50) {
+        try {
+          const fileContent = await fs.readFile(this.logFile, "utf-8");
+          const entries = JSON.parse(fileContent);
+          return entries.slice(0, limit);
+        } catch (error) {
+          console.error("Failed to read search history:", error);
+          return [];
+        }
+      }
+      async clearSearchHistory() {
+        try {
+          await fs.writeFile(this.logFile, JSON.stringify([], null, 2), "utf-8");
+          console.log("\u{1F9F9} Cleared Perplexity search history");
+        } catch (error) {
+          console.error("Failed to clear search history:", error);
+        }
+      }
+      async getSearchStats() {
+        try {
+          const entries = await this.getSearchHistory(1e3);
+          const now = Date.now();
+          const twentyFourHoursAgo = now - 24 * 60 * 60 * 1e3;
+          const recentSearches = entries.filter(
+            (entry) => new Date(entry.timestamp).getTime() > twentyFourHoursAgo
+          ).length;
+          const cachedCount = entries.filter((entry) => entry.cached).length;
+          const cacheHitRate = entries.length > 0 ? cachedCount / entries.length * 100 : 0;
+          const categoryCounts = entries.reduce((acc, entry) => {
+            acc[entry.category] = (acc[entry.category] || 0) + 1;
+            return acc;
+          }, {});
+          const averageResponseSize = entries.length > 0 ? entries.reduce((sum, entry) => sum + entry.responseSize, 0) / entries.length : 0;
+          return {
+            totalSearches: entries.length,
+            cacheHitRate: Math.round(cacheHitRate),
+            categoryCounts,
+            averageResponseSize: Math.round(averageResponseSize),
+            recentSearches
+          };
+        } catch (error) {
+          console.error("Failed to get search stats:", error);
+          return {
+            totalSearches: 0,
+            cacheHitRate: 0,
+            categoryCounts: {},
+            averageResponseSize: 0,
+            recentSearches: 0
+          };
+        }
+      }
+    };
+    perplexityLogger = new PerplexitySearchLogger();
+  }
+});
+
 // server/cultureCacheManager.ts
 var cultureCacheManager_exports = {};
 __export(cultureCacheManager_exports, {
@@ -2742,7 +3157,7 @@ __export(cultureCacheManager_exports, {
 import { eq as eq2 } from "drizzle-orm";
 async function getGlobalCacheStats() {
   try {
-    const result = await db2.select({
+    const result = await db.select({
       total_cuisines: "count(*)",
       total_access_count: "sum(access_count)",
       avg_quality_score: "avg(quality_score)",
@@ -2760,7 +3175,7 @@ async function getGlobalCacheStats() {
 }
 async function clearGlobalCache() {
   try {
-    await db2.delete(culturalCuisineCache);
+    await db.delete(culturalCuisineCache);
     console.log("\u{1F5D1}\uFE0F Cleared global cultural cuisine cache");
     return true;
   } catch (error) {
@@ -2773,19 +3188,19 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
   try {
     if (!options.forceRefresh) {
       console.log(`\u{1F50D} Looking for cached data for: "${normalizedCuisine}"`);
-      const cachedEntries = await db2.select().from(culturalCuisineCache).where(eq2(culturalCuisineCache.cuisine_name, normalizedCuisine)).limit(1);
+      const cachedEntries = await db.select().from(culturalCuisineCache).where(eq2(culturalCuisineCache.cuisine_name, normalizedCuisine)).limit(1);
       console.log(`\u{1F50D} Database query returned ${cachedEntries.length} results`);
       const cachedEntry = cachedEntries[0];
       if (cachedEntry) {
         const ageHours = (Date.now() - new Date(cachedEntry.created_at).getTime()) / (1e3 * 60 * 60);
         if (ageHours < CACHE_CONFIG.DEFAULT_TTL_HOURS) {
           console.log(`\u2705 Global cache hit for ${normalizedCuisine}, age: ${ageHours.toFixed(1)}h`);
-          await db2.update(culturalCuisineCache).set({
+          await db.update(culturalCuisineCache).set({
             access_count: cachedEntry.access_count + 1,
             last_accessed: /* @__PURE__ */ new Date()
           }).where(eq2(culturalCuisineCache.id, cachedEntry.id));
           cache_metrics.hits++;
-          return {
+          const cachedResult = {
             meals: cachedEntry.meals_data,
             summary: cachedEntry.summary_data,
             cached_at: new Date(cachedEntry.created_at),
@@ -2794,9 +3209,25 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
             data_version: cachedEntry.data_version,
             source_quality_score: cachedEntry.quality_score || 0
           };
+          try {
+            const { logPerplexitySearch: logPerplexitySearch2 } = await Promise.resolve().then(() => (init_perplexitySearchLogger(), perplexitySearchLogger_exports));
+            await logPerplexitySearch2(
+              `Cultural cuisine research: ${normalizedCuisine} (cached)`,
+              cachedResult,
+              "cultural-cuisine",
+              true,
+              // cached
+              userId,
+              0
+              // no execution time for cache hit
+            );
+          } catch (logError) {
+            console.error("Failed to log cached search:", logError);
+          }
+          return cachedResult;
         } else {
           console.log(`\u23F0 Global cache expired for ${normalizedCuisine}, age: ${ageHours.toFixed(1)}h`);
-          await db2.delete(culturalCuisineCache).where(eq2(culturalCuisineCache.id, cachedEntry.id));
+          await db.delete(culturalCuisineCache).where(eq2(culturalCuisineCache.id, cachedEntry.id));
         }
       }
     }
@@ -2806,7 +3237,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
     const freshData = await fetchCulturalDataFromPerplexityWithRetry(cultureTag);
     if (freshData) {
       try {
-        await db2.insert(culturalCuisineCache).values({
+        await db.insert(culturalCuisineCache).values({
           cuisine_name: normalizedCuisine,
           meals_data: freshData.meals,
           summary_data: freshData.summary,
@@ -2880,6 +3311,7 @@ async function fetchCulturalDataFromPerplexityWithRetry(cultureTag) {
   return null;
 }
 async function fetchCulturalDataFromPerplexity(cultureTag) {
+  const startTime = Date.now();
   try {
     console.log(`\u{1F50D} Fetching cultural data for: ${cultureTag}`);
     api_call_timestamps.push(Date.now());
@@ -2963,6 +3395,22 @@ Please respond with a JSON object in this exact format:
         common_techniques: cultureData.summary?.common_cooking_techniques?.length || 0,
         quality_score: qualityScore
       });
+      try {
+        const { logPerplexitySearch: logPerplexitySearch2 } = await Promise.resolve().then(() => (init_perplexitySearchLogger(), perplexitySearchLogger_exports));
+        const executionTime = Date.now() - startTime;
+        await logPerplexitySearch2(
+          `Cultural cuisine research: ${cultureTag}`,
+          cultureData,
+          "cultural-cuisine",
+          false,
+          // not cached since we just fetched it
+          0,
+          // temporary userId
+          executionTime
+        );
+      } catch (logError) {
+        console.error("Failed to log Perplexity search:", logError);
+      }
       return cultureData;
     } catch (parseError) {
       console.error(`\u{1F6A8} Error parsing Perplexity response for ${cultureTag}:`, parseError);
@@ -4894,14 +5342,20 @@ __export(intelligentPromptBuilder_exports, {
   validateMealConstraints: () => validateMealConstraints
 });
 async function buildIntelligentPrompt(filters) {
+  console.log("\n\u{1F528} PROMPT BUILDER STARTED");
+  console.log("\u{1F4CB} Input Filters:", JSON.stringify(filters, null, 2));
   let prompt = `Create exactly a ${filters.numDays}-day meal plan with ${filters.mealsPerDay} meals per day`;
+  console.log("1\uFE0F\u20E3 Base prompt:", prompt);
   if (filters.profileType === "family" && filters.familySize) {
     prompt += ` for a family of ${filters.familySize}`;
+    console.log("2\uFE0F\u20E3 Added family size:", `family of ${filters.familySize}`);
     if (filters.familyMembers && filters.familyMembers.length > 0) {
       const childrenCount = filters.familyMembers.filter((m) => m.ageGroup === "Child").length;
       const adultCount = filters.familyMembers.filter((m) => m.ageGroup === "Adult").length;
+      console.log("\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466} Family composition:", { adults: adultCount, children: childrenCount });
       if (childrenCount > 0) {
         prompt += ` (${adultCount} adults, ${childrenCount} children)`;
+        console.log("2\uFE0F\u20E3 Updated with ages:", `(${adultCount} adults, ${childrenCount} children)`);
       }
     }
   }
@@ -4938,11 +5392,19 @@ REQUIREMENTS:`;
 - Nutrition goal: ${filters.nutritionGoal}`;
   }
   if (filters.familyMembers && filters.familyMembers.length > 0) {
+    console.log("\u{1F465} Processing family members:");
+    filters.familyMembers.forEach((member, index2) => {
+      console.log(`   Member ${index2 + 1}: ${member.name} (${member.ageGroup})`);
+      console.log(`   - Preferences: [${member.preferences.join(", ")}]`);
+      console.log(`   - Goals: [${member.goals.join(", ")}]`);
+    });
     const allPreferences = filters.familyMembers.flatMap((m) => m.preferences);
     const uniquePreferences = [...new Set(allPreferences)];
+    console.log("\u{1F37D}\uFE0F All family preferences combined:", uniquePreferences);
     if (uniquePreferences.length > 0) {
       prompt += `
 - Family dietary preferences: ${uniquePreferences.join(", ")}`;
+      console.log("3\uFE0F\u20E3 Added family preferences to prompt:", uniquePreferences.join(", "));
     }
     const hasChildren = filters.familyMembers.some((m) => m.ageGroup === "Child");
     if (hasChildren) {
@@ -4950,11 +5412,13 @@ REQUIREMENTS:`;
 - Include child-friendly options that are appealing to kids`;
       prompt += `
 - Avoid overly spicy or complex flavors for children`;
+      console.log("\u{1F476} Added child-friendly requirements");
     }
   }
   if (filters.dietaryRestrictions) {
     prompt += `
 - Dietary restrictions: ${filters.dietaryRestrictions}`;
+    console.log("\u{1F6AB} Added dietary restrictions:", filters.dietaryRestrictions);
   }
   if (filters.availableIngredients) {
     const usagePercent = filters.availableIngredientUsagePercent || (filters.primaryGoal === "Save Money" ? 80 : 50);
@@ -4975,19 +5439,22 @@ REQUIREMENTS:`;
     prompt += `
 - Suggest bulk buying opportunities when possible`;
   }
-  console.log("Cultural cuisine data:", filters.culturalCuisineData);
-  console.log("Cultural background:", filters.culturalBackground);
+  console.log("\u{1F30D} Cultural cuisine data available:", !!filters.culturalCuisineData);
+  console.log("\u{1F30D} Cultural background:", filters.culturalBackground);
   if (filters.culturalCuisineData && filters.culturalBackground && filters.culturalBackground.length > 0) {
     prompt += `
 
 \u{1F30D} CULTURAL CUISINE INTEGRATION:`;
     prompt += `
 - Include authentic dishes from user's cultural background: ${filters.culturalBackground.join(", ")}`;
+    console.log("4\uFE0F\u20E3 Added cultural background to prompt:", filters.culturalBackground.join(", "));
     for (const culture of filters.culturalBackground) {
       if (filters.culturalCuisineData[culture]) {
         const cultureData = filters.culturalCuisineData[culture];
         const mealNames = cultureData.meals ? cultureData.meals.map((meal) => meal.name).slice(0, 3) : [];
         const keyIngredients = cultureData.key_ingredients ? cultureData.key_ingredients.slice(0, 5) : [];
+        console.log(`   \u{1F4DD} ${culture} specific dishes:`, mealNames);
+        console.log(`   \u{1F958} ${culture} key ingredients:`, keyIngredients);
         const cookingStyles = cultureData.styles ? cultureData.styles.slice(0, 3) : [];
         if (mealNames.length > 0) {
           prompt += `
@@ -5072,6 +5539,11 @@ ${mealExamples}
   "prep_tips": ["helpful preparation suggestions"],
   "estimated_savings": ${filters.encourageOverlap ? 15.5 : 0}
 }`;
+  console.log("\n\u2705 FINAL PROMPT BUILT:");
+  console.log("=".repeat(50));
+  console.log(prompt);
+  console.log("=".repeat(50));
+  console.log("\u{1F528} PROMPT BUILDER COMPLETED\n");
   return prompt;
 }
 function getUnifiedGoal(goalValue) {
@@ -5775,6 +6247,363 @@ var init_mealPlanEnhancer = __esm({
   }
 });
 
+// server/SmartCulturalSelector.ts
+var SmartCulturalSelector_exports = {};
+__export(SmartCulturalSelector_exports, {
+  SmartCulturalSelector: () => SmartCulturalSelector
+});
+var SmartCulturalSelector;
+var init_SmartCulturalSelector = __esm({
+  "server/SmartCulturalSelector.ts"() {
+    "use strict";
+    SmartCulturalSelector = class {
+      /**
+       * Determine if a cultural meal should be used for this slot
+       */
+      shouldUseCulturalMeal(context, mealSlotContext, weights) {
+        if (!context.availableCulturalMeals || context.availableCulturalMeals.length === 0) {
+          return false;
+        }
+        const culturalMealsUsed = context.culturalMealsUsed || 0;
+        const optimalCount = context.optimalCulturalMealCount || 0;
+        if (culturalMealsUsed >= optimalCount) {
+          return weights.cultural > 0.8;
+        }
+        let probability = weights.cultural;
+        const progress = mealSlotContext.slotIndex / context.totalMeals;
+        const culturalProgress = culturalMealsUsed / optimalCount;
+        if (culturalProgress < progress) {
+          probability += 0.2;
+        }
+        if (mealSlotContext.mealType === "dinner") {
+          probability += 0.1;
+        } else if (mealSlotContext.mealType === "breakfast") {
+          probability -= 0.1;
+        }
+        const recentMeals = mealSlotContext.previousMeals.slice(-3);
+        const recentCulturalCount = recentMeals.filter((m) => m.culturalSource).length;
+        if (recentCulturalCount >= 2) {
+          probability -= 0.3;
+        }
+        probability = Math.max(0, Math.min(1, probability));
+        return Math.random() < probability;
+      }
+      /**
+       * Select the best cultural meal for this slot
+       */
+      selectBestCulturalMeal(availableMeals, weights, mealSlotContext) {
+        if (availableMeals.length === 0) {
+          throw new Error("No cultural meals available to select from");
+        }
+        const scoredMeals = availableMeals.map((meal) => {
+          let score = 0;
+          if (weights.time > 0.5) {
+            const timeScore = meal.cookTime <= 30 ? 1 : meal.cookTime <= 45 ? 0.7 : 0.4;
+            score += timeScore * weights.time;
+          }
+          if (weights.cost > 0.5) {
+            const commonIngredients = ["rice", "beans", "chicken", "eggs", "pasta", "potatoes"];
+            const costScore = meal.ingredients.filter(
+              (ing) => commonIngredients.some((common) => ing.toLowerCase().includes(common))
+            ).length / meal.ingredients.length;
+            score += costScore * weights.cost;
+          }
+          if (weights.health > 0.5 && meal.nutrition) {
+            const healthScore = this.calculateHealthScore(meal.nutrition);
+            score += healthScore * weights.health;
+          }
+          if (weights.variety > 0.5) {
+            const recentCultures = mealSlotContext.previousMeals.filter((m) => m.culturalSource).map((m) => m.culturalSource).slice(-5);
+            const varietyScore = recentCultures.includes(meal.culture) ? 0.3 : 1;
+            score += varietyScore * weights.variety;
+          }
+          const appropriatenessScore = this.getMealTypeScore(meal, mealSlotContext.mealType);
+          score += appropriatenessScore * 0.2;
+          return { meal, score };
+        });
+        scoredMeals.sort((a, b) => b.score - a.score);
+        const topCandidates = scoredMeals.slice(0, Math.min(3, scoredMeals.length));
+        const selectedIndex = Math.floor(Math.random() * topCandidates.length);
+        return topCandidates[selectedIndex].meal;
+      }
+      /**
+       * Calculate health score based on nutrition
+       */
+      calculateHealthScore(nutrition) {
+        if (!nutrition) return 0.5;
+        let score = 0;
+        const totalMacros = (nutrition.protein_g || 0) + (nutrition.carbs_g || 0) + (nutrition.fat_g || 0);
+        if (totalMacros > 0) {
+          const proteinRatio = (nutrition.protein_g || 0) / totalMacros;
+          const carbRatio = (nutrition.carbs_g || 0) / totalMacros;
+          const fatRatio = (nutrition.fat_g || 0) / totalMacros;
+          score += 1 - Math.abs(proteinRatio - 0.3) * 2;
+          score += 1 - Math.abs(carbRatio - 0.4) * 2;
+          score += 1 - Math.abs(fatRatio - 0.3) * 2;
+          score /= 3;
+        }
+        const calories = nutrition.calories || 0;
+        if (calories >= 300 && calories <= 800) {
+          score = (score + 1) / 2;
+        } else {
+          score = (score + 0.5) / 2;
+        }
+        return Math.max(0, Math.min(1, score));
+      }
+      /**
+       * Score meal appropriateness for meal type
+       */
+      getMealTypeScore(meal, mealType) {
+        const title = meal.title.toLowerCase();
+        switch (mealType) {
+          case "breakfast":
+            if (title.includes("breakfast") || title.includes("morning") || title.includes("pancake") || title.includes("egg") || title.includes("oatmeal") || title.includes("cereal")) {
+              return 1;
+            }
+            return 0.3;
+          case "lunch":
+            if (title.includes("sandwich") || title.includes("salad") || title.includes("soup") || title.includes("wrap")) {
+              return 1;
+            }
+            return 0.7;
+          case "dinner":
+            if (title.includes("dinner") || title.includes("roast") || title.includes("steak") || title.includes("curry")) {
+              return 1;
+            }
+            return 0.8;
+          case "snack":
+            if (title.includes("snack") || title.includes("bite") || title.includes("bar") || title.includes("smoothie")) {
+              return 1;
+            }
+            return 0.2;
+          default:
+            return 0.5;
+        }
+      }
+    };
+  }
+});
+
+// server/MealAdaptationEngine.ts
+var MealAdaptationEngine_exports = {};
+__export(MealAdaptationEngine_exports, {
+  MealAdaptationEngine: () => MealAdaptationEngine
+});
+var MealAdaptationEngine;
+var init_MealAdaptationEngine = __esm({
+  "server/MealAdaptationEngine.ts"() {
+    "use strict";
+    MealAdaptationEngine = class {
+      // Common ingredient substitutions for dietary restrictions
+      substitutions = {
+        "vegetarian": {
+          "chicken": ["tofu", "tempeh", "chickpeas", "mushrooms"],
+          "beef": ["black beans", "lentils", "plant-based ground", "mushrooms"],
+          "pork": ["jackfruit", "tempeh", "mushrooms"],
+          "fish": ["tofu", "hearts of palm", "banana blossom"],
+          "seafood": ["king oyster mushrooms", "hearts of palm"],
+          "bacon": ["tempeh bacon", "mushroom bacon", "coconut bacon"],
+          "meat": ["plant protein", "beans", "lentils", "tofu"]
+        },
+        "vegan": {
+          "chicken": ["tofu", "tempeh", "chickpeas", "seitan"],
+          "beef": ["black beans", "lentils", "plant-based ground", "mushrooms"],
+          "pork": ["jackfruit", "tempeh", "mushrooms"],
+          "fish": ["tofu", "hearts of palm", "banana blossom"],
+          "seafood": ["king oyster mushrooms", "hearts of palm"],
+          "milk": ["almond milk", "oat milk", "soy milk", "coconut milk"],
+          "cheese": ["nutritional yeast", "cashew cheese", "vegan cheese"],
+          "butter": ["vegan butter", "coconut oil", "olive oil"],
+          "eggs": ["flax eggs", "chia eggs", "tofu scramble", "chickpea flour"],
+          "cream": ["coconut cream", "cashew cream", "oat cream"],
+          "yogurt": ["coconut yogurt", "almond yogurt", "soy yogurt"],
+          "honey": ["maple syrup", "agave nectar", "date syrup"]
+        },
+        "gluten-free": {
+          "wheat flour": ["rice flour", "almond flour", "coconut flour", "gluten-free flour blend"],
+          "pasta": ["rice pasta", "corn pasta", "zucchini noodles", "gluten-free pasta"],
+          "bread": ["gluten-free bread", "rice cakes", "corn tortillas"],
+          "soy sauce": ["tamari", "coconut aminos"],
+          "flour": ["gluten-free flour", "almond flour", "rice flour"],
+          "breadcrumbs": ["gluten-free breadcrumbs", "crushed rice crackers", "almond meal"]
+        },
+        "dairy-free": {
+          "milk": ["almond milk", "oat milk", "soy milk", "coconut milk"],
+          "cheese": ["nutritional yeast", "cashew cheese", "dairy-free cheese"],
+          "butter": ["olive oil", "coconut oil", "dairy-free butter"],
+          "cream": ["coconut cream", "cashew cream", "oat cream"],
+          "yogurt": ["coconut yogurt", "almond yogurt", "soy yogurt"],
+          "ice cream": ["coconut ice cream", "banana ice cream", "dairy-free ice cream"]
+        },
+        "nut-free": {
+          "almonds": ["sunflower seeds", "pumpkin seeds"],
+          "almond milk": ["oat milk", "soy milk", "rice milk"],
+          "peanut butter": ["sunflower seed butter", "tahini", "soy butter"],
+          "cashews": ["sunflower seeds", "hemp seeds"],
+          "walnuts": ["pumpkin seeds", "sunflower seeds"],
+          "pecans": ["pepitas", "sunflower seeds"],
+          "nut": ["seed", "coconut"]
+        },
+        "keto": {
+          "rice": ["cauliflower rice", "shirataki rice"],
+          "pasta": ["zucchini noodles", "shirataki noodles", "spaghetti squash"],
+          "potatoes": ["cauliflower", "turnips", "radishes"],
+          "bread": ["cloud bread", "almond flour bread", "coconut flour bread"],
+          "sugar": ["stevia", "erythritol", "monk fruit sweetener"],
+          "flour": ["almond flour", "coconut flour"]
+        }
+      };
+      /**
+       * Check if meal needs adaptation and adapt if necessary
+       */
+      async adaptMealIfNeeded(meal, dietaryRestrictions, weights) {
+        if (!dietaryRestrictions || dietaryRestrictions.length === 0) {
+          return { meal, adaptations: [], isAdapted: false };
+        }
+        const adaptations = [];
+        let adaptedMeal = { ...meal };
+        let needsAdaptation = false;
+        for (const restriction of dietaryRestrictions) {
+          const normalizedRestriction = restriction.toLowerCase().trim();
+          const substitutionMap = this.substitutions[normalizedRestriction];
+          if (substitutionMap) {
+            adaptedMeal.ingredients = adaptedMeal.ingredients.map((ingredient) => {
+              const lowerIngredient = ingredient.toLowerCase();
+              for (const [original, substitutes] of Object.entries(substitutionMap)) {
+                if (lowerIngredient.includes(original)) {
+                  needsAdaptation = true;
+                  const substitute = this.selectBestSubstitute(substitutes, weights);
+                  const adaptedIngredient = ingredient.replace(
+                    new RegExp(original, "gi"),
+                    substitute
+                  );
+                  adaptations.push(`Replaced ${original} with ${substitute} for ${restriction}`);
+                  return adaptedIngredient;
+                }
+              }
+              return ingredient;
+            });
+            if (needsAdaptation) {
+              adaptedMeal.instructions = adaptedMeal.instructions.map((instruction) => {
+                let adaptedInstruction = instruction;
+                for (const [original, substitutes] of Object.entries(substitutionMap)) {
+                  if (adaptedInstruction.toLowerCase().includes(original)) {
+                    const substitute = substitutes[0];
+                    adaptedInstruction = adaptedInstruction.replace(
+                      new RegExp(original, "gi"),
+                      substitute
+                    );
+                  }
+                }
+                return adaptedInstruction;
+              });
+            }
+          }
+          if (normalizedRestriction.includes("allerg")) {
+            const allergen = this.extractAllergen(normalizedRestriction);
+            if (allergen) {
+              adaptedMeal = this.removeAllergen(adaptedMeal, allergen, adaptations);
+              needsAdaptation = true;
+            }
+          }
+        }
+        if (needsAdaptation && adaptations.length > 2) {
+          const mainRestriction = dietaryRestrictions[0];
+          adaptedMeal.title = `${mainRestriction}-Friendly ${adaptedMeal.title}`;
+        }
+        return {
+          meal: adaptedMeal,
+          adaptations,
+          isAdapted: needsAdaptation
+        };
+      }
+      /**
+       * Select the best substitute based on goal weights
+       */
+      selectBestSubstitute(substitutes, weights) {
+        if (substitutes.length === 1) return substitutes[0];
+        if (weights.cost > 0.7) {
+          const economical = ["beans", "lentils", "tofu", "oat milk", "rice flour"];
+          const costEffective = substitutes.find(
+            (sub) => economical.some((econ) => sub.includes(econ))
+          );
+          if (costEffective) return costEffective;
+        }
+        if (weights.health > 0.7) {
+          const healthy = ["tempeh", "chickpeas", "almond", "cashew", "quinoa"];
+          const nutritious = substitutes.find(
+            (sub) => healthy.some((h) => sub.includes(h))
+          );
+          if (nutritious) return nutritious;
+        }
+        return substitutes[0];
+      }
+      /**
+       * Extract allergen from allergy string
+       */
+      extractAllergen(allergyString) {
+        const commonAllergens = ["peanut", "tree nut", "milk", "egg", "soy", "wheat", "fish", "shellfish"];
+        const lower = allergyString.toLowerCase();
+        for (const allergen of commonAllergens) {
+          if (lower.includes(allergen)) {
+            return allergen;
+          }
+        }
+        const match = lower.match(/allergic to (\w+)/);
+        return match ? match[1] : null;
+      }
+      /**
+       * Remove allergen from meal
+       */
+      removeAllergen(meal, allergen, adaptations) {
+        const adaptedMeal = { ...meal };
+        const originalCount = adaptedMeal.ingredients.length;
+        adaptedMeal.ingredients = adaptedMeal.ingredients.filter((ingredient) => {
+          const contains = ingredient.toLowerCase().includes(allergen.toLowerCase());
+          if (contains) {
+            adaptations.push(`Removed ${ingredient} due to ${allergen} allergy`);
+          }
+          return !contains;
+        });
+        if (adaptedMeal.ingredients.length < originalCount * 0.7) {
+          adaptations.push(`Warning: Significant ingredients removed due to ${allergen} allergy`);
+        }
+        return adaptedMeal;
+      }
+      /**
+       * Validate that a meal complies with all dietary restrictions
+       */
+      validateCompliance(meal, dietaryRestrictions) {
+        const violations = [];
+        for (const restriction of dietaryRestrictions) {
+          const normalizedRestriction = restriction.toLowerCase().trim();
+          const restrictionChecks = {
+            "vegetarian": ["meat", "chicken", "beef", "pork", "fish", "seafood"],
+            "vegan": ["meat", "chicken", "beef", "pork", "fish", "seafood", "dairy", "milk", "cheese", "eggs", "honey"],
+            "gluten-free": ["wheat", "flour", "bread", "pasta", "gluten"],
+            "dairy-free": ["milk", "cheese", "butter", "cream", "yogurt", "dairy"],
+            "nut-free": ["nut", "almond", "cashew", "peanut", "walnut", "pecan"]
+          };
+          const forbiddenItems = restrictionChecks[normalizedRestriction] || [];
+          const ingredientText = meal.ingredients.join(" ").toLowerCase();
+          for (const forbidden of forbiddenItems) {
+            if (ingredientText.includes(forbidden)) {
+              if (forbidden === "nut" && ingredientText.includes("coconut")) {
+                continue;
+              }
+              violations.push(`Contains ${forbidden} (violates ${restriction})`);
+            }
+          }
+        }
+        return {
+          isCompliant: violations.length === 0,
+          violations
+        };
+      }
+    };
+  }
+});
+
 // server/WeightBasedMealPlanner.ts
 var WeightBasedMealPlanner_exports = {};
 __export(WeightBasedMealPlanner_exports, {
@@ -5794,10 +6623,30 @@ var init_WeightBasedMealPlanner = __esm({
       heroIngredientManager;
       // Will be injected
       constructor(dependencies) {
-        this.smartCulturalSelector = dependencies?.smartCulturalSelector || new MockCulturalSelector();
-        this.predeterminedMealLibrary = dependencies?.predeterminedMealLibrary || new MockMealLibrary();
-        this.mealAdaptationEngine = dependencies?.mealAdaptationEngine || new MockAdaptationEngine();
-        this.heroIngredientManager = dependencies?.heroIngredientManager || new MockHeroIngredientManager();
+        this.smartCulturalSelector = dependencies?.smartCulturalSelector;
+        this.predeterminedMealLibrary = dependencies?.predeterminedMealLibrary;
+        this.mealAdaptationEngine = dependencies?.mealAdaptationEngine;
+        this.heroIngredientManager = dependencies?.heroIngredientManager;
+        if (!this.smartCulturalSelector) {
+          Promise.resolve().then(() => (init_SmartCulturalSelector(), SmartCulturalSelector_exports)).then((module) => {
+            this.smartCulturalSelector = new module.SmartCulturalSelector();
+          }).catch(() => {
+            this.smartCulturalSelector = new MockCulturalSelector();
+          });
+        }
+        if (!this.mealAdaptationEngine) {
+          Promise.resolve().then(() => (init_MealAdaptationEngine(), MealAdaptationEngine_exports)).then((module) => {
+            this.mealAdaptationEngine = new module.MealAdaptationEngine();
+          }).catch(() => {
+            this.mealAdaptationEngine = new MockAdaptationEngine();
+          });
+        }
+        if (!this.predeterminedMealLibrary) {
+          this.predeterminedMealLibrary = new MockMealLibrary();
+        }
+        if (!this.heroIngredientManager) {
+          this.heroIngredientManager = new MockHeroIngredientManager();
+        }
       }
       /**
        * Generate complete meal plan using weight-based decision system
@@ -6220,14 +7069,48 @@ var init_WeightBasedMealPlanner = __esm({
           weight_rationale: meal.weight_rationale || "Generated using weight-based priorities"
         };
         if (request.profile.dietaryRestrictions.length > 0) {
-          const restrictionCompliance = this.checkDietaryCompliance(
-            validatedMeal.ingredients,
-            request.profile.dietaryRestrictions
-          );
-          if (!restrictionCompliance.isCompliant) {
-            console.warn("Meal may not comply with dietary restrictions:", restrictionCompliance.violations);
-            validatedMeal.dietary_warnings = restrictionCompliance.violations;
+          if (this.mealAdaptationEngine && this.mealAdaptationEngine.validateCompliance) {
+            const compliance = this.mealAdaptationEngine.validateCompliance(
+              validatedMeal,
+              request.profile.dietaryRestrictions
+            );
+            if (!compliance.isCompliant) {
+              console.warn("\u274C Meal violates dietary restrictions:", compliance.violations);
+              console.log("Attempting to adapt meal for compliance...");
+              const adaptationResult = await this.mealAdaptationEngine.adaptMealIfNeeded(
+                validatedMeal,
+                request.profile.dietaryRestrictions,
+                request.profile.goalWeights
+              );
+              if (adaptationResult.isAdapted) {
+                console.log("\u2705 Meal successfully adapted:", adaptationResult.adaptations);
+                return {
+                  ...adaptationResult.meal,
+                  adaptationNotes: adaptationResult.adaptations,
+                  dietary_compliant: true
+                };
+              } else {
+                validatedMeal.dietary_warnings = compliance.violations;
+                validatedMeal.dietary_compliant = false;
+              }
+            } else {
+              validatedMeal.dietary_compliant = true;
+            }
+          } else {
+            const restrictionCompliance = this.checkDietaryCompliance(
+              validatedMeal.ingredients,
+              request.profile.dietaryRestrictions
+            );
+            if (!restrictionCompliance.isCompliant) {
+              console.warn("Meal may not comply with dietary restrictions:", restrictionCompliance.violations);
+              validatedMeal.dietary_warnings = restrictionCompliance.violations;
+              validatedMeal.dietary_compliant = false;
+            } else {
+              validatedMeal.dietary_compliant = true;
+            }
           }
+        } else {
+          validatedMeal.dietary_compliant = true;
         }
         if (context.heroIngredients && context.heroIngredients.length > 0) {
           const heroIngredientsUsed = validatedMeal.ingredients.filter(
@@ -7834,21 +8717,21 @@ var init_SmartCulturalMealSelector = __esm({
 });
 
 // server/cuisineMasterlistMigration.ts
-import fs from "fs";
-import path from "path";
+import fs2 from "fs";
+import path2 from "path";
 async function loadMasterlist(preferV2 = true) {
-  const basePath = path.join(process.cwd(), "client", "src", "data");
+  const basePath = path2.join(process.cwd(), "client", "src", "data");
   if (preferV2) {
     try {
-      const v2Path = path.join(basePath, "cultural_cuisine_masterlist_v2.json");
-      const v2Data = await fs.promises.readFile(v2Path, "utf-8");
+      const v2Path = path2.join(basePath, "cultural_cuisine_masterlist_v2.json");
+      const v2Data = await fs2.promises.readFile(v2Path, "utf-8");
       return JSON.parse(v2Data);
     } catch (error) {
       console.log("\u{1F4C4} V2 masterlist not found, falling back to legacy format");
     }
   }
-  const legacyPath = path.join(basePath, "cultural_cuisine_masterlist.json");
-  const legacyData = await fs.promises.readFile(legacyPath, "utf-8");
+  const legacyPath = path2.join(basePath, "cultural_cuisine_masterlist.json");
+  const legacyData = await fs2.promises.readFile(legacyPath, "utf-8");
   return JSON.parse(legacyData);
 }
 var init_cuisineMasterlistMigration = __esm({
@@ -8281,14 +9164,14 @@ async function saveCulturalMeals(req, res) {
         message: "cuisine_name, meals_data, and summary_data are required"
       });
     }
-    const existingSave = await db2.select().from(userSavedCulturalMeals).where(
+    const existingSave = await db.select().from(userSavedCulturalMeals).where(
       and2(
         eq3(userSavedCulturalMeals.user_id, userId),
         eq3(userSavedCulturalMeals.cuisine_name, cuisine_name.toLowerCase())
       )
     ).limit(1);
     if (existingSave.length > 0) {
-      const [updatedSave] = await db2.update(userSavedCulturalMeals).set({
+      const [updatedSave] = await db.update(userSavedCulturalMeals).set({
         meals_data,
         summary_data,
         custom_name: custom_name || `${cuisine_name} Meal Collection`,
@@ -8302,7 +9185,7 @@ async function saveCulturalMeals(req, res) {
         saved_meals: updatedSave
       });
     } else {
-      const [newSave] = await db2.insert(userSavedCulturalMeals).values({
+      const [newSave] = await db.insert(userSavedCulturalMeals).values({
         user_id: userId,
         cuisine_name: cuisine_name.toLowerCase(),
         meals_data,
@@ -8333,13 +9216,1026 @@ var init_save_cultural_meals = __esm({
   }
 });
 
+// server/culturalMealRankingEngine.ts
+var culturalMealRankingEngine_exports = {};
+__export(culturalMealRankingEngine_exports, {
+  CulturalMealRankingEngine: () => CulturalMealRankingEngine,
+  culturalMealRankingEngine: () => culturalMealRankingEngine
+});
+var CulturalMealRankingEngine, culturalMealRankingEngine;
+var init_culturalMealRankingEngine = __esm({
+  "server/culturalMealRankingEngine.ts"() {
+    "use strict";
+    init_cultureCacheManager();
+    CulturalMealRankingEngine = class {
+      structuredMeals = [];
+      lastCacheUpdate = 0;
+      cachedCultures = [];
+      CACHE_TTL = 5 * 60 * 1e3;
+      // 5 minutes
+      constructor() {
+        console.log("\u{1F3AF} Cultural Meal Ranking Engine initialized");
+      }
+      /**
+       * Convert cached cultural cuisine data to structured meal format
+       */
+      async buildStructuredMealDatabase(userId, cultures) {
+        console.log(`\u{1F4DA} Building structured meal database for cultures: ${cultures.join(", ")}`);
+        const culturalData = await getCachedCulturalCuisine(userId, cultures, { useBatch: true, forceRefresh: true });
+        console.log(`\u{1F4CA} Cultural data keys received: ${culturalData ? Object.keys(culturalData).join(", ") : "null"}`);
+        if (!culturalData) {
+          console.log("\u274C No cultural data available");
+          return [];
+        }
+        const structuredMeals = [];
+        let mealCounter = 0;
+        for (const [cuisine, cultureData] of Object.entries(culturalData)) {
+          console.log(`\u{1F37D}\uFE0F Processing ${cultureData.meals?.length || 0} meals from ${cuisine}`);
+          if (!cultureData.meals) continue;
+          for (const meal of cultureData.meals) {
+            const structuredMeal = {
+              id: `${cuisine.toLowerCase()}_${++mealCounter}`,
+              name: meal.name,
+              cuisine,
+              description: meal.description || "",
+              // Calculate core scores from cached data
+              authenticity_score: this.calculateAuthenticityScore(meal, cultureData),
+              health_score: this.calculateHealthScore(meal),
+              cost_score: this.calculateCostScore(meal),
+              time_score: this.calculateTimeScore(meal),
+              // Extract metadata
+              cooking_techniques: meal.cooking_techniques || this.extractCookingTechniques(meal.description),
+              ingredients: meal.full_ingredients || meal.healthy_ingredients || [],
+              healthy_modifications: meal.healthy_modifications || [],
+              estimated_prep_time: this.estimatePrepTime(meal),
+              estimated_cook_time: this.estimateCookTime(meal),
+              difficulty_level: this.estimateDifficulty(meal),
+              // Dietary compliance analysis
+              dietary_tags: this.analyzeDietaryTags(meal),
+              egg_free: this.isEggFree(meal),
+              vegetarian: this.isVegetarian(meal),
+              vegan: this.isVegan(meal),
+              gluten_free: this.isGlutenFree(meal),
+              dairy_free: this.isDairyFree(meal),
+              // Source metadata
+              source_quality: cultureData.source_quality_score || 0.8,
+              cache_data: cultureData
+            };
+            structuredMeals.push(structuredMeal);
+          }
+        }
+        console.log(`\u2705 Built structured database with ${structuredMeals.length} meals`);
+        return structuredMeals;
+      }
+      /**
+       * Score a meal based on user's cultural profile and weights
+       */
+      scoreMeal(meal, userProfile) {
+        const culturalPreference = userProfile.cultural_preferences[meal.cuisine] || 0.5;
+        const cultural_score = culturalPreference * meal.authenticity_score;
+        const component_scores = {
+          cultural_score,
+          health_score: meal.health_score,
+          cost_score: meal.cost_score,
+          time_score: meal.time_score
+        };
+        const total_score = (userProfile.priority_weights.cultural * cultural_score + userProfile.priority_weights.health * meal.health_score + userProfile.priority_weights.cost * meal.cost_score + userProfile.priority_weights.time * meal.time_score) / (userProfile.priority_weights.cultural + userProfile.priority_weights.health + userProfile.priority_weights.cost + userProfile.priority_weights.time);
+        const ranking_explanation = this.generateRankingExplanation(meal, component_scores, userProfile);
+        return {
+          meal,
+          total_score,
+          component_scores,
+          ranking_explanation
+        };
+      }
+      /**
+       * Get top-ranked meals for a user with dietary filtering
+       */
+      async getRankedMeals(userId, userProfile, limit = 20, relevanceThreshold = 0.8) {
+        const cultures = Object.keys(userProfile.cultural_preferences);
+        console.log(`\u{1F3AF} Requested cultures: ${cultures.join(", ")}`);
+        console.log(`\u{1F4CA} Current cache has ${this.structuredMeals.length} meals`);
+        console.log(`\u23F0 Cache age: ${Date.now() - this.lastCacheUpdate}ms (TTL: ${this.CACHE_TTL}ms)`);
+        const culturesDifferent = JSON.stringify(cultures.sort()) !== JSON.stringify(this.cachedCultures.sort());
+        if (this.structuredMeals.length === 0 || Date.now() - this.lastCacheUpdate > this.CACHE_TTL || culturesDifferent) {
+          console.log(`\u{1F504} Refreshing meal database. Cultures different: ${culturesDifferent}`);
+          console.log(`\u{1F9F9} Clearing old cache of ${this.structuredMeals.length} meals`);
+          this.structuredMeals = [];
+          this.structuredMeals = await this.buildStructuredMealDatabase(userId, cultures);
+          this.cachedCultures = [...cultures];
+          this.lastCacheUpdate = Date.now();
+          console.log(`\u2705 New cache built with ${this.structuredMeals.length} meals for ${cultures.join(", ")}`);
+        }
+        console.log(`\u{1F50D} Ranking ${this.structuredMeals.length} meals for user preferences`);
+        const filteredMeals = this.structuredMeals.filter(
+          (meal) => this.meetsDietaryRestrictions(meal, userProfile.dietary_restrictions)
+        );
+        console.log(`\u2705 ${filteredMeals.length} meals after dietary filtering`);
+        const scoredMeals = filteredMeals.map((meal) => this.scoreMeal(meal, userProfile));
+        scoredMeals.sort((a, b) => b.total_score - a.total_score);
+        const maxScore = scoredMeals[0]?.total_score || 0;
+        const relevantMeals = scoredMeals.filter(
+          (meal) => meal.total_score >= relevanceThreshold * maxScore
+        );
+        console.log(`\u{1F3AF} ${relevantMeals.length} meals within relevance threshold (${relevanceThreshold})`);
+        return relevantMeals.slice(0, limit);
+      }
+      // Helper methods for scoring
+      calculateAuthenticityScore(meal, cultureData) {
+        let score = 0.7;
+        if (cultureData.summary?.common_healthy_ingredients) {
+          const traditionalIngredients = cultureData.summary.common_healthy_ingredients.filter(
+            (ingredient) => meal.description?.toLowerCase().includes(ingredient.toLowerCase()) || meal.name?.toLowerCase().includes(ingredient.toLowerCase())
+          );
+          score += Math.min(traditionalIngredients.length * 0.1, 0.3);
+        }
+        return Math.min(score, 1);
+      }
+      calculateHealthScore(meal) {
+        let score = 0.4;
+        const description = meal.description?.toLowerCase() || "";
+        const name = meal.name?.toLowerCase() || "";
+        if (description.includes("steamed") || description.includes("grilled")) score += 0.3;
+        if (description.includes("fried") || description.includes("deep-fried")) score -= 0.2;
+        if (description.includes("boiled") || description.includes("poached")) score += 0.2;
+        if (description.includes("vegetable") || description.includes("tofu")) score += 0.2;
+        if (description.includes("lean") || description.includes("fish")) score += 0.25;
+        if (description.includes("oil") || description.includes("butter")) score -= 0.1;
+        if (description.includes("cream") || description.includes("cheese")) score -= 0.15;
+        if (name.includes("soup") || name.includes("salad")) score += 0.2;
+        if (name.includes("dumpling") || name.includes("roll")) score += 0.1;
+        if (name.includes("duck") || name.includes("pork")) score -= 0.1;
+        return Math.max(0.3, Math.min(score, 1));
+      }
+      calculateCostScore(meal) {
+        let score = 0.7;
+        const description = meal.description?.toLowerCase() || "";
+        const name = meal.name?.toLowerCase() || "";
+        if (description.includes("duck") || description.includes("beef")) score -= 0.2;
+        if (description.includes("saffron") || description.includes("truffle")) score -= 0.3;
+        if (description.includes("wine") || description.includes("cream")) score -= 0.1;
+        if (description.includes("seafood") || description.includes("fish")) score -= 0.15;
+        if (description.includes("tofu") || description.includes("bean")) score += 0.2;
+        if (description.includes("noodle") || description.includes("rice")) score += 0.15;
+        if (description.includes("vegetable") || description.includes("cabbage")) score += 0.1;
+        if (description.includes("egg") || description.includes("chicken")) score += 0.1;
+        if (description.includes("stir-fry") || description.includes("steamed")) score += 0.1;
+        if (description.includes("soup") || description.includes("boiled")) score += 0.15;
+        if (description.includes("stuffed") || description.includes("marinated")) score -= 0.1;
+        if (description.includes("slow-cooked") || description.includes("braised")) score -= 0.05;
+        return Math.max(0.3, Math.min(score, 1));
+      }
+      calculateTimeScore(meal) {
+        let score = 0.5;
+        const description = meal.description?.toLowerCase() || "";
+        const name = meal.name?.toLowerCase() || "";
+        if (description.includes("stir-fry") || description.includes("stir-fried")) score += 0.4;
+        if (description.includes("steamed") && !description.includes("slow")) score += 0.3;
+        if (description.includes("grilled") || description.includes("saut\xE9ed")) score += 0.3;
+        if (description.includes("boiled") || description.includes("poached")) score += 0.2;
+        if (description.includes("braised") || description.includes("slow-cook")) score -= 0.3;
+        if (description.includes("roasted") || description.includes("baked")) score -= 0.2;
+        if (description.includes("marinated") || description.includes("cured")) score -= 0.4;
+        if (description.includes("stuffed") || description.includes("layered")) score -= 0.2;
+        if (name.includes("soup") || name.includes("noodle")) score += 0.1;
+        if (name.includes("dumpling") || name.includes("spring roll")) score += 0.1;
+        if (name.includes("duck") || name.includes("whole")) score -= 0.3;
+        if (name.includes("risotto") || name.includes("lasagne")) score -= 0.2;
+        if (description.includes("homemade") || description.includes("fresh pasta")) score -= 0.1;
+        if (description.includes("sauce") && description.includes("from scratch")) score -= 0.15;
+        return Math.max(0.2, Math.min(score, 1));
+      }
+      extractCookingTechniques(description) {
+        const techniques = [];
+        const text2 = description.toLowerCase();
+        const techniqueKeywords = [
+          "stir-fry",
+          "steam",
+          "boil",
+          "saute",
+          "grill",
+          "roast",
+          "braise",
+          "fry",
+          "bake",
+          "simmer",
+          "poach",
+          "blanch"
+        ];
+        for (const technique of techniqueKeywords) {
+          if (text2.includes(technique)) {
+            techniques.push(technique);
+          }
+        }
+        return techniques.length > 0 ? techniques : ["saute"];
+      }
+      estimatePrepTime(meal) {
+        const ingredientCount = meal.full_ingredients?.length || 5;
+        return Math.min(ingredientCount * 2, 20);
+      }
+      estimateCookTime(meal) {
+        const techniques = meal.cooking_techniques || this.extractCookingTechniques(meal.description);
+        if (techniques.includes("stir-fry")) return 10;
+        if (techniques.includes("steam")) return 15;
+        if (techniques.includes("saute")) return 12;
+        if (techniques.includes("braise")) return 45;
+        if (techniques.includes("roast")) return 30;
+        return 20;
+      }
+      estimateDifficulty(meal) {
+        const techniques = meal.cooking_techniques || this.extractCookingTechniques(meal.description);
+        const ingredientCount = meal.full_ingredients?.length || 5;
+        let difficulty = 2;
+        if (techniques.includes("braise") || techniques.includes("roast")) difficulty += 1;
+        if (ingredientCount > 10) difficulty += 0.5;
+        if (meal.healthy_modifications && meal.healthy_modifications.length > 2) difficulty += 0.5;
+        return Math.min(difficulty, 5);
+      }
+      analyzeDietaryTags(meal) {
+        const tags = [];
+        const text2 = `${meal.name} ${meal.description}`.toLowerCase();
+        if (this.isVegetarian(meal)) tags.push("vegetarian");
+        if (this.isVegan(meal)) tags.push("vegan");
+        if (this.isGlutenFree(meal)) tags.push("gluten-free");
+        if (this.isDairyFree(meal)) tags.push("dairy-free");
+        if (this.isEggFree(meal)) tags.push("egg-free");
+        return tags;
+      }
+      isEggFree(meal) {
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const eggKeywords = ["egg", "eggs", "mayonnaise", "mayo"];
+        return !eggKeywords.some((keyword) => text2.includes(keyword));
+      }
+      isVegetarian(meal) {
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const meatKeywords = ["chicken", "beef", "pork", "fish", "meat", "lamb", "turkey"];
+        return !meatKeywords.some((keyword) => text2.includes(keyword));
+      }
+      isVegan(meal) {
+        if (!this.isVegetarian(meal)) return false;
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const animalProducts = ["dairy", "milk", "cheese", "butter", "cream", "yogurt", "honey"];
+        return !animalProducts.some((product) => text2.includes(product));
+      }
+      isGlutenFree(meal) {
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const glutenKeywords = ["wheat", "flour", "bread", "pasta", "noodles", "soy sauce"];
+        return !glutenKeywords.some((keyword) => text2.includes(keyword));
+      }
+      isDairyFree(meal) {
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const dairyKeywords = ["milk", "cheese", "butter", "cream", "yogurt", "dairy"];
+        return !dairyKeywords.some((keyword) => text2.includes(keyword));
+      }
+      meetsDietaryRestrictions(meal, restrictions) {
+        for (const restriction of restrictions) {
+          const lowerRestriction = restriction.toLowerCase();
+          if (lowerRestriction.includes("egg") && !meal.egg_free) return false;
+          if (lowerRestriction.includes("dairy") && !meal.dairy_free) return false;
+          if (lowerRestriction.includes("gluten") && !meal.gluten_free) return false;
+          if (lowerRestriction.includes("vegetarian") && !meal.vegetarian) return false;
+          if (lowerRestriction.includes("vegan") && !meal.vegan) return false;
+        }
+        return true;
+      }
+      generateRankingExplanation(meal, scores, userProfile) {
+        const explanations = [];
+        if (scores.cultural_score > 0.8) {
+          explanations.push(`High cultural match (${(scores.cultural_score * 100).toFixed(0)}%)`);
+        }
+        if (meal.authenticity_score > 0.8) {
+          explanations.push(`Authentic ${meal.cuisine} recipe`);
+        }
+        if (scores.health_score > 0.7) {
+          explanations.push(`Good health score`);
+        }
+        if (scores.cost_score > 0.7) {
+          explanations.push(`Cost-efficient ingredients`);
+        }
+        if (scores.time_score > 0.7) {
+          explanations.push(`Quick preparation`);
+        }
+        return explanations.join(", ") || "Balanced meal option";
+      }
+    };
+    culturalMealRankingEngine = new CulturalMealRankingEngine();
+  }
+});
+
+// server/llamaMealRanker.ts
+var llamaMealRanker_exports = {};
+__export(llamaMealRanker_exports, {
+  LlamaMealRanker: () => LlamaMealRanker,
+  llamaMealRanker: () => llamaMealRanker
+});
+import fetch4 from "node-fetch";
+var LlamaMealRanker, llamaMealRanker;
+var init_llamaMealRanker = __esm({
+  "server/llamaMealRanker.ts"() {
+    "use strict";
+    LlamaMealRanker = class {
+      apiEndpoint;
+      apiKey;
+      model = "gpt-4o-mini";
+      // OpenAI GPT-4o mini model
+      constructor() {
+        this.apiEndpoint = "https://api.openai.com/v1/chat/completions";
+        this.apiKey = process.env.OPENAI_API_KEY || "";
+        if (!this.apiKey) {
+          console.warn("\u26A0\uFE0F OPENAI_API_KEY not found. Meal ranking requires API key.");
+        }
+      }
+      /**
+       * Rank meals using Llama 3 8B with weight-based intelligence
+       */
+      async rankMeals(request) {
+        const startTime = Date.now();
+        console.log(`\u{1F916} Ranking ${request.meals.length} meals with GPT-4o mini`);
+        console.log(`\u{1F511} API Key available: ${this.apiKey ? "YES" : "NO"}`);
+        console.log(`\u{1F517} Using endpoint: ${this.apiEndpoint}`);
+        if (!this.apiKey) {
+          throw new Error("OPENAI_API_KEY is required for GPT-4o mini ranking. Fallback system removed.");
+        }
+        const prompt = this.buildRankingPrompt(request);
+        console.log(`\u{1F4DD} Prompt built, calling OpenAI API...`);
+        console.log(`\u{1F4CF} Prompt length: ${prompt.length} characters`);
+        const apiStartTime = Date.now();
+        const response = await this.callLlamaAPI(prompt);
+        const apiDuration = Date.now() - apiStartTime;
+        console.log(`\u2705 OpenAI API response received in ${apiDuration}ms`);
+        console.log(`\u{1F4CA} Response keys: ${Object.keys(response).join(", ")}`);
+        const rankedMeals = this.parseRankingResponse(response, request.meals);
+        return {
+          rankedMeals,
+          reasoning: response.reasoning || "Ranked by cultural authenticity, health, cost, and time preferences",
+          processingTime: Date.now() - startTime
+        };
+      }
+      /**
+       * Build intelligent ranking prompt for AI to score and rank meals
+       */
+      buildRankingPrompt(request) {
+        const { meals, userProfile, maxMeals = 9 } = request;
+        const culturalPrefs = Object.entries(userProfile.cultural_preferences).map(([culture, weight]) => `${culture}: ${(weight * 100).toFixed(0)}%`).join(", ");
+        const weights = userProfile.priority_weights;
+        const weightsList = [
+          `Cultural: ${(weights.cultural * 100).toFixed(0)}%`,
+          `Health: ${(weights.health * 100).toFixed(0)}%`,
+          `Cost: ${(weights.cost * 100).toFixed(0)}%`,
+          `Time: ${(weights.time * 100).toFixed(0)}%`
+        ].join(", ");
+        const mealOptions = meals.slice(0, 15).map((mealScore, index2) => {
+          const meal = mealScore.meal;
+          return `${index2 + 1}. "${meal.name}" (${meal.cuisine})
+   - Description: ${meal.description}
+   - Authenticity Score: ${(meal.authenticity_score * 100).toFixed(0)}%`;
+        }).join("\n\n");
+        return `You are a meal ranking expert. Score and rank the best ${maxMeals} meals for this user profile.
+
+USER PREFERENCES:
+- Cultural Preferences: ${culturalPrefs}
+- Priority Weights: ${weightsList}
+- Dietary Restrictions: ${userProfile.dietary_restrictions.join(", ") || "None"}
+
+SCORING INSTRUCTIONS:
+For each meal, YOU must calculate scores (0-100%) for:
+1. Cultural Score: How well it matches user's cultural preference (use authenticity score \xD7 cultural preference)
+2. Health Score: Based on cooking method and ingredients (steamed/grilled=high, fried=low, vegetables=high, heavy sauces=low)
+3. Cost Score: Based on ingredients (simple ingredients=high, premium ingredients=low)
+4. Time Score: Based on preparation complexity (stir-fry/simple=high, slow-cooked/complex=low)
+
+Then calculate Total Score using the user's weights:
+Total = (Cultural Weight \xD7 Cultural Score + Health Weight \xD7 Health Score + Cost Weight \xD7 Cost Score + Time Weight \xD7 Time Score) / Sum of Weights
+
+MEAL OPTIONS:
+${mealOptions}
+
+CRITICAL: Return ONLY a JSON response with NO calculation strings, NO formulas, NO math expressions.
+Use this EXACT format with abbreviated keys to save space:
+{
+  "meals": [
+    {"id": 1, "cs": 85, "hs": 70, "cos": 90, "ts": 60, "tot": 78}
+  ],
+  "reason": "Brief explanation"
+}
+
+Keys: cs=cultural score, hs=health score, cos=cost score, ts=time score, tot=total score
+Score ALL ${maxMeals} meals. Numbers only, NO text in meal objects.`;
+      }
+      /**
+       * Call OpenAI API for GPT-4o mini inference
+       */
+      async callLlamaAPI(prompt) {
+        const response = await fetch4(this.apiEndpoint, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: this.model,
+            messages: [
+              {
+                role: "system",
+                content: "You are a meal ranking expert. Respond only with valid JSON."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            max_tokens: 2500,
+            temperature: 0.3,
+            // Low temperature for consistent ranking
+            response_format: { type: "json_object" }
+            // Force JSON response for GPT-4o mini
+          })
+        });
+        if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorBody}`);
+        }
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+        try {
+          return JSON.parse(content);
+        } catch (parseError) {
+          console.error("Failed to parse OpenAI response:", content);
+          throw new Error("Invalid JSON response from OpenAI");
+        }
+      }
+      /**
+       * Parse AI response and create scored meals
+       */
+      parseRankingResponse(aiResponse, originalMeals) {
+        if (aiResponse.ranked_meal_ids) {
+          const rankedMeals2 = [];
+          for (const mealId of aiResponse.ranked_meal_ids) {
+            const mealIndex = mealId - 1;
+            if (mealIndex >= 0 && mealIndex < originalMeals.length) {
+              rankedMeals2.push(originalMeals[mealIndex]);
+            }
+          }
+          return rankedMeals2;
+        }
+        const mealsArray = aiResponse.meals || aiResponse.ranked_meals;
+        if (!Array.isArray(mealsArray)) {
+          console.error("Invalid AI response format:", aiResponse);
+          throw new Error("No meals array found in AI response");
+        }
+        const rankedMeals = [];
+        for (const meal of mealsArray) {
+          const mealIndex = meal.id - 1;
+          if (mealIndex >= 0 && mealIndex < originalMeals.length) {
+            const originalMeal = originalMeals[mealIndex];
+            let culturalScore, healthScore, costScore, timeScore, totalScore;
+            if (meal.cs !== void 0) {
+              culturalScore = meal.cs;
+              healthScore = meal.hs;
+              costScore = meal.cos;
+              timeScore = meal.ts;
+              totalScore = meal.tot;
+            } else if (meal.scores) {
+              culturalScore = meal.scores.cultural;
+              healthScore = meal.scores.health;
+              costScore = meal.scores.cost;
+              timeScore = meal.scores.time;
+              totalScore = meal.total_score;
+            } else {
+              console.warn("Unknown meal format:", meal);
+              continue;
+            }
+            const aiScoredMeal = {
+              meal: originalMeal.meal,
+              total_score: totalScore / 100,
+              // Convert from percentage to 0-1
+              component_scores: {
+                cultural_score: culturalScore / 100,
+                health_score: healthScore / 100,
+                cost_score: costScore / 100,
+                time_score: timeScore / 100
+              },
+              ranking_explanation: `AI Score: ${totalScore}% (C:${culturalScore}% H:${healthScore}% $:${costScore}% T:${timeScore}%)`
+            };
+            rankedMeals.push(aiScoredMeal);
+          }
+        }
+        rankedMeals.sort((a, b) => b.total_score - a.total_score);
+        console.log(`\u2705 GPT-4o mini scored and ranked ${rankedMeals.length} meals`);
+        console.log(`\u{1F3AF} Reasoning: ${aiResponse.reason || aiResponse.reasoning || "No reasoning provided"}`);
+        return rankedMeals;
+      }
+      /**
+       * Fallback ranking when Llama API is unavailable
+       */
+      fallbackRanking(request, startTime) {
+        console.log("\u{1F504} Using fallback ranking algorithm");
+        const { meals, userProfile, maxMeals = 9 } = request;
+        const weights = userProfile.priority_weights;
+        const sortedMeals = [...meals].sort((a, b) => {
+          const priorityEntries = Object.entries(weights).sort(([, a2], [, b2]) => b2 - a2);
+          const topPriority = priorityEntries[0][0];
+          const secondPriority = priorityEntries[1][0];
+          let aScore = a.total_score;
+          let bScore = b.total_score;
+          if (topPriority === "cultural") {
+            aScore += a.component_scores.cultural_score * 0.5;
+            bScore += b.component_scores.cultural_score * 0.5;
+          } else if (topPriority === "health") {
+            aScore += a.component_scores.health_score * 0.5;
+            bScore += b.component_scores.health_score * 0.5;
+          } else if (topPriority === "cost") {
+            aScore += a.component_scores.cost_score * 0.5;
+            bScore += b.component_scores.cost_score * 0.5;
+          } else if (topPriority === "time") {
+            aScore += a.component_scores.time_score * 0.5;
+            bScore += b.component_scores.time_score * 0.5;
+          }
+          return bScore - aScore;
+        });
+        return {
+          rankedMeals: sortedMeals.slice(0, maxMeals),
+          reasoning: `Fallback ranking by ${Object.entries(weights).sort(([, a], [, b]) => b - a)[0][0]} priority`,
+          processingTime: Date.now() - startTime
+        };
+      }
+      /**
+       * Quick meal selection for meal plan generation - NO FALLBACK VERSION
+       */
+      async selectMealsForPlan(userId, userProfile, mealCount = 9) {
+        console.log(`\u{1F3AF} selectMealsForPlan called for ${mealCount} meals`);
+        const { culturalMealRankingEngine: culturalMealRankingEngine2 } = await Promise.resolve().then(() => (init_culturalMealRankingEngine(), culturalMealRankingEngine_exports));
+        const scoredMeals = await culturalMealRankingEngine2.getRankedMeals(
+          userId,
+          userProfile,
+          mealCount * 2,
+          // Get extra meals for better Llama selection
+          0.7
+          // Lower threshold for more variety
+        );
+        console.log(`\u{1F4CA} Got ${scoredMeals.length} scored meals from ranking engine`);
+        if (scoredMeals.length === 0) {
+          throw new Error("No scored meals available from cultural ranking engine");
+        }
+        console.log(`\u{1F916} Calling GPT-4o mini rankMeals with ${scoredMeals.length} meals...`);
+        const rankingResult = await this.rankMeals({
+          meals: scoredMeals,
+          userProfile,
+          maxMeals: mealCount
+        });
+        console.log(`\u{1F3AF} GPT-4o mini selected ${rankingResult.rankedMeals.length} meals: ${rankingResult.reasoning}`);
+        return rankingResult.rankedMeals.map((score) => score.meal);
+      }
+      /**
+       * Rank meals in parallel batches for faster processing
+       */
+      async rankMealsInParallel(request) {
+        const startTime = Date.now();
+        const { meals, userProfile, maxMeals = 10 } = request;
+        console.log(`\u{1F680} Starting parallel ranking of ${meals.length} meals in batches of 2`);
+        const batches = [];
+        for (let i = 0; i < meals.length; i += 2) {
+          batches.push(meals.slice(i, i + 2));
+        }
+        console.log(`\u{1F4E6} Created ${batches.length} batches for parallel processing`);
+        const batchPromises = batches.map(async (batch, batchIndex) => {
+          console.log(`\u{1F504} Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} meals`);
+          try {
+            const batchRequest = {
+              meals: batch,
+              userProfile,
+              maxMeals: batch.length
+            };
+            const batchResult = await this.rankMeals(batchRequest);
+            console.log(`\u2705 Batch ${batchIndex + 1} completed with ${batchResult.rankedMeals.length} meals`);
+            return batchResult.rankedMeals;
+          } catch (error) {
+            console.error(`\u274C Batch ${batchIndex + 1} failed:`, error);
+            console.error(`\u274C Failed batch contained meals:`, batch.map((m) => m.meal.name));
+            return [];
+          }
+        });
+        const batchResults = await Promise.all(batchPromises);
+        console.log(`\u{1F3AF} All ${batches.length} batches completed`);
+        const allRankedMeals = batchResults.flat();
+        const finalRankedMeals = allRankedMeals.sort((a, b) => b.total_score - a.total_score).slice(0, maxMeals);
+        const totalProcessingTime = Date.now() - startTime;
+        console.log(`\u{1F3C1} Parallel ranking complete: ${finalRankedMeals.length} meals in ${totalProcessingTime}ms`);
+        return {
+          rankedMeals: finalRankedMeals,
+          reasoning: `Parallel AI ranking of ${meals.length} meals using GPT-4o mini with user weight preferences`,
+          processingTime: totalProcessingTime
+        };
+      }
+    };
+    llamaMealRanker = new LlamaMealRanker();
+  }
+});
+
+// server/enhancedMealPlanGenerator.ts
+var enhancedMealPlanGenerator_exports = {};
+__export(enhancedMealPlanGenerator_exports, {
+  EnhancedMealPlanGenerator: () => EnhancedMealPlanGenerator,
+  enhancedMealPlanGenerator: () => enhancedMealPlanGenerator
+});
+var EnhancedMealPlanGenerator, enhancedMealPlanGenerator;
+var init_enhancedMealPlanGenerator = __esm({
+  "server/enhancedMealPlanGenerator.ts"() {
+    "use strict";
+    init_llamaMealRanker();
+    EnhancedMealPlanGenerator = class {
+      /**
+       * Generate intelligent meal plan using cultural ranking + Llama selection
+       */
+      async generateMealPlan(request) {
+        const startTime = Date.now();
+        console.log(`\u{1F37D}\uFE0F Generating enhanced meal plan: ${request.numDays} days, ${request.mealsPerDay} meals/day`);
+        try {
+          const totalMeals = request.numDays * request.mealsPerDay;
+          const selectedMeals = await llamaMealRanker.selectMealsForPlan(
+            request.userId,
+            request.userProfile,
+            totalMeals
+          );
+          if (selectedMeals.length === 0) {
+            throw new Error("No meals available matching user preferences");
+          }
+          console.log(`\u2705 Selected ${selectedMeals.length} meals for plan`);
+          const mealPlan = this.buildMealPlanStructure(
+            selectedMeals,
+            request.numDays,
+            request.mealsPerDay,
+            request.servingSize || 1
+          );
+          const metadata = {
+            type: "enhanced-cultural-ranking-v1",
+            cultural_ranking_used: true,
+            llama_ranking_used: true,
+            meals_analyzed: selectedMeals.length,
+            selection_reasoning: this.generateSelectionReasoning(selectedMeals, request.userProfile),
+            processing_time_ms: Date.now() - startTime
+          };
+          return {
+            meal_plan: mealPlan,
+            generation_metadata: metadata
+          };
+        } catch (error) {
+          console.error("\u274C Enhanced meal plan generation failed:", error);
+          throw error;
+        }
+      }
+      /**
+       * Build structured meal plan from selected meals
+       */
+      buildMealPlanStructure(meals, numDays, mealsPerDay, servingSize) {
+        const mealPlan = {};
+        const mealTypes = ["breakfast", "lunch", "dinner", "snack", "dessert"];
+        let mealIndex = 0;
+        for (let day = 1; day <= numDays; day++) {
+          const dayKey = `day_${day}`;
+          mealPlan[dayKey] = {};
+          for (let mealNum = 0; mealNum < mealsPerDay; mealNum++) {
+            if (mealIndex >= meals.length) {
+              mealIndex = 0;
+            }
+            const meal = meals[mealIndex];
+            const mealType = mealTypes[mealNum] || `meal_${mealNum + 1}`;
+            mealPlan[dayKey][mealType] = {
+              title: meal.name,
+              description: meal.description,
+              cuisine: meal.cuisine,
+              ingredients: this.scaleIngredients(meal.ingredients, servingSize),
+              cooking_techniques: meal.cooking_techniques,
+              cook_time_minutes: meal.estimated_prep_time + meal.estimated_cook_time,
+              difficulty: meal.difficulty_level,
+              nutrition: this.estimateNutrition(meal, servingSize),
+              cultural_authenticity: meal.authenticity_score,
+              ranking_explanation: `Selected for ${meal.cuisine} authenticity and weight-based preferences`,
+              source: `Cultural cache + Llama ranking`
+            };
+            mealIndex++;
+          }
+        }
+        return mealPlan;
+      }
+      /**
+       * Scale ingredients for serving size
+       */
+      scaleIngredients(ingredients, servingSize) {
+        if (servingSize === 1) return ingredients;
+        return ingredients.map((ingredient) => {
+          if (servingSize > 1) {
+            return `${ingredient} (x${servingSize})`;
+          }
+          return ingredient;
+        });
+      }
+      /**
+       * Estimate nutrition info (mock implementation)
+       */
+      estimateNutrition(meal, servingSize) {
+        const baseCalories = 400;
+        const baseProtein = 25;
+        const baseCarbs = 45;
+        const baseFat = 15;
+        let calorieMultiplier = 1;
+        if (meal.cuisine.toLowerCase().includes("italian")) calorieMultiplier = 1.2;
+        if (meal.cuisine.toLowerCase().includes("chinese")) calorieMultiplier = 0.9;
+        return {
+          calories: Math.round(baseCalories * calorieMultiplier * servingSize),
+          protein_g: Math.round(baseProtein * servingSize),
+          carbs_g: Math.round(baseCarbs * servingSize),
+          fat_g: Math.round(baseFat * servingSize)
+        };
+      }
+      /**
+       * Generate human-readable selection reasoning
+       */
+      generateSelectionReasoning(meals, userProfile) {
+        const cuisines = [...new Set(meals.map((m) => m.cuisine))];
+        const avgAuthenticity = meals.reduce((sum, m) => sum + m.authenticity_score, 0) / meals.length;
+        const topPriority = Object.entries(userProfile.priority_weights).sort(([, a], [, b]) => b - a)[0][0];
+        return `Selected ${meals.length} meals from ${cuisines.join(", ")} cuisines. Average authenticity: ${(avgAuthenticity * 100).toFixed(0)}%. Prioritized ${topPriority}-focused selections using Llama 3 8B ranking.`;
+      }
+      /**
+       * Convert user profile data to UserCulturalProfile format
+       */
+      static buildUserProfile(profile, goalWeights) {
+        const cultural_preferences = {};
+        if (profile.cultural_background) {
+          for (const culture of profile.cultural_background) {
+            cultural_preferences[culture] = 0.9;
+          }
+        }
+        if (profile.preferences) {
+          for (const pref of profile.preferences) {
+            if (pref.toLowerCase().includes("asian")) {
+              cultural_preferences["Chinese"] = 0.8;
+              cultural_preferences["Japanese"] = 0.7;
+            }
+          }
+        }
+        return {
+          cultural_preferences,
+          priority_weights: {
+            cultural: goalWeights?.cultural || 0.5,
+            health: goalWeights?.health || 0.5,
+            cost: goalWeights?.cost || 0.5,
+            time: goalWeights?.time || 0.5,
+            variety: goalWeights?.variety || 0.5
+          },
+          dietary_restrictions: this.extractDietaryRestrictions(profile),
+          preferences: profile.preferences || []
+        };
+      }
+      static extractDietaryRestrictions(profile) {
+        const restrictions = [];
+        if (profile.preferences) {
+          for (const pref of profile.preferences) {
+            const lower = pref.toLowerCase();
+            if (lower.includes("egg-free") || lower.includes("no egg")) {
+              restrictions.push("Egg-Free");
+            }
+            if (lower.includes("dairy-free") || lower.includes("no dairy")) {
+              restrictions.push("Dairy-Free");
+            }
+            if (lower.includes("gluten-free")) {
+              restrictions.push("Gluten-Free");
+            }
+            if (lower.includes("vegetarian")) {
+              restrictions.push("Vegetarian");
+            }
+            if (lower.includes("vegan")) {
+              restrictions.push("Vegan");
+            }
+          }
+        }
+        if (profile.members) {
+          for (const member of profile.members) {
+            if (member.dietaryRestrictions) {
+              restrictions.push(...member.dietaryRestrictions);
+            }
+          }
+        }
+        return [...new Set(restrictions)];
+      }
+    };
+    enhancedMealPlanGenerator = new EnhancedMealPlanGenerator();
+  }
+});
+
+// server/intelligentMealBaseSelector.ts
+var intelligentMealBaseSelector_exports = {};
+__export(intelligentMealBaseSelector_exports, {
+  IntelligentMealBaseSelector: () => IntelligentMealBaseSelector,
+  intelligentMealBaseSelector: () => intelligentMealBaseSelector
+});
+var IntelligentMealBaseSelector, intelligentMealBaseSelector;
+var init_intelligentMealBaseSelector = __esm({
+  "server/intelligentMealBaseSelector.ts"() {
+    "use strict";
+    init_llamaMealRanker();
+    init_culturalMealRankingEngine();
+    IntelligentMealBaseSelector = class {
+      /**
+       * Find the best base meal that aligns with user's questionnaire-derived weights
+       */
+      async findOptimalBaseMeal(userId, userProfile, preferredCuisines = []) {
+        console.log("\u{1F3AF} Finding optimal base meal for user preferences");
+        console.log("\u{1F50D} User weights:", userProfile.priority_weights);
+        console.log("\u{1F30D} Preferred cuisines:", preferredCuisines);
+        const cultures = preferredCuisines.length > 0 ? preferredCuisines : Object.keys(userProfile.cultural_preferences);
+        if (cultures.length === 0) {
+          cultures.push("Italian", "Chinese", "Indian");
+        }
+        try {
+          const rankedMeals = await culturalMealRankingEngine.getRankedMeals(
+            userId,
+            userProfile,
+            15,
+            // Get more options for better base selection
+            0.4
+            // Lower threshold to consider more variety
+          );
+          console.log(`\u{1F4CA} Got ${rankedMeals.length} ranked meals for base selection`);
+          if (rankedMeals.length === 0) {
+            console.log("\u274C No meals available for base selection");
+            return null;
+          }
+          const aiRanking = await llamaMealRanker.rankMealsInParallel({
+            meals: rankedMeals,
+            userProfile,
+            maxMeals: 5
+            // Focus on top 5 candidates
+          });
+          if (aiRanking.rankedMeals.length === 0) {
+            console.log("\u274C AI ranking failed, using top scored meal");
+            return this.createBaseMealSelection(rankedMeals[0], userProfile);
+          }
+          const topMeal = aiRanking.rankedMeals[0];
+          console.log(`\u{1F3AF} Selected base meal: ${topMeal.meal.name} (Score: ${Math.round(topMeal.total_score * 100)}%)`);
+          return this.createBaseMealSelection(topMeal, userProfile);
+        } catch (error) {
+          console.error("\u274C Error finding optimal base meal:", error);
+          return null;
+        }
+      }
+      /**
+       * Generate a complete meal plan using the selected base meal as a foundation
+       */
+      async generateMealPlanWithBase(userId, userProfile, baseMealSelection, totalMeals = 9) {
+        console.log(`\u{1F37D}\uFE0F Generating meal plan with base: ${baseMealSelection.baseMeal.name}`);
+        const baseInfluence = this.calculateBaseInfluence(userProfile);
+        const similarMealsCount = Math.ceil(totalMeals * baseInfluence);
+        const varietyMealsCount = totalMeals - similarMealsCount - 1;
+        console.log(`\u{1F4C8} Base influence: ${Math.round(baseInfluence * 100)}%`);
+        console.log(`\u{1F3AF} Similar meals: ${similarMealsCount}, Variety meals: ${varietyMealsCount}`);
+        try {
+          const complementaryMeals = await this.findComplementaryMeals(
+            userId,
+            userProfile,
+            baseMealSelection.baseMeal,
+            similarMealsCount
+          );
+          const varietyBoostMeals = await this.findVarietyBoostMeals(
+            userId,
+            userProfile,
+            baseMealSelection.baseMeal,
+            varietyMealsCount
+          );
+          const reasoning = this.generateMealPlanReasoning(
+            baseMealSelection,
+            complementaryMeals,
+            varietyBoostMeals,
+            userProfile
+          );
+          return {
+            baseMeal: baseMealSelection,
+            complementaryMeals,
+            variety_boost_meals: varietyBoostMeals,
+            reasoning
+          };
+        } catch (error) {
+          console.error("\u274C Error generating meal plan with base:", error);
+          return {
+            baseMeal: baseMealSelection,
+            complementaryMeals: [],
+            variety_boost_meals: [],
+            reasoning: `Meal plan focused on ${baseMealSelection.baseMeal.name} and similar ${baseMealSelection.baseMeal.cuisine} dishes.`
+          };
+        }
+      }
+      /**
+       * Find meals that complement the base meal (similar style/cuisine)
+       */
+      async findComplementaryMeals(userId, userProfile, baseMeal, count) {
+        const complementaryProfile = {
+          ...userProfile,
+          cultural_preferences: {
+            ...userProfile.cultural_preferences,
+            [baseMeal.cuisine]: Math.min((userProfile.cultural_preferences[baseMeal.cuisine] || 0.5) + 0.3, 1)
+          }
+        };
+        const rankedMeals = await culturalMealRankingEngine.getRankedMeals(
+          userId,
+          complementaryProfile,
+          count * 2,
+          // Get extra for filtering
+          0.3
+        );
+        const complementary = rankedMeals.filter((meal) => meal.meal.id !== baseMeal.id).filter((meal) => meal.meal.cuisine === baseMeal.cuisine).slice(0, count).map((score) => score.meal);
+        console.log(`\u{1F91D} Found ${complementary.length} complementary meals for ${baseMeal.cuisine} cuisine`);
+        return complementary;
+      }
+      /**
+       * Find meals that add variety while still respecting user preferences
+       */
+      async findVarietyBoostMeals(userId, userProfile, baseMeal, count) {
+        const varietyProfile = {
+          ...userProfile,
+          priority_weights: {
+            ...userProfile.priority_weights,
+            variety: Math.min(userProfile.priority_weights.variety + 0.3, 1)
+          }
+        };
+        const rankedMeals = await culturalMealRankingEngine.getRankedMeals(
+          userId,
+          varietyProfile,
+          count * 3,
+          // Get many options for variety
+          0.2
+          // Lower threshold for more diversity
+        );
+        const varietyMeals = rankedMeals.filter((meal) => meal.meal.id !== baseMeal.id).filter((meal) => meal.meal.cuisine !== baseMeal.cuisine).slice(0, count).map((score) => score.meal);
+        console.log(`\u{1F31F} Found ${varietyMeals.length} variety meals from different cuisines`);
+        return varietyMeals;
+      }
+      /**
+       * Calculate how much the base meal should influence the overall meal plan
+       */
+      calculateBaseInfluence(userProfile) {
+        const weights = userProfile.priority_weights;
+        const culturalInfluence = weights.cultural * 0.4;
+        const varietyReduction = weights.variety * 0.3;
+        const timeReduction = weights.time * 0.1;
+        const baseInfluence = Math.max(0.2, Math.min(0.7, culturalInfluence - varietyReduction + timeReduction));
+        return baseInfluence;
+      }
+      /**
+       * Create a structured base meal selection with rationale
+       */
+      createBaseMealSelection(mealScore, userProfile) {
+        const weights = userProfile.priority_weights;
+        const scores = mealScore.component_scores;
+        const weightAlignment = {
+          cultural: scores.cultural_score * weights.cultural,
+          health: scores.health_score * weights.health,
+          cost: scores.cost_score * weights.cost,
+          time: scores.time_score * weights.time
+        };
+        const strongestAlignment = Object.entries(weightAlignment).sort(([, a], [, b]) => b - a)[0];
+        const usageRationale = this.generateUsageRationale(mealScore.meal, strongestAlignment[0], userProfile);
+        return {
+          baseMeal: mealScore.meal,
+          similarity_score: mealScore.total_score,
+          usage_rationale: usageRationale,
+          weight_alignment: weightAlignment
+        };
+      }
+      /**
+       * Generate a rationale for why this meal was selected as the base
+       */
+      generateUsageRationale(meal, strongestAlignment, userProfile) {
+        const alignmentReasons = {
+          cultural: `strongly matches your ${meal.cuisine} cuisine preference`,
+          health: `offers excellent nutritional balance with ${meal.cooking_techniques.join(", ")} preparation`,
+          cost: `uses affordable, accessible ingredients like ${meal.ingredients.slice(0, 3).join(", ")}`,
+          time: `can be prepared quickly with ${meal.estimated_prep_time + meal.estimated_cook_time} minutes total time`
+        };
+        const reason = alignmentReasons[strongestAlignment] || "aligns well with your preferences";
+        return `Selected as base meal because it ${reason}. This will guide similar meal selections in your plan.`;
+      }
+      /**
+       * Generate reasoning for the complete meal plan
+       */
+      generateMealPlanReasoning(baseMeal, complementaryMeals, varietyMeals, userProfile) {
+        const totalMeals = 1 + complementaryMeals.length + varietyMeals.length;
+        const cuisines = [baseMeal.baseMeal.cuisine, ...complementaryMeals.map((m) => m.cuisine), ...varietyMeals.map((m) => m.cuisine)];
+        const uniqueCuisines = [...new Set(cuisines)];
+        return `Meal plan generated around ${baseMeal.baseMeal.name} as the foundation. Includes ${complementaryMeals.length} similar ${baseMeal.baseMeal.cuisine} dishes for consistency and ${varietyMeals.length} variety meals from ${uniqueCuisines.length - 1} other cuisines. Total ${totalMeals} meals optimized for your ${Object.entries(userProfile.priority_weights).sort(([, a], [, b]) => b - a).slice(0, 2).map(([key]) => key).join(" and ")} priorities.`;
+      }
+    };
+    intelligentMealBaseSelector = new IntelligentMealBaseSelector();
+  }
+});
+
 // server/index.ts
 import express2 from "express";
 
 // server/routes.ts
 init_storage();
 import { createServer } from "http";
-import fetch4 from "node-fetch";
+import fetch5 from "node-fetch";
 
 // server/grok.ts
 import OpenAI from "openai";
@@ -9601,10 +11497,10 @@ var stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 async function registerRoutes(app2) {
   app2.get("/test-auth", (req, res) => {
-    const fs3 = __require("fs");
-    const path4 = __require("path");
-    const filePath = path4.join(__dirname, "../test-frontend-auth.html");
-    fs3.readFile(filePath, "utf8", (err, data) => {
+    const fs4 = __require("fs");
+    const path5 = __require("path");
+    const filePath = path5.join(__dirname, "../test-frontend-auth.html");
+    fs4.readFile(filePath, "utf8", (err, data) => {
       if (err) {
         res.status(404).send("Test file not found");
       } else {
@@ -9795,7 +11691,7 @@ async function registerRoutes(app2) {
                 }
               }
               const spoonacularUrl = `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`;
-              const response = await fetch4(spoonacularUrl);
+              const response = await fetch5(spoonacularUrl);
               const data = await response.json();
               if (data.results && data.results.length > 0) {
                 spoonacularTime = data.results[0].readyInMinutes || 30;
@@ -9894,13 +11790,13 @@ async function registerRoutes(app2) {
             const getUSDANutrition = async (foodName) => {
               try {
                 console.log(`Looking up USDA nutrition for: "${foodName}"`);
-                const searchResponse = await fetch4(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
+                const searchResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
                 if (searchResponse.ok) {
                   const searchData = await searchResponse.json();
                   if (searchData.foods && searchData.foods.length > 0) {
                     const foodId = searchData.foods[0].fdcId;
                     console.log(`Found USDA food ID ${foodId} for "${foodName}"`);
-                    const nutritionResponse = await fetch4(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
+                    const nutritionResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
                     if (nutritionResponse.ok) {
                       const nutritionData2 = await nutritionResponse.json();
                       const nutrients = nutritionData2.foodNutrients || [];
@@ -10021,7 +11917,8 @@ async function registerRoutes(app2) {
       }
     } catch (error) {
       console.error("Error generating recipe:", error);
-      return res.status(500).json({ message: `Failed to generate recipe: ${error.message}` });
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return res.status(500).json({ message: `Failed to generate recipe: ${errorMessage}` });
     }
   });
   app2.get("/api/recipes/popular", async (_req, res) => {
@@ -10079,14 +11976,16 @@ async function registerRoutes(app2) {
         res.status(500).json({ message: "Failed to save recipe - storage error" });
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : void 0;
       console.error("Error saving recipe:", {
         recipeId: req.params.id,
-        error: error.message,
-        stack: error.stack
+        error: errorMessage,
+        stack: errorStack
       });
       res.status(500).json({
         message: "Failed to save recipe",
-        error: error.message,
+        error: errorMessage,
         success: false
       });
     }
@@ -10106,14 +12005,16 @@ async function registerRoutes(app2) {
         success: true
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : void 0;
       console.error("Error unsaving recipe:", {
         recipeId: req.params.id,
-        error: error.message,
-        stack: error.stack
+        error: errorMessage,
+        stack: errorStack
       });
       res.status(500).json({
         message: "Failed to unsave recipe",
-        error: error.message,
+        error: errorMessage,
         success: false
       });
     }
@@ -10234,10 +12135,18 @@ async function registerRoutes(app2) {
         isAutoSaved: is_auto_saved || false
       });
       console.log("\u2705 SAVE SUCCESS:", savedPlan?.id || "unknown ID");
-      res.json(savedPlan);
+      const allUserPlans = await storage.getSavedMealPlans(Number(userId));
+      const isFirstMealPlan = allUserPlans.length === 1;
+      res.json({
+        ...savedPlan,
+        achievements: {
+          firstMealPlan: isFirstMealPlan
+        }
+      });
     } catch (error) {
       console.error("\u274C SAVE ERROR:", error);
-      res.status(500).json({ message: "Failed to save meal plan", error: error.message });
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to save meal plan", error: errorMessage });
     }
   });
   app2.put("/api/meal-plans/:id", authenticateToken, async (req, res) => {
@@ -10267,7 +12176,8 @@ async function registerRoutes(app2) {
       res.json(updatedPlan);
     } catch (error) {
       console.error("Error updating meal plan:", error);
-      res.status(500).json({ message: "Failed to update meal plan", error: error.message });
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to update meal plan", error: errorMessage });
     }
   });
   app2.delete("/api/meal-plans/:id", authenticateToken, async (req, res) => {
@@ -10286,6 +12196,61 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error deleting meal plan:", error);
       res.status(500).json({ message: "Failed to delete meal plan" });
+    }
+  });
+  app2.get("/api/meal-plans/:id/completions", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const mealPlanId = Number(req.params.id);
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const completions = await storage.getMealCompletions(Number(userId), mealPlanId);
+      res.json(completions);
+    } catch (error) {
+      console.error("Error fetching meal completions:", error);
+      res.status(500).json({ message: "Failed to fetch meal completions" });
+    }
+  });
+  app2.post("/api/meal-plans/:id/completions/toggle", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const mealPlanId = Number(req.params.id);
+      const { dayKey, mealType } = req.body;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      if (!dayKey || !mealType) {
+        return res.status(400).json({ message: "dayKey and mealType are required" });
+      }
+      const completion = await storage.toggleMealCompletion(Number(userId), mealPlanId, dayKey, mealType);
+      res.json(completion);
+    } catch (error) {
+      console.error("Error toggling meal completion:", error);
+      res.status(500).json({ message: "Failed to toggle meal completion" });
+    }
+  });
+  app2.post("/api/meal-plans/:id/complete", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const mealPlanId = Number(req.params.id);
+      console.log(`\u{1F680} ROUTE DEBUG: Complete plan request - userId: ${userId}, mealPlanId: ${mealPlanId}`);
+      if (!userId) {
+        console.log(`\u274C ROUTE DEBUG: User not authenticated`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      console.log(`\u2705 ROUTE DEBUG: User authenticated, calling storage.completeMealPlan`);
+      const completedPlan = await storage.completeMealPlan(Number(userId), mealPlanId);
+      console.log(`\u{1F4CA} ROUTE DEBUG: Storage returned:`, completedPlan ? "Plan object" : "null");
+      if (!completedPlan) {
+        console.log(`\u274C ROUTE DEBUG: No plan returned from storage, sending 404`);
+        return res.status(404).json({ message: "Meal plan not found or unauthorized" });
+      }
+      console.log(`\u2705 ROUTE DEBUG: Plan completed successfully, sending response`);
+      res.json({ message: "Meal plan completed successfully", plan: completedPlan });
+    } catch (error) {
+      console.error("\u274C ROUTE DEBUG: Error completing meal plan:", error);
+      res.status(500).json({ message: "Failed to complete meal plan" });
     }
   });
   app2.get("/api/meal-plan/latest", async (req, res) => {
@@ -10338,7 +12303,9 @@ async function registerRoutes(app2) {
         primaryGoal,
         selectedFamilyMembers = [],
         useIntelligentPrompt = true,
-        culturalBackground = []
+        culturalBackground = [],
+        planTargets = ["Everyone"]
+        // New parameter for family member targeting (array)
       } = req.body;
       let userProfile = null;
       let culturalCuisineData = null;
@@ -10368,18 +12335,38 @@ async function registerRoutes(app2) {
       }
       if (useIntelligentPrompt && (userProfile || culturalBackground.length > 0)) {
         const { buildIntelligentPrompt: buildIntelligentPrompt3 } = await Promise.resolve().then(() => (init_intelligentPromptBuilder(), intelligentPromptBuilder_exports));
+        const { mergeFamilyDietaryRestrictions: mergeFamilyDietaryRestrictions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+        const profileRestrictions = userProfile?.preferences || [];
+        const familyMembers = Array.isArray(userProfile?.members) ? userProfile.members : [];
+        const familyRestrictions = mergeFamilyDietaryRestrictions2(familyMembers);
+        const allRestrictions = /* @__PURE__ */ new Set();
+        if (dietaryRestrictions) {
+          dietaryRestrictions.split(",").forEach((r) => {
+            const trimmed = r.trim();
+            if (trimmed) allRestrictions.add(trimmed);
+          });
+        }
+        if (Array.isArray(familyRestrictions)) {
+          familyRestrictions.forEach((r) => allRestrictions.add(r));
+        }
+        if (Array.isArray(profileRestrictions)) {
+          profileRestrictions.forEach((r) => allRestrictions.add(r));
+        }
+        const mergedRestrictions = Array.from(allRestrictions).join(", ");
+        console.log("Merged dietary restrictions:", mergedRestrictions);
         const filters = {
           numDays,
           mealsPerDay,
           cookTime,
           difficulty,
           nutritionGoal,
-          dietaryRestrictions,
+          dietaryRestrictions: mergedRestrictions,
+          // Use merged restrictions
           availableIngredients,
           excludeIngredients,
           primaryGoal: primaryGoal || userProfile?.primary_goal,
           familySize: userProfile?.family_size || void 0,
-          familyMembers: Array.isArray(userProfile?.members) ? userProfile.members : [],
+          familyMembers,
           profileType: userProfile?.profile_type || "individual",
           // UNIFIED: Set intelligent defaults based on primary goal across entire system
           encourageOverlap: primaryGoal === "Save Money" || userProfile?.primary_goal === "Save Money",
@@ -10479,7 +12466,7 @@ ${exampleDays.join(",\n")}
 
 Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in the meal_plan object.`;
       }
-      const response = await fetch4("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch5("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -10607,7 +12594,9 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         culturalBackground = [],
         availableIngredients = "",
         excludeIngredients = "",
-        familySize = 2
+        familySize = 2,
+        planTargets = ["Everyone"]
+        // New parameter for family member targeting (array)
       } = req.body;
       let weightBasedProfile = null;
       let userProfile = null;
@@ -10640,6 +12629,63 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       } catch (error) {
         console.log("Could not fetch user profile for weight-based system, using request data. Error:", error);
       }
+      const { mergeFamilyDietaryRestrictions: mergeFamilyDietaryRestrictions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const allRestrictions = /* @__PURE__ */ new Set();
+      if (weightBasedProfile?.dietaryRestrictions && Array.isArray(weightBasedProfile.dietaryRestrictions)) {
+        weightBasedProfile.dietaryRestrictions.forEach((r) => allRestrictions.add(r));
+      }
+      if (userProfile?.preferences && Array.isArray(userProfile.preferences)) {
+        userProfile.preferences.forEach((r) => allRestrictions.add(r));
+      }
+      if (userProfile?.members && Array.isArray(userProfile.members)) {
+        const familyRestrictions = mergeFamilyDietaryRestrictions2(userProfile.members);
+        familyRestrictions.forEach((r) => allRestrictions.add(r));
+      }
+      if (dietaryRestrictions && Array.isArray(dietaryRestrictions)) {
+        dietaryRestrictions.forEach((r) => {
+          if (r && r.trim()) allRestrictions.add(r.trim());
+        });
+      }
+      const mergedDietaryRestrictions = Array.from(allRestrictions);
+      console.log("Weight-based system - Merged dietary restrictions:", mergedDietaryRestrictions);
+      let targetMemberRestrictions = mergedDietaryRestrictions;
+      let targetMemberNames = planTargets;
+      if (!planTargets.includes("Everyone") && userProfile?.members && Array.isArray(userProfile.members)) {
+        console.log(`\u{1F3AF} Filtering meal plan for specific members: "${planTargets.join(", ")}"`);
+        const memberRestrictions = /* @__PURE__ */ new Set();
+        planTargets.forEach((targetName) => {
+          const targetMember = userProfile.members.find((member) => member.name === targetName);
+          if (targetMember) {
+            console.log(`\u2705 Found target member: ${targetName}`, targetMember);
+            if (targetMember.dietaryRestrictions && Array.isArray(targetMember.dietaryRestrictions)) {
+              targetMember.dietaryRestrictions.forEach((restriction) => {
+                if (restriction && restriction.trim()) {
+                  memberRestrictions.add(restriction.trim());
+                }
+              });
+            }
+            if (targetMember.preferences && Array.isArray(targetMember.preferences)) {
+              targetMember.preferences.forEach((pref) => {
+                const lowerPref = pref.toLowerCase().trim();
+                if (lowerPref.includes("allerg") || lowerPref.includes("intoleran") || lowerPref.includes("free") || lowerPref.includes("vegan") || lowerPref.includes("vegetarian") || lowerPref.includes("kosher") || lowerPref.includes("halal") || lowerPref.includes("diet")) {
+                  memberRestrictions.add(pref.trim());
+                }
+              });
+            }
+          } else {
+            console.warn(`\u26A0\uFE0F Could not find family member "${targetName}", skipping`);
+          }
+        });
+        if (dietaryRestrictions && Array.isArray(dietaryRestrictions)) {
+          dietaryRestrictions.forEach((r) => {
+            if (r && r.trim()) memberRestrictions.add(r.trim());
+          });
+        }
+        targetMemberRestrictions = Array.from(memberRestrictions);
+        console.log(`\u{1F3AF} Combined restrictions for selected members [${planTargets.join(", ")}]:`, targetMemberRestrictions);
+      } else if (!planTargets.includes("Everyone") && planTargets.length > 0) {
+        console.log(`\u2139\uFE0F Plan targets "${planTargets.join(", ")}" specified but no family members found, using merged restrictions`);
+      }
       const finalGoalWeights = goalWeights || weightBasedProfile?.goalWeights || {
         cost: 0.5,
         health: 0.5,
@@ -10647,9 +12693,22 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         variety: 0.5,
         time: 0.5
       };
-      const finalDietaryRestrictions = dietaryRestrictions.length > 0 ? dietaryRestrictions : weightBasedProfile?.dietaryRestrictions || [];
+      const finalDietaryRestrictions = targetMemberRestrictions;
       const finalCulturalBackground = culturalBackground.length > 0 ? culturalBackground : weightBasedProfile?.culturalBackground || [];
-      const finalFamilySize = familySize || weightBasedProfile?.familySize || 2;
+      let finalFamilySize;
+      if (!planTargets.includes("Everyone") && userProfile?.members && Array.isArray(userProfile.members)) {
+        const validTargetCount = planTargets.filter(
+          (targetName) => userProfile.members.find((member) => member.name === targetName)
+        ).length;
+        if (validTargetCount > 0) {
+          finalFamilySize = validTargetCount;
+          console.log(`\u{1F3AF} Final family size set to ${validTargetCount} for selected members: ${planTargets.join(", ")}`);
+        } else {
+          finalFamilySize = familySize || weightBasedProfile?.familySize || 2;
+        }
+      } else {
+        finalFamilySize = familySize || weightBasedProfile?.familySize || 2;
+      }
       const { WeightBasedMealPlanner: WeightBasedMealPlanner2 } = await Promise.resolve().then(() => (init_WeightBasedMealPlanner(), WeightBasedMealPlanner_exports));
       const planner = new WeightBasedMealPlanner2();
       let heroIngredients = [];
@@ -10662,7 +12721,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
           finalGoalWeights.cost,
           finalDietaryRestrictions
         );
-        heroIngredients = heroSelection.ingredients;
+        heroIngredients = Array.isArray(heroSelection?.selected_ingredients) ? heroSelection.selected_ingredients.map((ing) => ing.name) : [];
         console.log("Selected hero ingredients:", heroIngredients);
       }
       let prompt;
@@ -10686,6 +12745,9 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
           culturalCuisineData,
           availableIngredients,
           excludeIngredients,
+          // Member targeting
+          planTargets,
+          targetMemberNames,
           // Weight-based enhancements
           goalWeights: finalGoalWeights,
           heroIngredients,
@@ -10728,7 +12790,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         messages: [
           {
             role: "system",
-            content: `You are an advanced meal planning expert with weight-based intelligence. You understand main goals (like "${primaryGoal}") and can apply weight-based priorities to refine decisions. Generate exactly the requested number of days following the main goal guidance first, then using weights to resolve conflicts. Always return valid JSON with proper day structure.`
+            content: `You are an advanced meal planning expert with weight-based intelligence. You understand main goals (like "${primaryGoal}") and can apply weight-based priorities to refine decisions. ${!planTargets.includes("Everyone") ? `This meal plan is specifically designed for "${planTargets.join(", ")}" with their combined dietary restrictions and preferences.` : "This meal plan is designed for the entire family with merged dietary restrictions."} Generate exactly the requested number of days following the main goal guidance first, then using weights to resolve conflicts. Always return valid JSON with proper day structure.`
           },
           {
             role: "user",
@@ -10947,12 +13009,12 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         console.log("Parsed profile data:", profileData);
         const profile = await storage.createProfile(profileData);
         console.log("Created profile:", profile);
-        if (profileData.cultural_background && profileData.cultural_background.length > 0) {
+        if (profileData.cultural_background && Array.isArray(profileData.cultural_background) && profileData.cultural_background.length > 0) {
           try {
             console.log(`\u{1F680} Auto-caching cultural data for new profile: [${profileData.cultural_background.join(", ")}]`);
             Promise.resolve().then(() => (init_cultureCacheManager(), cultureCacheManager_exports)).then(async ({ getCachedCulturalCuisine: getCachedCulturalCuisine2 }) => {
               try {
-                for (const culture of profileData.cultural_background) {
+                for (const culture of profileData.cultural_background || []) {
                   await getCachedCulturalCuisine2(Number(userId), [culture]);
                   console.log(`   \u2705 Cached cultural data for: ${culture}`);
                 }
@@ -11067,7 +13129,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         family_size: familySize,
         members: [],
         // Empty for weight-based approach
-        profile_type: "weight-based",
+        profile_type: "individual",
         preferences: dietaryRestrictions,
         goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
         cultural_background: culturalBackground
@@ -11097,7 +13159,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         primary_goal: "Weight-Based Planning",
         family_size: familySize,
         members: [],
-        profile_type: "weight-based",
+        profile_type: "individual",
         preferences: dietaryRestrictions,
         goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
         cultural_background: culturalBackground
@@ -11220,7 +13282,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       const userId = 9;
       const { userSavedCulturalMeals: userSavedCulturalMeals2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
       const { eq: eq4 } = await import("drizzle-orm");
-      const savedMeals = await db.select().from(userSavedCulturalMeals2).where(eq4(userSavedCulturalMeals2.user_id, userId)).orderBy(userSavedCulturalMeals2.updated_at);
+      const savedMeals = [];
       res.json({
         success: true,
         saved_meals: savedMeals
@@ -11294,6 +13356,36 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       });
     }
   });
+  app2.get("/api/perplexity-cache", async (req, res) => {
+    try {
+      const { perplexityLogger: perplexityLogger2 } = await Promise.resolve().then(() => (init_perplexitySearchLogger(), perplexitySearchLogger_exports));
+      const searchHistory = await perplexityLogger2.getSearchHistory(100);
+      res.json(searchHistory);
+    } catch (error) {
+      console.error("Failed to get Perplexity cache:", error);
+      res.status(500).json({ error: "Failed to load search history" });
+    }
+  });
+  app2.delete("/api/perplexity-cache", async (req, res) => {
+    try {
+      const { perplexityLogger: perplexityLogger2 } = await Promise.resolve().then(() => (init_perplexitySearchLogger(), perplexitySearchLogger_exports));
+      await perplexityLogger2.clearSearchHistory();
+      res.json({ success: true, message: "Search history cleared" });
+    } catch (error) {
+      console.error("Failed to clear Perplexity cache:", error);
+      res.status(500).json({ error: "Failed to clear search history" });
+    }
+  });
+  app2.get("/api/perplexity-cache/stats", async (req, res) => {
+    try {
+      const { perplexityLogger: perplexityLogger2 } = await Promise.resolve().then(() => (init_perplexitySearchLogger(), perplexitySearchLogger_exports));
+      const stats = await perplexityLogger2.getSearchStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Failed to get Perplexity cache stats:", error);
+      res.status(500).json({ error: "Failed to load cache statistics" });
+    }
+  });
   function validateAndRoundDifficulties(mealPlan, maxDifficulty) {
     Object.keys(mealPlan).forEach((day) => {
       const dayMeals = mealPlan[day];
@@ -11312,20 +13404,249 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       }
     });
   }
+  app2.get("/api/achievements", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      let achievements = await storage.getUserAchievements(userId);
+      if (achievements.length === 0) {
+        achievements = await storage.initializeUserAchievements(userId);
+      }
+      res.json(achievements);
+    } catch (error) {
+      console.error("Error fetching achievements:", error);
+      res.status(500).json({ message: "Failed to fetch achievements" });
+    }
+  });
+  app2.post("/api/achievements/trigger", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { achievementId, progress } = req.body;
+      if (!achievementId) {
+        return res.status(400).json({ message: "Achievement ID is required" });
+      }
+      const achievement = await storage.getUserAchievement(userId, achievementId);
+      if (!achievement) {
+        return res.status(404).json({ message: "Achievement not found" });
+      }
+      const newProgress = progress || (achievement.progress || 0) + 1;
+      const isUnlocked = newProgress >= achievement.max_progress;
+      const updatedAchievement = await storage.updateUserAchievement(userId, achievementId, {
+        progress: newProgress,
+        is_unlocked: isUnlocked,
+        unlocked_date: isUnlocked ? /* @__PURE__ */ new Date() : void 0
+      });
+      res.json({
+        achievement: updatedAchievement,
+        isNewlyUnlocked: isUnlocked && !achievement.is_unlocked
+      });
+    } catch (error) {
+      console.error("Error triggering achievement:", error);
+      res.status(500).json({ message: "Failed to trigger achievement" });
+    }
+  });
+  app2.get("/api/achievements/:achievementId", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { achievementId } = req.params;
+      const achievement = await storage.getUserAchievement(userId, achievementId);
+      if (!achievement) {
+        return res.status(404).json({ message: "Achievement not found" });
+      }
+      res.json(achievement);
+    } catch (error) {
+      console.error("Error fetching achievement:", error);
+      res.status(500).json({ message: "Failed to fetch achievement" });
+    }
+  });
+  app2.post("/api/enhanced-meal-plan", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const {
+        numDays = 3,
+        mealsPerDay = 3,
+        goalWeights,
+        profile: userProfile
+      } = req.body;
+      console.log(`\u{1F680} Enhanced meal plan request: ${numDays} days, ${mealsPerDay} meals/day`);
+      const profile = userProfile || await storage.getProfile(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      const { enhancedMealPlanGenerator: enhancedMealPlanGenerator2, EnhancedMealPlanGenerator: EnhancedMealPlanGenerator2 } = await Promise.resolve().then(() => (init_enhancedMealPlanGenerator(), enhancedMealPlanGenerator_exports));
+      const culturalProfile = EnhancedMealPlanGenerator2.buildUserProfile(profile, goalWeights);
+      console.log("\u{1F3AF} Cultural profile:", {
+        culturalPrefs: Object.keys(culturalProfile.cultural_preferences),
+        weights: culturalProfile.priority_weights,
+        restrictions: culturalProfile.dietary_restrictions
+      });
+      const mealPlan = await enhancedMealPlanGenerator2.generateMealPlan({
+        userId: Number(userId),
+        numDays,
+        mealsPerDay,
+        userProfile: culturalProfile,
+        servingSize: profile.family_size || 1
+      });
+      console.log(`\u2705 Generated enhanced meal plan in ${mealPlan.generation_metadata.processing_time_ms}ms`);
+      res.json(mealPlan);
+    } catch (error) {
+      console.error("\u274C Enhanced meal plan generation failed:", error);
+      res.status(500).json({
+        message: "Failed to generate enhanced meal plan",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  app2.get("/api/test-simple", (req, res) => {
+    res.json({ message: "API is working", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+  });
+  app2.post("/api/test-cultural-ranking", async (req, res) => {
+    try {
+      const body = req.body || {};
+      const userId = body.userId || 1;
+      console.log("\u{1F9EA} Test endpoint called with userId:", userId);
+      const { cultures, userProfile, limit = 10 } = body;
+      console.log("\u{1F9EA} Testing cultural ranking for cultures:", cultures);
+      console.log("\u{1F9EA} User profile weights:", userProfile.priority_weights);
+      console.log("\u{1F9EA} User cultural preferences:", userProfile.cultural_preferences);
+      const { culturalMealRankingEngine: culturalMealRankingEngine2 } = await Promise.resolve().then(() => (init_culturalMealRankingEngine(), culturalMealRankingEngine_exports));
+      const { llamaMealRanker: llamaMealRanker2 } = await Promise.resolve().then(() => (init_llamaMealRanker(), llamaMealRanker_exports));
+      const scoredMeals = await culturalMealRankingEngine2.getRankedMeals(
+        Number(userId),
+        userProfile,
+        limit * 2,
+        // Get extra meals for better selection
+        0.3
+        // Lower threshold to ensure all 10 meals pass through for AI ranking
+      );
+      console.log(`\u2705 Got ${scoredMeals.length} scored meals from ranking engine`);
+      if (scoredMeals.length === 0) {
+        return res.json({
+          rankedMeals: [],
+          reasoning: "No meals found matching the criteria",
+          processingTime: 0
+        });
+      }
+      const rankingResult = await llamaMealRanker2.rankMealsInParallel({
+        meals: scoredMeals,
+        userProfile,
+        maxMeals: limit
+      });
+      console.log(`\u{1F999} Llama ranking complete: ${rankingResult.rankedMeals.length} meals ranked`);
+      res.json({
+        rankedMeals: rankingResult.rankedMeals.map((mealScore) => ({
+          meal: {
+            name: mealScore.meal.name,
+            cuisine: mealScore.meal.cuisine,
+            description: mealScore.meal.description,
+            authenticity_score: mealScore.meal.authenticity_score,
+            health_score: mealScore.meal.health_score,
+            cost_score: mealScore.meal.cost_score,
+            time_score: mealScore.meal.time_score
+          },
+          total_score: mealScore.total_score,
+          ranking_explanation: mealScore.ranking_explanation
+        })),
+        reasoning: rankingResult.reasoning,
+        processingTime: rankingResult.processingTime
+      });
+    } catch (error) {
+      console.error("\u274C Cultural ranking test failed:", error);
+      res.status(500).json({
+        message: "Failed to test cultural ranking",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  app2.post("/api/intelligent-meal-selection", async (req, res) => {
+    try {
+      console.log("\u{1F916} Intelligent meal selection endpoint called");
+      const { userId = 1, userProfile, selectedMeal, totalMeals = 9 } = req.body;
+      if (!userProfile) {
+        return res.status(400).json({ error: "User profile is required" });
+      }
+      const { intelligentMealBaseSelector: intelligentMealBaseSelector2 } = await Promise.resolve().then(() => (init_intelligentMealBaseSelector(), intelligentMealBaseSelector_exports));
+      if (selectedMeal) {
+        console.log(`\u{1F3AF} Generating meal plan around selected base: ${selectedMeal.meal.name}`);
+        const baseMealSelection = {
+          baseMeal: selectedMeal.meal,
+          similarity_score: selectedMeal.total_score,
+          usage_rationale: selectedMeal.ranking_explanation || "Selected by user as preferred base meal",
+          weight_alignment: selectedMeal.component_scores
+        };
+        const mealPlan = await intelligentMealBaseSelector2.generateMealPlanWithBase(
+          userId,
+          userProfile,
+          baseMealSelection,
+          totalMeals
+        );
+        console.log(`\u2705 Generated meal plan with ${mealPlan.complementaryMeals.length + mealPlan.variety_boost_meals.length + 1} meals`);
+        res.json({
+          success: true,
+          mealPlan,
+          processingTime: Date.now()
+        });
+      } else {
+        console.log("\u{1F50D} Auto-selecting optimal base meal from user preferences");
+        const cultures = Object.keys(userProfile.cultural_preferences);
+        const baseMealSelection = await intelligentMealBaseSelector2.findOptimalBaseMeal(
+          userId,
+          userProfile,
+          cultures
+        );
+        if (!baseMealSelection) {
+          return res.status(404).json({
+            error: "No suitable base meal found for your preferences",
+            suggestion: "Try adjusting your cultural preferences or dietary restrictions"
+          });
+        }
+        const mealPlan = await intelligentMealBaseSelector2.generateMealPlanWithBase(
+          userId,
+          userProfile,
+          baseMealSelection,
+          totalMeals
+        );
+        console.log(`\u2705 Auto-generated meal plan with optimal base: ${baseMealSelection.baseMeal.name}`);
+        res.json({
+          success: true,
+          mealPlan,
+          autoSelectedBase: true,
+          processingTime: Date.now()
+        });
+      }
+    } catch (error) {
+      console.error("\u274C Error in intelligent meal selection:", error);
+      res.status(500).json({
+        error: "Internal server error during intelligent meal selection",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
   const httpServer = createServer(app2);
   return httpServer;
 }
 
 // server/vite.ts
 import express from "express";
-import fs2 from "fs";
-import path3 from "path";
+import fs3 from "fs";
+import path4 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path2 from "path";
+import path3 from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
   plugins: [
@@ -11339,14 +13660,14 @@ var vite_config_default = defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path2.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path2.resolve(import.meta.dirname, "shared"),
-      "@assets": path2.resolve(import.meta.dirname, "attached_assets")
+      "@": path3.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path3.resolve(import.meta.dirname, "shared"),
+      "@assets": path3.resolve(import.meta.dirname, "attached_assets")
     }
   },
-  root: path2.resolve(import.meta.dirname, "client"),
+  root: path3.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path2.resolve(import.meta.dirname, "dist/public"),
+    outDir: path3.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true
   }
 });
@@ -11383,16 +13704,19 @@ async function setupVite(app2, server) {
     appType: "custom"
   });
   app2.use(vite.middlewares);
-  app2.use("*", async (req, res, next) => {
+  app2.use(async (req, res, next) => {
+    if (req.originalUrl.startsWith("/api/")) {
+      return next();
+    }
     const url = req.originalUrl;
     try {
-      const clientTemplate = path3.resolve(
+      const clientTemplate = path4.resolve(
         import.meta.dirname,
         "..",
         "client",
         "index.html"
       );
-      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
+      let template = await fs3.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
@@ -11406,15 +13730,15 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path3.resolve(import.meta.dirname, "public");
-  if (!fs2.existsSync(distPath)) {
+  const distPath = path4.resolve(import.meta.dirname, "public");
+  if (!fs3.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
   app2.use(express.static(distPath));
   app2.use("*", (_req, res) => {
-    res.sendFile(path3.resolve(distPath, "index.html"));
+    res.sendFile(path4.resolve(distPath, "index.html"));
   });
 }
 
@@ -11426,7 +13750,7 @@ app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   const start = Date.now();
-  const path4 = req.path;
+  const path5 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -11435,8 +13759,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path4.startsWith("/api")) {
-      let logLine = `${req.method} ${path4} ${res.statusCode} in ${duration}ms`;
+    if (path5.startsWith("/api")) {
+      let logLine = `${req.method} ${path5} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }

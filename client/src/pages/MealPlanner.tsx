@@ -124,7 +124,8 @@ export default function MealPlanner() {
       
       const data = await response.json();
       setShoppingUrl(data.shopping_url);
-      window.open(data.shopping_url, '_blank');
+      // Use window.location.href instead of window.open to avoid popup blockers
+      window.location.href = data.shopping_url;
     } catch (error) {
       console.error('Error creating shopping list:', error);
     }

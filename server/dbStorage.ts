@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, recipes, mealPlans, profiles, type User, type InsertUser, type Recipe, type InsertRecipe, type MealPlan, type Profile, type InsertProfile, type IStorage } from "@shared/schema";
+import { users, recipes, mealPlans, profiles, userAchievements, mealCompletions, type User, type InsertUser, type Recipe, type InsertRecipe, type MealPlan, type Profile, type InsertProfile, type UserAchievement, type InsertUserAchievement, type MealCompletion, type InsertMealCompletion, type IStorage } from "@shared/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
@@ -316,6 +316,242 @@ export class DatabaseStorage implements IStorage {
       return updatedProfile || null;
     } catch (error) {
       console.error('Database error updating profile:', error);
+      return null;
+    }
+  }
+
+  // Achievement methods
+  async getUserAchievements(userId: number): Promise<UserAchievement[]> {
+    const achievements = await db.select()
+      .from(userAchievements)
+      .where(eq(userAchievements.user_id, userId))
+      .orderBy(desc(userAchievements.created_at));
+    return achievements;
+  }
+
+  async initializeUserAchievements(userId: number): Promise<UserAchievement[]> {
+    // Define all available achievements
+    const achievementDefinitions = [
+      {
+        achievement_id: "first_steps",
+        title: "First Steps",
+        description: "Generate your first meal plan",
+        category: "cooking",
+        max_progress: 1,
+        points: 100,
+        rarity: "common"
+      },
+      {
+        achievement_id: "meal_master",
+        title: "Meal Master", 
+        description: "Generate 10 meal plans",
+        category: "cooking",
+        max_progress: 10,
+        points: 500,
+        rarity: "rare"
+      },
+      {
+        achievement_id: "healthy_start",
+        title: "Healthy Start",
+        description: "Save your first healthy meal plan",
+        category: "wellness",
+        max_progress: 1,
+        points: 150,
+        rarity: "common"
+      }
+    ];
+
+    const insertData = achievementDefinitions.map(def => ({
+      user_id: userId,
+      achievement_id: def.achievement_id,
+      title: def.title,
+      description: def.description,
+      category: def.category,
+      is_unlocked: false,
+      progress: 0,
+      max_progress: def.max_progress,
+      points: def.points,
+      rarity: def.rarity,
+      unlocked_date: null
+    }));
+
+    const createdAchievements = await db.insert(userAchievements)
+      .values(insertData)
+      .returning();
+    
+    return createdAchievements;
+  }
+
+  async updateUserAchievement(userId: number, achievementId: string, data: {
+    progress?: number;
+    is_unlocked?: boolean;
+    unlocked_date?: Date;
+  }): Promise<UserAchievement | null> {
+    const [updatedAchievement] = await db
+      .update(userAchievements)
+      .set({
+        progress: data.progress,
+        is_unlocked: data.is_unlocked,
+        unlocked_date: data.unlocked_date,
+        updated_at: new Date()
+      })
+      .where(and(
+        eq(userAchievements.user_id, userId),
+        eq(userAchievements.achievement_id, achievementId)
+      ))
+      .returning();
+    
+    return updatedAchievement || null;
+  }
+
+  async getUserAchievement(userId: number, achievementId: string): Promise<UserAchievement | null> {
+    const [achievement] = await db.select()
+      .from(userAchievements)
+      .where(and(
+        eq(userAchievements.user_id, userId),
+        eq(userAchievements.achievement_id, achievementId)
+      ));
+    
+    return achievement || null;
+  }
+
+  // Meal completion methods
+  async getMealCompletions(userId: number, mealPlanId: number): Promise<MealCompletion[]> {
+    const completions = await db.select()
+      .from(mealCompletions)
+      .where(and(
+        eq(mealCompletions.user_id, userId),
+        eq(mealCompletions.meal_plan_id, mealPlanId)
+      ));
+    
+    return completions;
+  }
+
+  async toggleMealCompletion(userId: number, mealPlanId: number, dayKey: string, mealType: string): Promise<MealCompletion> {
+    // First check if completion record exists
+    const [existing] = await db.select()
+      .from(mealCompletions)
+      .where(and(
+        eq(mealCompletions.user_id, userId),
+        eq(mealCompletions.meal_plan_id, mealPlanId),
+        eq(mealCompletions.day_key, dayKey),
+        eq(mealCompletions.meal_type, mealType)
+      ));
+
+    if (existing) {
+      // Toggle the completion status
+      const [updated] = await db.update(mealCompletions)
+        .set({
+          is_completed: !existing.is_completed,
+          completed_at: !existing.is_completed ? new Date() : null,
+          updated_at: new Date()
+        })
+        .where(and(
+          eq(mealCompletions.user_id, userId),
+          eq(mealCompletions.meal_plan_id, mealPlanId),
+          eq(mealCompletions.day_key, dayKey),
+          eq(mealCompletions.meal_type, mealType)
+        ))
+        .returning();
+      
+      return updated;
+    } else {
+      // Create new completion record (mark as completed)
+      const [created] = await db.insert(mealCompletions)
+        .values({
+          user_id: userId,
+          meal_plan_id: mealPlanId,
+          day_key: dayKey,
+          meal_type: mealType,
+          is_completed: true,
+          completed_at: new Date()
+        })
+        .returning();
+      
+      return created;
+    }
+  }
+
+  async getMealCompletion(userId: number, mealPlanId: number, dayKey: string, mealType: string): Promise<MealCompletion | null> {
+    const [completion] = await db.select()
+      .from(mealCompletions)
+      .where(and(
+        eq(mealCompletions.user_id, userId),
+        eq(mealCompletions.meal_plan_id, mealPlanId),
+        eq(mealCompletions.day_key, dayKey),
+        eq(mealCompletions.meal_type, mealType)
+      ));
+    
+    return completion || null;
+  }
+
+  async completeMealPlan(userId: number, mealPlanId: number): Promise<MealPlan | null> {
+    try {
+      console.log(`🔍 COMPLETE PLAN DEBUG: Starting for user ${userId}, plan ${mealPlanId}`);
+      
+      // Get the meal plan first to verify it exists and belongs to the user
+      const [plan] = await db.select()
+        .from(mealPlans)
+        .where(and(
+          eq(mealPlans.id, mealPlanId),
+          eq(mealPlans.userId, userId)
+        ));
+
+      if (!plan) {
+        console.log(`❌ COMPLETE PLAN DEBUG: No meal plan found for user ${userId} and plan ${mealPlanId}`);
+        return null;
+      }
+
+      console.log(`✅ COMPLETE PLAN DEBUG: Found meal plan ${mealPlanId} for user ${userId}`);
+
+      // Check existing completions before deletion
+      const existingCompletions = await db.select()
+        .from(mealCompletions)
+        .where(and(
+          eq(mealCompletions.meal_plan_id, mealPlanId),
+          eq(mealCompletions.user_id, userId)
+        ));
+
+      console.log(`📊 COMPLETE PLAN DEBUG: Found ${existingCompletions.length} completions to delete`);
+
+      // Use a transaction to ensure both operations complete atomically
+      return await db.transaction(async (tx) => {
+        console.log(`🔄 COMPLETE PLAN DEBUG: Starting transaction for plan ${mealPlanId}`);
+        
+        // First delete associated meal completions to avoid foreign key constraint
+        const deletedCompletions = await tx.delete(mealCompletions)
+          .where(and(
+            eq(mealCompletions.meal_plan_id, mealPlanId),
+            eq(mealCompletions.user_id, userId)
+          ));
+
+        console.log(`🗑️ COMPLETE PLAN DEBUG: Deleted meal completions for plan ${mealPlanId}:`, deletedCompletions);
+
+        // Verify completions are actually deleted
+        const remainingCompletions = await tx.select()
+          .from(mealCompletions)
+          .where(eq(mealCompletions.meal_plan_id, mealPlanId));
+
+        console.log(`🔍 COMPLETE PLAN DEBUG: Remaining completions after deletion: ${remainingCompletions.length}`);
+        
+        if (remainingCompletions.length > 0) {
+          console.log(`⚠️ COMPLETE PLAN DEBUG: Still found completions:`, remainingCompletions);
+        }
+
+        // Then delete the meal plan to remove it from active plans
+        console.log(`🗑️ COMPLETE PLAN DEBUG: Now deleting meal plan ${mealPlanId}`);
+        const deletedPlan = await tx.delete(mealPlans)
+          .where(and(
+            eq(mealPlans.id, mealPlanId),
+            eq(mealPlans.userId, userId)
+          ));
+
+        console.log(`✅ COMPLETE PLAN DEBUG: Successfully deleted meal plan ${mealPlanId}:`, deletedPlan);
+
+        return plan;
+      });
+    } catch (error) {
+      console.error('❌ COMPLETE PLAN DEBUG: Database error completing meal plan:', error);
       return null;
     }
   }

@@ -141,7 +141,7 @@ export async function getCulturalCuisineData(userId: number, cultureTag: string,
           cache_metrics.hits++;
           
           // Convert database format to expected format
-          return {
+          const cachedResult = {
             meals: cachedEntry.meals_data as any,
             summary: cachedEntry.summary_data as any,
             cached_at: new Date(cachedEntry.created_at),
@@ -150,6 +150,23 @@ export async function getCulturalCuisineData(userId: number, cultureTag: string,
             data_version: cachedEntry.data_version,
             source_quality_score: cachedEntry.quality_score || 0
           };
+          
+          // Log the cache hit for visibility
+          try {
+            const { logPerplexitySearch } = await import('./perplexitySearchLogger');
+            await logPerplexitySearch(
+              `Cultural cuisine research: ${normalizedCuisine} (cached)`,
+              cachedResult,
+              'cultural-cuisine',
+              true, // cached
+              userId,
+              0 // no execution time for cache hit
+            );
+          } catch (logError) {
+            console.error('Failed to log cached search:', logError);
+          }
+          
+          return cachedResult;
         } else {
           console.log(`⏰ Global cache expired for ${normalizedCuisine}, age: ${ageHours.toFixed(1)}h`);
           // Remove expired entries
@@ -283,6 +300,7 @@ async function fetchCulturalDataFromPerplexityWithRetry(cultureTag: string): Pro
 }
 
 async function fetchCulturalDataFromPerplexity(cultureTag: string): Promise<CulturalCuisineData | null> {
+  const startTime = Date.now();
   try {
     console.log(`🔍 Fetching cultural data for: ${cultureTag}`);
     
@@ -385,6 +403,22 @@ Please respond with a JSON object in this exact format:
         common_techniques: cultureData.summary?.common_cooking_techniques?.length || 0,
         quality_score: qualityScore
       });
+      
+      // Log the Perplexity search for cache viewing
+      try {
+        const { logPerplexitySearch } = await import('./perplexitySearchLogger');
+        const executionTime = Date.now() - startTime;
+        await logPerplexitySearch(
+          `Cultural cuisine research: ${cultureTag}`,
+          cultureData,
+          'cultural-cuisine',
+          false, // not cached since we just fetched it
+          0, // temporary userId
+          executionTime
+        );
+      } catch (logError) {
+        console.error('Failed to log Perplexity search:', logError);
+      }
       
       return cultureData;
     } catch (parseError) {

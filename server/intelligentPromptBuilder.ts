@@ -46,18 +46,25 @@ interface FamilyMember {
 }
 
 export async function buildIntelligentPrompt(filters: MealPlanFilters): Promise<string> {
+  console.log('\n🔨 PROMPT BUILDER STARTED');
+  console.log('📋 Input Filters:', JSON.stringify(filters, null, 2));
+  
   let prompt = `Create exactly a ${filters.numDays}-day meal plan with ${filters.mealsPerDay} meals per day`;
+  console.log('1️⃣ Base prompt:', prompt);
 
   // Add family context if available
   if (filters.profileType === 'family' && filters.familySize) {
     prompt += ` for a family of ${filters.familySize}`;
+    console.log('2️⃣ Added family size:', `family of ${filters.familySize}`);
     
     if (filters.familyMembers && filters.familyMembers.length > 0) {
       const childrenCount = filters.familyMembers.filter(m => m.ageGroup === 'Child').length;
       const adultCount = filters.familyMembers.filter(m => m.ageGroup === 'Adult').length;
+      console.log('👨‍👩‍👧‍👦 Family composition:', { adults: adultCount, children: childrenCount });
       
       if (childrenCount > 0) {
         prompt += ` (${adultCount} adults, ${childrenCount} children)`;
+        console.log('2️⃣ Updated with ages:', `(${adultCount} adults, ${childrenCount} children)`);
       }
     }
   }
@@ -96,11 +103,20 @@ export async function buildIntelligentPrompt(filters: MealPlanFilters): Promise<
 
   // Family-specific dietary needs
   if (filters.familyMembers && filters.familyMembers.length > 0) {
+    console.log('👥 Processing family members:');
+    filters.familyMembers.forEach((member, index) => {
+      console.log(`   Member ${index + 1}: ${member.name} (${member.ageGroup})`);
+      console.log(`   - Preferences: [${member.preferences.join(', ')}]`);
+      console.log(`   - Goals: [${member.goals.join(', ')}]`);
+    });
+    
     const allPreferences = filters.familyMembers.flatMap(m => m.preferences);
     const uniquePreferences = [...new Set(allPreferences)];
+    console.log('🍽️ All family preferences combined:', uniquePreferences);
     
     if (uniquePreferences.length > 0) {
       prompt += `\n- Family dietary preferences: ${uniquePreferences.join(', ')}`;
+      console.log('3️⃣ Added family preferences to prompt:', uniquePreferences.join(', '));
     }
 
     // Child-friendly requirements
@@ -108,11 +124,13 @@ export async function buildIntelligentPrompt(filters: MealPlanFilters): Promise<
     if (hasChildren) {
       prompt += `\n- Include child-friendly options that are appealing to kids`;
       prompt += `\n- Avoid overly spicy or complex flavors for children`;
+      console.log('👶 Added child-friendly requirements');
     }
   }
 
   if (filters.dietaryRestrictions) {
     prompt += `\n- Dietary restrictions: ${filters.dietaryRestrictions}`;
+    console.log('🚫 Added dietary restrictions:', filters.dietaryRestrictions);
   }
 
   // Ingredient handling with intelligence
@@ -136,12 +154,13 @@ export async function buildIntelligentPrompt(filters: MealPlanFilters): Promise<
   }
 
   // Cultural cuisine integration from Perplexity API
-  console.log('Cultural cuisine data:', filters.culturalCuisineData);
-  console.log('Cultural background:', filters.culturalBackground);
+  console.log('🌍 Cultural cuisine data available:', !!filters.culturalCuisineData);
+  console.log('🌍 Cultural background:', filters.culturalBackground);
   
   if (filters.culturalCuisineData && filters.culturalBackground && filters.culturalBackground.length > 0) {
     prompt += `\n\n🌍 CULTURAL CUISINE INTEGRATION:`;
     prompt += `\n- Include authentic dishes from user's cultural background: ${filters.culturalBackground.join(', ')}`;
+    console.log('4️⃣ Added cultural background to prompt:', filters.culturalBackground.join(', '));
     
     // Add specific cultural meal suggestions from Perplexity data
     for (const culture of filters.culturalBackground) {
@@ -149,6 +168,8 @@ export async function buildIntelligentPrompt(filters: MealPlanFilters): Promise<
         const cultureData = filters.culturalCuisineData[culture];
         const mealNames = cultureData.meals ? cultureData.meals.map((meal: any) => meal.name).slice(0, 3) : [];
         const keyIngredients = cultureData.key_ingredients ? cultureData.key_ingredients.slice(0, 5) : [];
+        console.log(`   📝 ${culture} specific dishes:`, mealNames);
+        console.log(`   🥘 ${culture} key ingredients:`, keyIngredients);
         const cookingStyles = cultureData.styles ? cultureData.styles.slice(0, 3) : [];
         
         if (mealNames.length > 0) {
@@ -231,6 +252,12 @@ ${mealExamples}
   "estimated_savings": ${filters.encourageOverlap ? 15.50 : 0}
 }`;
 
+  console.log('\n✅ FINAL PROMPT BUILT:');
+  console.log('='.repeat(50));
+  console.log(prompt);
+  console.log('='.repeat(50));
+  console.log('🔨 PROMPT BUILDER COMPLETED\n');
+  
   return prompt;
 }
 

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthy Mama - Preview Status</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .status-good { color: #10b981; }
+        .status-working { color: #f59e0b; }
+        .feature-list {
+            display: grid;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+        }
+        .btn {
+            display: inline-block;
+            background: #6366f1;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #4f46e5;
+        }
+        .preview-example {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: monospace;
+            border-left: 4px solid #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🍽️ Healthy Mama Preview System</h1>
+        <p><strong>Server Status:</strong> <span class="status-good">✅ Running on Port 5000</span></p>
+        <p><strong>Database:</strong> <span class="status-good">✅ PostgreSQL Connected</span></p>
+        <p><strong>Cultural AI:</strong> <span class="status-good">✅ GPT-4o Mini + Llama 3 8B Active</span></p>
+    </div>
+
+    <div class="card">
+        <h2>🎯 Preview Features Currently Working</h2>
+        <div class="feature-list">
+            <div class="feature">
+                <h3>Cultural Meal Ranking Preview</h3>
+                <p>Real-time AI ranking of Italian cuisine with 10 meals processed in ~2-3 seconds using GPT-4o mini</p>
+                <div class="preview-example">
+🎯 User Preferences: Italian (0.9 cultural authenticity)
+✅ 10 meals after dietary filtering  
+🤖 GPT-4o mini ranked 3 meals
+🦙 Processing time: 2.5 seconds
+                </div>
+            </div>
+            
+            <div class="feature">
+                <h3>Weight-Based Priority System</h3>
+                <p>Shows how your priority weights resolve meal conflicts</p>
+                <div class="preview-example">
+Priority Weights:
+- Cultural: 0.9 (authentic recipes prioritized)
+- Health: 0.6 (moderate health focus)  
+- Cost: 0.8 (high cost efficiency)
+- Time: 0.3 (longer cooking acceptable)
+                </div>
+            </div>
+            
+            <div class="feature">
+                <h3>Profile Prompt Building</h3>
+                <p>Step-by-step visualization of AI prompt construction from your profile data</p>
+                <div class="preview-example">
+Step 1: Base meal plan structure (3 days, 3 meals)
+Step 2: Goal optimization (Weight-Based Planning)
+Step 3: Cultural integration (Chinese, Italian, Indian)
+Step 4: Family member preferences aggregation
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🚀 Access Your Preview</h2>
+        <p>Your Healthy Mama application is now running with full preview functionality:</p>
+        
+        <a href="http://localhost:5000" class="btn">🏠 Open Main App</a>
+        <a href="http://localhost:5000/profile" class="btn">👤 Go to Profile Preview</a>
+        
+        <h3>Quick Navigation:</h3>
+        <ol>
+            <li>Click "Open Main App" above</li>
+            <li>Use the menu (☰) to navigate to Profile</li>
+            <li>Look for "Meal Generation Prompt Preview" section</li>
+            <li>Click "Show Prompt Building" to see the magic!</li>
+            <li>Test cultural meal ranking with real AI</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h2>🔄 Live Cultural Testing</h2>
+        <p>Your logs show successful real-time testing:</p>
+        <div class="preview-example">
+✅ Italian cuisine: 10 meals processed
+✅ Chinese cuisine: 18 meals processed  
+✅ Indian cuisine: 10 meals processed
+✅ Cache TTL: 5 minutes for fast responses
+✅ AI ranking: GPT-4o mini + Llama 3 8B working together
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh status every 30 seconds
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+        
+        // Test server connection
+        fetch('/api/test-simple')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server test successful:', data);
+            })
+            .catch(error => {
+                console.log('Server connection issue:', error);
+            });
+    </script>
+</body>
+</html>

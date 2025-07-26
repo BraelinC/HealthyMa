@@ -60,6 +60,7 @@ export const familyMemberSchema = z.object({
   name: z.string().optional(),
   ageGroup: z.enum(["Child", "Teen", "Adult"]).optional(),
   preferences: z.array(z.string()).default([]), // dietary preferences, allergies, dislikes
+  dietaryRestrictions: z.array(z.string()).default([]), // mandatory dietary restrictions for this member
   goals: z.array(z.string()).default([]), // individual goals
 });
 
@@ -142,6 +143,48 @@ export type GoalWeights = z.infer<typeof goalWeightsSchema>;
 export type SimplifiedUserProfile = z.infer<typeof simplifiedUserProfileSchema>;
 export type MealPlanRequest = z.infer<typeof mealPlanRequestSchema>;
 export type WeightBasedMeal = z.infer<typeof weightBasedMealSchema>;
+
+// Helper function to merge dietary restrictions from all family members
+export function mergeFamilyDietaryRestrictions(members: FamilyMember[]): string[] {
+  console.log('🔗 Merging family dietary restrictions from', members.length, 'members');
+  const allRestrictions = new Set<string>();
+  
+  members.forEach((member, index) => {
+    console.log(`   Member ${index + 1} (${member.name || 'Unnamed'}):`, {
+      dietaryRestrictions: member.dietaryRestrictions || [],
+      preferences: member.preferences || []
+    });
+    
+    // Add mandatory dietary restrictions
+    if (member.dietaryRestrictions && Array.isArray(member.dietaryRestrictions)) {
+      member.dietaryRestrictions.forEach(restriction => {
+        if (restriction && restriction.trim()) {
+          allRestrictions.add(restriction.trim());
+          console.log(`     ✅ Added restriction: "${restriction.trim()}"`);
+        }
+      });
+    }
+    
+    // Also check preferences for dietary restrictions (backward compatibility)
+    if (member.preferences && Array.isArray(member.preferences)) {
+      member.preferences.forEach(pref => {
+        const lowerPref = pref.toLowerCase().trim();
+        // Common dietary restriction keywords
+        if (lowerPref.includes('allerg') || lowerPref.includes('intoleran') || 
+            lowerPref.includes('free') || lowerPref.includes('vegan') || 
+            lowerPref.includes('vegetarian') || lowerPref.includes('kosher') ||
+            lowerPref.includes('halal') || lowerPref.includes('diet')) {
+          allRestrictions.add(pref.trim());
+          console.log(`     ⚠️ Found dietary restriction in preferences: "${pref.trim()}"`);
+        }
+      });
+    }
+  });
+  
+  const finalRestrictions = Array.from(allRestrictions);
+  console.log('🔗 Final merged restrictions:', finalRestrictions);
+  return finalRestrictions;
+}
 
 // Recipe model
 export const recipes = pgTable("recipes", {
@@ -252,6 +295,70 @@ export const insertUserSavedCulturalMealsSchema = createInsertSchema(userSavedCu
 export type UserSavedCulturalMeals = typeof userSavedCulturalMeals.$inferSelect;
 export type InsertUserSavedCulturalMeals = z.infer<typeof insertUserSavedCulturalMealsSchema>;
 
+// User achievements table for tracking user progress
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").notNull().references(() => users.id),
+  achievement_id: text("achievement_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  is_unlocked: boolean("is_unlocked").default(false),
+  progress: integer("progress").default(0),
+  max_progress: integer("max_progress").notNull(),
+  points: integer("points").notNull(),
+  rarity: text("rarity").notNull(), // "common", "rare", "epic", "legendary"
+  unlocked_date: timestamp("unlocked_date"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userAchievementIdx: index("user_achievement_idx").on(table.user_id, table.achievement_id),
+}));
+
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).pick({
+  user_id: true,
+  achievement_id: true,
+  title: true,
+  description: true,
+  category: true,
+  is_unlocked: true,
+  progress: true,
+  max_progress: true,
+  points: true,
+  rarity: true,
+  unlocked_date: true,
+});
+
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+
+// Meal completions table for tracking completed meals
+export const mealCompletions = pgTable("meal_completions", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").notNull().references(() => users.id),
+  meal_plan_id: integer("meal_plan_id").notNull().references(() => mealPlans.id),
+  day_key: text("day_key").notNull(), // e.g., "day_1", "day_2"
+  meal_type: text("meal_type").notNull(), // "breakfast", "lunch", "dinner", "snack"
+  is_completed: boolean("is_completed").default(false),
+  completed_at: timestamp("completed_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userMealIdx: index("user_meal_idx").on(table.user_id, table.meal_plan_id, table.day_key, table.meal_type),
+}));
+
+export const insertMealCompletionSchema = createInsertSchema(mealCompletions).pick({
+  user_id: true,
+  meal_plan_id: true,
+  day_key: true,
+  meal_type: true,
+  is_completed: true,
+  completed_at: true,
+});
+
+export type MealCompletion = typeof mealCompletions.$inferSelect;
+export type InsertMealCompletion = z.infer<typeof insertMealCompletionSchema>;
+
 // Storage interfaces
 export interface IStorage {
   // User methods
@@ -299,6 +406,22 @@ export interface IStorage {
   getProfile(userId: number): Promise<Profile | undefined>;
   createProfile(profile: InsertProfile): Promise<Profile>;
   updateProfile(userId: number, profile: Partial<InsertProfile>): Promise<Profile | null>;
+  
+  // Achievement methods
+  getUserAchievements(userId: number): Promise<UserAchievement[]>;
+  initializeUserAchievements(userId: number): Promise<UserAchievement[]>;
+  updateUserAchievement(userId: number, achievementId: string, data: {
+    progress?: number;
+    is_unlocked?: boolean;
+    unlocked_date?: Date;
+  }): Promise<UserAchievement | null>;
+  getUserAchievement(userId: number, achievementId: string): Promise<UserAchievement | null>;
+
+  // Meal completion methods
+  getMealCompletions(userId: number, mealPlanId: number): Promise<MealCompletion[]>;
+  toggleMealCompletion(userId: number, mealPlanId: number, dayKey: string, mealType: string): Promise<MealCompletion>;
+  getMealCompletion(userId: number, mealPlanId: number, dayKey: string, mealType: string): Promise<MealCompletion | null>;
+  completeMealPlan(userId: number, mealPlanId: number): Promise<MealPlan | null>;
 }
 
 // Extend MemStorage in storage.ts to include recipe functionality
