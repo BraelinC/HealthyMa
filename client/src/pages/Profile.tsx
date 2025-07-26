@@ -21,6 +21,7 @@ import CulturalFreeTextInput from '@/components/CulturalFreeTextInput';
 import AchievementsContainer from '@/components/AchievementsContainer';
 import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
 import ProfilePromptPreview from '@/components/ProfilePromptPreview';
+import DynamicMealRanking from '@/components/DynamicMealRanking';
 
 const commonGoals = [
   'Lose Weight',
@@ -960,6 +961,11 @@ export default function Profile() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Dynamic Meal Ranking Section - Show for profiles with cultural preferences */}
+            {!isEditing && culturalBackground.length > 0 && (
+              <DynamicMealRanking culturalBackground={culturalBackground} />
+            )}
 
             {/* Achievements Section - Show for both individual and family profiles when not editing */}
             {!isEditing && (profile || profileType === 'individual') && (
