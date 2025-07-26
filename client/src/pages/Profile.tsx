@@ -935,14 +935,31 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            {/* Smart Cultural Preference Editor - Always visible for both individual and family profiles */}
-            <SmartCulturalPreferenceEditor
-              culturalBackground={culturalBackground}
-              onCulturalBackgroundChange={setCulturalBackground}
-              onSave={handleSaveCulturalPreferences}
-              isSaving={updateProfileMutation.isPending}
-              showPreviewData={false}
-            />
+            {/* Cultural Preferences Section */}
+            <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-emerald-600" />
+                  Cultural Cuisine Preferences
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <CulturalCuisineDropdown
+                  selectedCuisines={culturalBackground}
+                  onCuisineChange={setCulturalBackground}
+                />
+                
+                {culturalBackground.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {culturalBackground.map((cuisine) => (
+                      <Badge key={cuisine} variant="outline" className="bg-emerald-50 border-emerald-200">
+                        {cuisine}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Achievements Section - Show for both individual and family profiles when not editing */}
             {!isEditing && (profile || profileType === 'individual') && (
