@@ -964,7 +964,10 @@ export default function Profile() {
 
             {/* Dynamic Meal Ranking Section - Show for profiles with cultural preferences */}
             {!isEditing && culturalBackground.length > 0 && (
-              <DynamicMealRanking culturalBackground={culturalBackground} />
+              <DynamicMealRanking 
+                culturalBackground={culturalBackground} 
+                primaryGoal={primaryGoal}
+              />
             )}
 
             {/* Achievements Section - Show for both individual and family profiles when not editing */}

@@ -33,18 +33,43 @@ interface RankedMeal {
 
 interface DynamicMealRankingProps {
   culturalBackground?: string[];
+  primaryGoal?: string;
 }
 
-export default function DynamicMealRanking({ culturalBackground = [] }: DynamicMealRankingProps) {
-  const [weights, setWeights] = useState<WeightSettings>({
-    cultural: 0.5,
-    health: 0.5,
-    cost: 0.5,
-    time: 0.5,
-    variety: 0.5
-  });
+export default function DynamicMealRanking({ culturalBackground = [], primaryGoal }: DynamicMealRankingProps) {
+  // Convert questionnaire goal to weight preferences
+  const getWeightsFromGoal = (goal?: string): WeightSettings => {
+    switch (goal) {
+      case 'Budget-Friendly':
+        return { cultural: 0.3, health: 0.4, cost: 0.9, time: 0.6, variety: 0.2 };
+      case 'Health & Nutrition':
+        return { cultural: 0.4, health: 0.9, cost: 0.3, time: 0.5, variety: 0.6 };
+      case 'Quick & Easy':
+        return { cultural: 0.3, health: 0.5, cost: 0.4, time: 0.9, variety: 0.3 };
+      case 'Family-Friendly':
+        return { cultural: 0.5, health: 0.6, cost: 0.7, time: 0.6, variety: 0.8 };
+      case 'Weight Loss':
+        return { cultural: 0.3, health: 0.9, cost: 0.4, time: 0.5, variety: 0.7 };
+      case 'Cultural Exploration':
+        return { cultural: 0.9, health: 0.5, cost: 0.4, time: 0.4, variety: 0.8 };
+      default:
+        return { cultural: 0.5, health: 0.5, cost: 0.5, time: 0.5, variety: 0.5 };
+    }
+  };
+
+  const [weights, setWeights] = useState<WeightSettings>(getWeightsFromGoal(primaryGoal));
 
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLocked, setIsLocked] = useState(!!primaryGoal); // Lock weights if goal is set
+
+  // Update weights when primaryGoal changes
+  useEffect(() => {
+    if (primaryGoal) {
+      const newWeights = getWeightsFromGoal(primaryGoal);
+      setWeights(newWeights);
+      setIsLocked(true);
+    }
+  }, [primaryGoal]);
 
   // Query for ranked meals based on current weights
   const { data: rankingData, isLoading, refetch } = useQuery({
@@ -126,7 +151,27 @@ export default function DynamicMealRanking({ culturalBackground = [] }: DynamicM
       <CardContent className="space-y-6">
         {/* Weight Controls */}
         <div className="space-y-4">
-          <Label className="text-base font-medium">Your Meal Planning Priorities</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-medium">Your Meal Planning Priorities</Label>
+{primaryGoal && (
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-purple-600">
+                  {primaryGoal}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsLocked(!isLocked);
+                  }}
+                  className="text-xs"
+                >
+                  {isLocked ? 'Unlock' : 'Lock'} Weights
+                </Button>
+              </div>
+            )}
+          </div>
+          
           {Object.entries(weights).map(([type, value]) => {
             const Icon = getWeightIcon(type as keyof WeightSettings);
             const colorClass = getWeightColor(type as keyof WeightSettings);
@@ -149,6 +194,7 @@ export default function DynamicMealRanking({ culturalBackground = [] }: DynamicM
                   min={0}
                   step={0.1}
                   className="w-full"
+disabled={isLocked}
                 />
               </div>
             );
@@ -159,7 +205,7 @@ export default function DynamicMealRanking({ culturalBackground = [] }: DynamicM
             disabled={isUpdating || isLoading}
             className="w-full bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600"
           >
-            {isUpdating ? 'Reranking Meals...' : 'Update Meal Rankings'}
+{isUpdating ? 'Reranking Meals...' : (isLocked && primaryGoal ? `Find Best Meals for ${primaryGoal}` : 'Update Meal Rankings')}
           </Button>
         </div>
 
@@ -167,8 +213,11 @@ export default function DynamicMealRanking({ culturalBackground = [] }: DynamicM
 
         {/* Ranked Meals Results */}
         <div className="space-y-4">
-          <Label className="text-base font-medium">
-            Top Ranked Meals ({rankingData?.rankedMeals?.length || 0} found)
+<Label className="text-base font-medium">
+            {primaryGoal && isLocked 
+              ? `Best Meals for ${primaryGoal} (${rankingData?.rankedMeals?.length || 0} found)`
+              : `Top Ranked Meals (${rankingData?.rankedMeals?.length || 0} found)`
+            }
           </Label>
           
           {isLoading && (
