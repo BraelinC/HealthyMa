@@ -51,9 +51,9 @@ export default function IntelligentMealSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<RankedMeal | null>(null);
 
-  const handleQuestionnaireComplete = async (weights: GoalWeights) => {
-    console.log('📊 Questionnaire completed with weights:', weights);
-    setCalculatedWeights(weights);
+  const handleQuestionnaireComplete = async (result: { weights: GoalWeights; answers: Record<string, string[]>; selectedOptions: any[] }) => {
+    console.log('📊 Questionnaire completed with result:', result);
+    setCalculatedWeights(result.weights);
     setIsLoading(true);
     
     try {
@@ -68,11 +68,11 @@ export default function IntelligentMealSelector({
       const testProfile = {
         cultural_preferences: culturalPreferences,
         priority_weights: {
-          cultural: weights.cultural,
-          health: weights.health,
-          cost: weights.cost,
-          time: weights.time,
-          variety: weights.variety || 0.5
+          cultural: result.weights.cultural,
+          health: result.weights.health,
+          cost: result.weights.cost,
+          time: result.weights.time,
+          variety: result.weights.variety || 0.5
         },
         dietary_restrictions: userProfile?.dietary_restrictions || [],
         preferences: userProfile?.preferences || []

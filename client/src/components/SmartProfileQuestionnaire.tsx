@@ -17,8 +17,20 @@ import {
 } from 'lucide-react';
 import type { GoalWeights } from '@shared/schema';
 
+interface QuestionnaireResult {
+  weights: GoalWeights;
+  answers: Record<string, string[]>;
+  selectedOptions: Array<{
+    questionId: string;
+    questionTitle: string;
+    optionId: string;
+    optionLabel: string;
+    optionDescription: string;
+  }>;
+}
+
 interface SmartProfileQuestionnaireProps {
-  onComplete: (weights: GoalWeights) => void;
+  onComplete: (result: QuestionnaireResult) => void;
   onSkip: () => void;
   initialWeights?: GoalWeights;
 }
@@ -253,9 +265,37 @@ export default function SmartProfileQuestionnaire({
     setCalculatedWeights(newWeights);
   };
 
+  const buildQuestionnaireResult = (): QuestionnaireResult => {
+    const selectedOptions: QuestionnaireResult['selectedOptions'] = [];
+    
+    Object.entries(answers).forEach(([questionId, optionIds]) => {
+      const question = questions.find(q => q.id === questionId);
+      if (!question) return;
+      
+      optionIds.forEach(optionId => {
+        const option = question.options.find(opt => opt.id === optionId);
+        if (option) {
+          selectedOptions.push({
+            questionId,
+            questionTitle: question.title,
+            optionId,
+            optionLabel: option.label,
+            optionDescription: option.description,
+          });
+        }
+      });
+    });
+
+    return {
+      weights: calculatedWeights,
+      answers,
+      selectedOptions,
+    };
+  };
+
   const handleNext = () => {
     if (isLastQuestion) {
-      onComplete(calculatedWeights);
+      onComplete(buildQuestionnaireResult());
     } else {
       setCurrentStep(currentStep + 1);
     }
@@ -268,7 +308,18 @@ export default function SmartProfileQuestionnaire({
   };
 
   const handlePresetSelect = (preset: typeof presetScenarios[0]) => {
-    onComplete(preset.weights);
+    const presetResult: QuestionnaireResult = {
+      weights: preset.weights,
+      answers: { 'preset': [preset.name] },
+      selectedOptions: [{
+        questionId: 'preset',
+        questionTitle: 'Quick Setup Selection',
+        optionId: preset.name,
+        optionLabel: preset.name,
+        optionDescription: preset.description,
+      }],
+    };
+    onComplete(presetResult);
   };
 
   const getWeightColor = (weight: number) => {

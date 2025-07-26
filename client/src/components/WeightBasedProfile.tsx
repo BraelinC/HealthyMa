@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { GoalWeights, SimplifiedUserProfile } from '@shared/schema';
 import SmartCulturalPreferenceEditor from '@/components/SmartCulturalPreferenceEditor';
 import SmartProfileQuestionnaire from '@/components/SmartProfileQuestionnaire';
+import QuestionnaireAnswersDisplay from '@/components/QuestionnaireAnswersDisplay';
 
 const commonDietaryRestrictions = [
   'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo',
@@ -55,6 +56,14 @@ export default function WeightBasedProfile() {
   });
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [culturalBackground, setCulturalBackground] = useState<string[]>([]);
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string[]>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Array<{
+    questionId: string;
+    questionTitle: string;
+    optionId: string;
+    optionLabel: string;
+    optionDescription: string;
+  }>>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const { data: profile, isLoading, error } = useQuery({
@@ -152,6 +161,8 @@ export default function WeightBasedProfile() {
       });
       setDietaryRestrictions(profileData.dietaryRestrictions || []);
       setCulturalBackground(profileData.culturalBackground || []);
+      setQuestionnaireAnswers(profileData.questionnaire_answers || {});
+      setSelectedOptions(profileData.questionnaire_selections || []);
     }
   }, [profile]);
 
@@ -170,7 +181,12 @@ export default function WeightBasedProfile() {
       familySize,
       goalWeights,
       dietaryRestrictions,
-      culturalBackground
+      culturalBackground,
+      // Include questionnaire data if it exists
+      ...(Object.keys(questionnaireAnswers).length > 0 && {
+        questionnaire_answers: questionnaireAnswers,
+        questionnaire_selections: selectedOptions
+      })
     };
 
     if (profile) {
@@ -240,8 +256,10 @@ export default function WeightBasedProfile() {
     }
   };
 
-  const handleQuestionnaireComplete = (weights: GoalWeights) => {
-    setGoalWeights(weights);
+  const handleQuestionnaireComplete = (result: { weights: GoalWeights; answers: Record<string, string[]>; selectedOptions: any[] }) => {
+    setGoalWeights(result.weights);
+    setQuestionnaireAnswers(result.answers);
+    setSelectedOptions(result.selectedOptions);
     setShowQuestionnaire(false);
     setIsEditing(true);
     
@@ -543,6 +561,16 @@ export default function WeightBasedProfile() {
               isSaving={updateProfileMutation.isPending}
               showPreviewData={false}
             />
+
+            {/* Questionnaire Answers Display */}
+            {selectedOptions.length > 0 && (
+              <QuestionnaireAnswersDisplay
+                answers={questionnaireAnswers}
+                selectedOptions={selectedOptions}
+                onRetakeQuestionnaire={() => setShowQuestionnaire(true)}
+                showRetakeButton={isEditing}
+              />
+            )}
 
             {/* Action Buttons */}
             {isEditing && (
