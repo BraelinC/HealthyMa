@@ -51,9 +51,9 @@ export default function IntelligentMealSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<RankedMeal | null>(null);
 
-  const handleQuestionnaireComplete = async (result: { weights: GoalWeights; answers: Record<string, string[]>; selectedOptions: any[] }) => {
-    console.log('📊 Questionnaire completed with result:', result);
-    setCalculatedWeights(result.weights);
+  const handleQuestionnaireComplete = async (weights: GoalWeights) => {
+    console.log('📊 Questionnaire completed with weights:', weights);
+    setCalculatedWeights(weights);
     setIsLoading(true);
     
     try {

@@ -17,23 +17,10 @@ import {
 } from 'lucide-react';
 import type { GoalWeights } from '@shared/schema';
 
-interface QuestionnaireResult {
-  weights: GoalWeights;
-  answers: Record<string, string[]>;
-  selectedOptions: Array<{
-    questionId: string;
-    questionTitle: string;
-    optionId: string;
-    optionLabel: string;
-    optionDescription: string;
-  }>;
-}
-
 interface SmartProfileQuestionnaireProps {
-  onComplete: (result: QuestionnaireResult) => void;
+  onComplete: (weights: GoalWeights) => void;
   onSkip: () => void;
   initialWeights?: GoalWeights;
-  initialAnswers?: Record<string, string[]>;
 }
 
 interface QuestionOption {
@@ -192,11 +179,10 @@ const presetScenarios = [
 export default function SmartProfileQuestionnaire({ 
   onComplete, 
   onSkip, 
-  initialWeights,
-  initialAnswers 
+  initialWeights 
 }: SmartProfileQuestionnaireProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string[]>>(initialAnswers || {});
+  const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [showPresets, setShowPresets] = useState(false);
   const [calculatedWeights, setCalculatedWeights] = useState<GoalWeights>(
     initialWeights || { cost: 0.5, health: 0.5, cultural: 0.5, variety: 0.5, time: 0.5 }
@@ -269,38 +255,7 @@ export default function SmartProfileQuestionnaire({
 
   const handleNext = () => {
     if (isLastQuestion) {
-      // Build selected options array
-      const selectedOptions: Array<{
-        questionId: string;
-        questionTitle: string;
-        optionId: string;
-        optionLabel: string;
-        optionDescription: string;
-      }> = [];
-
-      Object.entries(answers).forEach(([questionId, optionIds]) => {
-        const question = questions.find(q => q.id === questionId);
-        if (!question) return;
-
-        optionIds.forEach(optionId => {
-          const option = question.options.find(opt => opt.id === optionId);
-          if (option) {
-            selectedOptions.push({
-              questionId,
-              questionTitle: question.title,
-              optionId,
-              optionLabel: option.label,
-              optionDescription: option.description
-            });
-          }
-        });
-      });
-
-      onComplete({
-        weights: calculatedWeights,
-        answers,
-        selectedOptions
-      });
+      onComplete(calculatedWeights);
     } else {
       setCurrentStep(currentStep + 1);
     }
@@ -313,17 +268,7 @@ export default function SmartProfileQuestionnaire({
   };
 
   const handlePresetSelect = (preset: typeof presetScenarios[0]) => {
-    onComplete({
-      weights: preset.weights,
-      answers: {},
-      selectedOptions: [{
-        questionId: 'preset',
-        questionTitle: 'Quick Setup Preset',
-        optionId: preset.name.toLowerCase().replace(/\s+/g, '-'),
-        optionLabel: preset.name,
-        optionDescription: preset.description
-      }]
-    });
+    onComplete(preset.weights);
   };
 
   const getWeightColor = (weight: number) => {

@@ -17,8 +17,8 @@ import { format, addDays, differenceInDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import PastGenerations from "@/components/PastGenerations";
-// Removed useProfileSystem - always using smart system
-// Removed ProfileSystemIndicator - always using smart system
+import { useProfileSystem } from "@/hooks/useProfileSystem";
+import ProfileSystemIndicator from "@/components/ProfileSystemIndicator";
 import { 
   generateMealPlanName, 
   generateMealPlanDescription, 
@@ -70,7 +70,7 @@ interface PlanResponse {
 
 export default function MealPlanner() {
   // Profile system detection
-  // Always use smart profile system
+  const { isSmartProfileEnabled } = useProfileSystem();
   
   const [cookTime, setCookTime] = useState([30]);
   const [difficulty, setDifficulty] = useState([3.0]);
@@ -205,31 +205,58 @@ export default function MealPlanner() {
 
     setIsGenerating(true);
     
-    console.log('🔄 Generating meal plan using SMART profile system');
+    console.log(`🔄 Generating meal plan using ${isSmartProfileEnabled ? 'SMART' : 'TRADITIONAL'} profile system`);
     
     try {
       const token = localStorage.getItem('auth_token');
       let response;
       
-      // Always use smart profile system - weight-based endpoint
-      console.log('🎯 Using weight-based meal planning system');
-      
-      response = await fetch('/api/meal-plan/generate-weight-based', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify({
-          numDays: numDays[0],
-          mealsPerDay: mealsPerDay[0],
-          maxCookTime: cookTime[0],
-          maxDifficulty: difficulty[0] / 5, // Convert to 0-1 scale
-          familySize: selectedFamilyMembers.length || 2,
-          planTargets: planTargets, // Who this meal plan is specifically designed for
-          // dietaryRestrictions and goalWeights are fetched from user's weight-based profile
-        }),
-      });
+      if (isSmartProfileEnabled) {
+        // SMART PROFILE SYSTEM - Use weight-based endpoint
+        console.log('🎯 Using weight-based meal planning system');
+        
+        response = await fetch('/api/meal-plan/generate-weight-based', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          },
+          body: JSON.stringify({
+            numDays: numDays[0],
+            mealsPerDay: mealsPerDay[0],
+            maxCookTime: cookTime[0],
+            maxDifficulty: difficulty[0] / 5, // Convert to 0-1 scale
+            familySize: selectedFamilyMembers.length || 2,
+            planTargets: planTargets, // Who this meal plan is specifically designed for
+            // dietaryRestrictions and goalWeights are fetched from user's weight-based profile
+          }),
+        });
+      } else {
+        // TRADITIONAL PROFILE SYSTEM - Use original endpoint (unchanged)
+        console.log('👨‍👩‍👧‍👦 Using traditional family-based meal planning system');
+        
+        response = await fetch('/api/meal-plan/generate', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          },
+          body: JSON.stringify({
+            numDays: numDays[0],
+            mealsPerDay: mealsPerDay[0],
+            cookTime: cookTime[0],
+            difficulty: difficulty[0],
+            nutritionGoal,
+            dietaryRestrictions,
+            availableIngredients,
+            excludeIngredients,
+            primaryGoal,
+            selectedFamilyMembers,
+            planTargets: planTargets, // Who this meal plan is specifically designed for
+            useIntelligentPrompt: true
+          })
+        });
+      }
 
       if (!response.ok) throw new Error('Failed to generate meal plan');
       
@@ -527,7 +554,7 @@ export default function MealPlanner() {
           Get personalized meal plans with smart shopping lists
         </p>
         <div className="flex justify-center mt-3">
-          {/* Removed ProfileSystemIndicator - always using smart system */}
+          <ProfileSystemIndicator />
         </div>
       </div>
 

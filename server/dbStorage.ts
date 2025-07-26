@@ -285,8 +285,6 @@ export class DatabaseStorage implements IStorage {
           preferences: profile.preferences || [],
           goals: profile.goals || [],
           cultural_background: profile.cultural_background || [],
-          questionnaire_answers: profile.questionnaire_answers || {},
-          questionnaire_selections: profile.questionnaire_selections || [],
         })
         .returning();
       
@@ -311,8 +309,6 @@ export class DatabaseStorage implements IStorage {
           preferences: profile.preferences,
           goals: profile.goals,
           cultural_background: profile.cultural_background,
-          questionnaire_answers: profile.questionnaire_answers,
-          questionnaire_selections: profile.questionnaire_selections,
           updated_at: new Date(),
         })
         .where(eq(profiles.user_id, userId))
