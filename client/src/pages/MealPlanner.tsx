@@ -9,8 +9,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { CalendarDays, Clock, ChefHat, ShoppingCart, Target, ChevronDown, ChevronRight, ExternalLink, Utensils } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { useProfileSystem } from "@/hooks/useProfileSystem";
-import ProfileSystemIndicator from "@/components/ProfileSystemIndicator";
+// Removed useProfileSystem - always using smart system
+// Removed ProfileSystemIndicator - always using smart system
 
 interface Recipe {
   title: string;
@@ -33,7 +33,7 @@ interface PlanResponse {
 
 export default function MealPlanner() {
   // Profile system detection
-  const { isSmartProfileEnabled } = useProfileSystem();
+  // Always use smart profile system
   
   const [cookTime, setCookTime] = useState([30]);
   const [difficulty, setDifficulty] = useState([3.0]);
@@ -49,52 +49,30 @@ export default function MealPlanner() {
   const handleGeneratePlan = async () => {
     setIsGenerating(true);
     
-    console.log(`🔄 Generating meal plan using ${isSmartProfileEnabled ? 'SMART' : 'TRADITIONAL'} profile system`);
+    console.log('🔄 Generating meal plan using SMART profile system');
     
     try {
       const token = localStorage.getItem('auth_token');
       let response;
       
-      if (isSmartProfileEnabled) {
-        // SMART PROFILE SYSTEM - Use weight-based endpoint
-        console.log('🎯 Using weight-based meal planning system');
-        
-        response = await fetch('/api/meal-plan/generate-weight-based', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` })
-          },
-          body: JSON.stringify({
-            numDays: numDays[0],
-            mealsPerDay: mealsPerDay[0],
-            maxCookTime: cookTime[0],
-            maxDifficulty: difficulty[0] / 5, // Convert to 0-1 scale
-            familySize: 2, // Default for this simple interface
-            // dietaryRestrictions and goalWeights are fetched from user's weight-based profile
-          }),
-        });
-      } else {
-        // TRADITIONAL PROFILE SYSTEM - Use original endpoint (unchanged)
-        console.log('👨‍👩‍👧‍👦 Using traditional family-based meal planning system');
-        
-        response = await fetch('/api/meal-plan/generate', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            numDays: numDays[0],
-            mealsPerDay: mealsPerDay[0],
-            cookTime: cookTime[0],
-            difficulty: difficulty[0],
-            nutritionGoal: nutritionGoal || 'general_wellness',
-            dietaryRestrictions: dietaryRestrictions || '',
-            useIntelligentPrompt: true
-          })
-        });
-      }
+      // SMART PROFILE SYSTEM - Always use weight-based endpoint
+      console.log('🎯 Using weight-based meal planning system');
+      
+      response = await fetch('/api/meal-plan/generate-weight-based', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          numDays: numDays[0],
+          mealsPerDay: mealsPerDay[0],
+          maxCookTime: cookTime[0],
+          maxDifficulty: difficulty[0] / 5, // Convert to 0-1 scale
+          familySize: 2, // Default for this simple interface
+          // dietaryRestrictions and goalWeights are fetched from user's weight-based profile
+        }),
+      });
 
       if (!response.ok) throw new Error('Failed to generate meal plan');
       
@@ -174,7 +152,7 @@ export default function MealPlanner() {
           Get personalized meal plans with smart shopping lists
         </p>
         <div className="flex justify-center mt-3">
-          <ProfileSystemIndicator />
+          {/* Removed ProfileSystemIndicator - always using smart system */}
         </div>
       </div>
 

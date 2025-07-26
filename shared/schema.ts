@@ -51,6 +51,8 @@ export const profiles = pgTable("profiles", {
   preferences: json("preferences").default([]), // For individual profiles
   goals: json("goals").default([]), // For individual profiles
   cultural_background: json("cultural_background").default([]), // Array of cultural cuisine tags
+  questionnaire_answers: json("questionnaire_answers").default({}), // Questionnaire answers by question ID
+  questionnaire_selections: json("questionnaire_selections").default([]), // Selected options with details
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -74,12 +76,22 @@ export const insertProfileSchema = createInsertSchema(profiles).pick({
   preferences: true,
   goals: true,
   cultural_background: true,
+  questionnaire_answers: true,
+  questionnaire_selections: true,
 }).extend({
   members: z.array(familyMemberSchema).optional(),
   profile_type: z.enum(["individual", "family"]).optional(),
   preferences: z.array(z.string()).optional(),
   goals: z.array(z.string()).optional(),
   cultural_background: z.array(z.string()).optional(),
+  questionnaire_answers: z.record(z.array(z.string())).optional(),
+  questionnaire_selections: z.array(z.object({
+    questionId: z.string(),
+    questionTitle: z.string(),
+    optionId: z.string(),
+    optionLabel: z.string(),
+    optionDescription: z.string(),
+  })).optional(),
 });
 
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
@@ -103,9 +115,20 @@ export const simplifiedUserProfileSchema = z.object({
   goalWeights: goalWeightsSchema,
   
   // Basic info
+  profileName: z.string().optional(),
   culturalBackground: z.array(z.string()).default([]),
   familySize: z.number().min(1).max(12).default(1),
   availableIngredients: z.array(z.string()).optional(),
+  
+  // Questionnaire data
+  questionnaire_answers: z.record(z.array(z.string())).optional(),
+  questionnaire_selections: z.array(z.object({
+    questionId: z.string(),
+    questionTitle: z.string(),
+    optionId: z.string(),
+    optionLabel: z.string(),
+    optionDescription: z.string(),
+  })).optional(),
 });
 
 export const mealPlanRequestSchema = z.object({

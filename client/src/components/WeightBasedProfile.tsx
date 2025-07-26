@@ -56,6 +56,14 @@ export default function WeightBasedProfile() {
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [culturalBackground, setCulturalBackground] = useState<string[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string[]>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Array<{
+    questionId: string;
+    questionTitle: string;
+    optionId: string;
+    optionLabel: string;
+    optionDescription: string;
+  }>>([]);
 
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['/api/profile/weight-based'],
@@ -152,6 +160,14 @@ export default function WeightBasedProfile() {
       });
       setDietaryRestrictions(profileData.dietaryRestrictions || []);
       setCulturalBackground(profileData.culturalBackground || []);
+      
+      // Load questionnaire data if available
+      if ((profileData as any).questionnaire_answers) {
+        setQuestionnaireAnswers((profileData as any).questionnaire_answers);
+      }
+      if ((profileData as any).questionnaire_selections) {
+        setSelectedOptions((profileData as any).questionnaire_selections);
+      }
     }
   }, [profile]);
 
@@ -170,7 +186,12 @@ export default function WeightBasedProfile() {
       familySize,
       goalWeights,
       dietaryRestrictions,
-      culturalBackground
+      culturalBackground,
+      // Include questionnaire data if available
+      ...(Object.keys(questionnaireAnswers).length > 0 && {
+        questionnaire_answers: questionnaireAnswers,
+        questionnaire_selections: selectedOptions
+      })
     };
 
     if (profile) {
@@ -217,7 +238,12 @@ export default function WeightBasedProfile() {
       familySize: familySize || (profile as any).familySize,
       goalWeights: goalWeights || (profile as any).goalWeights,
       dietaryRestrictions: dietaryRestrictions || (profile as any).dietaryRestrictions,
-      culturalBackground: cuisinesToSave
+      culturalBackground: cuisinesToSave,
+      // Preserve questionnaire data if it exists
+      ...(Object.keys(questionnaireAnswers).length > 0 && {
+        questionnaire_answers: questionnaireAnswers,
+        questionnaire_selections: selectedOptions
+      })
     };
 
     try {
@@ -240,8 +266,10 @@ export default function WeightBasedProfile() {
     }
   };
 
-  const handleQuestionnaireComplete = (weights: GoalWeights) => {
-    setGoalWeights(weights);
+  const handleQuestionnaireComplete = (result: { weights: GoalWeights; answers: Record<string, string[]>; selectedOptions: any[] }) => {
+    setGoalWeights(result.weights);
+    setQuestionnaireAnswers(result.answers);
+    setSelectedOptions(result.selectedOptions);
     setShowQuestionnaire(false);
     setIsEditing(true);
     
