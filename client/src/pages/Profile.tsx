@@ -22,6 +22,7 @@ import AchievementsContainer from '@/components/AchievementsContainer';
 import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
 import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 import DynamicMealRanking from '@/components/DynamicMealRanking';
+import QuestionnaireSliderConnector from '@/components/QuestionnaireSliderConnector';
 
 const commonGoals = [
   'Lose Weight',
@@ -1105,6 +1106,9 @@ export default function Profile() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Goal Weights Questionnaire Section */}
+            <QuestionnaireSliderConnector />
 
             {/* Dynamic Meal Ranking Section - Show for profiles with cultural preferences */}
             {!isEditing && culturalBackground.length > 0 && (
