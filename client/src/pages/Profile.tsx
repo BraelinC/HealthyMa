@@ -118,6 +118,9 @@ export default function Profile() {
   const [individualPreferences, setIndividualPreferences] = useState<string[]>([]);
   const [individualGoals, setIndividualGoals] = useState<string[]>([]);
   const [culturalBackground, setCulturalBackground] = useState<string[]>([]);
+
+  // Extract questionnaire weights from profile goals (handle both object and array formats)
+  const [questionnaireWeights, setQuestionnaireWeights] = useState<any>(null);
   const [isParsingCulture, setIsParsingCulture] = useState(false);
   const [isCachingCuisines, setIsCachingCuisines] = useState(false);
   const [showCachedData, setShowCachedData] = useState(false);
@@ -309,6 +312,54 @@ export default function Profile() {
           setCulturalBackground([]);
         }
       }
+
+      // Extract questionnaire weights
+      const extractQuestionnaireWeights = () => {
+        // First check if profile has weights as object (newer format)
+        if (profileData.goals && typeof profileData.goals === 'object' && !Array.isArray(profileData.goals)) {
+          const weights = profileData.goals as any;
+          if (Object.keys(weights).length >= 3) {
+            return {
+              cultural: weights.cultural || 0.5,
+              health: weights.health || 0.5,
+              cost: weights.cost || 0.5,
+              time: weights.time || 0.5,
+              variety: weights.variety || 0.5
+            };
+          }
+        }
+        
+        // Fallback to parsing from array format (legacy)
+        const goals = profileData.goals || [];
+        if (Array.isArray(goals)) {
+          const weights: any = {};
+          goals.forEach(goal => {
+            if (typeof goal === 'string' && goal.includes(':')) {
+              const [key, value] = goal.split(':');
+              const numValue = parseFloat(value);
+              if (!isNaN(numValue) && numValue >= 0 && numValue <= 1) {
+                weights[key] = numValue;
+              }
+            }
+          });
+          
+          if (Object.keys(weights).length >= 3) {
+            return {
+              cultural: weights.cultural || 0.5,
+              health: weights.health || 0.5,
+              cost: weights.cost || 0.5,
+              time: weights.time || 0.5,
+              variety: weights.variety || 0.5
+            };
+          }
+        }
+        
+        return null;
+      };
+
+      const extractedWeights = extractQuestionnaireWeights();
+      console.log('📊 Extracted questionnaire weights:', extractedWeights);
+      setQuestionnaireWeights(extractedWeights);
     }
   }, [profile]);
 
@@ -967,6 +1018,7 @@ export default function Profile() {
               <DynamicMealRanking 
                 culturalBackground={culturalBackground} 
                 primaryGoal={primaryGoal}
+questionnaireWeights={questionnaireWeights}
               />
             )}
 

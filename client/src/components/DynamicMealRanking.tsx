@@ -34,9 +34,10 @@ interface RankedMeal {
 interface DynamicMealRankingProps {
   culturalBackground?: string[];
   primaryGoal?: string;
+  questionnaireWeights?: WeightSettings;
 }
 
-export default function DynamicMealRanking({ culturalBackground = [], primaryGoal }: DynamicMealRankingProps) {
+export default function DynamicMealRanking({ culturalBackground = [], primaryGoal, questionnaireWeights }: DynamicMealRankingProps) {
   // Convert questionnaire goal to weight preferences
   const getWeightsFromGoal = (goal?: string): WeightSettings => {
     switch (goal) {
@@ -57,19 +58,27 @@ export default function DynamicMealRanking({ culturalBackground = [], primaryGoa
     }
   };
 
-  const [weights, setWeights] = useState<WeightSettings>(getWeightsFromGoal(primaryGoal));
+  const [weights, setWeights] = useState<WeightSettings>(
+    questionnaireWeights || getWeightsFromGoal(primaryGoal)
+  );
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLocked, setIsLocked] = useState(!!primaryGoal); // Lock weights if goal is set
 
-  // Update weights when primaryGoal changes
+  // Update weights when primaryGoal or questionnaireWeights change
   useEffect(() => {
-    if (primaryGoal) {
+    console.log('🎛️ DynamicMealRanking received questionnaireWeights:', questionnaireWeights);
+    if (questionnaireWeights) {
+      setWeights(questionnaireWeights);
+      setIsLocked(true);
+      console.log('🔒 Locked weights from questionnaire:', questionnaireWeights);
+    } else if (primaryGoal) {
       const newWeights = getWeightsFromGoal(primaryGoal);
       setWeights(newWeights);
       setIsLocked(true);
+      console.log('🔒 Locked weights from primaryGoal:', newWeights);
     }
-  }, [primaryGoal]);
+  }, [primaryGoal, questionnaireWeights]);
 
   // Query for ranked meals based on current weights
   const { data: rankingData, isLoading, refetch } = useQuery({
