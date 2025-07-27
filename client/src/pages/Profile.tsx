@@ -22,7 +22,7 @@ import AchievementsContainer from '@/components/AchievementsContainer';
 import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
 import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 import DynamicMealRanking from '@/components/DynamicMealRanking';
-import QuestionnaireSliderConnector from '@/components/QuestionnaireSliderConnector';
+import WeightBasedProfile from '@/components/WeightBasedProfile';
 import AIPoweredMealPlanGenerator from '@/components/AIPoweredMealPlanGenerator';
 
 const commonGoals = [
@@ -1108,8 +1108,8 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            {/* Goal Weights Questionnaire Section */}
-            <QuestionnaireSliderConnector />
+            {/* Weight-Based Profile with Built-in Questionnaire */}
+            <WeightBasedProfile />
 
             {/* AI-Powered Meal Plan Generator */}
             <AIPoweredMealPlanGenerator />
