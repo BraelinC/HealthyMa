@@ -227,27 +227,45 @@ export default function SmartProfileQuestionnaire({
   };
 
   const updateWeightsFromAnswers = (currentAnswers: Record<string, string[]>) => {
+    console.log('🔄 Updating weights from answers:', currentAnswers);
     let newWeights: GoalWeights = { cost: 0, health: 0, cultural: 0, variety: 0, time: 0 };
     let totalInfluence = 0;
 
     // Process each answer
     Object.entries(currentAnswers).forEach(([questionId, optionIds]) => {
       const question = questions.find(q => q.id === questionId);
-      if (!question) return;
+      if (!question) {
+        console.log('❌ Question not found:', questionId);
+        return;
+      }
 
       optionIds.forEach(optionId => {
         const option = question.options.find(opt => opt.id === optionId);
-        if (!option) return;
+        if (!option) {
+          console.log('❌ Option not found:', optionId, 'in question:', questionId);
+          return;
+        }
 
         // Add weighted influence based on question type
         const influence = questionId === 'primary-focus' ? 2 : questionId === 'lifestyle' ? 1.5 : 0.5;
         totalInfluence += influence;
+
+        console.log('✅ Processing answer:', {
+          questionId,
+          optionId,
+          optionLabel: option.label,
+          optionWeights: option.weights,
+          influence,
+          totalInfluence
+        });
 
         Object.entries(option.weights).forEach(([key, value]) => {
           newWeights[key as keyof GoalWeights] += (value || 0) * influence;
         });
       });
     });
+
+    console.log('📊 Before normalization:', { newWeights, totalInfluence });
 
     // Normalize weights
     if (totalInfluence > 0) {
@@ -257,15 +275,20 @@ export default function SmartProfileQuestionnaire({
           1
         );
       });
+      console.log('📊 After normalization:', newWeights);
     } else {
       // Default balanced weights
       newWeights = { cost: 0.5, health: 0.5, cultural: 0.5, variety: 0.5, time: 0.5 };
+      console.log('⚠️ No answers found, using default weights:', newWeights);
     }
 
     setCalculatedWeights(newWeights);
   };
 
   const buildQuestionnaireResult = (): QuestionnaireResult => {
+    console.log('🏁 Building questionnaire result with calculated weights:', calculatedWeights);
+    console.log('🏁 All answers:', answers);
+    
     const selectedOptions: QuestionnaireResult['selectedOptions'] = [];
     
     Object.entries(answers).forEach(([questionId, optionIds]) => {
@@ -286,11 +309,14 @@ export default function SmartProfileQuestionnaire({
       });
     });
 
-    return {
+    const result = {
       weights: calculatedWeights,
       answers,
       selectedOptions,
     };
+    
+    console.log('🏁 Final questionnaire result:', result);
+    return result;
   };
 
   const handleNext = () => {
