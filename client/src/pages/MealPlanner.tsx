@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { useProfileSystem } from "@/hooks/useProfileSystem";
 import ProfileSystemIndicator from "@/components/ProfileSystemIndicator";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Recipe {
   title: string;
