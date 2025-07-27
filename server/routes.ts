@@ -2682,76 +2682,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
     res.json({ message: "API is working", timestamp: new Date().toISOString() });
   });
 
-  // Cultural Meal Ranking Test Endpoint - Enhanced with Llama 3 8B
-  app.post("/api/test-cultural-ranking", async (req, res) => {
-    try {
-      const body = req.body || {};
-      const userId = body.userId || 1;
-      console.log('🧪 Test endpoint called with userId:', userId);
 
-      const { cultures, userProfile, limit = 10 } = body;
-      console.log('🧪 Testing cultural ranking for cultures:', cultures);
-      console.log('🧪 User profile weights:', userProfile.priority_weights);
-      console.log('🧪 User cultural preferences:', userProfile.cultural_preferences);
-
-      // Import ranking engine and llama ranker
-      const { culturalMealRankingEngine } = await import('./culturalMealRankingEngine.js');
-      const { llamaMealRanker } = await import('./llamaMealRanker.js');
-      
-      // Get scored meals from ranking engine
-      const scoredMeals = await culturalMealRankingEngine.getRankedMeals(
-        Number(userId),
-        userProfile,
-        limit * 2, // Get extra meals for better selection
-        0.3 // Lower threshold to ensure all 10 meals pass through for AI ranking
-      );
-
-      console.log(`✅ Got ${scoredMeals.length} scored meals from ranking engine`);
-
-      if (scoredMeals.length === 0) {
-        return res.json({
-          rankedMeals: [],
-          reasoning: 'No meals found matching the criteria',
-          processingTime: 0
-        });
-      }
-
-      // Use GPT-4o mini to intelligently rank the meals in parallel batches
-      const rankingResult = await llamaMealRanker.rankMealsInParallel({
-        meals: scoredMeals,
-        userProfile,
-        maxMeals: limit
-      });
-
-      console.log(`🦙 Llama ranking complete: ${rankingResult.rankedMeals.length} meals ranked`);
-
-      // Format response to match frontend expectations
-      res.json({
-        rankedMeals: rankingResult.rankedMeals.map(mealScore => ({
-          meal: {
-            name: mealScore.meal.name,
-            cuisine: mealScore.meal.cuisine,
-            description: mealScore.meal.description,
-            authenticity_score: mealScore.meal.authenticity_score,
-            health_score: mealScore.meal.health_score,
-            cost_score: mealScore.meal.cost_score,
-            time_score: mealScore.meal.time_score
-          },
-          total_score: mealScore.total_score,
-          ranking_explanation: mealScore.ranking_explanation
-        })),
-        reasoning: rankingResult.reasoning,
-        processingTime: rankingResult.processingTime
-      });
-
-    } catch (error) {
-      console.error("❌ Cultural ranking test failed:", error);
-      res.status(500).json({ 
-        message: "Failed to test cultural ranking",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
 
   // Intelligent Meal Base Selection Endpoint
   app.post("/api/intelligent-meal-selection", async (req, res) => {
