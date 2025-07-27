@@ -22,8 +22,6 @@ import AchievementsContainer from '@/components/AchievementsContainer';
 import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
 import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 import DynamicMealRanking from '@/components/DynamicMealRanking';
-import WeightBasedProfile from '@/components/WeightBasedProfile';
-import { useProfileSystem } from '@/hooks/useProfileSystem';
 
 const commonGoals = [
   'Lose Weight',
@@ -104,7 +102,6 @@ export default function Profile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isSmartProfileEnabled, setToSmartProfile } = useProfileSystem();
   
 
 
@@ -371,14 +368,6 @@ export default function Profile() {
     console.log('🎯 Cultural background state changed:', culturalBackground);
   }, [culturalBackground]);
 
-  // Auto-enable smart profile mode when no profile exists (new users)
-  useEffect(() => {
-    if (!isSmartProfileEnabled && !profile && !isLoading) {
-      console.log('🎯 New user detected, auto-enabling smart profile mode');
-      setToSmartProfile();
-    }
-  }, [isSmartProfileEnabled, profile, isLoading, setToSmartProfile]);
-
   // Auto-generate avatar when member name changes
   useEffect(() => {
     if (newMember.name && !newMember.avatar) {
@@ -642,10 +631,7 @@ export default function Profile() {
     );
   }
 
-  // If smart profile mode is enabled, show the weight-based profile instead
-  if (isSmartProfileEnabled) {
-    return <WeightBasedProfile />;
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50">
@@ -662,23 +648,12 @@ export default function Profile() {
               <p className="text-gray-600 mt-1">Create your personalized meal planning experience</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={setToSmartProfile} 
-              variant="outline" 
-              size="sm" 
-              className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-            >
-              <Target className="h-4 w-4 mr-2" />
-              Try Smart Profile
+          {!isEditing && profile && (
+            <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0">
+              <Edit3 className="h-4 w-4" />
+              Edit Profile
             </Button>
-            {!isEditing && profile && (
-              <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0">
-                <Edit3 className="h-4 w-4" />
-                Edit Profile
-              </Button>
-            )}
-          </div>
+          )}
         </div>
 
 

@@ -782,29 +782,12 @@ export default function Home() {
               </>
             ) : (
               <>
-                <h1 className="text-3xl font-bold mb-4">Welcome to SmartMeal! 🍽️</h1>
-                <p className="text-muted-foreground mb-6">Get started with personalized meal planning based on your preferences and lifestyle.</p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button 
-                    onClick={() => window.location.href = '/profile'} 
-                    className="bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0"
-                  >
-                    <ChefHat className="w-4 h-4 mr-2" />
-                    Smart Profile Setup
-                  </Button>
-                  <Button 
-                    onClick={() => window.location.href = '/meal-planner'} 
-                    variant="outline"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Quick Meal Plan
-                  </Button>
-                </div>
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 max-w-md mx-auto">
-                  <p className="text-sm text-blue-800">
-                    💡 <strong>Tip:</strong> Set up your Smart Profile first to get personalized meal recommendations based on your dietary preferences, budget, and cooking style!
-                  </p>
-                </div>
+                <h1 className="text-3xl font-bold mb-4">No Meal Plans Found</h1>
+                <p className="text-muted-foreground mb-6">Create your first meal plan to get started.</p>
+                <Button onClick={() => window.location.href = '/meal-planner'}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Meal Plan
+                </Button>
               </>
             )}
           </div>
