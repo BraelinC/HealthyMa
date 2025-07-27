@@ -23,6 +23,7 @@ import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
 import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 import DynamicMealRanking from '@/components/DynamicMealRanking';
 import QuestionnaireSliderConnector from '@/components/QuestionnaireSliderConnector';
+import AIPoweredMealPlanGenerator from '@/components/AIPoweredMealPlanGenerator';
 
 const commonGoals = [
   'Lose Weight',
@@ -1109,6 +1110,9 @@ export default function Profile() {
 
             {/* Goal Weights Questionnaire Section */}
             <QuestionnaireSliderConnector />
+
+            {/* AI-Powered Meal Plan Generator */}
+            <AIPoweredMealPlanGenerator />
 
             {/* Dynamic Meal Ranking Section - Show for profiles with cultural preferences */}
             {!isEditing && culturalBackground.length > 0 && (
