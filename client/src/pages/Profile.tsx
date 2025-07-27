@@ -23,7 +23,7 @@ import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
 import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 
 import WeightBasedProfile from '@/components/WeightBasedProfile';
-import AIPoweredMealPlanGenerator from '@/components/AIPoweredMealPlanGenerator';
+
 
 const commonGoals = [
   'Lose Weight',
@@ -104,7 +104,7 @@ export default function Profile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
 
 
   const [isEditing, setIsEditing] = useState(false);
@@ -171,7 +171,7 @@ export default function Profile() {
       console.log('=== CREATE PROFILE MUTATION CALLED ===');
       console.log('Data being sent:', data);
       setSaveStatus('saving');
-      
+
       try {
         const result = await apiRequest('/api/profile', {
           method: 'POST',
@@ -194,7 +194,7 @@ export default function Profile() {
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
-      
+
       // Reset to idle after showing saved state
       setTimeout(() => setSaveStatus('idle'), 2000);
     },
@@ -223,7 +223,7 @@ export default function Profile() {
       console.log('=== UPDATE PROFILE MUTATION CALLED ===');
       console.log('Data being sent:', data);
       setSaveStatus('saving');
-      
+
       try {
         const result = await apiRequest('/api/profile', {
           method: 'PUT',
@@ -244,7 +244,7 @@ export default function Profile() {
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
-      
+
       // Reset to idle after showing saved state
       setTimeout(() => setSaveStatus('idle'), 2000);
     },
@@ -293,7 +293,7 @@ export default function Profile() {
           setProfileType('family');
         }
       }
-      
+
       // Load individual preferences if they exist (for individual profiles)
       if (profileType === 'individual' || 
           (profileData.family_size === 1 && (!profileData.members || profileData.members.length === 0))) {
@@ -353,7 +353,7 @@ export default function Profile() {
         if (weightBasedProfile) {
           const wbp = weightBasedProfile as any;
           console.log('🔍 Full weight-based profile structure:', wbp);
-          
+
           // Check nested structures
           if (wbp.profile && wbp.profile.goalWeights) {
             const weights = wbp.profile.goalWeights;
@@ -366,7 +366,7 @@ export default function Profile() {
               variety: weights.variety || 0.5
             };
           }
-          
+
           // Check for any goalWeights property anywhere in the object
           const findGoalWeights = (obj: any, path = ''): any => {
             if (obj && typeof obj === 'object') {
@@ -381,7 +381,7 @@ export default function Profile() {
             }
             return null;
           };
-          
+
           const foundWeights = findGoalWeights(wbp);
           if (foundWeights) {
             return {
@@ -421,7 +421,7 @@ export default function Profile() {
             };
           }
         }
-        
+
         // Third fallback to parsing from array format (legacy)
         const goals = profileData.goals || [];
         if (Array.isArray(goals)) {
@@ -435,7 +435,7 @@ export default function Profile() {
               }
             }
           });
-          
+
           if (Object.keys(weights).length >= 3) {
             console.log('✅ Found weights in goals array field:', weights);
             return {
@@ -447,7 +447,7 @@ export default function Profile() {
             };
           }
         }
-        
+
         console.log('❌ No questionnaire weights found in profile data');
         return null;
       };
@@ -549,12 +549,12 @@ export default function Profile() {
   // Smart cultural preference save function
   const handleSaveCulturalPreferences = async (overrideCuisines?: string[]) => {
     if (!profile) return;
-    
+
     const cuisinesToSave = overrideCuisines || culturalBackground;
     console.log('🔄 Saving cultural preferences:', cuisinesToSave);
     console.log('🔄 Override cuisines provided:', overrideCuisines);
     console.log('🔄 Current state culturalBackground:', culturalBackground);
-    
+
     const profileData = {
       profile_name: profileName.trim() || (profile as any).profile_name,
       primary_goal: primaryGoal || (profile as any).primary_goal,
@@ -571,14 +571,14 @@ export default function Profile() {
 
     try {
       await updateProfileMutation.mutateAsync(profileData);
-      
+
       // Wait a moment before invalidating to ensure database update is complete
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
       }, 500);
-      
+
       console.log('✅ Cultural preferences saved successfully!');
-      
+
       toast({
         title: "Cultural preferences updated!",
         description: "Your cultural cuisine preferences have been saved."
@@ -609,7 +609,7 @@ export default function Profile() {
       const response = await apiRequest('/api/cache-cultural-cuisines', {
         method: 'POST'
       });
-      
+
       toast({
         title: "Success",
         description: `${response.message} - ${response.cached.length}/${response.total} cuisines cached successfully`
@@ -831,7 +831,7 @@ export default function Profile() {
                       <li>• Add multiple family members</li>
                       <li>• Set individual preferences for each</li>
                       <li>• Get family-friendly meal plans</li>
-                      <li>• Account for everyone's needs</li>
+                      <li>•Account for everyone's needs</li>
                     </ul>
                   </CardContent>
                 </Card>
@@ -1095,7 +1095,7 @@ export default function Profile() {
                   selectedCuisines={culturalBackground}
                   onCuisineChange={setCulturalBackground}
                 />
-                
+
                 {culturalBackground.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {culturalBackground.map((cuisine) => (
@@ -1109,9 +1109,6 @@ export default function Profile() {
             </Card>
 
 
-
-            {/* AI-Powered Meal Plan Generator */}
-            <AIPoweredMealPlanGenerator />
 
             {/* Achievements Section - Show for both individual and family profiles when not editing */}
             {!isEditing && (profile || profileType === 'individual') && (
@@ -1132,7 +1129,7 @@ export default function Profile() {
                   console.log(`DEBUG Member ${index}:`, member); // Debug log
                   const roleInfo = familyRoles.find(r => r.value === member.role);
                   const RoleIcon = roleInfo?.icon || User;
-                  
+
                   // Ensure avatar is generated if missing
                   const memberAvatar = member.avatar || generateAvatar(member.name || `member-${index}`, member.avatarStyle || 'fun-emoji');
 
