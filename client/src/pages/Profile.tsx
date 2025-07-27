@@ -1108,8 +1108,7 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            {/* Weight-Based Profile with Built-in Questionnaire */}
-            <WeightBasedProfile />
+            
 
             {/* AI-Powered Meal Plan Generator */}
             <AIPoweredMealPlanGenerator />
