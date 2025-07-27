@@ -66,12 +66,12 @@ export default function WeightBasedProfile() {
   }>>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-  const { data: profile, isLoading, error } = useQuery({
+  const { data: profile, isLoading, error } = useQuery<SimplifiedUserProfile>({
     queryKey: ['/api/profile/weight-based'],
     enabled: !!user,
     retry: 2,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000
+    gcTime: 10 * 60 * 1000
   });
 
   const createProfileMutation = useMutation({
