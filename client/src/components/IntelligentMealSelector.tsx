@@ -14,7 +14,7 @@ import {
   Zap,
   ChefHat
 } from 'lucide-react';
-import SmartProfileQuestionnaire from '@/components/SmartProfileQuestionnaire';
+
 import type { GoalWeights } from '@shared/schema';
 
 interface IntelligentMealSelectorProps {
@@ -159,13 +159,16 @@ export default function IntelligentMealSelector({
   };
 
   if (step === 'questionnaire') {
-    return (
-      <SmartProfileQuestionnaire
-        onComplete={handleQuestionnaireComplete}
-        onSkip={handleQuestionnaireSkip}
-        initialWeights={calculatedWeights || undefined}
-      />
-    );
+    // Skip questionnaire and use balanced weights
+    const balancedWeights: GoalWeights = {
+      cost: 0.5,
+      health: 0.5,
+      cultural: 0.5,
+      variety: 0.5,
+      time: 0.5
+    };
+    setCalculatedWeights(balancedWeights);
+    setStep('meal-selection');
   }
 
   if (isLoading) {

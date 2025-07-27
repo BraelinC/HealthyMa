@@ -13,7 +13,7 @@ import { Save, Edit3, ChefHat, Target, DollarSign, Heart, Clock, Shuffle, Globe,
 import { useToast } from '@/hooks/use-toast';
 import type { GoalWeights, SimplifiedUserProfile } from '@shared/schema';
 import SmartCulturalPreferenceEditor from '@/components/SmartCulturalPreferenceEditor';
-import SmartProfileQuestionnaire from '@/components/SmartProfileQuestionnaire';
+
 import QuestionnaireAnswersDisplay from '@/components/QuestionnaireAnswersDisplay';
 
 const commonDietaryRestrictions = [
@@ -304,20 +304,7 @@ export default function WeightBasedProfile() {
     setIsEditing(true);
   };
 
-  // Show questionnaire for new profiles
-  if (!profile && showQuestionnaire) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50">
-        <div className="container mx-auto p-4 max-w-4xl">
-          <SmartProfileQuestionnaire
-            onComplete={handleQuestionnaireComplete}
-            onSkip={handleQuestionnaireSkip}
-            initialWeights={goalWeights}
-          />
-        </div>
-      </div>
-    );
-  }
+
 
   if (isLoading) {
     return (
@@ -366,13 +353,9 @@ export default function WeightBasedProfile() {
                 Set up intelligent meal planning with weight-based priorities that adapt to your lifestyle.
               </p>
               <div className="flex gap-4 justify-center">
-                <Button onClick={() => setShowQuestionnaire(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0 px-8 py-3">
-                  <Wand2 className="h-5 w-5" />
-                  Smart Setup
-                </Button>
-                <Button onClick={() => setIsEditing(true)} variant="outline" className="px-8 py-3">
-                  <Target className="h-5 w-5 mr-2" />
-                  Manual Setup
+                <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0 px-8 py-3">
+                  <Target className="h-5 w-5" />
+                  Setup Profile
                 </Button>
               </div>
             </CardContent>
