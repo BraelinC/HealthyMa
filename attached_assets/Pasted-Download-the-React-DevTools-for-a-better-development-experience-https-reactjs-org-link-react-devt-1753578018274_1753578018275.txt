@@ -1,0 +1,171 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:113 Query function called for: /api/profile
+queryClient.ts:18 API Request: {url: '/api/profile', method: 'GET', hasBody: false}
+queryClient.ts:113 Query function called for: /api/profile/weight-based
+queryClient.ts:18 API Request: {url: '/api/profile/weight-based', method: 'GET', hasBody: false}
+Profile.tsx:159 === PROFILE QUERY STATE ===
+Profile.tsx:160 User: {id: 9, email: 'bralincarranza@gmail.com', phone: '4077333279', full_name: 'braelin', created_at: '2025-07-15T16:54:41.762Z', …}
+Profile.tsx:161 IsLoading: true
+Profile.tsx:162 Error: null
+Profile.tsx:163 Profile: undefined
+Profile.tsx:164 WeightBasedProfile: undefined
+Profile.tsx:461 🎯 Cultural background state changed: []
+queryClient.ts:27 API Response: {url: '/api/profile', status: 200, ok: true, contentType: 'application/json; charset=utf-8'}
+queryClient.ts:27 API Response: {url: '/api/profile/weight-based', status: 200, ok: true, contentType: 'application/json; charset=utf-8'}
+queryClient.ts:43 API Response Text: {"id":2,"user_id":9,"profile_name":"braelin","primary_goal":"Lose Weight","family_size":2,"members":[{"name":"tyler","preferences":["Enjoys Asian"],"dietaryRestrictions":["Paleo"],"goals":["Gain Muscle"],"avatar":"https://api.dicebear.com/7.x/fun-emoji/svg?seed=t&backgroundColor=transparent","role":"Mom","avatarStyle":"fun-emoji"},{"name":"braelin","ageGroup":"Adult","preferences":["Loves Italian"],"dietaryRestrictions":["Vegetarian"],"goals":["Try New Foods"],"avatar":"https://api.dicebear.com/7.x/fun-emoji/svg?seed=b&backgroundColor=transparent","role":"Mom","avatarStyle":"fun-emoji"}],"profile_type":"family","preferences":["Keto"],"goals":{"cost":0.8,"health":0.5,"cultural":0.5,"variety":0.5,"time":0.5},"cultural_background":["Chinese"],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-07-15T16:57:02.782Z","updated_at":"2025-07-27T00:59:17.674Z"}
+queryClient.ts:65 API Parsed Response: {id: 2, user_id: 9, profile_name: 'braelin', primary_goal: 'Lose Weight', family_size: 2, …}
+queryClient.ts:116 Query result: {id: 2, user_id: 9, profile_name: 'braelin', primary_goal: 'Lose Weight', family_size: 2, …}
+queryClient.ts:43 API Response Text: {"profileName":"braelin","familySize":2,"goalWeights":{"cost":0.5,"health":0.5,"cultural":0.5,"variety":0.5,"time":0.5},"dietaryRestrictions":["Keto"],"culturalBackground":["Chinese"]}
+queryClient.ts:65 API Parsed Response: {profileName: 'braelin', familySize: 2, goalWeights: {…}, dietaryRestrictions: Array(1), culturalBackground: Array(1)}
+queryClient.ts:116 Query result: {profileName: 'braelin', familySize: 2, goalWeights: {…}, dietaryRestrictions: Array(1), culturalBackground: Array(1)}
+queryClient.ts:113 Query function called for: /api/culture-cache-stats
+queryClient.ts:18 API Request: {url: '/api/culture-cache-stats', method: 'GET', hasBody: false}
+Profile.tsx:159 === PROFILE QUERY STATE ===
+Profile.tsx:160 User: {id: 9, email: 'bralincarranza@gmail.com', phone: '4077333279', full_name: 'braelin', created_at: '2025-07-15T16:54:41.762Z', …}
+Profile.tsx:161 IsLoading: false
+Profile.tsx:162 Error: null
+Profile.tsx:163 Profile: {id: 2, user_id: 9, profile_name: 'braelin', primary_goal: 'Lose Weight', family_size: 2, …}
+Profile.tsx:164 WeightBasedProfile: {profileName: 'braelin', familySize: 2, goalWeights: {…}, dietaryRestrictions: Array(1), culturalBackground: Array(1)}
+Profile.tsx:273 Loading profile data: {id: 2, user_id: 9, profile_name: 'braelin', primary_goal: 'Lose Weight', family_size: 2, …}
+Profile.tsx:274 Profile members: (2) [{…}, {…}]
+Profile.tsx:308 🔄 Loading cultural background from profile: ['Chinese']
+Profile.tsx:313 🔄 Cultural background changed, updating state
+Profile.tsx:328 🔍 Extracting questionnaire weights from profile data: {profileData: {…}, weightBasedProfile: {…}}
+Profile.tsx:340 ✅ Found goalWeights in weight-based profile: {cost: 0.5, health: 0.5, cultural: 0.5, variety: 0.5, time: 0.5}
+Profile.tsx:454 📊 Extracted questionnaire weights: {cultural: 0.5, health: 0.5, cost: 0.5, time: 0.5, variety: 0.5}
+Profile.tsx:1134 DEBUG Member 0: {name: 'tyler', preferences: Array(1), dietaryRestrictions: Array(1), goals: Array(1), avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=t&backgroundColor=transparent', …}
+Profile.tsx:1134 DEBUG Member 1: {name: 'braelin', ageGroup: 'Adult', preferences: Array(1), dietaryRestrictions: Array(1), goals: Array(1), …}
+DynamicMealRanking.tsx:67 🎯 DynamicMealRanking weights state changed: {cultural: 0.5, health: 0.5, cost: 0.5, time: 0.5, variety: 0.5}
+queryClient.ts:18 API Request: {url: '/api/test-cultural-ranking', method: 'POST', hasBody: true}
+DynamicMealRanking.tsx:100 🎛️ DynamicMealRanking received props: {questionnaireWeights: {…}, primaryGoal: 'Lose Weight', hasQuestionnaireWeights: true, currentWeights: {…}}
+DynamicMealRanking.tsx:108 🔒 Setting weights from questionnaire: {cultural: 0.5, health: 0.5, cost: 0.5, time: 0.5, variety: 0.5}
+DynamicMealRanking.tsx:109 🔒 Previous weights: {cultural: 0.5, health: 0.5, cost: 0.5, time: 0.5, variety: 0.5}
+Profile.tsx:461 🎯 Cultural background state changed: ['Chinese']
+useCulturalCache.ts:52  GET https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/cultural-cuisine/Chinese 401 (Unauthorized)
+fetchCulturalData @ useCulturalCache.ts:52
+(anonymous) @ useCulturalCache.ts:95
+commitHookEffectListMount @ chunk-276SZO74.js?v=019c9ddc:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=019c9ddc:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=019c9ddc:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=019c9ddc:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=019c9ddc:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=019c9ddc:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=019c9ddc:19447
+commitRootImpl @ chunk-276SZO74.js?v=019c9ddc:19416
+commitRoot @ chunk-276SZO74.js?v=019c9ddc:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=019c9ddc:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=019c9ddc:9119
+(anonymous) @ chunk-276SZO74.js?v=019c9ddc:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=019c9ddc:555
+flush @ @tanstack_react-query.js?v=019c9ddc:569
+batch @ @tanstack_react-query.js?v=019c9ddc:587
+dispatch_fn @ @tanstack_react-query.js?v=019c9ddc:996
+setData @ @tanstack_react-query.js?v=019c9ddc:696
+onSuccess @ @tanstack_react-query.js?v=019c9ddc:897
+resolve @ @tanstack_react-query.js?v=019c9ddc:456
+Promise.then
+run @ @tanstack_react-query.js?v=019c9ddc:498
+start @ @tanstack_react-query.js?v=019c9ddc:536
+fetch @ @tanstack_react-query.js?v=019c9ddc:926
+executeFetch_fn @ @tanstack_react-query.js?v=019c9ddc:2211
+onSubscribe @ @tanstack_react-query.js?v=019c9ddc:1898
+subscribe @ @tanstack_react-query.js?v=019c9ddc:24
+(anonymous) @ @tanstack_react-query.js?v=019c9ddc:3022
+subscribeToStore @ chunk-276SZO74.js?v=019c9ddc:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=019c9ddc:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=019c9ddc:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=019c9ddc:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=019c9ddc:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=019c9ddc:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=019c9ddc:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=019c9ddc:19447
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=019c9ddc:18868
+flushSyncCallbacks @ chunk-276SZO74.js?v=019c9ddc:9119
+commitRootImpl @ chunk-276SZO74.js?v=019c9ddc:19432
+commitRoot @ chunk-276SZO74.js?v=019c9ddc:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=019c9ddc:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=019c9ddc:18718
+workLoop @ chunk-276SZO74.js?v=019c9ddc:197
+flushWork @ chunk-276SZO74.js?v=019c9ddc:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=019c9ddc:384
+PerplexityCacheViewer.tsx:44  GET https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/perplexity-cache 500 (Internal Server Error)
+loadSearchHistory @ PerplexityCacheViewer.tsx:44
+(anonymous) @ PerplexityCacheViewer.tsx:33
+commitHookEffectListMount @ chunk-276SZO74.js?v=019c9ddc:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=019c9ddc:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=019c9ddc:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=019c9ddc:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=019c9ddc:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=019c9ddc:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=019c9ddc:19447
+commitRootImpl @ chunk-276SZO74.js?v=019c9ddc:19416
+commitRoot @ chunk-276SZO74.js?v=019c9ddc:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=019c9ddc:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=019c9ddc:9119
+(anonymous) @ chunk-276SZO74.js?v=019c9ddc:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=019c9ddc:555
+flush @ @tanstack_react-query.js?v=019c9ddc:569
+batch @ @tanstack_react-query.js?v=019c9ddc:587
+dispatch_fn @ @tanstack_react-query.js?v=019c9ddc:996
+setData @ @tanstack_react-query.js?v=019c9ddc:696
+onSuccess @ @tanstack_react-query.js?v=019c9ddc:897
+resolve @ @tanstack_react-query.js?v=019c9ddc:456
+Promise.then
+run @ @tanstack_react-query.js?v=019c9ddc:498
+start @ @tanstack_react-query.js?v=019c9ddc:536
+fetch @ @tanstack_react-query.js?v=019c9ddc:926
+executeFetch_fn @ @tanstack_react-query.js?v=019c9ddc:2211
+onSubscribe @ @tanstack_react-query.js?v=019c9ddc:1898
+subscribe @ @tanstack_react-query.js?v=019c9ddc:24
+(anonymous) @ @tanstack_react-query.js?v=019c9ddc:3022
+subscribeToStore @ chunk-276SZO74.js?v=019c9ddc:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=019c9ddc:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=019c9ddc:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=019c9ddc:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=019c9ddc:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=019c9ddc:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=019c9ddc:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=019c9ddc:19447
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=019c9ddc:18868
+flushSyncCallbacks @ chunk-276SZO74.js?v=019c9ddc:9119
+commitRootImpl @ chunk-276SZO74.js?v=019c9ddc:19432
+commitRoot @ chunk-276SZO74.js?v=019c9ddc:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=019c9ddc:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=019c9ddc:18718
+workLoop @ chunk-276SZO74.js?v=019c9ddc:197
+flushWork @ chunk-276SZO74.js?v=019c9ddc:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=019c9ddc:384
+queryClient.ts:27 API Response: {url: '/api/culture-cache-stats', status: 200, ok: true, contentType: 'application/json; charset=utf-8'}
+queryClient.ts:43 API Response Text: {"totalUsers":0,"totalCuisines":0,"cacheSize":"0 KB","hitRate":0,"metrics":{"hits":0,"misses":2,"errors":0,"last_cleanup":"2025-07-27T00:58:53.857Z","total_entries":0,"memory_usage_bytes":2},"topCultures":[],"memoryUsageMB":0}
+queryClient.ts:65 API Parsed Response: {totalUsers: 0, totalCuisines: 0, cacheSize: '0 KB', hitRate: 0, metrics: {…}, …}
+queryClient.ts:116 Query result: {totalUsers: 0, totalCuisines: 0, cacheSize: '0 KB', hitRate: 0, metrics: {…}, …}
+Profile.tsx:1134 DEBUG Member 0: {name: 'tyler', preferences: Array(1), dietaryRestrictions: Array(1), goals: Array(1), avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=t&backgroundColor=transparent', …}
+Profile.tsx:1134 DEBUG Member 1: {name: 'braelin', ageGroup: 'Adult', preferences: Array(1), dietaryRestrictions: Array(1), goals: Array(1), …}
+DynamicMealRanking.tsx:115 🚀 Auto-triggering ranking with questionnaire weights: {cultural: 0.5, health: 0.5, cost: 0.5, time: 0.5, variety: 0.5}
+queryClient.ts:27 API Response: {url: '/api/test-cultural-ranking', status: 200, ok: true, contentType: 'application/json; charset=utf-8'}
+queryClient.ts:43 API Response Text: {"rankedMeals":[{"meal":{"name":"Stir-Fried Tofu with Rice","cuisine":"Chinese","description":"A simple and nutritious dish made by stir-frying tofu with vegetables and serving it over rice. It is a staple in many Chinese households.","authenticity_score":0.8999999999999999,"health_score":0.6000000000000001,"cost_score":1,"time_score":0.9},"total_score":0.85,"ranking_explanation":"AI Score: 85% (C:90% H:80% $:90% T:80%)"},{"meal":{"name":"Dim Sums","cuisine":"Chinese","description":"Steamed dumplings filled with vegetables or meat, popular as a snack or appetizer. They are a symbol of communal dining and are often served at family gatherings.","authenticity_score":0.7999999999999999,"health_score":0.8999999999999999,"cost_score":0.8999999999999999,"time_score":0.8},"total_score":0.83,"ranking_explanation":"AI Score: 83% (C:80% H:90% $:85% T:80%)"},{"meal":{"name":"La Mian (Hand-Pulled Noodles)","cuisine":"Chinese","description":"A traditional noodle dish from northern China, known for its chewy texture and flavorful sauces. It is often served with vegetables and meat.","authenticity_score":0.7999999999999999,"health_score":0.6000000000000001,"cost_score":0.95,"time_score":0.6},"total_score":0.83,"ranking_explanation":"AI Score: 83% (C:80% H:80% $:90% T:85%)"},{"meal":{"name":"Wonton Noodles","cuisine":"Chinese","description":"A Cantonese dish featuring thin noodles served in a light broth with dumplings filled with shrimp or pork. It is a comforting and nourishing meal.","authenticity_score":0.7,"health_score":0.4,"cost_score":0.85,"time_score":0.6},"total_score":0.8,"ranking_explanation":"AI Score: 80% (C:70% H:80% $:90% T:80%)"},{"meal":{"name":"Hot and Sour Soup","cuisine":"Chinese","description":"A spicy and sour soup made with mushrooms, tofu, and vegetables, often served as a comfort food during cold weather.","authenticity_score":0.8999999999999999,"health_score":0.8,"cost_score":1,"time_score":0.6},"total_score":0.78,"ranking_explanation":"AI Score: 78% (C:90% H:70% $:90% T:70%)"},{"meal":{"name":"Spring Rolls","cuisine":"Chinese","description":"Crisp rolls filled with shredded vegetables, often served as an appetizer or snack. They are a versatile dish that can be fried or steamed.","authenticity_score":0.7999999999999999,"health_score":0.7999999999999999,"cost_score":0.8999999999999999,"time_score":0.9},"total_score":0.76,"ranking_explanation":"AI Score: 76% (C:80% H:60% $:90% T:70%)"},{"meal":{"name":"Shitake Fried Rice with Water Chestnuts","cuisine":"Chinese","description":"A flavorful rice dish made with mushrooms, water chestnuts, and vegetables. It is a popular choice for using leftover ingredients.","authenticity_score":0.7999999999999999,"health_score":0.6000000000000001,"cost_score":0.95,"time_score":0.5},"total_score":0.76,"ranking_explanation":"AI Score: 76% (C:80% H:60% $:90% T:75%)"},{"meal":{"name":"Yangrou Paomo (Lamb Soup with Bread)","cuisine":"Chinese","description":"A hearty soup from Shaanxi, made with lamb and served with bread for dipping. It is a comforting and nourishing dish during cold weather.","authenticity_score":0.7,"health_score":0.6000000000000001,"cost_score":0.85,"time_score":0.6},"total_score":0.7,"ranking_explanation":"AI Score: 70% (C:70% H:60% $:80% T:70%)"},{"meal":{"name":"Szechwan Chilli Chicken","cuisine":"Chinese","description":"A spicy dish from the Sichuan region, known for its bold flavors and use of Sichuan peppercorns. It is a popular choice for those who enjoy spicy food.","authenticity_score":0.7,"health_score":0.4,"cost_score":0.7,"time_score":0.5},"total_score":0.7,"ranking_explanation":"AI Score: 70% (C:70% H:50% $:80% T:80%)"},{"meal":{"name":"Peking Duck","cuisine":"Chinese","description":"A classic dish from Beijing, known for its crispy skin and tender meat, often served with pancakes, scallions, and hoisin sauce. It symbolizes luxury and is a staple at special occasions.","authenticity_score":0.7,"health_score":0.30000000000000004,"cost_score":0.7,"time_score":0.2},"total_score":0.65,"ranking_explanation":"AI Score: 65% (C:70% H:60% $:70% T:50%)"}],"reasoning":"Parallel AI ranking of 10 meals using GPT-4o mini with user weight preferences","processingTime":2187}
+queryClient.ts:65 API Parsed Response: {rankedMeals: Array(10), reasoning: 'Parallel AI ranking of 10 meals using GPT-4o mini with user weight preferences', processingTime: 2187}
+SmartProfileQuestionnaire.tsx:230 🔄 Updating weights from answers: {primary-focus: Array(1)}
+SmartProfileQuestionnaire.tsx:253 ✅ Processing answer: {questionId: 'primary-focus', optionId: 'health', optionLabel: 'Health & Nutrition', optionWeights: {…}, influence: 2, …}
+SmartProfileQuestionnaire.tsx:268 📊 Before normalization: {newWeights: {…}, totalInfluence: 2}
+SmartProfileQuestionnaire.tsx:278 📊 After normalization: {cost: 0.4, health: 0.8, cultural: 0.5, variety: 0.6, time: 0.5}
+SmartProfileQuestionnaire.tsx:230 🔄 Updating weights from answers: {primary-focus: Array(1), lifestyle: Array(1)}
+SmartProfileQuestionnaire.tsx:253 ✅ Processing answer: {questionId: 'primary-focus', optionId: 'health', optionLabel: 'Health & Nutrition', optionWeights: {…}, influence: 2, …}
+SmartProfileQuestionnaire.tsx:253 ✅ Processing answer: {questionId: 'lifestyle', optionId: 'health-focused', optionLabel: 'Health-Conscious', optionWeights: {…}, influence: 1.5, …}
+SmartProfileQuestionnaire.tsx:268 📊 Before normalization: {newWeights: {…}, totalInfluence: 3.5}
+SmartProfileQuestionnaire.tsx:278 📊 After normalization: {cost: 0.4, health: 0.8, cultural: 0.2857142857142857, variety: 0.5999999999999999, time: 0.2857142857142857}
+SmartProfileQuestionnaire.tsx:230 🔄 Updating weights from answers: {primary-focus: Array(1), lifestyle: Array(1), cooking-preferences: Array(1)}
+SmartProfileQuestionnaire.tsx:253 ✅ Processing answer: {questionId: 'primary-focus', optionId: 'health', optionLabel: 'Health & Nutrition', optionWeights: {…}, influence: 2, …}
+SmartProfileQuestionnaire.tsx:253 ✅ Processing answer: {questionId: 'lifestyle', optionId: 'health-focused', optionLabel: 'Health-Conscious', optionWeights: {…}, influence: 1.5, …}
+SmartProfileQuestionnaire.tsx:253 ✅ Processing answer: {questionId: 'cooking-preferences', optionId: 'quick-meals', optionLabel: 'Quick 15-minute meals', optionWeights: {…}, influence: 0.5, …}
+SmartProfileQuestionnaire.tsx:268 📊 Before normalization: {newWeights: {…}, totalInfluence: 4}
+SmartProfileQuestionnaire.tsx:278 📊 After normalization: {cost: 0.35000000000000003, health: 0.7000000000000001, cultural: 0.25, variety: 0.5249999999999999, time: 0.2875}
+SmartProfileQuestionnaire.tsx:322 🏁 Recalculated final weights: {cost: 0.35000000000000003, health: 0.7000000000000001, cultural: 0.25, variety: 0.5249999999999999, time: 0.2875}
+SmartProfileQuestionnaire.tsx:323 🏁 State calculated weights (for comparison): {cost: 0.35000000000000003, health: 0.7000000000000001, cultural: 0.25, variety: 0.5249999999999999, time: 0.2875}
+SmartProfileQuestionnaire.tsx:324 🏁 All answers: {primary-focus: Array(1), lifestyle: Array(1), cooking-preferences: Array(1)}
+SmartProfileQuestionnaire.tsx:352 🏁 Final questionnaire result: {weights: {…}, answers: {…}, selectedOptions: Array(3)}
+IntelligentMealSelector.tsx:55 📊 Questionnaire completed with result: {weights: {…}, answers: {…}, selectedOptions: Array(3)}

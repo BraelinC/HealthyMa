@@ -127,7 +127,8 @@ export default function WeightBasedProfile() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Profile update successful, response:', data);
       setSaveStatus('saved');
       toast({
         title: "Success", 
@@ -263,6 +264,9 @@ export default function WeightBasedProfile() {
   };
 
   const handleQuestionnaireComplete = (result: { weights: GoalWeights; answers: Record<string, string[]>; selectedOptions: any[] }) => {
+    console.log('🎯 Questionnaire completed with weights:', result.weights);
+    console.log('🎯 Current profile state:', profile);
+    
     setGoalWeights(result.weights);
     setQuestionnaireAnswers(result.answers);
     setSelectedOptions(result.selectedOptions);
@@ -280,8 +284,10 @@ export default function WeightBasedProfile() {
     };
 
     console.log('🚀 Auto-saving profile with questionnaire results:', profileData);
+    console.log('💾 Weights being saved:', result.weights);
 
     if (profile) {
+      console.log('📝 Updating existing profile...');
       updateProfileMutation.mutate(profileData);
     } else {
       createProfileMutation.mutate(profileData);

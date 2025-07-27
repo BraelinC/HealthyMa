@@ -2026,17 +2026,36 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
       const existingProfile = await storage.getProfile(Number(userId));
       
       if (existingProfile) {
+        // Extract stored goal weights from the goals array
+        const storedGoalWeights: any = {
+          cost: 0.5,
+          health: 0.5,
+          cultural: 0.5,
+          variety: 0.5,
+          time: 0.5
+        };
+
+        // Parse stored weights from goals array (format: "goal:weight")
+        if (existingProfile.goals && Array.isArray(existingProfile.goals)) {
+          existingProfile.goals.forEach((goal: string) => {
+            const [key, value] = goal.split(':');
+            if (key && value) {
+              const weight = parseFloat(value);
+              if (!isNaN(weight) && weight >= 0 && weight <= 1) {
+                storedGoalWeights[key] = weight;
+              }
+            }
+          });
+        }
+
+        console.log('📊 Extracted stored goal weights:', storedGoalWeights);
+        console.log('📋 Raw goals array:', existingProfile.goals);
+        
         // Convert existing profile to weight-based format
         const weightBasedProfile = {
           profileName: existingProfile.profile_name || 'My Profile',
           familySize: existingProfile.family_size || 2,
-          goalWeights: {
-            cost: 0.5,
-            health: 0.5,
-            cultural: 0.5,
-            variety: 0.5,
-            time: 0.5
-          },
+          goalWeights: storedGoalWeights,
           dietaryRestrictions: existingProfile.preferences || [],
           culturalBackground: existingProfile.cultural_background || []
         };
