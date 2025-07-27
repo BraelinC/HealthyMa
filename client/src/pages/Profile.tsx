@@ -1108,11 +1108,6 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            
-
-            {/* AI-Powered Meal Plan Generator */}
-            <AIPoweredMealPlanGenerator />
-
 
 
             {/* Achievements Section - Show for both individual and family profiles when not editing */}
