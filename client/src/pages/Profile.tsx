@@ -23,6 +23,7 @@ import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
 import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 
 import WeightBasedProfile from '@/components/WeightBasedProfile';
+import AIPoweredMealPlanGenerator from '@/components/AIPoweredMealPlanGenerator';
 
 const commonGoals = [
   'Lose Weight',
@@ -1109,6 +1110,9 @@ export default function Profile() {
 
             {/* Weight-Based Profile with Built-in Questionnaire */}
             <WeightBasedProfile />
+
+            {/* AI-Powered Meal Plan Generator */}
+            <AIPoweredMealPlanGenerator />
 
 
 
