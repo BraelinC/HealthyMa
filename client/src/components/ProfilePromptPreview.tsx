@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import IntelligentMealSelector from '@/components/IntelligentMealSelector';
+
 import { 
   Eye,
   EyeOff,
@@ -711,33 +711,9 @@ export default function ProfilePromptPreview({ profile, familyMembers }: Profile
 
   return (
     <div className="space-y-6">
-
-      {/* Intelligent Meal Selection System */}
-      <Card className="bg-gradient-to-r from-purple-50 to-emerald-50 border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-purple-600" />
-            🤖 AI-Powered Meal Plan Generator
-          </CardTitle>
-          <p className="text-sm text-gray-600">
-            Take a smart questionnaire to determine your meal planning priorities, then get an intelligent meal plan 
-            tailored to your preferences using advanced AI ranking.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <IntelligentMealSelector
-            userProfile={userProfile}
-            onMealSelected={(selectedMeal, weights) => {
-              console.log('🎯 Base meal selected:', selectedMeal.meal.name);
-              console.log('📊 Calculated weights:', weights);
-              // Here you could trigger meal plan generation or save the preferences
-            }}
-            onSkip={() => {
-              console.log('⏩ User skipped intelligent meal selection');
-            }}
-          />
-        </CardContent>
-      </Card>
+      <div className="text-center text-gray-500 py-8">
+        Profile preview functionality simplified
+      </div>
     </div>
   );
 }
