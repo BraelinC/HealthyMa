@@ -63,22 +63,7 @@ export default function DynamicMealRanking({ culturalBackground = [], primaryGoa
   );
 
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isLocked, setIsLocked] = useState(!!primaryGoal); // Lock weights if goal is set
-
-  // Update weights when primaryGoal or questionnaireWeights change
-  useEffect(() => {
-    console.log('🎛️ DynamicMealRanking received questionnaireWeights:', questionnaireWeights);
-    if (questionnaireWeights) {
-      setWeights(questionnaireWeights);
-      setIsLocked(true);
-      console.log('🔒 Locked weights from questionnaire:', questionnaireWeights);
-    } else if (primaryGoal) {
-      const newWeights = getWeightsFromGoal(primaryGoal);
-      setWeights(newWeights);
-      setIsLocked(true);
-      console.log('🔒 Locked weights from primaryGoal:', newWeights);
-    }
-  }, [primaryGoal, questionnaireWeights]);
+  const [isLocked, setIsLocked] = useState(!!questionnaireWeights || !!primaryGoal); // Lock weights if questionnaire or goal is set
 
   // Query for ranked meals based on current weights
   const { data: rankingData, isLoading, refetch } = useQuery({
@@ -104,6 +89,35 @@ export default function DynamicMealRanking({ culturalBackground = [], primaryGoa
     enabled: true,
     staleTime: 30000 // Cache for 30 seconds
   });
+
+  // Update weights when primaryGoal or questionnaireWeights change
+  useEffect(() => {
+    console.log('🎛️ DynamicMealRanking received questionnaireWeights:', questionnaireWeights);
+    console.log('🎛️ DynamicMealRanking received primaryGoal:', primaryGoal);
+    
+    if (questionnaireWeights) {
+      console.log('🔒 Setting weights from questionnaire:', questionnaireWeights);
+      setWeights(questionnaireWeights);
+      setIsLocked(true);
+      
+      // Auto-trigger ranking when questionnaire weights are detected
+      setTimeout(() => {
+        console.log('🚀 Auto-triggering ranking with questionnaire weights');
+        refetch();
+      }, 500);
+    } else if (primaryGoal) {
+      const newWeights = getWeightsFromGoal(primaryGoal);
+      console.log('🔒 Setting weights from primaryGoal:', newWeights);
+      setWeights(newWeights);
+      setIsLocked(true);
+      
+      // Auto-trigger ranking when goal weights are set
+      setTimeout(() => {
+        console.log('🚀 Auto-triggering ranking with goal weights');
+        refetch();
+      }, 500);
+    }
+  }, [primaryGoal, questionnaireWeights, refetch]);
 
   const handleWeightChange = (weightType: keyof WeightSettings, value: number[]) => {
     setWeights(prev => ({
@@ -162,11 +176,18 @@ export default function DynamicMealRanking({ culturalBackground = [], primaryGoa
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Label className="text-base font-medium">Your Meal Planning Priorities</Label>
-{primaryGoal && (
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              {questionnaireWeights && (
+                <Badge variant="default" className="bg-blue-600">
+                  Smart Profile Active
+                </Badge>
+              )}
+              {primaryGoal && !questionnaireWeights && (
                 <Badge variant="default" className="bg-purple-600">
                   {primaryGoal}
                 </Badge>
+              )}
+              {(questionnaireWeights || primaryGoal) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -177,8 +198,8 @@ export default function DynamicMealRanking({ culturalBackground = [], primaryGoa
                 >
                   {isLocked ? 'Unlock' : 'Lock'} Weights
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
           
           {Object.entries(weights).map(([type, value]) => {
@@ -214,7 +235,10 @@ disabled={isLocked}
             disabled={isUpdating || isLoading}
             className="w-full bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600"
           >
-{isUpdating ? 'Reranking Meals...' : (isLocked && primaryGoal ? `Find Best Meals for ${primaryGoal}` : 'Update Meal Rankings')}
+            {isUpdating ? 'Reranking Meals...' : 
+             (isLocked && questionnaireWeights ? 'Find Best Meals for Your Smart Profile' :
+              isLocked && primaryGoal ? `Find Best Meals for ${primaryGoal}` : 
+              'Update Meal Rankings')}
           </Button>
         </div>
 
@@ -222,8 +246,10 @@ disabled={isLocked}
 
         {/* Ranked Meals Results */}
         <div className="space-y-4">
-<Label className="text-base font-medium">
-            {primaryGoal && isLocked 
+          <Label className="text-base font-medium">
+            {questionnaireWeights && isLocked 
+              ? `Best Meals for Your Smart Profile (${rankingData?.rankedMeals?.length || 0} found)`
+              : primaryGoal && isLocked 
               ? `Best Meals for ${primaryGoal} (${rankingData?.rankedMeals?.length || 0} found)`
               : `Top Ranked Meals (${rankingData?.rankedMeals?.length || 0} found)`
             }

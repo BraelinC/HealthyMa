@@ -145,6 +145,15 @@ export default function Profile() {
     gcTime: 10 * 60 * 1000 // Keep in cache for 10 minutes (formerly cacheTime)
   });
 
+  // Fetch weight-based profile data for questionnaire weights
+  const { data: weightBasedProfile } = useQuery({
+    queryKey: ['/api/profile/weight-based'],
+    enabled: !!user,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
+  });
+
   // Log profile data for debugging
   useEffect(() => {
     console.log('=== PROFILE QUERY STATE ===');
@@ -152,7 +161,8 @@ export default function Profile() {
     console.log('IsLoading:', isLoading);
     console.log('Error:', error);
     console.log('Profile:', profile);
-  }, [user, isLoading, error, profile]);
+    console.log('WeightBasedProfile:', weightBasedProfile);
+  }, [user, isLoading, error, profile, weightBasedProfile]);
 
   const createProfileMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -315,10 +325,46 @@ export default function Profile() {
 
       // Extract questionnaire weights
       const extractQuestionnaireWeights = () => {
-        // First check if profile has weights as object (newer format)
+        console.log('🔍 Extracting questionnaire weights from profile data:', {
+          profileData: {
+            goalWeights: profileData.goalWeights,
+            questionnaire_answers: profileData.questionnaire_answers,
+            goals: profileData.goals
+          },
+          weightBasedProfile: weightBasedProfile
+        });
+
+        // First check weight-based profile data (primary source for questionnaire weights)
+        if (weightBasedProfile && weightBasedProfile.goalWeights && typeof weightBasedProfile.goalWeights === 'object') {
+          const weights = weightBasedProfile.goalWeights;
+          console.log('✅ Found goalWeights in weight-based profile:', weights);
+          return {
+            cultural: weights.cultural || 0.5,
+            health: weights.health || 0.5,
+            cost: weights.cost || 0.5,
+            time: weights.time || 0.5,
+            variety: weights.variety || 0.5
+          };
+        }
+
+        // Second check for goalWeights field in main profile (backup)
+        if (profileData.goalWeights && typeof profileData.goalWeights === 'object') {
+          const weights = profileData.goalWeights;
+          console.log('✅ Found goalWeights field in main profile:', weights);
+          return {
+            cultural: weights.cultural || 0.5,
+            health: weights.health || 0.5,
+            cost: weights.cost || 0.5,
+            time: weights.time || 0.5,
+            variety: weights.variety || 0.5
+          };
+        }
+
+        // Second check if profile has weights as object in goals field (legacy format)
         if (profileData.goals && typeof profileData.goals === 'object' && !Array.isArray(profileData.goals)) {
           const weights = profileData.goals as any;
           if (Object.keys(weights).length >= 3) {
+            console.log('✅ Found weights in goals object field:', weights);
             return {
               cultural: weights.cultural || 0.5,
               health: weights.health || 0.5,
@@ -329,7 +375,7 @@ export default function Profile() {
           }
         }
         
-        // Fallback to parsing from array format (legacy)
+        // Third fallback to parsing from array format (legacy)
         const goals = profileData.goals || [];
         if (Array.isArray(goals)) {
           const weights: any = {};
@@ -344,6 +390,7 @@ export default function Profile() {
           });
           
           if (Object.keys(weights).length >= 3) {
+            console.log('✅ Found weights in goals array field:', weights);
             return {
               cultural: weights.cultural || 0.5,
               health: weights.health || 0.5,
@@ -354,6 +401,7 @@ export default function Profile() {
           }
         }
         
+        console.log('❌ No questionnaire weights found in profile data');
         return null;
       };
 
@@ -361,7 +409,7 @@ export default function Profile() {
       console.log('📊 Extracted questionnaire weights:', extractedWeights);
       setQuestionnaireWeights(extractedWeights);
     }
-  }, [profile]);
+  }, [profile, weightBasedProfile]);
 
   // Debug cultural background changes
   useEffect(() => {
