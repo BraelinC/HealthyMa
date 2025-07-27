@@ -22,7 +22,7 @@ import AchievementsContainer from '@/components/AchievementsContainer';
 import PerplexityCacheViewer from '@/components/PerplexityCacheViewer';
 import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 
-
+import AIPoweredMealPlanGenerator from '@/components/AIPoweredMealPlanGenerator';
 
 
 const commonGoals = [
@@ -1108,7 +1108,8 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-
+            {/* AI-Powered Meal Plan Generator with Sliders */}
+            <AIPoweredMealPlanGenerator />
 
             {/* Achievements Section - Show for both individual and family profiles when not editing */}
             {!isEditing && (profile || profileType === 'individual') && (
