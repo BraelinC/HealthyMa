@@ -62,12 +62,17 @@ export default function DynamicMealRanking({ culturalBackground = [], primaryGoa
     questionnaireWeights || getWeightsFromGoal(primaryGoal)
   );
 
+  // Debug log when weights change
+  useEffect(() => {
+    console.log('🎯 DynamicMealRanking weights state changed:', weights);
+  }, [weights]);
+
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLocked, setIsLocked] = useState(!!questionnaireWeights || !!primaryGoal); // Lock weights if questionnaire or goal is set
 
   // Query for ranked meals based on current weights
   const { data: rankingData, isLoading, refetch } = useQuery({
-    queryKey: ['test-cultural-ranking', weights],
+    queryKey: ['test-cultural-ranking', weights, culturalBackground],
     queryFn: async () => {
       const response = await apiRequest('/api/test-cultural-ranking', {
         method: 'POST',
@@ -92,17 +97,22 @@ export default function DynamicMealRanking({ culturalBackground = [], primaryGoa
 
   // Update weights when primaryGoal or questionnaireWeights change
   useEffect(() => {
-    console.log('🎛️ DynamicMealRanking received questionnaireWeights:', questionnaireWeights);
-    console.log('🎛️ DynamicMealRanking received primaryGoal:', primaryGoal);
+    console.log('🎛️ DynamicMealRanking received props:', {
+      questionnaireWeights,
+      primaryGoal,
+      hasQuestionnaireWeights: !!questionnaireWeights,
+      currentWeights: weights
+    });
     
     if (questionnaireWeights) {
       console.log('🔒 Setting weights from questionnaire:', questionnaireWeights);
+      console.log('🔒 Previous weights:', weights);
       setWeights(questionnaireWeights);
       setIsLocked(true);
       
       // Auto-trigger ranking when questionnaire weights are detected
       setTimeout(() => {
-        console.log('🚀 Auto-triggering ranking with questionnaire weights');
+        console.log('🚀 Auto-triggering ranking with questionnaire weights:', questionnaireWeights);
         refetch();
       }, 500);
     } else if (primaryGoal) {
@@ -113,9 +123,11 @@ export default function DynamicMealRanking({ culturalBackground = [], primaryGoa
       
       // Auto-trigger ranking when goal weights are set
       setTimeout(() => {
-        console.log('🚀 Auto-triggering ranking with goal weights');
+        console.log('🚀 Auto-triggering ranking with goal weights:', newWeights);
         refetch();
       }, 500);
+    } else {
+      console.log('🔓 No questionnaire weights or primary goal found, using defaults');
     }
   }, [primaryGoal, questionnaireWeights, refetch]);
 

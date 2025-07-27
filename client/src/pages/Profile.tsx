@@ -334,9 +334,9 @@ export default function Profile() {
           weightBasedProfile: weightBasedProfile
         });
 
-        // First check weight-based profile data (primary source for questionnaire weights)
-        if (weightBasedProfile && weightBasedProfile.goalWeights && typeof weightBasedProfile.goalWeights === 'object') {
-          const weights = weightBasedProfile.goalWeights;
+        // Primary: Check weight-based profile data (where questionnaire saves weights)
+        if (weightBasedProfile && (weightBasedProfile as any).goalWeights && typeof (weightBasedProfile as any).goalWeights === 'object') {
+          const weights = (weightBasedProfile as any).goalWeights;
           console.log('✅ Found goalWeights in weight-based profile:', weights);
           return {
             cultural: weights.cultural || 0.5,
@@ -345,6 +345,51 @@ export default function Profile() {
             time: weights.time || 0.5,
             variety: weights.variety || 0.5
           };
+        }
+
+        // Secondary: Check if weight-based profile has goalWeights in any nested structure
+        if (weightBasedProfile) {
+          const wbp = weightBasedProfile as any;
+          console.log('🔍 Full weight-based profile structure:', wbp);
+          
+          // Check nested structures
+          if (wbp.profile && wbp.profile.goalWeights) {
+            const weights = wbp.profile.goalWeights;
+            console.log('✅ Found goalWeights in nested profile:', weights);
+            return {
+              cultural: weights.cultural || 0.5,
+              health: weights.health || 0.5,
+              cost: weights.cost || 0.5,
+              time: weights.time || 0.5,
+              variety: weights.variety || 0.5
+            };
+          }
+          
+          // Check for any goalWeights property anywhere in the object
+          const findGoalWeights = (obj: any, path = ''): any => {
+            if (obj && typeof obj === 'object') {
+              if (obj.goalWeights && typeof obj.goalWeights === 'object') {
+                console.log(`✅ Found goalWeights at path: ${path}.goalWeights`, obj.goalWeights);
+                return obj.goalWeights;
+              }
+              for (const [key, value] of Object.entries(obj)) {
+                const result = findGoalWeights(value, path ? `${path}.${key}` : key);
+                if (result) return result;
+              }
+            }
+            return null;
+          };
+          
+          const foundWeights = findGoalWeights(wbp);
+          if (foundWeights) {
+            return {
+              cultural: foundWeights.cultural || 0.5,
+              health: foundWeights.health || 0.5,
+              cost: foundWeights.cost || 0.5,
+              time: foundWeights.time || 0.5,
+              variety: foundWeights.variety || 0.5
+            };
+          }
         }
 
         // Second check for goalWeights field in main profile (backup)

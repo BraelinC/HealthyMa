@@ -95,7 +95,10 @@ export default function WeightBasedProfile() {
         description: "Weight-based profile created successfully!"
       });
       setIsEditing(false);
+      
+      // Invalidate both profile queries to update all components
       queryClient.invalidateQueries({ queryKey: ['/api/profile/weight-based'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
       
       // Reset to idle after showing saved state
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -131,7 +134,10 @@ export default function WeightBasedProfile() {
         description: "Profile updated successfully!"
       });
       setIsEditing(false);
+      
+      // Invalidate both profile queries to update all components
       queryClient.invalidateQueries({ queryKey: ['/api/profile/weight-based'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
       
       // Reset to idle after showing saved state
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -261,11 +267,29 @@ export default function WeightBasedProfile() {
     setQuestionnaireAnswers(result.answers);
     setSelectedOptions(result.selectedOptions);
     setShowQuestionnaire(false);
-    setIsEditing(true);
+    
+    // Auto-save the profile with questionnaire results
+    const profileData: Partial<SimplifiedUserProfile> = {
+      profileName: profileName.trim() || 'My Smart Profile',
+      familySize,
+      goalWeights: result.weights,
+      dietaryRestrictions,
+      culturalBackground,
+      questionnaire_answers: result.answers,
+      questionnaire_selections: result.selectedOptions
+    };
+
+    console.log('🚀 Auto-saving profile with questionnaire results:', profileData);
+
+    if (profile) {
+      updateProfileMutation.mutate(profileData);
+    } else {
+      createProfileMutation.mutate(profileData);
+    }
     
     toast({
       title: "Smart Profile Setup Complete!",
-      description: "Your meal planning priorities have been configured. Review and save your profile."
+      description: "Your meal planning priorities have been saved and are now active."
     });
   };
 
