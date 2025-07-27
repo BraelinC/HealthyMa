@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
@@ -65,11 +66,7 @@ export default function AIPoweredMealPlanGenerator() {
   // Fetch current profile data
   const { data: profileData, isLoading } = useQuery<ProfileData>({
     queryKey: ['weight-based-profile'],
-    queryFn: async () => {
-      const response = await fetch('/api/profile/weight-based');
-      if (!response.ok) throw new Error('Failed to fetch profile');
-      return response.json();
-    }
+    queryFn: () => apiRequest('/api/profile/weight-based')
   });
 
   // Update current weights when profile data loads
@@ -95,20 +92,11 @@ export default function AIPoweredMealPlanGenerator() {
       );
       console.log('🤖 AI Generator: Validated weights:', validatedWeights);
       
-      const response = await fetch('/api/profile/weight-based', {
+      const result = await apiRequest('/api/profile/weight-based', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ goalWeights: validatedWeights })
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('🤖 AI Generator: Save failed with status:', response.status);
-        console.error('🤖 AI Generator: Error response:', errorText);
-        throw new Error(`Failed to save weights: ${response.status} ${errorText}`);
-      }
-      
-      const result = await response.json();
       console.log('🤖 AI Generator: Save successful, response:', result);
       return result;
     },
@@ -122,11 +110,8 @@ export default function AIPoweredMealPlanGenerator() {
       // Verify the save by checking what was actually stored
       setTimeout(async () => {
         try {
-          const verifyResponse = await fetch('/api/profile/weight-based');
-          if (verifyResponse.ok) {
-            const verifyData = await verifyResponse.json();
-            console.log('🔍 AI Generator: Verification check - stored weights:', verifyData.goalWeights);
-          }
+          const verifyData = await apiRequest('/api/profile/weight-based');
+          console.log('🔍 AI Generator: Verification check - stored weights:', verifyData.goalWeights);
         } catch (error) {
           console.warn('🔍 AI Generator: Verification check failed:', error);
         }

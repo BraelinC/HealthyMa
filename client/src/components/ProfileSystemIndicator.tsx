@@ -17,12 +17,12 @@ export default function ProfileSystemIndicator() {
       {isSmartProfileEnabled ? (
         <>
           <Target className="h-3 w-3" />
-          Smart Profile Active
+          Advanced Planner
         </>
       ) : (
         <>
           <Users className="h-3 w-3" />
-          Traditional Profile Active
+          Traditional Planner
         </>
       )}
     </Badge>
