@@ -1110,6 +1110,9 @@ export default function Profile() {
 
 
 
+            {/* AI-Powered Meal Plan Generator */}
+            <AIPoweredMealPlanGenerator />
+
             {/* Achievements Section - Show for both individual and family profiles when not editing */}
             {!isEditing && (profile || profileType === 'individual') && (
               <AchievementsContainer />
