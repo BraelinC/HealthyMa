@@ -2026,7 +2026,15 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
       const existingProfile = await storage.getProfile(Number(userId));
       
       if (existingProfile) {
-        // Extract stored goal weights from the goals array
+        console.log('🔍 Processing existing profile for weight extraction:', {
+          profile_name: existingProfile.profile_name,
+          goals: existingProfile.goals,
+          goalsType: typeof existingProfile.goals,
+          goalsIsArray: Array.isArray(existingProfile.goals),
+          goalsLength: existingProfile.goals?.length
+        });
+
+        // Extract stored goal weights - handle both object and array formats
         const storedGoalWeights: any = {
           cost: 0.5,
           health: 0.5,
@@ -2035,21 +2043,65 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
           time: 0.5
         };
 
-        // Parse stored weights from goals array (format: "goal:weight")
-        if (existingProfile.goals && Array.isArray(existingProfile.goals)) {
-          existingProfile.goals.forEach((goal: string) => {
-            const [key, value] = goal.split(':');
-            if (key && value) {
-              const weight = parseFloat(value);
-              if (!isNaN(weight) && weight >= 0 && weight <= 1) {
-                storedGoalWeights[key] = weight;
+        let parsedWeightsCount = 0;
+
+        if (existingProfile.goals) {
+          console.log('📋 Processing goals data:', existingProfile.goals, 'type:', typeof existingProfile.goals);
+          
+          // Handle object format (e.g., {"cost":0.8,"health":0.5,...})
+          if (typeof existingProfile.goals === 'object' && !Array.isArray(existingProfile.goals)) {
+            console.log('📋 Processing goals as object format');
+            
+            Object.entries(existingProfile.goals).forEach(([key, value]) => {
+              console.log(`🔍 Processing goal object entry: key="${key}", value="${value}"`);
+              
+              if (typeof value === 'number' && value >= 0 && value <= 1) {
+                storedGoalWeights[key] = value;
+                parsedWeightsCount++;
+                console.log(`   ✅ Set ${key} = ${value}`);
+              } else {
+                console.log(`   ❌ Invalid weight value: ${value}`);
               }
-            }
-          });
+            });
+          }
+          // Handle array format (e.g., ["cost:0.8", "health:0.5", ...])
+          else if (Array.isArray(existingProfile.goals)) {
+            console.log('📋 Processing goals as array format');
+            
+            existingProfile.goals.forEach((goal: string, index: number) => {
+              console.log(`🔍 Processing goal ${index}:`, goal, typeof goal);
+              
+              if (typeof goal === 'string' && goal.includes(':')) {
+                const [key, value] = goal.split(':');
+                console.log(`   Split result: key="${key}", value="${value}"`);
+                
+                if (key && value) {
+                  const weight = parseFloat(value);
+                  console.log(`   Parsed weight: ${weight}, isNaN: ${isNaN(weight)}`);
+                  
+                  if (!isNaN(weight) && weight >= 0 && weight <= 1) {
+                    storedGoalWeights[key] = weight;
+                    parsedWeightsCount++;
+                    console.log(`   ✅ Set ${key} = ${weight}`);
+                  } else {
+                    console.log(`   ❌ Invalid weight value: ${weight}`);
+                  }
+                } else {
+                  console.log(`   ❌ Missing key or value after split`);
+                }
+              } else {
+                console.log(`   ❌ Goal is not string or doesn't contain ":"`);
+              }
+            });
+          } else {
+            console.log('❌ Goals is neither object nor array');
+          }
+        } else {
+          console.log('❌ Goals is null/undefined');
         }
 
-        console.log('📊 Extracted stored goal weights:', storedGoalWeights);
-        console.log('📋 Raw goals array:', existingProfile.goals);
+        console.log('📊 Final extracted stored goal weights:', storedGoalWeights);
+        console.log(`📊 Successfully parsed ${parsedWeightsCount} weights from ${existingProfile.goals?.length || 0} goals`);
         
         // Convert existing profile to weight-based format
         const weightBasedProfile = {
@@ -2077,7 +2129,21 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+
+      console.log('💾 Creating weight-based profile with data:', {
+        profileName,
+        familySize,
+        goalWeights,
+        dietaryRestrictions,
+        culturalBackground,
+        questionnaire_answers,
+        questionnaire_selections
+      });
+
+      // Convert goalWeights to goals array format
+      const goalsArray = Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`);
+      console.log('💾 Converted goalWeights to goals array for creation:', goalsArray);
 
       // Create profile using existing schema structure
       const profileData = {
@@ -2088,18 +2154,30 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         members: [], // Empty for weight-based approach
         profile_type: 'individual' as const,
         preferences: dietaryRestrictions,
-        goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
+        goals: goalsArray,
         cultural_background: culturalBackground
       };
 
+      console.log('💾 Final profileData being created:', profileData);
+
       const profile = await storage.createProfile(profileData);
-      res.json({
+      
+      console.log('💾 Profile created successfully:', {
+        profile_name: profile.profile_name,
+        goals: profile.goals,
+        savedGoalWeights: goalWeights
+      });
+
+      const response = {
         profileName: profile.profile_name,
         familySize: profile.family_size,
         goalWeights,
         dietaryRestrictions: profile.preferences,
         culturalBackground: profile.cultural_background
-      });
+      };
+
+      console.log('💾 Returning creation response to client:', response);
+      res.json(response);
     } catch (error) {
       console.error("Error creating weight-based profile:", error);
       res.status(500).json({ message: "Failed to create weight-based profile" });
@@ -2113,7 +2191,21 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+
+      console.log('💾 Saving weight-based profile with data:', {
+        profileName,
+        familySize,
+        goalWeights,
+        dietaryRestrictions,
+        culturalBackground,
+        questionnaire_answers,
+        questionnaire_selections
+      });
+
+      // Convert goalWeights to goals array format
+      const goalsArray = Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`);
+      console.log('💾 Converted goalWeights to goals array:', goalsArray);
 
       // Update profile using existing schema structure
       const profileData = {
@@ -2123,22 +2215,33 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         members: [],
         profile_type: 'individual' as const,
         preferences: dietaryRestrictions,
-        goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
+        goals: goalsArray,
         cultural_background: culturalBackground
       };
+
+      console.log('💾 Final profileData being saved:', profileData);
 
       const profile = await storage.updateProfile(Number(userId), profileData);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      res.json({
+      console.log('💾 Profile saved successfully:', {
+        profile_name: profile.profile_name,
+        goals: profile.goals,
+        savedGoalWeights: goalWeights
+      });
+
+      const response = {
         profileName: profile.profile_name,
         familySize: profile.family_size,
         goalWeights,
         dietaryRestrictions: profile.preferences,
         culturalBackground: profile.cultural_background
-      });
+      };
+
+      console.log('💾 Returning response to client:', response);
+      res.json(response);
     } catch (error) {
       console.error("Error updating weight-based profile:", error);
       res.status(500).json({ message: "Failed to update weight-based profile" });
