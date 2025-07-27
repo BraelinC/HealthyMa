@@ -15,6 +15,7 @@ import type { GoalWeights, SimplifiedUserProfile } from '@shared/schema';
 import SmartCulturalPreferenceEditor from '@/components/SmartCulturalPreferenceEditor';
 import SmartProfileQuestionnaire from '@/components/SmartProfileQuestionnaire';
 import QuestionnaireAnswersDisplay from '@/components/QuestionnaireAnswersDisplay';
+import { useProfileSystem } from '@/hooks/useProfileSystem';
 
 const commonDietaryRestrictions = [
   'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo',
@@ -42,6 +43,7 @@ export default function WeightBasedProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { setToTraditionalProfile } = useProfileSystem();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
@@ -267,6 +269,50 @@ export default function WeightBasedProfile() {
       title: "Smart Profile Setup Complete!",
       description: "Your meal planning priorities have been configured. Review and save your profile."
     });
+
+    // Auto-save the profile with questionnaire results and then redirect to meal planner
+    const autoSaveProfile = async () => {
+      try {
+        const profileData: Partial<SimplifiedUserProfile> = {
+          profileName: profileName.trim() || 'My Smart Profile',
+          familySize: familySize || 2,
+          goalWeights: result.weights,
+          dietaryRestrictions: dietaryRestrictions || [],
+          culturalBackground: culturalBackground || [],
+          questionnaire_answers: result.answers,
+          questionnaire_selections: result.selectedOptions
+        };
+
+        if (profile) {
+          await updateProfileMutation.mutateAsync(profileData);
+        } else {
+          await createProfileMutation.mutateAsync(profileData);
+        }
+
+        // Show success and offer to go to meal planner
+        setTimeout(() => {
+          toast({
+            title: "Ready to Create Meal Plans! 🍽️",
+            description: "Your smart profile is saved. Click to start planning meals with your personalized weights.",
+            action: (
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => window.location.href = '/meal-planner'}
+                  className="bg-emerald-500 text-white px-3 py-1 rounded text-sm hover:bg-emerald-600"
+                >
+                  Start Meal Planning
+                </button>
+              </div>
+            ),
+          });
+        }, 1000);
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+        // If auto-save fails, still let user manually save
+      }
+    };
+
+    autoSaveProfile();
   };
 
   const handleQuestionnaireSkip = () => {
@@ -315,12 +361,23 @@ export default function WeightBasedProfile() {
               <p className="text-gray-600 mt-1">Set your priorities with intelligent weight-based preferences</p>
             </div>
           </div>
-          {!isEditing && profile && (
-            <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0">
-              <Edit3 className="h-4 w-4" />
-              Edit Profile
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={setToTraditionalProfile} 
+              variant="outline" 
+              size="sm" 
+              className="border-blue-500 text-blue-600 hover:bg-blue-50"
+            >
+              <ChefHat className="h-4 w-4 mr-2" />
+              Family Profile
             </Button>
-          )}
+            {!isEditing && profile && (
+              <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0">
+                <Edit3 className="h-4 w-4" />
+                Edit Profile
+              </Button>
+            )}
+          </div>
         </div>
 
         {!profile && !isEditing && (
