@@ -146,7 +146,15 @@ IMPORTANT: Each meal MUST include:
     
     // Combine goal prompts into a coherent paragraph
     const mainPrompt = goal.prompts[0];
-    const additionalPoints = goal.prompts.slice(1).map(p => `- ${p}`).join('\n');
+    let additionalPoints = goal.prompts.slice(1).map(p => `- ${p}`).join('\n');
+    
+    // Add specific requirements for muscle gain
+    if (primaryGoal === 'Gain Muscle') {
+      additionalPoints += '\n- PROTEIN REQUIREMENT: Each meal MUST contain 40-50g of protein minimum';
+      additionalPoints += '\n- Ensure total daily protein intake of 150-180g across all meals';
+      additionalPoints += '\n- Focus on caloric surplus with 2500-3000 calories per day total';
+      additionalPoints += '\n- Prioritize complete proteins from culturally appropriate sources';
+    }
     
     return `${mainPrompt}\n${additionalPoints}`;
   }

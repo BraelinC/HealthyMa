@@ -1752,8 +1752,21 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
           advanced_prompt_used: true,
           prompt_builder_version: 'V2',
           generation_time_ms: Date.now() - startTime
+        },
+        debugInfo: {
+          promptSystem: 'V3-Template',
+          promptLength: prompt.length,
+          isNewGeneration: true,
+          timestamp: new Date().toISOString(),
+          maxCookTime: maxCookTime,
+          maxDifficulty: maxDifficulty
         }
       };
+
+      // Add debug prompt only in development
+      if (process.env.NODE_ENV === 'development') {
+        (finalMealPlan as any).debugPrompt = prompt;
+      }
 
       console.log(`✅ Generated weight-based meal plan in ${Date.now() - startTime}ms`);
       res.json(finalMealPlan);

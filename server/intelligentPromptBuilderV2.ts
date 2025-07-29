@@ -593,7 +593,7 @@ const UNIFIED_GOALS: UnifiedGoal[] = [
       "Prioritize nutrient-dense, satisfying foods that aid physical repair and consistent energy",
       "Structure the plan with [number] main meals, spaced to fuel workouts and recovery periods",
       "Each meal should include portion sizes, estimated protein content, calorie estimates, and preparation instructions",
-      "Include a variety of lean proteins (e.g., chicken, fish, tofu, legumes), whole grains, and colorful vegetables",
+      "Include a variety of protein-rich foods appropriate to the cultural cuisine, whole grains, and colorful vegetables",
       "The plan should promote steady nourishment, muscle repair, and strength gains throughout the day"
     ],
     filterAdjustments: {
