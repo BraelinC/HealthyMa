@@ -545,18 +545,136 @@ interface UnifiedGoal {
   filterAdjustments: Partial<MealPlanFilters>;
 }
 
-const UNIFIED_GOALS: UnifiedGoal[] = [
+// Family-specific goals
+const FAMILY_GOALS: UnifiedGoal[] = [
   {
     value: "Save Money",
     label: "💸 Save Money",
     nutritionFocus: "general_wellness",
     prompts: [
-      "Generate a cost-effective meal plan that reduces food expenses through strategic ingredient overlap and simplicity",
-      "Use a small set of base ingredients repeatedly across meals to minimize waste and maximize value",
-      "Focus on affordable, versatile staples (e.g., beans, rice, eggs, seasonal produce)",
-      "Structure the plan for [number] main meals per day, with batch-prep options and clear storage instructions",
-      "For each meal, list ingredients, estimated cost, and preparation steps",
-      "The plan should be low-waste, scalable, and easy to prepare in advance"
+      "Generate a weekly meal plan using budget-friendly recipes for a family",
+      "Prioritize affordable ingredients that can be bought in bulk",
+      "Minimize waste by using ingredients across multiple meals",
+      "Maximize leftovers that can be repurposed for lunches or next day meals",
+      "Focus on family-sized portions that provide good value",
+      "Include batch cooking opportunities to save time and money"
+    ],
+    filterAdjustments: {
+      encourageOverlap: true,
+      availableIngredientUsagePercent: 85,
+      budgetConstraints: 'low',
+      varietyPreference: 'consistent'
+    }
+  },
+  {
+    value: "Quick & Simple Meals",
+    label: "⏱️ Quick & Simple",
+    nutritionFocus: "general_wellness",
+    prompts: [
+      "Generate a structured weekly meal plan optimized for time-constrained families requiring rapid meal preparation without sacrificing nutritional value",
+      "Prioritize recipes with total time investment under 30 minutes while maintaining nutritional density, balanced macronutrients, and broad family appeal",
+      "Structure meals to minimize active cooking time through strategic use of one-pot techniques, sheet pan methods, and parallel preparation workflows",
+      "Each recipe should detail exact timing breakdowns, parallel cooking steps, ingredient staging, and efficiency shortcuts that compress traditional cooking times",
+      "Include ingredient prep strategies that reduce daily cooking burden through batch processing, strategic pre-cutting, and intelligent storage methods",
+      "Suggest time-saving equipment usage, technique modifications, and process optimizations that maintain meal quality while drastically reducing hands-on time",
+      "The plan should enable consistent family nutrition despite severe time constraints through operational efficiency and systematic meal architecture"
+    ],
+    filterAdjustments: {
+      encourageOverlap: true,
+      availableIngredientUsagePercent: 70,
+      prepTimePreference: 'minimal'
+    }
+  },
+  {
+    value: "Complex Meals",
+    label: "👨‍🍳 Complex Meals",
+    nutritionFocus: "general_wellness",
+    prompts: [
+      "Design an ambitious weekly meal plan for families passionate about culinary exploration and collaborative cooking experiences",
+      "Structure meals requiring advanced techniques including fermentation, multi-stage preparations, precision temperature control, and professional-level execution",
+      "Orchestrate recipes with complexity scores of 4-5 that demand skilled knife work, timing coordination, and mastery of multiple cooking methods simultaneously",
+      "Each meal should include detailed mise en place instructions, technique breakdowns, family member task assignments, and progression milestones",
+      "Incorporate restaurant-caliber dishes spanning global cuisines that teach fundamental and advanced skills through hands-on family participation",
+      "Provide comprehensive guidance on ingredient sourcing for specialty items, equipment requirements, and skill-building progressions for each family member",
+      "The plan should transform weekend cooking into educational culinary journeys that build technique mastery while creating memorable family experiences"
+    ],
+    filterAdjustments: {
+      encourageOverlap: false,
+      varietyPreference: 'high_variety',
+      prepTimePreference: 'enjoys_cooking'
+    }
+  },
+  {
+    value: "Cook Big Batches",
+    label: "🍲 Big Batch Cooking",
+    nutritionFocus: "general_wellness",
+    prompts: [
+      "Engineer a comprehensive batch cooking meal plan that maximizes family food production efficiency through strategic large-scale preparation",
+      "Design recipes yielding 8-12 servings minimum that maintain quality through proper storage, leveraging freezer-stable techniques and vacuum sealing methods",
+      "Structure the plan around scalable base components that transform into multiple distinct meals through flavor pivoting and creative repurposing strategies",
+      "Each recipe must include precise scaling formulas, industrial cooking techniques adapted for home use, and multi-stage storage protocols with shelf life data",
+      "Incorporate batch cooking workflows that compress 5 days of cooking into single 3-4 hour sessions through parallel processing and equipment optimization",
+      "Detail comprehensive storage systems including container specifications, labeling protocols, FIFO rotation schedules, and quality maintenance techniques",
+      "The plan should enable families to achieve restaurant-level meal variety while investing minimal daily cooking time through systematic batch production"
+    ],
+    filterAdjustments: {
+      encourageOverlap: true,
+      availableIngredientUsagePercent: 75,
+      prepTimePreference: 'batch_cooking'
+    }
+  },
+  {
+    value: "Baby-Friendly",
+    label: "👶 Baby-Friendly",
+    nutritionFocus: "baby_nutrition",
+    prompts: [
+      "Develop a medically-informed meal progression plan for infants and toddlers aged 6-24 months following pediatric nutrition guidelines and WHO recommendations",
+      "Structure meals across texture stages: smooth purees (6-8mo), mashed/lumpy (8-10mo), minced/chopped (10-12mo), and family foods (12-24mo) with precise consistency specifications",
+      "CRITICAL SAFETY: Eliminate all honey, added salt/sugar, whole nuts, popcorn, hard vegetables, and foods with choking risk dimensions exceeding infant oral capacity",
+      "Engineer nutrient-dense combinations emphasizing iron bioavailability (15mg/day), DHA omega-3s, zinc, and vitamin D through strategic food pairing and absorption optimization",
+      "Design systematic allergen introduction protocols following early exposure guidelines with 3-5 day monitoring windows between new foods for reaction assessment",
+      "Include detailed preparation methods for texture modification, portion sizes by age/weight, temperature guidelines, and storage protocols maintaining nutritional integrity",
+      "The plan should support optimal neurodevelopment and growth trajectories while establishing diverse flavor acceptance through graduated sensory exposure"
+    ],
+    filterAdjustments: {
+      varietyPreference: 'moderate',
+      prepTimePreference: 'minimal'
+    }
+  },
+  {
+    value: "Young Kid-Friendly",
+    label: "🧒 Kid-Friendly",
+    nutritionFocus: "general_wellness",
+    prompts: [
+      "Architect a behavioral nutrition meal plan for young children aged 2-6 years integrating child development psychology with nutritional science",
+      "Engineer meals using sensory appeal strategies: vibrant color contrasts, playful geometric shapes, interactive assembly, and textural variety to overcome neophobia",
+      "Calibrate flavor profiles within pediatric preference windows using mild seasonings, natural sweetness from fruits, and umami-rich bases while avoiding overwhelming spices",
+      "Structure portions using child-scaled servings (1 tablespoon per year of age) with nutrient density calculations ensuring RDA achievement despite smaller volumes",
+      "Implement stealth nutrition techniques embedding vegetables through purees, grating, and incorporation into preferred vehicles while maintaining recognizable base flavors",
+      "Design eating experiences promoting autonomy through finger foods, build-your-own stations, and choice architectures that guide selection toward nutritious options",
+      "The plan should transform mealtime battles into positive food relationships while meeting growth requirements through strategic presentation and psychological framing"
+    ],
+    filterAdjustments: {
+      varietyPreference: 'moderate',
+      prepTimePreference: 'moderate'
+    }
+  }
+];
+
+// Individual-specific goals
+const INDIVIDUAL_GOALS: UnifiedGoal[] = [
+  {
+    value: "Save Money",
+    label: "💸 Save Money",
+    nutritionFocus: "general_wellness",
+    prompts: [
+      "Architect a hyper-efficient single-person meal plan maximizing nutritional ROI while minimizing cost per nutrient unit through strategic ingredient selection",
+      "Engineer recipes utilizing ingredients with extended shelf stability and multiple use cases, preventing single-person waste through systematic cross-utilization strategies",
+      "Calculate precise single-serving portions using yield management principles to eliminate overproduction while maintaining economies of scale through bulk purchasing",
+      "Design ingredient rotation systems where each purchase serves 4-6 distinct recipes, creating flavor variety while maximizing ingredient depletion before spoilage",
+      "Implement storage optimization protocols including vacuum sealing, controlled atmosphere storage, and strategic freezing to extend ingredient viability for solo consumption",
+      "Structure shopping strategies leveraging loss leaders, seasonal pricing, and bulk-to-portion conversions that achieve sub-$2 per meal costs while meeting nutritional targets",
+      "The plan should achieve 40-60% cost reduction versus typical single-person dining while maintaining dietary quality through systematic resource optimization"
     ],
     filterAdjustments: {
       encourageOverlap: true,
@@ -566,35 +684,35 @@ const UNIFIED_GOALS: UnifiedGoal[] = [
     }
   },
   {
-    value: "Eat Healthier",
-    label: "🍎 Eat Healthier", 
+    value: "Meal Prep",
+    label: "🥡 Meal Prep",
     nutritionFocus: "general_wellness",
     prompts: [
-      "Create a daily meal plan focused on long-term food quality and better daily choices",
-      "Each meal should promote nourishment, food diversity, and satiety, using simple and consistent recipes",
-      "Include a variety of whole foods: vegetables, fruits, whole grains, lean proteins, and healthy fats",
-      "Structure the plan with [number] main meals, with clear portion guidance",
-      "For each meal, provide a brief description, ingredients, and preparation steps",
-      "The goal is to reinforce healthy eating patterns that gradually reshape meal habits"
+      "Design a systematic weekly meal prep architecture for solo dining that compresses 7 days of cooking into single 2-3 hour production sessions",
+      "Engineer recipes optimized for batch production with graduated storage stability: immediate consumption (days 1-2), short-term refrigeration (days 3-4), and freezer rotation (days 5-7)",
+      "Structure prep workflows using mise en place principles, parallel processing, and equipment maximization to achieve 15-minute daily meal assembly from prepped components",
+      "Calculate precise container ecosystems with portion control built-in, using modular sizing that prevents decision fatigue while maintaining nutritional targets per meal",
+      "Implement quality maintenance protocols including blast chilling, vacuum sealing, and strategic sauce separation to preserve texture and flavor integrity throughout the week",
+      "Design ingredient prep strategies that create versatile base components transformable into multiple cuisines through seasoning and assembly variations",
+      "The plan should reduce daily cooking time to under 10 minutes while providing restaurant-quality variety through systematic Sunday prep sessions"
     ],
     filterAdjustments: {
-      encourageOverlap: false,
-      availableIngredientUsagePercent: 50,
-      varietyPreference: 'high_variety'
+      encourageOverlap: true,
+      availableIngredientUsagePercent: 75,
+      prepTimePreference: 'batch_cooking'
     }
   },
   {
     value: "Gain Muscle",
-    label: "🏋️ Build Muscle",
-    nutritionFocus: "muscle_gain", 
+    label: "💪 Gain Muscle",
+    nutritionFocus: "muscle_gain",
     prompts: [
-      "Generate a structured daily meal plan for a user training regularly to build muscle",
-      "Meals should emphasize foods naturally rich in protein, complex carbohydrates, and healthy fats to support muscle growth and recovery",
-      "Prioritize nutrient-dense, satisfying foods that aid physical repair and consistent energy",
-      "Structure the plan with [number] main meals, spaced to fuel workouts and recovery periods",
-      "Each meal should include portion sizes, estimated protein content, calorie estimates, and preparation instructions",
-      "Include a variety of protein-rich foods appropriate to the cultural cuisine, whole grains, and colorful vegetables",
-      "The plan should promote steady nourishment, muscle repair, and strength gains throughout the day"
+      "Create high-protein meal plans for one person focusing on muscle growth",
+      "Each meal should contain 40-50g of protein minimum",
+      "Ensure total daily protein intake of 150-180g",
+      "Focus on portion sizes appropriate for one person",
+      "Include post-workout meal timing suggestions",
+      "Balance protein with complex carbs and healthy fats for recovery"
     ],
     filterAdjustments: {
       encourageOverlap: true,
@@ -603,17 +721,16 @@ const UNIFIED_GOALS: UnifiedGoal[] = [
     }
   },
   {
-    value: "Lose Weight",
+    value: "Lose Weight", 
     label: "⚖️ Lose Weight",
     nutritionFocus: "weight_loss",
     prompts: [
-      "Generate a structured daily meal plan for a user aiming to reduce body fat while staying satisfied and energized",
-      "Meals should support a lower total calorie intake but maintain high food volume and routine",
-      "Use foods that are filling, high in fiber or protein, and take time to eat and digest",
-      "Structure the plan to include [number] main meals, spaced evenly throughout the day",
-      "Each meal should include portion sizes, calorie estimates, and preparation instructions",
-      "Avoid high-calorie, low-volume foods and minimize added sugars and processed fats",
-      "The plan should naturally reduce overconsumption through meal timing, food choices, and eating rhythm"
+      "Suggest calorie-conscious meals for one person with portion control",
+      "Focus on high-volume, low-calorie foods that promote satiety",
+      "Include balanced nutrition to support healthy weight loss",
+      "Provide single-serving portions to prevent overeating",
+      "Emphasize protein and fiber for fullness",
+      "Avoid meal prep fatigue with variety"
     ],
     filterAdjustments: {
       encourageOverlap: false,
@@ -623,32 +740,35 @@ const UNIFIED_GOALS: UnifiedGoal[] = [
     }
   },
   {
-    value: "Family Nutrition", 
-    label: "👨‍👩‍👧‍👦 Family Nutrition",
-    nutritionFocus: "general_wellness",
+    value: "Eat Healthier",
+    label: "🥗 Eat Healthier",
+    nutritionFocus: "general_wellness", 
     prompts: [
-      "FAMILY-FRIENDLY: Create meals that appeal to all family members",
-      "Include kid-friendly options that are still nutritious", 
-      "Balance adult nutrition needs with children's preferences",
-      "Ensure appropriate portions for different age groups"
+      "Construct a personalized nutrition optimization plan for solo dining that systematically elevates dietary quality through evidence-based whole food integration",
+      "Engineer meals achieving maximum nutrient density per calorie using superfoods, phytonutrient-rich vegetables, and bioavailable protein sources scaled for individual consumption",
+      "Design weekly rotations ensuring comprehensive micronutrient coverage across 40+ essential nutrients while preventing single-person portion monotony through strategic variety",
+      "Calculate single-serving portions that optimize satiety indices while maintaining caloric appropriateness, using volumetrics principles and protein-fiber combinations",
+      "Develop sustainable behavior modification protocols transitioning from processed foods to whole food alternatives through incremental substitutions and habit stacking",
+      "Balance nutritional ideals with solo dining practicalities through 20-minute recipes, minimal prep strategies, and convenience modifications that preserve nutrient integrity",
+      "The plan should achieve measurable biomarker improvements while establishing lifetime healthy eating patterns through systematic, achievable daily practices"
     ],
     filterAdjustments: {
-      encourageOverlap: true,
-      availableIngredientUsagePercent: 65,
-      varietyPreference: 'moderate'
+      encourageOverlap: false,
+      availableIngredientUsagePercent: 50,
+      varietyPreference: 'high_variety'
     }
   },
   {
     value: "Energy & Performance",
-    label: "⚡ Energy & Performance", 
+    label: "⚡ Energy & Performance",
     nutritionFocus: "energy_performance",
     prompts: [
-      "Design a meal plan to sustain steady energy and focus for a physically and mentally active user",
-      "Emphasize meals with balanced macronutrients and a steady release of energy (complex carbs, lean proteins, healthy fats)",
-      "Structure the plan with [number] main meals, timed to align with periods of activity and rest",
-      "Avoid foods that cause energy spikes or crashes (e.g., high sugar, refined carbs)",
-      "For each meal, provide a description, ingredients, and timing guidance",
-      "The plan should support reliable energy, focus, and performance throughout the day"
+      "Provide meal plans for one active person that boost energy",
+      "Support an active lifestyle with complex carbs and healthy fats",
+      "Time meals around workout and activity schedules",
+      "Include pre and post-workout nutrition guidance",
+      "Focus on sustained energy throughout the day",
+      "Balance macronutrients for optimal performance"
     ],
     filterAdjustments: {
       availableIngredientUsagePercent: 60,
@@ -658,14 +778,14 @@ const UNIFIED_GOALS: UnifiedGoal[] = [
   {
     value: "Digestive Health",
     label: "🥦 Digestive Health",
-    nutritionFocus: "digestive_health", 
+    nutritionFocus: "digestive_health",
     prompts: [
-      "Create a meal plan that promotes digestive comfort, ease, and regularity",
-      "Meals should be light, soft, and simple, using easily digestible ingredients and gentle cooking methods",
-      "Include fiber-rich foods and fermented items",
-      "Structure the plan with [number] main meals, spaced for natural digestive pacing",
-      "For each meal, provide a description, ingredients, and preparation steps",
-      "The goal is to reduce digestive strain and support regular, comfortable digestion"
+      "Suggest meals for one person that are easy to digest",
+      "Include high fiber foods and fermented options",
+      "Support gut health while avoiding common irritants",
+      "Provide gentle cooking methods and simple ingredients",
+      "Focus on anti-inflammatory foods",
+      "Include probiotic and prebiotic rich options"
     ],
     filterAdjustments: {
       availableIngredientUsagePercent: 60,
@@ -674,23 +794,45 @@ const UNIFIED_GOALS: UnifiedGoal[] = [
   }
 ];
 
+// Keep UNIFIED_GOALS for backward compatibility - it combines both family and individual goals
+const UNIFIED_GOALS: UnifiedGoal[] = [...FAMILY_GOALS, ...INDIVIDUAL_GOALS];
+
+// Helper function to get goals based on profile type
+export function getGoalsForProfileType(profileType: 'family' | 'individual' | undefined): UnifiedGoal[] {
+  if (profileType === 'family') {
+    return FAMILY_GOALS;
+  } else if (profileType === 'individual') {
+    return INDIVIDUAL_GOALS;
+  }
+  // Default to all goals if profile type is not specified
+  return UNIFIED_GOALS;
+}
+
+// Update the getUnifiedGoal function to work with profile type
+export function getUnifiedGoalWithProfile(goalValue: string, profileType?: 'family' | 'individual'): UnifiedGoal | null {
+  const goals = getGoalsForProfileType(profileType);
+  return goals.find(goal => goal.value.toLowerCase() === goalValue.toLowerCase()) || null;
+}
+
 /**
- * Get unified goal configuration by value
+ * Get unified goal configuration by value (for backward compatibility)
  */
 export function getUnifiedGoal(goalValue: string): UnifiedGoal | null {
   return UNIFIED_GOALS.find(goal => goal.value.toLowerCase() === goalValue.toLowerCase()) || null;
 }
 
 /**
- * Export unified goals for frontend use
+ * Export goals for frontend use
  */
-export { UNIFIED_GOALS };
+export { UNIFIED_GOALS, FAMILY_GOALS, INDIVIDUAL_GOALS };
 
 function applyPrimaryGoalLogic(primaryGoal: string, filters: MealPlanFilters) {
   console.log('\n📋 PRIMARY GOAL LOGIC DEBUG:');
   console.log('  - Requested primaryGoal:', primaryGoal);
+  console.log('  - Profile type:', filters.profileType);
   
-  const unifiedGoal = getUnifiedGoal(primaryGoal);
+  // Use profile-aware goal lookup
+  const unifiedGoal = getUnifiedGoalWithProfile(primaryGoal, filters.profileType);
   console.log('  - Found unified goal:', unifiedGoal ? unifiedGoal.value : 'NOT FOUND');
   
   if (unifiedGoal) {

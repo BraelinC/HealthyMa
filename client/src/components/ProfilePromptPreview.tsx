@@ -80,107 +80,95 @@ interface ProfilePromptPreviewProps {
   familyMembers: FamilyMember[];
 }
 
-// UNIFIED_GOALS system - matches server-side intelligentPromptBuilder.ts
-const UNIFIED_GOALS: UnifiedGoal[] = [
+// Define goals based on profile type
+const FAMILY_GOALS: UnifiedGoal[] = [
   {
     value: "Save Money",
     label: "💸 Save Money",
     nutritionFocus: "general_wellness",
-    prompts: [
-      "Generate a cost-effective meal plan that reduces food expenses through strategic ingredient overlap and simplicity",
-      "Use a small set of base ingredients repeatedly across meals to minimize waste and maximize value",
-      "Focus on affordable, versatile staples (e.g., beans, rice, eggs, seasonal produce)",
-      "Structure the plan for [number] main meals per day, with batch-prep options and clear storage instructions",
-      "For each meal, list ingredients, estimated cost, and preparation steps",
-      "The plan should be low-waste, scalable, and easy to prepare in advance"
-    ],
-    filterAdjustments: {
-      encourageOverlap: true,
-      availableIngredientUsagePercent: 80,
-      budgetConstraints: 'low',
-      varietyPreference: 'consistent'
-    }
+    prompts: ["Generate a weekly meal plan using budget-friendly recipes for a family"]
   },
   {
-    value: "Eat Healthier",
-    label: "🍎 Eat Healthier", 
+    value: "Quick & Simple Meals",
+    label: "⏱️ Quick & Simple",
     nutritionFocus: "general_wellness",
-    prompts: [
-      "Create a daily meal plan focused on long-term food quality and better daily choices",
-      "Each meal should promote nourishment, food diversity, and satiety, using simple and consistent recipes",
-      "Include a variety of whole foods: vegetables, fruits, whole grains, lean proteins, and healthy fats",
-      "Structure the plan with [number] main meals, with clear portion guidance",
-      "For each meal, provide a brief description, ingredients, and preparation steps",
-      "The goal is to reinforce healthy eating patterns that gradually reshape meal habits"
-    ],
-    filterAdjustments: {
-      encourageOverlap: false,
-      availableIngredientUsagePercent: 50,
-      varietyPreference: 'high_variety'
-    }
+    prompts: ["Create a meal plan with recipes that require minimal ingredients and simple steps"]
+  },
+  {
+    value: "Complex Meals",
+    label: "👨‍🍳 Complex Meals",
+    nutritionFocus: "general_wellness",
+    prompts: ["Suggest gourmet or elaborate recipes for families who enjoy cooking together"]
+  },
+  {
+    value: "Cook Big Batches",
+    label: "🍲 Big Batch Cooking",
+    nutritionFocus: "general_wellness",
+    prompts: ["Plan meals that can be cooked in large quantities for a family"]
+  },
+  {
+    value: "Baby-Friendly",
+    label: "👶 Baby-Friendly",
+    nutritionFocus: "baby_nutrition",
+    prompts: ["Generate meal plans suitable for babies and toddlers (ages 6-24 months)"]
+  },
+  {
+    value: "Young Kid-Friendly",
+    label: "🧒 Kid-Friendly",
+    nutritionFocus: "general_wellness",
+    prompts: ["Provide meal ideas for young children (ages 2-6 years)"]
+  }
+];
+
+const INDIVIDUAL_GOALS: UnifiedGoal[] = [
+  {
+    value: "Save Money",
+    label: "💸 Save Money",
+    nutritionFocus: "general_wellness",
+    prompts: ["Generate a weekly meal plan for one person using budget-friendly recipes"]
+  },
+  {
+    value: "Meal Prep",
+    label: "🥡 Meal Prep",
+    nutritionFocus: "general_wellness",
+    prompts: ["Create a meal plan optimized for weekly meal prep for one person"]
   },
   {
     value: "Gain Muscle",
-    label: "🏋️ Build Muscle",
-    nutritionFocus: "muscle_gain", 
-    prompts: [
-      "Generate a structured daily meal plan for a user training regularly to build muscle",
-      "Meals should emphasize foods naturally rich in protein, complex carbohydrates, and healthy fats to support muscle growth and recovery",
-      "Prioritize nutrient-dense, satisfying foods that aid physical repair and consistent energy",
-      "Structure the plan with [number] main meals, spaced to fuel workouts and recovery periods",
-      "Each meal should include portion sizes, estimated protein content, calorie estimates, and preparation instructions",
-      "Include a variety of lean proteins (e.g., chicken, fish, tofu, legumes), whole grains, and colorful vegetables",
-      "The plan should promote steady nourishment, muscle repair, and strength gains throughout the day"
-    ],
-    filterAdjustments: {
-      encourageOverlap: true,
-      availableIngredientUsagePercent: 60,
-      prepTimePreference: 'moderate'
-    }
+    label: "💪 Gain Muscle",
+    nutritionFocus: "muscle_gain",
+    prompts: ["Create high-protein meal plans for one person focusing on muscle growth"]
   },
   {
     value: "Lose Weight",
     label: "⚖️ Lose Weight",
     nutritionFocus: "weight_loss",
-    prompts: [
-      "Generate a structured daily meal plan for a user aiming to reduce body fat while staying satisfied and energized",
-      "Meals should support a lower total calorie intake but maintain high food volume and routine",
-      "Use foods that are filling, high in fiber or protein, and take time to eat and digest",
-      "Structure the plan to include [number] main meals, spaced evenly throughout the day",
-      "Each meal should include portion sizes, calorie estimates, and preparation instructions",
-      "Avoid high-calorie, low-volume foods and minimize added sugars and processed fats",
-      "The plan should naturally reduce overconsumption through meal timing, food choices, and eating rhythm"
-    ],
-    filterAdjustments: {
-      encourageOverlap: false,
-      availableIngredientUsagePercent: 60,
-      varietyPreference: 'high_variety',
-      prepTimePreference: 'minimal'
-    }
+    prompts: ["Suggest calorie-conscious meals for one person with portion control"]
   },
   {
-    value: "Weight-Based Planning",
-    label: "⚖️ Weight-Based Planning",
-    nutritionFocus: "weight_based",
-    prompts: [
-      "Generate a meal plan using weight-based priority system to balance multiple objectives",
-      "Consider cost efficiency, cultural authenticity, health benefits, variety, and time constraints",
-      "Use priority weights to resolve conflicts between competing objectives",
-      "Optimize for ingredient overlap when cost priority is high",
-      "Maintain cultural authenticity when cultural weight is significant",
-      "Balance health and convenience based on user's priority weights"
-    ],
-    filterAdjustments: {
-      encourageOverlap: true,
-      availableIngredientUsagePercent: 65,
-      varietyPreference: 'moderate'
-    }
+    value: "Eat Healthier",
+    label: "🥗 Eat Healthier",
+    nutritionFocus: "general_wellness",
+    prompts: ["Plan balanced, nutrient-dense meals for one person"]
+  },
+  {
+    value: "Energy & Performance",
+    label: "⚡ Energy & Performance",
+    nutritionFocus: "energy_performance",
+    prompts: ["Provide meal plans for one active person that boost energy"]
+  },
+  {
+    value: "Digestive Health",
+    label: "🥦 Digestive Health",
+    nutritionFocus: "digestive_health",
+    prompts: ["Suggest meals for one person that are easy to digest"]
   }
 ];
 
 // Helper function to get unified goal by value
-function getUnifiedGoal(goalValue: string): UnifiedGoal | null {
-  return UNIFIED_GOALS.find(goal => goal.value.toLowerCase() === goalValue.toLowerCase()) || null;
+function getUnifiedGoal(goalValue: string, profileType?: 'family' | 'individual'): UnifiedGoal | null {
+  const goals = profileType === 'family' ? FAMILY_GOALS : INDIVIDUAL_GOALS;
+  return goals.find(goal => goal.value.toLowerCase() === goalValue.toLowerCase()) || null;
 }
 
 export default function ProfilePromptPreview({ profile, familyMembers }: ProfilePromptPreviewProps) {
@@ -251,7 +239,7 @@ export default function ProfilePromptPreview({ profile, familyMembers }: Profile
 
     // Step 2: Goal-Optimized Requirements (using UNIFIED_GOALS system)
     if (profile?.primary_goal) {
-      const unifiedGoal = getUnifiedGoal(profile.primary_goal);
+      const unifiedGoal = getUnifiedGoal(profile.primary_goal, profile?.profile_type);
       
       if (unifiedGoal) {
         // Use the actual goal-specific prompts from UNIFIED_GOALS

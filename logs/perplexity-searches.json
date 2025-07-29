@@ -1,0 +1,1429 @@
+[
+  {
+    "id": "1753802540925-o3wrd2n0h",
+    "query": "Cultural cuisine research: Peruvian",
+    "timestamp": "2025-07-29T15:22:20.925Z",
+    "responseSize": 4922,
+    "cached": false,
+    "category": "cultural-cuisine",
+    "responsePreview": "Found 10 dishes: Ceviche, Lomo Saltado, Pachamanca...",
+    "fullResponse": {
+      "culture": "Peruvian",
+      "meals": [
+        {
+          "name": "Ceviche",
+          "description": "A traditional Peruvian dish of raw fish marinated in lime juice, mixed with chili, onion, and coriander. It is culturally significant as a national symbol and is recognized by UNESCO as Intangible Cultural Heritage, widely consumed daily and at celebrations.",
+          "cooking_techniques": [
+            "marinating",
+            "no heat cooking"
+          ],
+          "healthy_ingredients": [
+            "fresh fish",
+            "lime juice",
+            "onion",
+            "cilantro",
+            "ají chili"
+          ],
+          "healthy_modifications": [
+            "use sustainably sourced fish",
+            "reduce salt",
+            "serve with sweet potato and cancha corn for fiber"
+          ]
+        },
+        {
+          "name": "Lomo Saltado",
+          "description": "A popular stir-fry dish combining beef, tomatoes, onions, and Peruvian yellow chili, reflecting the fusion of indigenous and Chinese influences in Peru.",
+          "cooking_techniques": [
+            "stir-frying",
+            "sautéing"
+          ],
+          "healthy_ingredients": [
+            "lean beef",
+            "tomatoes",
+            "onions",
+            "ají amarillo",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use lean cuts of beef",
+            "reduce oil quantity",
+            "serve with quinoa instead of white rice"
+          ]
+        },
+        {
+          "name": "Pachamanca",
+          "description": "An ancestral Andean dish where meats, potatoes, corn, and herbs are slow-cooked underground on hot stones, symbolizing community and connection to the earth.",
+          "cooking_techniques": [
+            "earth oven slow cooking",
+            "steaming"
+          ],
+          "healthy_ingredients": [
+            "variety of meats",
+            "potatoes",
+            "corn",
+            "herbs"
+          ],
+          "healthy_modifications": [
+            "choose lean meats",
+            "increase vegetable portions",
+            "limit added salt"
+          ]
+        },
+        {
+          "name": "Anticuchos",
+          "description": "Grilled skewers traditionally made from beef heart, seasoned and cooked over open flames, a beloved street food with deep cultural roots.",
+          "cooking_techniques": [
+            "grilling",
+            "skewering"
+          ],
+          "healthy_ingredients": [
+            "beef heart (organ meat)",
+            "ají pepper",
+            "garlic"
+          ],
+          "healthy_modifications": [
+            "use leaner cuts or chicken breast",
+            "grill without excessive oil",
+            "serve with fresh salad"
+          ]
+        },
+        {
+          "name": "Aji de Gallina",
+          "description": "A creamy chicken stew with a spicy yellow chili sauce, potatoes, and cheese, widely enjoyed across Peru as comfort food.",
+          "cooking_techniques": [
+            "stewing",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "chicken breast",
+            "ají amarillo",
+            "potatoes",
+            "walnuts"
+          ],
+          "healthy_modifications": [
+            "use low-fat milk or broth instead of cream",
+            "reduce cheese quantity",
+            "use whole grain bread for thickening"
+          ]
+        },
+        {
+          "name": "Causa Limeña",
+          "description": "A layered cold dish made from mashed yellow potatoes seasoned with lime and chili, filled with tuna, chicken, or avocado, popular as an appetizer.",
+          "cooking_techniques": [
+            "boiling",
+            "mashing",
+            "assembling cold"
+          ],
+          "healthy_ingredients": [
+            "yellow potatoes",
+            "lime",
+            "avocado",
+            "tuna or chicken",
+            "ají amarillo"
+          ],
+          "healthy_modifications": [
+            "use olive oil instead of mayonnaise",
+            "increase avocado for healthy fats",
+            "use fresh tuna or chicken breast"
+          ]
+        },
+        {
+          "name": "Tacu Tacu",
+          "description": "A traditional dish of rice and beans fried together, originally a way to use leftovers, now a staple with variations including seafood or meat.",
+          "cooking_techniques": [
+            "boiling",
+            "pan-frying"
+          ],
+          "healthy_ingredients": [
+            "beans",
+            "rice",
+            "onion",
+            "ají amarillo"
+          ],
+          "healthy_modifications": [
+            "use brown rice",
+            "limit oil in frying",
+            "add vegetables like spinach or peppers"
+          ]
+        },
+        {
+          "name": "Papa a la Huancaína",
+          "description": "Boiled potatoes served with a spicy, creamy cheese sauce made from yellow chili and queso fresco, a classic starter from the Huancayo region.",
+          "cooking_techniques": [
+            "boiling",
+            "blending sauce"
+          ],
+          "healthy_ingredients": [
+            "potatoes",
+            "ají amarillo",
+            "queso fresco",
+            "milk"
+          ],
+          "healthy_modifications": [
+            "use low-fat cheese and milk",
+            "reduce sauce portion",
+            "add lettuce or other greens as base"
+          ]
+        },
+        {
+          "name": "Pollo a la Brasa",
+          "description": "Peruvian rotisserie chicken marinated with spices and cooked over charcoal, a national favorite for its smoky flavor and crispy skin.",
+          "cooking_techniques": [
+            "rotisserie roasting",
+            "marinating"
+          ],
+          "healthy_ingredients": [
+            "chicken",
+            "garlic",
+            "black pepper",
+            "ají panca"
+          ],
+          "healthy_modifications": [
+            "remove skin to reduce fat",
+            "use lean chicken cuts",
+            "serve with salad instead of fries"
+          ]
+        },
+        {
+          "name": "Ocopa",
+          "description": "Boiled potatoes topped with a spicy sauce made from huacatay herb, peanuts, and yellow chili, similar to Papa a la Huancaína but with distinct flavors.",
+          "cooking_techniques": [
+            "boiling",
+            "blending sauce"
+          ],
+          "healthy_ingredients": [
+            "potatoes",
+            "huacatay",
+            "peanuts",
+            "ají amarillo"
+          ],
+          "healthy_modifications": [
+            "use less oil in sauce",
+            "substitute peanuts with walnuts for omega-3",
+            "serve with fresh greens"
+          ]
+        }
+      ],
+      "summary": {
+        "common_healthy_ingredients": [
+          "ají amarillo (yellow chili)",
+          "potatoes",
+          "onions",
+          "cilantro",
+          "lime",
+          "lean meats (chicken breast, lean beef)",
+          "corn",
+          "fresh fish",
+          "avocado",
+          "herbs (huacatay, garlic)"
+        ],
+        "common_cooking_techniques": [
+          "boiling",
+          "grilling",
+          "marinating",
+          "stir-frying",
+          "slow cooking",
+          "blending sauces",
+          "roasting",
+          "assembling cold dishes"
+        ]
+      },
+      "cached_at": "2025-07-29T15:22:20.924Z",
+      "last_accessed": "2025-07-29T15:22:20.924Z",
+      "access_count": 0,
+      "data_version": "1.2.0",
+      "source_quality_score": 60
+    },
+    "userId": 0,
+    "executionTime": 15070
+  },
+  {
+    "id": "1753802525848-3klnpjpne",
+    "query": "Cultural cuisine research: peruvian (cached)",
+    "timestamp": "2025-07-29T15:22:05.848Z",
+    "responseSize": 5624,
+    "cached": true,
+    "category": "cultural-cuisine",
+    "responsePreview": "Found 10 dishes: Ceviche, Pachamanca, Lomo Saltado...",
+    "fullResponse": {
+      "meals": [
+        {
+          "name": "Ceviche",
+          "description": "A quintessential Peruvian dish of raw fish marinated in lime juice, mixed with onions, chili, and cilantro. It is a cultural symbol of coastal Peru and widely consumed daily and at celebrations, representing social cohesion and artisanal fishing traditions.",
+          "cooking_techniques": [
+            "marinating",
+            "no heat cooking"
+          ],
+          "healthy_ingredients": [
+            "fresh fish",
+            "lime juice",
+            "onions",
+            "cilantro",
+            "chili peppers"
+          ],
+          "healthy_modifications": [
+            "use sustainably sourced fish",
+            "reduce added salt",
+            "add more fresh vegetables like sweet potato or corn on the side"
+          ]
+        },
+        {
+          "name": "Pachamanca",
+          "description": "An ancient Andean ritual dish cooked underground with volcanic stones, combining lamb, pork, chicken, native potatoes, corn, fava beans, and Andean herbs. It honors Pachamama (Mother Earth) and is a communal feast celebrating tradition and gratitude.",
+          "cooking_techniques": [
+            "earth baking",
+            "slow roasting"
+          ],
+          "healthy_ingredients": [
+            "native potatoes",
+            "corn",
+            "fava beans",
+            "Andean herbs (huacatay)"
+          ],
+          "healthy_modifications": [
+            "use lean cuts of meat",
+            "increase proportion of tubers and legumes",
+            "limit added salt or fatty marinades"
+          ]
+        },
+        {
+          "name": "Lomo Saltado",
+          "description": "A popular stir-fry dish blending indigenous and Chinese influences, featuring beef strips, tomatoes, onions, and yellow chili, served with rice and potatoes. It reflects Peru’s multicultural culinary heritage and is widely enjoyed across the country.",
+          "cooking_techniques": [
+            "stir-frying",
+            "sautéing"
+          ],
+          "healthy_ingredients": [
+            "beef (lean cuts)",
+            "tomatoes",
+            "onions",
+            "yellow chili peppers"
+          ],
+          "healthy_modifications": [
+            "use lean beef or substitute with chicken or tofu",
+            "reduce oil quantity",
+            "serve with quinoa instead of white rice"
+          ]
+        },
+        {
+          "name": "Aji de Gallina",
+          "description": "A creamy chicken stew made with shredded chicken in a spicy, nutty aji amarillo (yellow chili) sauce, traditionally served with potatoes and rice. It is a comforting home-style dish with deep cultural roots.",
+          "cooking_techniques": [
+            "boiling",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "chicken breast",
+            "aji amarillo",
+            "walnuts or pecans",
+            "potatoes"
+          ],
+          "healthy_modifications": [
+            "use low-fat milk or vegetable broth instead of cream",
+            "replace white rice with quinoa",
+            "increase vegetable content"
+          ]
+        },
+        {
+          "name": "Anticuchos",
+          "description": "Grilled skewers of marinated meat, traditionally beef heart, served with spicy sauces. A popular street food with roots in indigenous and Afro-Peruvian cultures, symbolizing communal eating and celebration.",
+          "cooking_techniques": [
+            "grilling",
+            "marinating"
+          ],
+          "healthy_ingredients": [
+            "beef heart or lean meat",
+            "aji panca (red chili)",
+            "garlic",
+            "vinegar"
+          ],
+          "healthy_modifications": [
+            "use leaner cuts or chicken breast",
+            "grill without added fats",
+            "serve with fresh salad or corn"
+          ]
+        },
+        {
+          "name": "Papa a la Huancaína",
+          "description": "Boiled potatoes topped with a spicy, creamy sauce made from aji amarillo, cheese, and milk. It is a classic appetizer from the highlands, showcasing native potatoes and local peppers.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "native potatoes",
+            "aji amarillo",
+            "low-fat cheese",
+            "milk"
+          ],
+          "healthy_modifications": [
+            "use low-fat cheese and milk",
+            "reduce oil in sauce",
+            "serve with fresh lettuce or vegetables"
+          ]
+        },
+        {
+          "name": "Tacu Tacu",
+          "description": "A traditional Afro-Peruvian dish of fried rice and beans mixed and pan-fried into a crispy cake, often served with a protein like steak or seafood. It reflects the fusion of African and Peruvian culinary traditions.",
+          "cooking_techniques": [
+            "pan-frying",
+            "boiling"
+          ],
+          "healthy_ingredients": [
+            "beans",
+            "rice (preferably brown or quinoa)",
+            "onions",
+            "garlic"
+          ],
+          "healthy_modifications": [
+            "use brown rice or quinoa",
+            "pan-fry with minimal oil",
+            "add more vegetables to the mix"
+          ]
+        },
+        {
+          "name": "Cau Cau",
+          "description": "A tripe stew cooked with potatoes, yellow chili, and herbs, reflecting Lima’s Creole culinary tradition. It is a hearty dish often served with rice.",
+          "cooking_techniques": [
+            "sautéing",
+            "stewing"
+          ],
+          "healthy_ingredients": [
+            "tripe (lean protein)",
+            "potatoes",
+            "aji amarillo",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use lean cuts or substitute with chicken",
+            "reduce oil",
+            "serve with quinoa or vegetables"
+          ]
+        },
+        {
+          "name": "Arroz con Mariscos",
+          "description": "Peruvian-style seafood rice, similar to paella, combining a variety of fresh seafood with rice, peppers, and herbs. It is a coastal favorite highlighting Peru’s rich marine resources.",
+          "cooking_techniques": [
+            "sautéing",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "seafood (shrimp, squid, mussels)",
+            "rice (preferably brown or quinoa)",
+            "bell peppers",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use brown rice or quinoa",
+            "limit added oil",
+            "increase vegetable content"
+          ]
+        },
+        {
+          "name": "Ocopa",
+          "description": "Boiled potatoes served with a spicy, creamy sauce made from aji amarillo, peanuts, and herbs. It is a traditional dish from Arequipa, often served as an appetizer or side.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "potatoes",
+            "aji amarillo",
+            "peanuts",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use less oil in sauce",
+            "serve with fresh vegetables",
+            "use native potatoes for more nutrients"
+          ]
+        }
+      ],
+      "summary": {
+        "common_healthy_ingredients": [
+          "aji amarillo (yellow chili pepper)",
+          "native potatoes",
+          "cilantro",
+          "onions",
+          "beans",
+          "corn",
+          "fresh seafood",
+          "lean meats (chicken, beef heart)",
+          "quinoa or brown rice",
+          "Andean herbs (huacatay)"
+        ],
+        "common_cooking_techniques": [
+          "boiling",
+          "grilling",
+          "marinating",
+          "sautéing",
+          "slow roasting",
+          "earth baking",
+          "stir-frying",
+          "blending",
+          "pan-frying",
+          "simmering"
+        ]
+      },
+      "cached_at": "2025-07-28T18:34:36.950Z",
+      "last_accessed": "2025-07-29T15:22:05.848Z",
+      "access_count": 4,
+      "data_version": "1.2.0",
+      "source_quality_score": 60
+    },
+    "userId": 9,
+    "executionTime": 0
+  },
+  {
+    "id": "1753802320341-4k2k5qfx2",
+    "query": "Cultural cuisine research: peruvian (cached)",
+    "timestamp": "2025-07-29T15:18:40.341Z",
+    "responseSize": 5624,
+    "cached": true,
+    "category": "cultural-cuisine",
+    "responsePreview": "Found 10 dishes: Ceviche, Pachamanca, Lomo Saltado...",
+    "fullResponse": {
+      "meals": [
+        {
+          "name": "Ceviche",
+          "description": "A quintessential Peruvian dish of raw fish marinated in lime juice, mixed with onions, chili, and cilantro. It is a cultural symbol of coastal Peru and widely consumed daily and at celebrations, representing social cohesion and artisanal fishing traditions.",
+          "cooking_techniques": [
+            "marinating",
+            "no heat cooking"
+          ],
+          "healthy_ingredients": [
+            "fresh fish",
+            "lime juice",
+            "onions",
+            "cilantro",
+            "chili peppers"
+          ],
+          "healthy_modifications": [
+            "use sustainably sourced fish",
+            "reduce added salt",
+            "add more fresh vegetables like sweet potato or corn on the side"
+          ]
+        },
+        {
+          "name": "Pachamanca",
+          "description": "An ancient Andean ritual dish cooked underground with volcanic stones, combining lamb, pork, chicken, native potatoes, corn, fava beans, and Andean herbs. It honors Pachamama (Mother Earth) and is a communal feast celebrating tradition and gratitude.",
+          "cooking_techniques": [
+            "earth baking",
+            "slow roasting"
+          ],
+          "healthy_ingredients": [
+            "native potatoes",
+            "corn",
+            "fava beans",
+            "Andean herbs (huacatay)"
+          ],
+          "healthy_modifications": [
+            "use lean cuts of meat",
+            "increase proportion of tubers and legumes",
+            "limit added salt or fatty marinades"
+          ]
+        },
+        {
+          "name": "Lomo Saltado",
+          "description": "A popular stir-fry dish blending indigenous and Chinese influences, featuring beef strips, tomatoes, onions, and yellow chili, served with rice and potatoes. It reflects Peru’s multicultural culinary heritage and is widely enjoyed across the country.",
+          "cooking_techniques": [
+            "stir-frying",
+            "sautéing"
+          ],
+          "healthy_ingredients": [
+            "beef (lean cuts)",
+            "tomatoes",
+            "onions",
+            "yellow chili peppers"
+          ],
+          "healthy_modifications": [
+            "use lean beef or substitute with chicken or tofu",
+            "reduce oil quantity",
+            "serve with quinoa instead of white rice"
+          ]
+        },
+        {
+          "name": "Aji de Gallina",
+          "description": "A creamy chicken stew made with shredded chicken in a spicy, nutty aji amarillo (yellow chili) sauce, traditionally served with potatoes and rice. It is a comforting home-style dish with deep cultural roots.",
+          "cooking_techniques": [
+            "boiling",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "chicken breast",
+            "aji amarillo",
+            "walnuts or pecans",
+            "potatoes"
+          ],
+          "healthy_modifications": [
+            "use low-fat milk or vegetable broth instead of cream",
+            "replace white rice with quinoa",
+            "increase vegetable content"
+          ]
+        },
+        {
+          "name": "Anticuchos",
+          "description": "Grilled skewers of marinated meat, traditionally beef heart, served with spicy sauces. A popular street food with roots in indigenous and Afro-Peruvian cultures, symbolizing communal eating and celebration.",
+          "cooking_techniques": [
+            "grilling",
+            "marinating"
+          ],
+          "healthy_ingredients": [
+            "beef heart or lean meat",
+            "aji panca (red chili)",
+            "garlic",
+            "vinegar"
+          ],
+          "healthy_modifications": [
+            "use leaner cuts or chicken breast",
+            "grill without added fats",
+            "serve with fresh salad or corn"
+          ]
+        },
+        {
+          "name": "Papa a la Huancaína",
+          "description": "Boiled potatoes topped with a spicy, creamy sauce made from aji amarillo, cheese, and milk. It is a classic appetizer from the highlands, showcasing native potatoes and local peppers.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "native potatoes",
+            "aji amarillo",
+            "low-fat cheese",
+            "milk"
+          ],
+          "healthy_modifications": [
+            "use low-fat cheese and milk",
+            "reduce oil in sauce",
+            "serve with fresh lettuce or vegetables"
+          ]
+        },
+        {
+          "name": "Tacu Tacu",
+          "description": "A traditional Afro-Peruvian dish of fried rice and beans mixed and pan-fried into a crispy cake, often served with a protein like steak or seafood. It reflects the fusion of African and Peruvian culinary traditions.",
+          "cooking_techniques": [
+            "pan-frying",
+            "boiling"
+          ],
+          "healthy_ingredients": [
+            "beans",
+            "rice (preferably brown or quinoa)",
+            "onions",
+            "garlic"
+          ],
+          "healthy_modifications": [
+            "use brown rice or quinoa",
+            "pan-fry with minimal oil",
+            "add more vegetables to the mix"
+          ]
+        },
+        {
+          "name": "Cau Cau",
+          "description": "A tripe stew cooked with potatoes, yellow chili, and herbs, reflecting Lima’s Creole culinary tradition. It is a hearty dish often served with rice.",
+          "cooking_techniques": [
+            "sautéing",
+            "stewing"
+          ],
+          "healthy_ingredients": [
+            "tripe (lean protein)",
+            "potatoes",
+            "aji amarillo",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use lean cuts or substitute with chicken",
+            "reduce oil",
+            "serve with quinoa or vegetables"
+          ]
+        },
+        {
+          "name": "Arroz con Mariscos",
+          "description": "Peruvian-style seafood rice, similar to paella, combining a variety of fresh seafood with rice, peppers, and herbs. It is a coastal favorite highlighting Peru’s rich marine resources.",
+          "cooking_techniques": [
+            "sautéing",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "seafood (shrimp, squid, mussels)",
+            "rice (preferably brown or quinoa)",
+            "bell peppers",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use brown rice or quinoa",
+            "limit added oil",
+            "increase vegetable content"
+          ]
+        },
+        {
+          "name": "Ocopa",
+          "description": "Boiled potatoes served with a spicy, creamy sauce made from aji amarillo, peanuts, and herbs. It is a traditional dish from Arequipa, often served as an appetizer or side.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "potatoes",
+            "aji amarillo",
+            "peanuts",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use less oil in sauce",
+            "serve with fresh vegetables",
+            "use native potatoes for more nutrients"
+          ]
+        }
+      ],
+      "summary": {
+        "common_healthy_ingredients": [
+          "aji amarillo (yellow chili pepper)",
+          "native potatoes",
+          "cilantro",
+          "onions",
+          "beans",
+          "corn",
+          "fresh seafood",
+          "lean meats (chicken, beef heart)",
+          "quinoa or brown rice",
+          "Andean herbs (huacatay)"
+        ],
+        "common_cooking_techniques": [
+          "boiling",
+          "grilling",
+          "marinating",
+          "sautéing",
+          "slow roasting",
+          "earth baking",
+          "stir-frying",
+          "blending",
+          "pan-frying",
+          "simmering"
+        ]
+      },
+      "cached_at": "2025-07-28T18:34:36.950Z",
+      "last_accessed": "2025-07-29T15:18:40.340Z",
+      "access_count": 3,
+      "data_version": "1.2.0",
+      "source_quality_score": 60
+    },
+    "userId": 9,
+    "executionTime": 0
+  },
+  {
+    "id": "1753802298605-ly2g4rqxv",
+    "query": "Cultural cuisine research: peruvian (cached)",
+    "timestamp": "2025-07-29T15:18:18.605Z",
+    "responseSize": 5624,
+    "cached": true,
+    "category": "cultural-cuisine",
+    "responsePreview": "Found 10 dishes: Ceviche, Pachamanca, Lomo Saltado...",
+    "fullResponse": {
+      "meals": [
+        {
+          "name": "Ceviche",
+          "description": "A quintessential Peruvian dish of raw fish marinated in lime juice, mixed with onions, chili, and cilantro. It is a cultural symbol of coastal Peru and widely consumed daily and at celebrations, representing social cohesion and artisanal fishing traditions.",
+          "cooking_techniques": [
+            "marinating",
+            "no heat cooking"
+          ],
+          "healthy_ingredients": [
+            "fresh fish",
+            "lime juice",
+            "onions",
+            "cilantro",
+            "chili peppers"
+          ],
+          "healthy_modifications": [
+            "use sustainably sourced fish",
+            "reduce added salt",
+            "add more fresh vegetables like sweet potato or corn on the side"
+          ]
+        },
+        {
+          "name": "Pachamanca",
+          "description": "An ancient Andean ritual dish cooked underground with volcanic stones, combining lamb, pork, chicken, native potatoes, corn, fava beans, and Andean herbs. It honors Pachamama (Mother Earth) and is a communal feast celebrating tradition and gratitude.",
+          "cooking_techniques": [
+            "earth baking",
+            "slow roasting"
+          ],
+          "healthy_ingredients": [
+            "native potatoes",
+            "corn",
+            "fava beans",
+            "Andean herbs (huacatay)"
+          ],
+          "healthy_modifications": [
+            "use lean cuts of meat",
+            "increase proportion of tubers and legumes",
+            "limit added salt or fatty marinades"
+          ]
+        },
+        {
+          "name": "Lomo Saltado",
+          "description": "A popular stir-fry dish blending indigenous and Chinese influences, featuring beef strips, tomatoes, onions, and yellow chili, served with rice and potatoes. It reflects Peru’s multicultural culinary heritage and is widely enjoyed across the country.",
+          "cooking_techniques": [
+            "stir-frying",
+            "sautéing"
+          ],
+          "healthy_ingredients": [
+            "beef (lean cuts)",
+            "tomatoes",
+            "onions",
+            "yellow chili peppers"
+          ],
+          "healthy_modifications": [
+            "use lean beef or substitute with chicken or tofu",
+            "reduce oil quantity",
+            "serve with quinoa instead of white rice"
+          ]
+        },
+        {
+          "name": "Aji de Gallina",
+          "description": "A creamy chicken stew made with shredded chicken in a spicy, nutty aji amarillo (yellow chili) sauce, traditionally served with potatoes and rice. It is a comforting home-style dish with deep cultural roots.",
+          "cooking_techniques": [
+            "boiling",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "chicken breast",
+            "aji amarillo",
+            "walnuts or pecans",
+            "potatoes"
+          ],
+          "healthy_modifications": [
+            "use low-fat milk or vegetable broth instead of cream",
+            "replace white rice with quinoa",
+            "increase vegetable content"
+          ]
+        },
+        {
+          "name": "Anticuchos",
+          "description": "Grilled skewers of marinated meat, traditionally beef heart, served with spicy sauces. A popular street food with roots in indigenous and Afro-Peruvian cultures, symbolizing communal eating and celebration.",
+          "cooking_techniques": [
+            "grilling",
+            "marinating"
+          ],
+          "healthy_ingredients": [
+            "beef heart or lean meat",
+            "aji panca (red chili)",
+            "garlic",
+            "vinegar"
+          ],
+          "healthy_modifications": [
+            "use leaner cuts or chicken breast",
+            "grill without added fats",
+            "serve with fresh salad or corn"
+          ]
+        },
+        {
+          "name": "Papa a la Huancaína",
+          "description": "Boiled potatoes topped with a spicy, creamy sauce made from aji amarillo, cheese, and milk. It is a classic appetizer from the highlands, showcasing native potatoes and local peppers.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "native potatoes",
+            "aji amarillo",
+            "low-fat cheese",
+            "milk"
+          ],
+          "healthy_modifications": [
+            "use low-fat cheese and milk",
+            "reduce oil in sauce",
+            "serve with fresh lettuce or vegetables"
+          ]
+        },
+        {
+          "name": "Tacu Tacu",
+          "description": "A traditional Afro-Peruvian dish of fried rice and beans mixed and pan-fried into a crispy cake, often served with a protein like steak or seafood. It reflects the fusion of African and Peruvian culinary traditions.",
+          "cooking_techniques": [
+            "pan-frying",
+            "boiling"
+          ],
+          "healthy_ingredients": [
+            "beans",
+            "rice (preferably brown or quinoa)",
+            "onions",
+            "garlic"
+          ],
+          "healthy_modifications": [
+            "use brown rice or quinoa",
+            "pan-fry with minimal oil",
+            "add more vegetables to the mix"
+          ]
+        },
+        {
+          "name": "Cau Cau",
+          "description": "A tripe stew cooked with potatoes, yellow chili, and herbs, reflecting Lima’s Creole culinary tradition. It is a hearty dish often served with rice.",
+          "cooking_techniques": [
+            "sautéing",
+            "stewing"
+          ],
+          "healthy_ingredients": [
+            "tripe (lean protein)",
+            "potatoes",
+            "aji amarillo",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use lean cuts or substitute with chicken",
+            "reduce oil",
+            "serve with quinoa or vegetables"
+          ]
+        },
+        {
+          "name": "Arroz con Mariscos",
+          "description": "Peruvian-style seafood rice, similar to paella, combining a variety of fresh seafood with rice, peppers, and herbs. It is a coastal favorite highlighting Peru’s rich marine resources.",
+          "cooking_techniques": [
+            "sautéing",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "seafood (shrimp, squid, mussels)",
+            "rice (preferably brown or quinoa)",
+            "bell peppers",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use brown rice or quinoa",
+            "limit added oil",
+            "increase vegetable content"
+          ]
+        },
+        {
+          "name": "Ocopa",
+          "description": "Boiled potatoes served with a spicy, creamy sauce made from aji amarillo, peanuts, and herbs. It is a traditional dish from Arequipa, often served as an appetizer or side.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "potatoes",
+            "aji amarillo",
+            "peanuts",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use less oil in sauce",
+            "serve with fresh vegetables",
+            "use native potatoes for more nutrients"
+          ]
+        }
+      ],
+      "summary": {
+        "common_healthy_ingredients": [
+          "aji amarillo (yellow chili pepper)",
+          "native potatoes",
+          "cilantro",
+          "onions",
+          "beans",
+          "corn",
+          "fresh seafood",
+          "lean meats (chicken, beef heart)",
+          "quinoa or brown rice",
+          "Andean herbs (huacatay)"
+        ],
+        "common_cooking_techniques": [
+          "boiling",
+          "grilling",
+          "marinating",
+          "sautéing",
+          "slow roasting",
+          "earth baking",
+          "stir-frying",
+          "blending",
+          "pan-frying",
+          "simmering"
+        ]
+      },
+      "cached_at": "2025-07-28T18:34:36.950Z",
+      "last_accessed": "2025-07-29T15:18:18.604Z",
+      "access_count": 2,
+      "data_version": "1.2.0",
+      "source_quality_score": 60
+    },
+    "userId": 9,
+    "executionTime": 0
+  },
+  {
+    "id": "1753798445084-2wle1ny2i",
+    "query": "Cultural cuisine research: Peruvian",
+    "timestamp": "2025-07-29T14:14:05.084Z",
+    "responseSize": 5645,
+    "cached": false,
+    "category": "cultural-cuisine",
+    "responsePreview": "Found 10 dishes: Ceviche, Pachamanca, Lomo Saltado...",
+    "fullResponse": {
+      "culture": "Peruvian",
+      "meals": [
+        {
+          "name": "Ceviche",
+          "description": "A quintessential Peruvian dish of raw fish marinated in lime juice, mixed with onions, chili, and cilantro. It is a cultural symbol of coastal Peru and widely consumed daily and at celebrations, representing social cohesion and artisanal fishing traditions.",
+          "cooking_techniques": [
+            "marinating",
+            "no heat cooking"
+          ],
+          "healthy_ingredients": [
+            "fresh fish",
+            "lime juice",
+            "onions",
+            "cilantro",
+            "chili peppers"
+          ],
+          "healthy_modifications": [
+            "use sustainably sourced fish",
+            "reduce added salt",
+            "add more fresh vegetables like sweet potato or corn on the side"
+          ]
+        },
+        {
+          "name": "Pachamanca",
+          "description": "An ancient Andean ritual dish cooked underground with volcanic stones, combining lamb, pork, chicken, native potatoes, corn, fava beans, and Andean herbs. It honors Pachamama (Mother Earth) and is a communal feast celebrating tradition and gratitude.",
+          "cooking_techniques": [
+            "earth baking",
+            "slow roasting"
+          ],
+          "healthy_ingredients": [
+            "native potatoes",
+            "corn",
+            "fava beans",
+            "Andean herbs (huacatay)"
+          ],
+          "healthy_modifications": [
+            "use lean cuts of meat",
+            "increase proportion of tubers and legumes",
+            "limit added salt or fatty marinades"
+          ]
+        },
+        {
+          "name": "Lomo Saltado",
+          "description": "A popular stir-fry dish blending indigenous and Chinese influences, featuring beef strips, tomatoes, onions, and yellow chili, served with rice and potatoes. It reflects Peru’s multicultural culinary heritage and is widely enjoyed across the country.",
+          "cooking_techniques": [
+            "stir-frying",
+            "sautéing"
+          ],
+          "healthy_ingredients": [
+            "beef (lean cuts)",
+            "tomatoes",
+            "onions",
+            "yellow chili peppers"
+          ],
+          "healthy_modifications": [
+            "use lean beef or substitute with chicken or tofu",
+            "reduce oil quantity",
+            "serve with quinoa instead of white rice"
+          ]
+        },
+        {
+          "name": "Aji de Gallina",
+          "description": "A creamy chicken stew made with shredded chicken in a spicy, nutty aji amarillo (yellow chili) sauce, traditionally served with potatoes and rice. It is a comforting home-style dish with deep cultural roots.",
+          "cooking_techniques": [
+            "boiling",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "chicken breast",
+            "aji amarillo",
+            "walnuts or pecans",
+            "potatoes"
+          ],
+          "healthy_modifications": [
+            "use low-fat milk or vegetable broth instead of cream",
+            "replace white rice with quinoa",
+            "increase vegetable content"
+          ]
+        },
+        {
+          "name": "Anticuchos",
+          "description": "Grilled skewers of marinated meat, traditionally beef heart, served with spicy sauces. A popular street food with roots in indigenous and Afro-Peruvian cultures, symbolizing communal eating and celebration.",
+          "cooking_techniques": [
+            "grilling",
+            "marinating"
+          ],
+          "healthy_ingredients": [
+            "beef heart or lean meat",
+            "aji panca (red chili)",
+            "garlic",
+            "vinegar"
+          ],
+          "healthy_modifications": [
+            "use leaner cuts or chicken breast",
+            "grill without added fats",
+            "serve with fresh salad or corn"
+          ]
+        },
+        {
+          "name": "Papa a la Huancaína",
+          "description": "Boiled potatoes topped with a spicy, creamy sauce made from aji amarillo, cheese, and milk. It is a classic appetizer from the highlands, showcasing native potatoes and local peppers.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "native potatoes",
+            "aji amarillo",
+            "low-fat cheese",
+            "milk"
+          ],
+          "healthy_modifications": [
+            "use low-fat cheese and milk",
+            "reduce oil in sauce",
+            "serve with fresh lettuce or vegetables"
+          ]
+        },
+        {
+          "name": "Tacu Tacu",
+          "description": "A traditional Afro-Peruvian dish of fried rice and beans mixed and pan-fried into a crispy cake, often served with a protein like steak or seafood. It reflects the fusion of African and Peruvian culinary traditions.",
+          "cooking_techniques": [
+            "pan-frying",
+            "boiling"
+          ],
+          "healthy_ingredients": [
+            "beans",
+            "rice (preferably brown or quinoa)",
+            "onions",
+            "garlic"
+          ],
+          "healthy_modifications": [
+            "use brown rice or quinoa",
+            "pan-fry with minimal oil",
+            "add more vegetables to the mix"
+          ]
+        },
+        {
+          "name": "Cau Cau",
+          "description": "A tripe stew cooked with potatoes, yellow chili, and herbs, reflecting Lima’s Creole culinary tradition. It is a hearty dish often served with rice.",
+          "cooking_techniques": [
+            "sautéing",
+            "stewing"
+          ],
+          "healthy_ingredients": [
+            "tripe (lean protein)",
+            "potatoes",
+            "aji amarillo",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use lean cuts or substitute with chicken",
+            "reduce oil",
+            "serve with quinoa or vegetables"
+          ]
+        },
+        {
+          "name": "Arroz con Mariscos",
+          "description": "Peruvian-style seafood rice, similar to paella, combining a variety of fresh seafood with rice, peppers, and herbs. It is a coastal favorite highlighting Peru’s rich marine resources.",
+          "cooking_techniques": [
+            "sautéing",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "seafood (shrimp, squid, mussels)",
+            "rice (preferably brown or quinoa)",
+            "bell peppers",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use brown rice or quinoa",
+            "limit added oil",
+            "increase vegetable content"
+          ]
+        },
+        {
+          "name": "Ocopa",
+          "description": "Boiled potatoes served with a spicy, creamy sauce made from aji amarillo, peanuts, and herbs. It is a traditional dish from Arequipa, often served as an appetizer or side.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "potatoes",
+            "aji amarillo",
+            "peanuts",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use less oil in sauce",
+            "serve with fresh vegetables",
+            "use native potatoes for more nutrients"
+          ]
+        }
+      ],
+      "summary": {
+        "common_healthy_ingredients": [
+          "aji amarillo (yellow chili pepper)",
+          "native potatoes",
+          "cilantro",
+          "onions",
+          "beans",
+          "corn",
+          "fresh seafood",
+          "lean meats (chicken, beef heart)",
+          "quinoa or brown rice",
+          "Andean herbs (huacatay)"
+        ],
+        "common_cooking_techniques": [
+          "boiling",
+          "grilling",
+          "marinating",
+          "sautéing",
+          "slow roasting",
+          "earth baking",
+          "stir-frying",
+          "blending",
+          "pan-frying",
+          "simmering"
+        ]
+      },
+      "cached_at": "2025-07-29T14:14:05.083Z",
+      "last_accessed": "2025-07-29T14:14:05.083Z",
+      "access_count": 0,
+      "data_version": "1.2.0",
+      "source_quality_score": 60
+    },
+    "userId": 0,
+    "executionTime": 28320
+  },
+  {
+    "id": "1753798416665-v8eljtcxb",
+    "query": "Cultural cuisine research: peruvian (cached)",
+    "timestamp": "2025-07-29T14:13:36.665Z",
+    "responseSize": 5274,
+    "cached": true,
+    "category": "cultural-cuisine",
+    "responsePreview": "Found 10 dishes: Ceviche, Pachamanca, Lomo Saltado...",
+    "fullResponse": {
+      "meals": [
+        {
+          "name": "Ceviche",
+          "description": "A traditional Peruvian dish of raw fish marinated in lime juice, mixed with ají chili, onion, and coriander. It is culturally significant as a national symbol and part of daily and festive meals, recognized by UNESCO as Intangible Cultural Heritage.",
+          "cooking_techniques": [
+            "marinating",
+            "no heat cooking"
+          ],
+          "healthy_ingredients": [
+            "fresh fish",
+            "lime juice",
+            "onion",
+            "cilantro",
+            "ají chili"
+          ],
+          "healthy_modifications": [
+            "use sustainably caught fish",
+            "reduce salt",
+            "serve with boiled sweet potatoes instead of fried sides"
+          ]
+        },
+        {
+          "name": "Pachamanca",
+          "description": "An ancient Andean ritual dish cooked underground with volcanic stones, combining meats (lamb, pork, chicken), native potatoes, corn, fava beans, and Andean herbs. It honors Pachamama (Mother Earth) and is a communal feast.",
+          "cooking_techniques": [
+            "earth oven slow cooking",
+            "roasting"
+          ],
+          "healthy_ingredients": [
+            "native potatoes",
+            "corn",
+            "fava beans",
+            "Andean herbs (huacatay)",
+            "lean meats"
+          ],
+          "healthy_modifications": [
+            "use lean cuts of meat",
+            "increase proportion of native tubers and legumes",
+            "limit added salt"
+          ]
+        },
+        {
+          "name": "Lomo Saltado",
+          "description": "A popular stir-fry dish combining beef strips with tomatoes, onions, and ají amarillo, reflecting Chinese influence in Peruvian cuisine. It is widely eaten across Peru as a hearty meal.",
+          "cooking_techniques": [
+            "stir-frying",
+            "sautéing"
+          ],
+          "healthy_ingredients": [
+            "beef (preferably lean cuts)",
+            "tomatoes",
+            "onions",
+            "ají amarillo",
+            "cilantro"
+          ],
+          "healthy_modifications": [
+            "use lean beef or substitute with chicken breast",
+            "reduce oil quantity",
+            "serve with quinoa or brown rice instead of white rice"
+          ]
+        },
+        {
+          "name": "Aji de Gallina",
+          "description": "A creamy chicken stew made with shredded chicken in a spicy, nutty ají amarillo sauce with cheese and bread. It is a comfort food staple in Peruvian households.",
+          "cooking_techniques": [
+            "boiling",
+            "simmering"
+          ],
+          "healthy_ingredients": [
+            "chicken breast",
+            "ají amarillo",
+            "walnuts",
+            "milk",
+            "garlic"
+          ],
+          "healthy_modifications": [
+            "use low-fat milk or plant-based milk",
+            "reduce cheese amount",
+            "replace white bread with whole grain bread"
+          ]
+        },
+        {
+          "name": "Anticuchos",
+          "description": "Skewered and grilled meat, traditionally beef heart, marinated in vinegar and ají panca. It is a popular street food with deep roots in Andean culture.",
+          "cooking_techniques": [
+            "grilling",
+            "marinating"
+          ],
+          "healthy_ingredients": [
+            "beef heart (rich in iron)",
+            "ají panca",
+            "vinegar",
+            "garlic"
+          ],
+          "healthy_modifications": [
+            "trim visible fat",
+            "grill without added oil",
+            "serve with fresh salad or corn instead of fried potatoes"
+          ]
+        },
+        {
+          "name": "Causa Limeña",
+          "description": "A layered cold dish made with mashed yellow potatoes seasoned with lime and ají amarillo, filled with tuna, chicken, or avocado. It is a refreshing appetizer or light meal.",
+          "cooking_techniques": [
+            "boiling",
+            "mashing",
+            "assembling cold"
+          ],
+          "healthy_ingredients": [
+            "yellow potatoes",
+            "lime",
+            "ají amarillo",
+            "avocado",
+            "tuna or chicken"
+          ],
+          "healthy_modifications": [
+            "use olive oil instead of mayonnaise",
+            "increase avocado and vegetable layers",
+            "use fresh tuna or chicken breast"
+          ]
+        },
+        {
+          "name": "Tacu Tacu",
+          "description": "A traditional dish of rice and beans fried together, often served with a protein like steak or fried egg. It originated as a way to use leftovers and is a staple comfort food.",
+          "cooking_techniques": [
+            "boiling",
+            "pan-frying"
+          ],
+          "healthy_ingredients": [
+            "beans",
+            "rice (preferably brown)",
+            "onion",
+            "garlic"
+          ],
+          "healthy_modifications": [
+            "use brown rice",
+            "pan-fry with minimal oil",
+            "serve with grilled lean protein and vegetables"
+          ]
+        },
+        {
+          "name": "Papa a la Huancaína",
+          "description": "Boiled yellow potatoes served with a spicy, creamy sauce made from ají amarillo, cheese, and milk. It is a classic appetizer from the Huancayo region.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "yellow potatoes",
+            "ají amarillo",
+            "low-fat cheese",
+            "milk"
+          ],
+          "healthy_modifications": [
+            "use low-fat cheese and milk",
+            "reduce sauce quantity",
+            "serve with fresh lettuce and tomato"
+          ]
+        },
+        {
+          "name": "Pollo a la Brasa",
+          "description": "Peruvian rotisserie chicken marinated with spices and cooked over charcoal or wood fire. It is one of the most popular dishes nationwide.",
+          "cooking_techniques": [
+            "rotisserie roasting",
+            "marinating"
+          ],
+          "healthy_ingredients": [
+            "chicken",
+            "garlic",
+            "black pepper",
+            "ají panca"
+          ],
+          "healthy_modifications": [
+            "remove skin before eating",
+            "use lean chicken cuts",
+            "serve with salad and baked potatoes instead of fries"
+          ]
+        },
+        {
+          "name": "Ocopa Arequipeña",
+          "description": "Boiled potatoes topped with a spicy sauce made from ají amarillo, peanuts, cheese, and huacatay herb. It is a traditional dish from Arequipa.",
+          "cooking_techniques": [
+            "boiling",
+            "blending"
+          ],
+          "healthy_ingredients": [
+            "potatoes",
+            "ají amarillo",
+            "peanuts",
+            "huacatay",
+            "low-fat cheese"
+          ],
+          "healthy_modifications": [
+            "use low-fat cheese",
+            "reduce peanut quantity",
+            "serve with fresh vegetables"
+          ]
+        }
+      ],
+      "summary": {
+        "common_healthy_ingredients": [
+          "ají amarillo",
+          "potatoes (native varieties)",
+          "onions",
+          "cilantro",
+          "lime",
+          "lean meats (chicken breast, lean beef)",
+          "corn",
+          "beans",
+          "Andean herbs (huacatay)",
+          "avocado"
+        ],
+        "common_cooking_techniques": [
+          "boiling",
+          "marinating",
+          "grilling",
+          "roasting",
+          "stir-frying",
+          "blending",
+          "slow cooking"
+        ]
+      },
+      "cached_at": "2025-07-28T18:34:36.950Z",
+      "last_accessed": "2025-07-29T14:13:36.655Z",
+      "access_count": 2,
+      "data_version": "1.2.0",
+      "source_quality_score": 60
+    },
+    "userId": 9,
+    "executionTime": 0
+  }
+]

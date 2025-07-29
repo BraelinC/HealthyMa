@@ -4,7 +4,7 @@
  */
 
 import { CulturalMealRankingEngine, MealScore } from './culturalMealRankingEngine';
-import { UNIFIED_GOALS } from './intelligentPromptBuilderV2';
+import { UNIFIED_GOALS, getUnifiedGoalWithProfile } from './intelligentPromptBuilderV2';
 
 export interface PromptTemplateData {
   // Basic configuration
@@ -36,6 +36,7 @@ export interface PromptTemplateData {
   // User context
   userId: number;
   profileName: string;
+  profileType?: 'family' | 'individual';
   familySize: number;
 }
 
@@ -52,6 +53,45 @@ REQUIREMENTS:
 - Max cook time: {MAX_COOK_TIME} minutes (including prep + cook time)
 - Difficulty level: MAXIMUM {MAX_DIFFICULTY}/5 (calculated by RecipeComplexityCalculator)
 - Nutrition goal: {NUTRITION_GOAL}
+
+📊 COMPLEXITY CALCULATION SYSTEM:
+Calculate difficulty (1-5 scale) using these specific factors:
+
+1. **Technique Complexity** (1-5):
+   - 1: Basic (mixing, assembling)
+   - 2: Simple cooking (boiling, toasting)
+   - 3: Moderate (sautéing, grilling, basic frying)
+   - 4: Advanced (stir-frying with timing, braising)
+   - 5: Expert (multiple simultaneous techniques, precise timing)
+
+2. **Ingredient Complexity** (1-5):
+   - 1: 1-3 ingredients
+   - 2: 4-6 ingredients
+   - 3: 7-10 ingredients
+   - 4: 11-15 ingredients
+   - 5: 15+ ingredients or rare/specialty items
+
+3. **Timing Precision** (1-5):
+   - 1: Flexible timing, hard to overcook
+   - 2: Some timing awareness needed
+   - 3: Moderate timing required
+   - 4: Precise timing for multiple components
+   - 5: Critical timing coordination
+
+**Final Difficulty = ROUND(AVG(technique + ingredients + timing))**
+**Only select meals with difficulty ≤ {MAX_DIFFICULTY}**
+
+Example: Lomo Saltado
+- Technique: 4 (stir-frying with precise timing)
+- Ingredients: 3 (8 ingredients)
+- Timing: 4 (meat must be seared perfectly, vegetables crisp)
+- Final: ROUND((4+3+4)/3) = ROUND(3.67) = 4
+
+Example: Scrambled Eggs
+- Technique: 2 (simple cooking)
+- Ingredients: 1 (3 ingredients)
+- Timing: 2 (some attention needed)
+- Final: ROUND((2+1+2)/3) = ROUND(1.67) = 2
 
 🌍 CULTURAL CUISINE INTEGRATION:
 - Cultural background: {USER_CULTURE}
@@ -107,7 +147,7 @@ IMPORTANT: Each meal MUST include:
     }
     
     const replacements: Record<string, string> = {
-      '{MAIN_GOAL_PROMPT}': this.generateMainGoalPrompt(data.primaryGoal),
+      '{MAIN_GOAL_PROMPT}': this.generateMainGoalPrompt(data.primaryGoal, data.profileType),
       '{MEAL_PLAN_DAYS}': data.mealPlanDays.toString(),
       '{MEALS_PER_DAY}': data.mealsPerDay.toString(),
       '{DYNAMIC_WEIGHTS_LIST}': this.generateDynamicWeightsList(data.goalWeights),
@@ -138,8 +178,12 @@ IMPORTANT: Each meal MUST include:
   /**
    * Generate main goal prompt section
    */
-  private generateMainGoalPrompt(primaryGoal: string): string {
-    const goal = UNIFIED_GOALS.find(g => g.value === primaryGoal);
+  private generateMainGoalPrompt(primaryGoal: string, profileType?: 'family' | 'individual'): string {
+    // Use profile-aware goal lookup
+    const goal = profileType 
+      ? getUnifiedGoalWithProfile(primaryGoal, profileType)
+      : UNIFIED_GOALS.find(g => g.value === primaryGoal);
+      
     if (!goal) {
       return 'Generate a balanced meal plan with practical nutrition';
     }

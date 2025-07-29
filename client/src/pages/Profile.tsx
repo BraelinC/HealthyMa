@@ -25,15 +25,24 @@ import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 import AIPoweredMealPlanGenerator from '@/components/AIPoweredMealPlanGenerator';
 
 
-const commonGoals = [
-  'Lose Weight',
-  'Gain Muscle',
-  'Improve Health',
+// Define goals based on profile type
+const familyGoals = [
   'Save Money',
-  'Save Time',
-  'Eat More Variety',
-  'Learn New Recipes',
-  'Meal Prep Efficiency'
+  'Quick & Simple Meals',
+  'Complex Meals',
+  'Cook Big Batches',
+  'Baby-Friendly',
+  'Young Kid-Friendly'
+];
+
+const individualGoals = [
+  'Save Money',
+  'Meal Prep',
+  'Gain Muscle',
+  'Lose Weight',
+  'Eat Healthier',
+  'Energy & Performance',
+  'Digestive Health'
 ];
 
 const ageGroups = ['Child', 'Teen', 'Adult'] as const;
@@ -978,7 +987,7 @@ export default function Profile() {
                       <SelectValue placeholder="Select your main goal" />
                     </SelectTrigger>
                     <SelectContent>
-                      {commonGoals.map(goal => (
+                      {(profileType === 'family' ? familyGoals : individualGoals).map(goal => (
                         <SelectItem key={goal} value={goal}>{goal}</SelectItem>
                       ))}
                     </SelectContent>

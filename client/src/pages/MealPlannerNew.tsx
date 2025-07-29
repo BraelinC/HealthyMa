@@ -106,15 +106,28 @@ export default function MealPlanner() {
   const [calendarOpen, setCalendarOpen] = useState(true); // Auto-show calendar on page load
 
   // UNIFIED GOAL SYSTEM - Frontend mirrors backend goals exactly
-  const unifiedGoals = [
-    { value: "Save Money", label: "💰 Save Money", nutritionFocus: "general_wellness" },
-    { value: "Eat Healthier", label: "🥗 Eat Healthier", nutritionFocus: "general_wellness" },
-    { value: "Gain Muscle", label: "💪 Gain Muscle", nutritionFocus: "muscle_gain" },
-    { value: "Lose Weight", label: "🎯 Lose Weight", nutritionFocus: "weight_loss" },
-    { value: "Family Nutrition", label: "👨‍👩‍👧‍👦 Family Nutrition", nutritionFocus: "general_wellness" },
-    { value: "Energy & Performance", label: "⚡ Energy & Performance", nutritionFocus: "energy_performance" },
-    { value: "Digestive Health", label: "🌿 Digestive Health", nutritionFocus: "digestive_health" },
+  // Define goals based on profile type
+  const familyGoals = [
+    { value: "Save Money", label: "💸 Save Money", nutritionFocus: "general_wellness" },
+    { value: "Quick & Simple Meals", label: "⏱️ Quick & Simple", nutritionFocus: "general_wellness" },
+    { value: "Complex Meals", label: "👨‍🍳 Complex Meals", nutritionFocus: "general_wellness" },
+    { value: "Cook Big Batches", label: "🍲 Big Batch Cooking", nutritionFocus: "general_wellness" },
+    { value: "Baby-Friendly", label: "👶 Baby-Friendly", nutritionFocus: "baby_nutrition" },
+    { value: "Young Kid-Friendly", label: "🧒 Kid-Friendly", nutritionFocus: "general_wellness" },
   ];
+
+  const individualGoals = [
+    { value: "Save Money", label: "💸 Save Money", nutritionFocus: "general_wellness" },
+    { value: "Meal Prep", label: "🥡 Meal Prep", nutritionFocus: "general_wellness" },
+    { value: "Gain Muscle", label: "💪 Gain Muscle", nutritionFocus: "muscle_gain" },
+    { value: "Lose Weight", label: "⚖️ Lose Weight", nutritionFocus: "weight_loss" },
+    { value: "Eat Healthier", label: "🥗 Eat Healthier", nutritionFocus: "general_wellness" },
+    { value: "Energy & Performance", label: "⚡ Energy & Performance", nutritionFocus: "energy_performance" },
+    { value: "Digestive Health", label: "🥦 Digestive Health", nutritionFocus: "digestive_health" },
+  ];
+
+  // Use appropriate goals based on profile type
+  const unifiedGoals = userProfile?.profile_type === 'family' ? familyGoals : individualGoals;
 
   const nutritionGoals = [
     { value: "weight_loss", label: "Weight Loss" },

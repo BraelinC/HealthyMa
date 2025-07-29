@@ -3011,20 +3011,24 @@ __export(perplexitySearchLogger_exports, {
 });
 import fs from "fs/promises";
 import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 async function logPerplexitySearch(query, response, category = "general", cached = false, userId, executionTime) {
   return perplexityLogger.logSearch(query, response, category, cached, userId, executionTime);
 }
-var PerplexitySearchLogger, perplexityLogger;
+var __filename, __dirname2, PerplexitySearchLogger, perplexityLogger;
 var init_perplexitySearchLogger = __esm({
   "server/perplexitySearchLogger.ts"() {
     "use strict";
+    __filename = fileURLToPath(import.meta.url);
+    __dirname2 = dirname(__filename);
     PerplexitySearchLogger = class {
       logFile;
       maxEntries = 1e3;
       maxFileSize = 10 * 1024 * 1024;
       // 10MB
       constructor() {
-        this.logFile = path.join(__dirname, "../logs/perplexity-searches.json");
+        this.logFile = path.join(__dirname2, "../logs/perplexity-searches.json");
         this.ensureLogDirectory();
       }
       async ensureLogDirectory() {
@@ -7709,6 +7713,354 @@ var init_HeroIngredientManager = __esm({
   }
 });
 
+// server/promptTemplateEngine.ts
+function determineNutritionGoal(primaryGoal) {
+  const nutritionMap = {
+    "Save Money": "general_wellness",
+    "Eat Healthier": "general_wellness",
+    "Gain Muscle": "muscle_gain",
+    "Lose Weight": "weight_loss",
+    "Family Nutrition": "general_wellness",
+    "Energy & Performance": "energy_performance",
+    "Digestive Health": "digestive_health"
+  };
+  return nutritionMap[primaryGoal] || "general_wellness";
+}
+var PromptTemplateEngine;
+var init_promptTemplateEngine = __esm({
+  "server/promptTemplateEngine.ts"() {
+    "use strict";
+    init_intelligentPromptBuilderV2();
+    PromptTemplateEngine = class {
+      template = `{MAIN_GOAL_PROMPT}
+
+Create a {MEAL_PLAN_DAYS}-day meal plan with {MEALS_PER_DAY} meals per day with balanced nutrition.
+
+\u{1F3AF} DYNAMIC WEIGHT-BASED PRIORITY SYSTEM:
+Objectives ranked by user preferences (weights dynamically calculated):
+{DYNAMIC_WEIGHTS_LIST}
+
+REQUIREMENTS:
+- Max cook time: {MAX_COOK_TIME} minutes (including prep + cook time)
+- Difficulty level: MAXIMUM {MAX_DIFFICULTY}/5 (calculated by RecipeComplexityCalculator)
+- Nutrition goal: {NUTRITION_GOAL}
+
+\u{1F4CA} COMPLEXITY CALCULATION SYSTEM:
+Calculate difficulty (1-5 scale) using these specific factors:
+
+1. **Technique Complexity** (1-5):
+   - 1: Basic (mixing, assembling)
+   - 2: Simple cooking (boiling, toasting)
+   - 3: Moderate (saut\xE9ing, grilling, basic frying)
+   - 4: Advanced (stir-frying with timing, braising)
+   - 5: Expert (multiple simultaneous techniques, precise timing)
+
+2. **Ingredient Complexity** (1-5):
+   - 1: 1-3 ingredients
+   - 2: 4-6 ingredients
+   - 3: 7-10 ingredients
+   - 4: 11-15 ingredients
+   - 5: 15+ ingredients or rare/specialty items
+
+3. **Timing Precision** (1-5):
+   - 1: Flexible timing, hard to overcook
+   - 2: Some timing awareness needed
+   - 3: Moderate timing required
+   - 4: Precise timing for multiple components
+   - 5: Critical timing coordination
+
+**Final Difficulty = ROUND(AVG(technique + ingredients + timing))**
+**Only select meals with difficulty \u2264 {MAX_DIFFICULTY}**
+
+Example: Lomo Saltado
+- Technique: 4 (stir-frying with precise timing)
+- Ingredients: 3 (8 ingredients)
+- Timing: 4 (meat must be seared perfectly, vegetables crisp)
+- Final: ROUND((4+3+4)/3) = ROUND(3.67) = 4
+
+Example: Scrambled Eggs
+- Technique: 2 (simple cooking)
+- Ingredients: 1 (3 ingredients)
+- Timing: 2 (some attention needed)
+- Final: ROUND((2+1+2)/3) = ROUND(1.67) = 2
+
+\u{1F30D} CULTURAL CUISINE INTEGRATION:
+- Cultural background: {USER_CULTURE}
+- Priority weight: {CULTURAL_WEIGHT}%
+
+{RANKED_MEALS_SECTION}
+
+{TECHNIQUE_GUIDANCE_SECTION}
+
+ENHANCED TIME CALCULATIONS:
+Each meal must include:
+- prep_time_minutes: (integer value)
+- active_cooking_minutes: (integer value)
+- passive_time_minutes: (integer value, 0 if none)
+- total_time_minutes: \u2264{MAX_COOK_TIME}
+
+{DIETARY_RESTRICTIONS_SECTION}
+
+MEAL SELECTION ALGORITHM:
+1. Pre-calculate complexity scores for all {USER_CULTURE} dishes
+2. Apply weight matrix: {WEIGHT_MATRIX}
+3. Rank meals by composite score
+4. Select top meals within difficulty constraint ({MAX_DIFFICULTY})
+5. Ensure variety across {MEAL_PLAN_DAYS} days
+
+RETURN FORMAT: Enhanced JSON structure with BOTH standard fields (cook_time_minutes, difficulty) and detailed breakdowns:
+{JSON_STRUCTURE}
+
+IMPORTANT: Each meal MUST include:
+- cook_time_minutes: Total cooking time as a single integer
+- difficulty: Overall difficulty as integer from 1-{MAX_DIFFICULTY}
+- nutrition_info: (not just "nutrition") with calories, protein_g, carbs_g, fat_g`;
+      /**
+       * Generate prompt from template and data
+       */
+      generatePrompt(data) {
+        console.log("\n\u{1F4CA} TEMPLATE ENGINE DEBUG - Input data:");
+        console.log("  - Meal plan days:", data.mealPlanDays);
+        console.log("  - Meals per day:", data.mealsPerDay);
+        console.log("  - Max cook time:", data.maxCookTime, "minutes");
+        console.log("  - Max difficulty:", data.maxDifficulty, "/5");
+        console.log("  - Primary goal:", data.primaryGoal);
+        console.log("  - Cultural background:", data.culturalBackground);
+        console.log("  - Goal weights:", JSON.stringify(data.goalWeights, null, 2));
+        console.log("  - Ranked meals count:", data.rankedMeals?.length || 0);
+        if (!data.maxCookTime || !data.maxDifficulty) {
+          console.error("\u274C TEMPLATE ENGINE ERROR: Missing required data!");
+          console.error("  - maxCookTime:", data.maxCookTime);
+          console.error("  - maxDifficulty:", data.maxDifficulty);
+        }
+        const replacements = {
+          "{MAIN_GOAL_PROMPT}": this.generateMainGoalPrompt(data.primaryGoal, data.profileType),
+          "{MEAL_PLAN_DAYS}": data.mealPlanDays.toString(),
+          "{MEALS_PER_DAY}": data.mealsPerDay.toString(),
+          "{DYNAMIC_WEIGHTS_LIST}": this.generateDynamicWeightsList(data.goalWeights),
+          "{MAX_COOK_TIME}": data.maxCookTime.toString(),
+          "{MAX_DIFFICULTY}": data.maxDifficulty.toString(),
+          "{NUTRITION_GOAL}": data.nutritionGoal,
+          "{USER_CULTURE}": data.culturalBackground.join(", ") || "Not specified",
+          "{CULTURAL_WEIGHT}": Math.round((data.goalWeights.cultural || 0.5) * 100).toString(),
+          "{RANKED_MEALS_SECTION}": this.generateRankedMealsSection(data),
+          "{TECHNIQUE_GUIDANCE_SECTION}": this.generateTechniqueGuidance(data.rankedMeals),
+          "{DIETARY_RESTRICTIONS_SECTION}": this.generateDietarySection(data.dietaryRestrictions),
+          "{WEIGHT_MATRIX}": JSON.stringify(data.goalWeights),
+          "{JSON_STRUCTURE}": this.generateJSONStructure(data)
+        };
+        let prompt = this.template;
+        for (const [placeholder, value] of Object.entries(replacements)) {
+          prompt = prompt.replace(new RegExp(placeholder, "g"), value);
+        }
+        console.log("\n\u2705 TEMPLATE ENGINE: Successfully generated prompt");
+        console.log("  - Prompt length:", prompt.length, "characters");
+        console.log("  - First 200 chars:", prompt.substring(0, 200) + "...");
+        return prompt;
+      }
+      /**
+       * Generate main goal prompt section
+       */
+      generateMainGoalPrompt(primaryGoal, profileType) {
+        const goal = profileType ? getUnifiedGoalWithProfile(primaryGoal, profileType) : UNIFIED_GOALS2.find((g) => g.value === primaryGoal);
+        if (!goal) {
+          return "Generate a balanced meal plan with practical nutrition";
+        }
+        const mainPrompt = goal.prompts[0];
+        let additionalPoints = goal.prompts.slice(1).map((p) => `- ${p}`).join("\n");
+        if (primaryGoal === "Gain Muscle") {
+          additionalPoints += "\n- PROTEIN REQUIREMENT: Each meal MUST contain 40-50g of protein minimum";
+          additionalPoints += "\n- Ensure total daily protein intake of 150-180g across all meals";
+          additionalPoints += "\n- Focus on caloric surplus with 2500-3000 calories per day total";
+          additionalPoints += "\n- Prioritize complete proteins from culturally appropriate sources";
+        }
+        return `${mainPrompt}
+${additionalPoints}`;
+      }
+      /**
+       * Generate dynamic weights list with descriptions
+       */
+      generateDynamicWeightsList(weights) {
+        const weightDescriptions = {
+          cost: "Cost savings through smart ingredient choices and reuse",
+          health: "Nutritional density and balanced macronutrients",
+          cultural: "Incorporate authentic cultural flavors and techniques",
+          time: "Minimize prep and cooking time for efficiency",
+          variety: "Use diverse ingredients and cooking methods"
+        };
+        const sortedWeights = Object.entries(weights).sort(([, a], [, b]) => b - a).filter(([, weight]) => weight > 0);
+        return sortedWeights.map(([key, weight]) => {
+          const percentage = Math.round(weight * 100);
+          const priority = this.getPriorityLevel(weight);
+          const description = weightDescriptions[key] || `Optimize for ${key}`;
+          return `- ${priority} (${percentage}%): ${description}`;
+        }).join("\n");
+      }
+      /**
+       * Get priority level text based on weight
+       */
+      getPriorityLevel(weight) {
+        if (weight >= 0.7) return "VERY HIGH PRIORITY";
+        if (weight >= 0.5) return "HIGH PRIORITY";
+        if (weight >= 0.3) return "MODERATE PRIORITY";
+        if (weight >= 0.15) return "LOW PRIORITY";
+        return "MINIMAL PRIORITY";
+      }
+      /**
+       * Generate ranked meals section
+       */
+      generateRankedMealsSection(data) {
+        if (!data.culturalBackground?.length) {
+          return "TOP-RANKED MEALS:\n- No cultural background specified";
+        }
+        const culture = data.culturalBackground[0];
+        let section = `TOP-RANKED ${culture.toUpperCase()} MEALS (by complexity + weight algorithm):
+`;
+        if (data.rankedMeals && data.rankedMeals.length > 0) {
+          const topMeals = data.rankedMeals.slice(0, 5);
+          section += topMeals.map(
+            (score, index2) => `${index2 + 1}. ${score.meal.name} (Score: ${Math.round(score.total_score * 100)}%)`
+          ).join("\n");
+          const allIngredients = /* @__PURE__ */ new Set();
+          topMeals.forEach((score) => {
+            score.meal.ingredients.forEach((ing) => allIngredients.add(ing));
+          });
+          const keyIngredients = Array.from(allIngredients).slice(0, 8);
+          if (keyIngredients.length > 0) {
+            section += `
+
+Key ingredients from top-ranked meals: ${keyIngredients.join(", ")}`;
+          }
+          const allTechniques = /* @__PURE__ */ new Set();
+          topMeals.forEach((score) => {
+            score.meal.cooking_techniques.forEach((tech) => allTechniques.add(tech));
+          });
+          const techniques = Array.from(allTechniques).slice(0, 5);
+          if (techniques.length > 0) {
+            section += `
+Cooking techniques: ${techniques.join(", ")}`;
+          }
+        } else {
+          section += this.getCulturalFallbackMeals(culture);
+        }
+        return section;
+      }
+      /**
+       * Get fallback meals for a culture
+       */
+      getCulturalFallbackMeals(culture) {
+        const fallbacks = {
+          "Peruvian": ["Ceviche", "Lomo Saltado", "Aji de Gallina", "Anticuchos", "Causa Lime\xF1a"],
+          "Chinese": ["Kung Pao Chicken", "Mapo Tofu", "Beef and Broccoli", "Hot and Sour Soup", "Fried Rice"],
+          "Italian": ["Pasta Primavera", "Chicken Marsala", "Caprese Salad", "Minestrone", "Risotto"],
+          "Mexican": ["Tacos al Pastor", "Enchiladas Verdes", "Pozole", "Chiles Rellenos", "Mole Poblano"]
+        };
+        const meals = fallbacks[culture] || ["Traditional Dish 1", "Traditional Dish 2", "Traditional Dish 3"];
+        return meals.slice(0, 5).map((meal, i) => `${i + 1}. ${meal}`).join("\n");
+      }
+      /**
+       * Generate technique guidance from ranked meals
+       */
+      generateTechniqueGuidance(rankedMeals) {
+        let section = "TECHNIQUE-SPECIFIC GUIDANCE (from top-ranked meals):\n";
+        if (rankedMeals && rankedMeals.length > 0) {
+          const techniqueMap = /* @__PURE__ */ new Map();
+          rankedMeals.slice(0, 5).forEach((score) => {
+            score.meal.cooking_techniques.forEach((technique) => {
+              const current = techniqueMap.get(technique) || { count: 0, avgTime: 0 };
+              current.count++;
+              current.avgTime = (score.meal.estimated_cook_time + score.meal.estimated_prep_time) / 2;
+              techniqueMap.set(technique, current);
+            });
+          });
+          const sortedTechniques = Array.from(techniqueMap.entries()).sort(([, a], [, b]) => b.count - a.count).slice(0, 5);
+          section += sortedTechniques.map(([technique, data]) => {
+            const timeRange = `${Math.round(data.avgTime * 0.8)}-${Math.round(data.avgTime * 1.2)} min`;
+            return `- ${technique}: ${timeRange} - Used in ${data.count} top-ranked dishes`;
+          }).join("\n");
+        } else {
+          section += `- Stir-frying: 10-15 min - High heat, quick movements
+- Braising: 45-60 min - Low and slow for tenderness
+- Grilling: 15-20 min - Preheat well, oil grates
+- Steaming: 10-20 min - Gentle, preserves nutrients
+- Roasting: 30-45 min - Even browning, crispy exterior`;
+        }
+        return section;
+      }
+      /**
+       * Generate dietary restrictions section
+       */
+      generateDietarySection(restrictions) {
+        if (!restrictions || restrictions.length === 0) {
+          return "DIETARY RESTRICTIONS:\n- None specified";
+        }
+        return `DIETARY RESTRICTIONS:
+- Must comply with: ${restrictions.join(", ")}
+- All meals must be strictly ${restrictions.join(" and ")}
+- Suggest appropriate substitutions when adapting traditional dishes
+- Clearly indicate any modifications made for dietary compliance`;
+      }
+      /**
+       * Generate enhanced JSON structure
+       */
+      generateJSONStructure(data) {
+        const dayKeys = Array.from({ length: data.mealPlanDays }, (_, i) => `day_${i + 1}`);
+        const mealTypes = ["breakfast", "lunch", "dinner", "snack", "second_snack"].slice(0, data.mealsPerDay);
+        const mealExample = {
+          title: "Recipe Name",
+          cook_time_minutes: "{integer \u2264 " + data.maxCookTime + "}",
+          difficulty: "{1-" + data.maxDifficulty + " integer}",
+          ingredients: ["ingredient with amount"],
+          instructions: ["Step 1", "Step 2"],
+          nutrition_info: {
+            calories: "{integer}",
+            protein_g: "{integer}",
+            carbs_g: "{integer}",
+            fat_g: "{integer}"
+          },
+          // Enhanced fields for template system
+          complexity_score: "{float between 0-1}",
+          cultural_rank: "{1-10 based on cultural alignment}",
+          time_breakdown: {
+            prep_minutes: "{integer}",
+            active_minutes: "{integer}",
+            passive_minutes: "{integer}",
+            total_minutes: "{same as cook_time_minutes}"
+          },
+          primary_techniques: ["technique1", "technique2"],
+          difficulty_factors: {
+            technique_complexity: "{1-5 scale}",
+            ingredient_complexity: "{1-5 scale}",
+            timing_precision: "{1-5 scale}"
+          }
+        };
+        const dayStructure = {};
+        mealTypes.forEach((mealType) => {
+          dayStructure[mealType] = mealExample;
+        });
+        const mealPlanStructure = {};
+        dayKeys.forEach((dayKey) => {
+          mealPlanStructure[dayKey] = dayStructure;
+        });
+        const fullStructure = {
+          meal_plan: mealPlanStructure,
+          shopping_list: ["All unique ingredients consolidated"],
+          prep_tips: ["Batch cooking suggestions", "Storage tips"],
+          technique_guidance: {
+            "technique_name": {
+              difficulty: "{1-5}",
+              time_required: "{X-Y minutes}",
+              tips: "Specific tips for this technique"
+            }
+          },
+          estimated_savings: "{numeric value based on ingredient reuse}"
+        };
+        return JSON.stringify(fullStructure, null, 2);
+      }
+    };
+  }
+});
+
 // server/culturalMealRankingEngine.ts
 var culturalMealRankingEngine_exports = {};
 __export(culturalMealRankingEngine_exports, {
@@ -7981,6 +8333,9 @@ var init_culturalMealRankingEngine = __esm({
         return !dairyKeywords.some((keyword) => text2.includes(keyword));
       }
       meetsDietaryRestrictions(meal, restrictions) {
+        if (!restrictions || !Array.isArray(restrictions)) {
+          return true;
+        }
         for (const restriction of restrictions) {
           const lowerRestriction = restriction.toLowerCase();
           if (lowerRestriction.includes("egg") && !meal.egg_free) return false;
@@ -8018,19 +8373,83 @@ var init_culturalMealRankingEngine = __esm({
 // server/intelligentPromptBuilderV2.ts
 var intelligentPromptBuilderV2_exports = {};
 __export(intelligentPromptBuilderV2_exports, {
+  FAMILY_GOALS: () => FAMILY_GOALS,
+  INDIVIDUAL_GOALS: () => INDIVIDUAL_GOALS,
   UNIFIED_GOALS: () => UNIFIED_GOALS2,
   buildEnhancedIntelligentPrompt: () => buildEnhancedIntelligentPrompt2,
-  buildIntelligentPrompt: () => buildIntelligentPrompt2,
+  buildTemplateBasedPrompt: () => buildTemplateBasedPrompt,
   buildWeightBasedIntelligentPrompt: () => buildWeightBasedIntelligentPrompt,
   enhanceMealWithIntelligentTiming: () => enhanceMealWithIntelligentTiming2,
   extractFamilyDietaryNeeds: () => extractFamilyDietaryNeeds2,
   generateEnhancedMealPlan: () => generateEnhancedMealPlan2,
   generateStandardMealPlan: () => generateStandardMealPlan2,
   getDifficultyAdjustedPromptSuffix: () => getDifficultyAdjustedPromptSuffix2,
+  getGoalsForProfileType: () => getGoalsForProfileType,
   getUnifiedGoal: () => getUnifiedGoal2,
+  getUnifiedGoalWithProfile: () => getUnifiedGoalWithProfile,
   validateEnhancedMealPlan: () => validateEnhancedMealPlan2,
   validateMealConstraints: () => validateMealConstraints2
 });
+async function buildTemplateBasedPrompt(filters, goalWeights, heroIngredients = []) {
+  console.log("\u{1F680} Using Template-Based Prompt Builder V3");
+  console.log("\u{1F4CD} TEMPLATE SYSTEM ACTIVATED - This should replace old prompt system");
+  console.log("\u{1F4CD} Input filters:", {
+    numDays: filters.numDays,
+    mealsPerDay: filters.mealsPerDay,
+    cookTime: filters.cookTime,
+    difficulty: filters.difficulty,
+    primaryGoal: filters.primaryGoal,
+    culturalBackground: filters.culturalBackground
+  });
+  const templateEngine = new PromptTemplateEngine();
+  let rankedMeals = void 0;
+  if (filters.culturalBackground && filters.culturalBackground.length > 0 && filters.userId) {
+    try {
+      const { culturalMealRankingEngine: culturalMealRankingEngine2 } = await Promise.resolve().then(() => (init_culturalMealRankingEngine(), culturalMealRankingEngine_exports));
+      const culturalPreferences = {};
+      filters.culturalBackground.forEach((culture) => {
+        culturalPreferences[culture] = 1;
+      });
+      const userProfile = {
+        cultural_preferences: culturalPreferences,
+        priority_weights: goalWeights,
+        dietary_restrictions: filters.dietaryRestrictions?.split(",").map((r) => r.trim()).filter(Boolean) || [],
+        preferences: []
+      };
+      console.log("  \u{1F50D} Getting ranked meals with template engine");
+      rankedMeals = await culturalMealRankingEngine2.getRankedMeals(
+        filters.userId,
+        userProfile,
+        10,
+        // top 10 meals
+        0.7
+        // relevance threshold
+      );
+      console.log(`  \u2705 Got ${rankedMeals.length} ranked meals for template`);
+    } catch (error) {
+      console.error("  \u274C Failed to get ranked meals:", error.message);
+    }
+  }
+  const templateData = {
+    mealPlanDays: filters.numDays,
+    mealsPerDay: filters.mealsPerDay,
+    maxCookTime: filters.cookTime,
+    maxDifficulty: filters.difficulty,
+    primaryGoal: filters.primaryGoal || "Save Money",
+    nutritionGoal: determineNutritionGoal(filters.primaryGoal || "Save Money"),
+    goalWeights,
+    culturalBackground: filters.culturalBackground || [],
+    rankedMeals,
+    dietaryRestrictions: filters.dietaryRestrictions?.split(",").map((r) => r.trim()).filter(Boolean) || [],
+    userId: filters.userId || 1,
+    profileName: filters.profileName || "User",
+    familySize: filters.familySize || 1
+  };
+  const prompt = templateEngine.generatePrompt(templateData);
+  console.log("\u2705 Generated template-based prompt");
+  console.log("\u{1F4DD} Prompt length:", prompt.length, "characters");
+  return prompt;
+}
 async function buildWeightBasedIntelligentPrompt(filters, goalWeights, heroIngredients = []) {
   console.log("\u{1F680} Using Prompt Builder V2 with weight-based intelligence");
   console.log("\u{1F4CA} PROMPT DEBUG - Input parameters:");
@@ -8038,30 +8457,25 @@ async function buildWeightBasedIntelligentPrompt(filters, goalWeights, heroIngre
   console.log("  - Cultural background:", filters.culturalBackground);
   console.log("  - Hero ingredients:", heroIngredients);
   console.log("  - Dietary restrictions:", filters.dietaryRestrictions);
-  const basePrompt = await buildIntelligentPrompt2({
-    ...filters,
-    goalWeights,
-    heroIngredients,
-    weightBasedEnhanced: true
-  });
-  console.log("\n\u{1F4DD} PROMPT DEBUG - Base prompt length:", basePrompt.length);
-  console.log("\u{1F4DD} PROMPT DEBUG - Base prompt preview:", basePrompt.substring(0, 500) + "...");
-  const weightEnhancedPrompt = applyWeightBasedEnhancements(
-    basePrompt,
-    goalWeights,
-    heroIngredients,
-    filters
-  );
-  console.log("\n\u2705 V2 prompt generated with main goals + weight-based priorities");
-  console.log("\u{1F4DD} PROMPT DEBUG - Final prompt length:", weightEnhancedPrompt.length);
-  console.log("\u{1F4DD} PROMPT DEBUG - Weight enhancements added:", weightEnhancedPrompt.length - basePrompt.length, "characters");
-  console.log("\n\u{1F3AF} PROMPT DEBUG - COMPLETE FINAL PROMPT:");
-  console.log("=====================================");
-  console.log(weightEnhancedPrompt);
-  console.log("=====================================\n");
-  return weightEnhancedPrompt;
+  console.log("  - Cook time:", filters.cookTime);
+  console.log("  - Difficulty:", filters.difficulty);
+  try {
+    console.log("\u{1F504} Calling buildTemplateBasedPrompt (V3)...");
+    const prompt = await buildTemplateBasedPrompt(filters, goalWeights, heroIngredients);
+    console.log("\n\u{1F3AF} PROMPT DEBUG - COMPLETE FINAL PROMPT (FROM V3 TEMPLATE):");
+    console.log("=====================================");
+    console.log(prompt);
+    console.log("=====================================\n");
+    return prompt;
+  } catch (error) {
+    console.error("\u274C Template-based prompt builder failed:", error);
+    console.error("Stack trace:", error.stack);
+    throw error;
+  }
 }
-async function buildIntelligentPrompt2(filters) {
+async function buildIntelligentPrompt_OLD(filters) {
+  console.log("\u26A0\uFE0F WARNING: Old buildIntelligentPrompt_OLD is being called! This should not happen!");
+  console.log("Stack trace:", new Error().stack);
   let prompt = `Create exactly a ${filters.numDays}-day meal plan with ${filters.mealsPerDay} meals per day`;
   if (filters.profileType === "family" && filters.familySize) {
     prompt += ` for a family of ${filters.familySize}`;
@@ -8307,85 +8721,31 @@ ${mealExamples}
 }`;
   return prompt;
 }
-function applyWeightBasedEnhancements(basePrompt, goalWeights, heroIngredients, filters) {
-  console.log("\n\u{1F527} PROMPT DEBUG - Applying weight-based enhancements");
-  console.log("  - Cultural weight:", goalWeights.cultural);
-  console.log("  - Cultural background in filters:", filters.culturalBackground);
-  let enhancedPrompt = basePrompt;
-  enhancedPrompt += `
-
-\u2696\uFE0F WEIGHT-BASED PRIORITY REFINEMENTS:`;
-  enhancedPrompt += `
-When the main goal guidance creates conflicts, use these weights to resolve decisions:`;
-  const sortedWeights = Object.entries(goalWeights).sort(([, a], [, b]) => b - a).filter(([, weight]) => weight >= 0.3);
-  console.log("  - Sorted weights above 0.3 threshold:", sortedWeights);
-  for (const [goal, weight] of sortedWeights) {
-    const percentage = Math.round(weight * 100);
-    if (weight >= 0.7) {
-      enhancedPrompt += `
-- VERY HIGH PRIORITY (${percentage}%): ${getWeightDescription(goal)}`;
-      console.log(`  - Added VERY HIGH priority for ${goal}: ${percentage}%`);
-    } else if (weight >= 0.5) {
-      enhancedPrompt += `
-- HIGH PRIORITY (${percentage}%): ${getWeightDescription(goal)}`;
-      console.log(`  - Added HIGH priority for ${goal}: ${percentage}%`);
-    } else if (weight >= 0.3) {
-      enhancedPrompt += `
-- MODERATE PRIORITY (${percentage}%): ${getWeightDescription(goal)}`;
-      console.log(`  - Added MODERATE priority for ${goal}: ${percentage}%`);
-    }
+function getGoalsForProfileType(profileType) {
+  if (profileType === "family") {
+    return FAMILY_GOALS;
+  } else if (profileType === "individual") {
+    return INDIVIDUAL_GOALS;
   }
-  if (heroIngredients.length > 0) {
-    enhancedPrompt += `
-
-\u{1F3AF} SMART INGREDIENT STRATEGY:`;
-    enhancedPrompt += `
-Incorporate 2-3 of these cost-effective versatile ingredients: ${heroIngredients.join(", ")}`;
-    enhancedPrompt += `
-These ingredients maximize value and work across multiple cuisines.`;
-  }
-  enhancedPrompt += `
-
-\u{1F3AF} INTELLIGENT OBJECTIVE OVERLAP:`;
-  enhancedPrompt += `
-Each meal should demonstrate smart overlap of objectives:`;
-  enhancedPrompt += `
-- Satisfy the main goal (${filters.primaryGoal || "balanced nutrition"}) as primary focus`;
-  enhancedPrompt += `
-- Use weight priorities to refine choices when multiple options exist`;
-  enhancedPrompt += `
-- Dietary restrictions remain 100% non-negotiable`;
-  enhancedPrompt += `
-- Balance cost efficiency with nutritional quality based on weight priorities`;
-  enhancedPrompt += `
-
-\u{1F4CB} WEIGHT-BASED IMPLEMENTATION:`;
-  enhancedPrompt += `
-1. Start with main goal requirements (${filters.primaryGoal || "balanced nutrition"})`;
-  enhancedPrompt += `
-2. When choosing between similar options, prioritize higher-weighted objectives`;
-  enhancedPrompt += `
-3. Ensure final meals are practical and appealing to the target family`;
-  enhancedPrompt += `
-4. Use weights for smart trade-offs, not rigid constraints`;
-  return enhancedPrompt;
+  return UNIFIED_GOALS2;
 }
-function getWeightDescription(goal) {
-  const descriptions = {
-    cost: "Cost savings through smart ingredient choices and reuse",
-    health: "Nutritional density and balanced macronutrients",
-    cultural: "Incorporate authentic cultural flavors and techniques",
-    time: "Minimize prep and cooking time for efficiency",
-    variety: "Use diverse ingredients and cooking methods"
-  };
-  return descriptions[goal] || "Balanced approach";
+function getUnifiedGoalWithProfile(goalValue, profileType) {
+  const goals = getGoalsForProfileType(profileType);
+  return goals.find((goal) => goal.value.toLowerCase() === goalValue.toLowerCase()) || null;
 }
 function getUnifiedGoal2(goalValue) {
   return UNIFIED_GOALS2.find((goal) => goal.value.toLowerCase() === goalValue.toLowerCase()) || null;
 }
 function applyPrimaryGoalLogic2(primaryGoal, filters) {
-  const unifiedGoal = getUnifiedGoal2(primaryGoal);
+  console.log("\n\u{1F4CB} PRIMARY GOAL LOGIC DEBUG:");
+  console.log("  - Requested primaryGoal:", primaryGoal);
+  console.log("  - Profile type:", filters.profileType);
+  const unifiedGoal = getUnifiedGoalWithProfile(primaryGoal, filters.profileType);
+  console.log("  - Found unified goal:", unifiedGoal ? unifiedGoal.value : "NOT FOUND");
   if (unifiedGoal) {
+    console.log("  - Using goal-specific prompts for:", unifiedGoal.label);
+    console.log("  - Goal prompts count:", unifiedGoal.prompts.length);
+    console.log("  - Nutrition focus:", unifiedGoal.nutritionFocus);
     let prompt = ` ${unifiedGoal.prompts[0].toLowerCase().replace(":", "")}`;
     const goalPrompts = unifiedGoal.prompts.slice(1).map((p) => `
 - ${p}`).join("");
@@ -8394,6 +8754,8 @@ function applyPrimaryGoalLogic2(primaryGoal, filters) {
       ...unifiedGoal.filterAdjustments,
       nutritionGoal: unifiedGoal.nutritionFocus
     };
+    console.log("  - Generated goal prompt length:", prompt.length);
+    console.log("  - Applied filter adjustments:", Object.keys(adjustedFilters));
     return { prompt, adjustedFilters };
   }
   return {
@@ -8520,7 +8882,7 @@ async function generateEnhancedMealPlan2(filters) {
 }
 function generateStandardMealPlan2(filters) {
   console.log("\u{1F4DD} Using Standard Recipe Generation System (fallback)");
-  const prompt = buildIntelligentPrompt2(filters);
+  const prompt = buildIntelligentPrompt_OLD(filters);
   return {
     success: true,
     prompt,
@@ -8535,7 +8897,7 @@ async function buildEnhancedIntelligentPrompt2(filters) {
   const enhancedService = new EnhancedRecipeGenerationService();
   try {
     const mealAnalysis = await enhancedService.analyzeMealRequirements(filters);
-    let enhancedPrompt = buildIntelligentPrompt2(filters);
+    let enhancedPrompt = buildIntelligentPrompt_OLD(filters);
     enhancedPrompt += `
 
 \u{1F9E0} ENHANCED MEAL-SPECIFIC GUIDANCE:`;
@@ -8567,7 +8929,7 @@ ${mealType.toUpperCase()}:`;
     return enhancedPrompt;
   } catch (error) {
     console.warn("Enhanced prompt building failed, using standard prompt:", error);
-    return buildIntelligentPrompt2(filters);
+    return buildIntelligentPrompt_OLD(filters);
   }
 }
 function validateEnhancedMealPlan2(mealPlan, filters) {
@@ -8739,25 +9101,141 @@ function addBasicCulturalDataFallback(filters) {
   }
   return culturalContent;
 }
-var UNIFIED_GOALS2;
+var FAMILY_GOALS, INDIVIDUAL_GOALS, UNIFIED_GOALS2;
 var init_intelligentPromptBuilderV2 = __esm({
   "server/intelligentPromptBuilderV2.ts"() {
     "use strict";
     init_cookingTimeCalculator();
     init_enhancedRecipeGenerationService();
     init_dietaryCulturalConflictResolver();
-    UNIFIED_GOALS2 = [
+    init_promptTemplateEngine();
+    FAMILY_GOALS = [
       {
         value: "Save Money",
         label: "\u{1F4B8} Save Money",
         nutritionFocus: "general_wellness",
         prompts: [
-          "Generate a cost-effective meal plan that reduces food expenses through strategic ingredient overlap and simplicity",
-          "Use a small set of base ingredients repeatedly across meals to minimize waste and maximize value",
-          "Focus on affordable, versatile staples (e.g., beans, rice, eggs, seasonal produce)",
-          "Structure the plan for [number] main meals per day, with batch-prep options and clear storage instructions",
-          "For each meal, list ingredients, estimated cost, and preparation steps",
-          "The plan should be low-waste, scalable, and easy to prepare in advance"
+          "Generate a weekly meal plan using budget-friendly recipes for a family",
+          "Prioritize affordable ingredients that can be bought in bulk",
+          "Minimize waste by using ingredients across multiple meals",
+          "Maximize leftovers that can be repurposed for lunches or next day meals",
+          "Focus on family-sized portions that provide good value",
+          "Include batch cooking opportunities to save time and money"
+        ],
+        filterAdjustments: {
+          encourageOverlap: true,
+          availableIngredientUsagePercent: 85,
+          budgetConstraints: "low",
+          varietyPreference: "consistent"
+        }
+      },
+      {
+        value: "Quick & Simple Meals",
+        label: "\u23F1\uFE0F Quick & Simple",
+        nutritionFocus: "general_wellness",
+        prompts: [
+          "Generate a structured weekly meal plan optimized for time-constrained families requiring rapid meal preparation without sacrificing nutritional value",
+          "Prioritize recipes with total time investment under 30 minutes while maintaining nutritional density, balanced macronutrients, and broad family appeal",
+          "Structure meals to minimize active cooking time through strategic use of one-pot techniques, sheet pan methods, and parallel preparation workflows",
+          "Each recipe should detail exact timing breakdowns, parallel cooking steps, ingredient staging, and efficiency shortcuts that compress traditional cooking times",
+          "Include ingredient prep strategies that reduce daily cooking burden through batch processing, strategic pre-cutting, and intelligent storage methods",
+          "Suggest time-saving equipment usage, technique modifications, and process optimizations that maintain meal quality while drastically reducing hands-on time",
+          "The plan should enable consistent family nutrition despite severe time constraints through operational efficiency and systematic meal architecture"
+        ],
+        filterAdjustments: {
+          encourageOverlap: true,
+          availableIngredientUsagePercent: 70,
+          prepTimePreference: "minimal"
+        }
+      },
+      {
+        value: "Complex Meals",
+        label: "\u{1F468}\u200D\u{1F373} Complex Meals",
+        nutritionFocus: "general_wellness",
+        prompts: [
+          "Design an ambitious weekly meal plan for families passionate about culinary exploration and collaborative cooking experiences",
+          "Structure meals requiring advanced techniques including fermentation, multi-stage preparations, precision temperature control, and professional-level execution",
+          "Orchestrate recipes with complexity scores of 4-5 that demand skilled knife work, timing coordination, and mastery of multiple cooking methods simultaneously",
+          "Each meal should include detailed mise en place instructions, technique breakdowns, family member task assignments, and progression milestones",
+          "Incorporate restaurant-caliber dishes spanning global cuisines that teach fundamental and advanced skills through hands-on family participation",
+          "Provide comprehensive guidance on ingredient sourcing for specialty items, equipment requirements, and skill-building progressions for each family member",
+          "The plan should transform weekend cooking into educational culinary journeys that build technique mastery while creating memorable family experiences"
+        ],
+        filterAdjustments: {
+          encourageOverlap: false,
+          varietyPreference: "high_variety",
+          prepTimePreference: "enjoys_cooking"
+        }
+      },
+      {
+        value: "Cook Big Batches",
+        label: "\u{1F372} Big Batch Cooking",
+        nutritionFocus: "general_wellness",
+        prompts: [
+          "Engineer a comprehensive batch cooking meal plan that maximizes family food production efficiency through strategic large-scale preparation",
+          "Design recipes yielding 8-12 servings minimum that maintain quality through proper storage, leveraging freezer-stable techniques and vacuum sealing methods",
+          "Structure the plan around scalable base components that transform into multiple distinct meals through flavor pivoting and creative repurposing strategies",
+          "Each recipe must include precise scaling formulas, industrial cooking techniques adapted for home use, and multi-stage storage protocols with shelf life data",
+          "Incorporate batch cooking workflows that compress 5 days of cooking into single 3-4 hour sessions through parallel processing and equipment optimization",
+          "Detail comprehensive storage systems including container specifications, labeling protocols, FIFO rotation schedules, and quality maintenance techniques",
+          "The plan should enable families to achieve restaurant-level meal variety while investing minimal daily cooking time through systematic batch production"
+        ],
+        filterAdjustments: {
+          encourageOverlap: true,
+          availableIngredientUsagePercent: 75,
+          prepTimePreference: "batch_cooking"
+        }
+      },
+      {
+        value: "Baby-Friendly",
+        label: "\u{1F476} Baby-Friendly",
+        nutritionFocus: "baby_nutrition",
+        prompts: [
+          "Develop a medically-informed meal progression plan for infants and toddlers aged 6-24 months following pediatric nutrition guidelines and WHO recommendations",
+          "Structure meals across texture stages: smooth purees (6-8mo), mashed/lumpy (8-10mo), minced/chopped (10-12mo), and family foods (12-24mo) with precise consistency specifications",
+          "CRITICAL SAFETY: Eliminate all honey, added salt/sugar, whole nuts, popcorn, hard vegetables, and foods with choking risk dimensions exceeding infant oral capacity",
+          "Engineer nutrient-dense combinations emphasizing iron bioavailability (15mg/day), DHA omega-3s, zinc, and vitamin D through strategic food pairing and absorption optimization",
+          "Design systematic allergen introduction protocols following early exposure guidelines with 3-5 day monitoring windows between new foods for reaction assessment",
+          "Include detailed preparation methods for texture modification, portion sizes by age/weight, temperature guidelines, and storage protocols maintaining nutritional integrity",
+          "The plan should support optimal neurodevelopment and growth trajectories while establishing diverse flavor acceptance through graduated sensory exposure"
+        ],
+        filterAdjustments: {
+          varietyPreference: "moderate",
+          prepTimePreference: "minimal"
+        }
+      },
+      {
+        value: "Young Kid-Friendly",
+        label: "\u{1F9D2} Kid-Friendly",
+        nutritionFocus: "general_wellness",
+        prompts: [
+          "Architect a behavioral nutrition meal plan for young children aged 2-6 years integrating child development psychology with nutritional science",
+          "Engineer meals using sensory appeal strategies: vibrant color contrasts, playful geometric shapes, interactive assembly, and textural variety to overcome neophobia",
+          "Calibrate flavor profiles within pediatric preference windows using mild seasonings, natural sweetness from fruits, and umami-rich bases while avoiding overwhelming spices",
+          "Structure portions using child-scaled servings (1 tablespoon per year of age) with nutrient density calculations ensuring RDA achievement despite smaller volumes",
+          "Implement stealth nutrition techniques embedding vegetables through purees, grating, and incorporation into preferred vehicles while maintaining recognizable base flavors",
+          "Design eating experiences promoting autonomy through finger foods, build-your-own stations, and choice architectures that guide selection toward nutritious options",
+          "The plan should transform mealtime battles into positive food relationships while meeting growth requirements through strategic presentation and psychological framing"
+        ],
+        filterAdjustments: {
+          varietyPreference: "moderate",
+          prepTimePreference: "moderate"
+        }
+      }
+    ];
+    INDIVIDUAL_GOALS = [
+      {
+        value: "Save Money",
+        label: "\u{1F4B8} Save Money",
+        nutritionFocus: "general_wellness",
+        prompts: [
+          "Architect a hyper-efficient single-person meal plan maximizing nutritional ROI while minimizing cost per nutrient unit through strategic ingredient selection",
+          "Engineer recipes utilizing ingredients with extended shelf stability and multiple use cases, preventing single-person waste through systematic cross-utilization strategies",
+          "Calculate precise single-serving portions using yield management principles to eliminate overproduction while maintaining economies of scale through bulk purchasing",
+          "Design ingredient rotation systems where each purchase serves 4-6 distinct recipes, creating flavor variety while maximizing ingredient depletion before spoilage",
+          "Implement storage optimization protocols including vacuum sealing, controlled atmosphere storage, and strategic freezing to extend ingredient viability for solo consumption",
+          "Structure shopping strategies leveraging loss leaders, seasonal pricing, and bulk-to-portion conversions that achieve sub-$2 per meal costs while meeting nutritional targets",
+          "The plan should achieve 40-60% cost reduction versus typical single-person dining while maintaining dietary quality through systematic resource optimization"
         ],
         filterAdjustments: {
           encourageOverlap: true,
@@ -8767,35 +9245,35 @@ var init_intelligentPromptBuilderV2 = __esm({
         }
       },
       {
-        value: "Eat Healthier",
-        label: "\u{1F34E} Eat Healthier",
+        value: "Meal Prep",
+        label: "\u{1F961} Meal Prep",
         nutritionFocus: "general_wellness",
         prompts: [
-          "Create a daily meal plan focused on long-term food quality and better daily choices",
-          "Each meal should promote nourishment, food diversity, and satiety, using simple and consistent recipes",
-          "Include a variety of whole foods: vegetables, fruits, whole grains, lean proteins, and healthy fats",
-          "Structure the plan with [number] main meals, with clear portion guidance",
-          "For each meal, provide a brief description, ingredients, and preparation steps",
-          "The goal is to reinforce healthy eating patterns that gradually reshape meal habits"
+          "Design a systematic weekly meal prep architecture for solo dining that compresses 7 days of cooking into single 2-3 hour production sessions",
+          "Engineer recipes optimized for batch production with graduated storage stability: immediate consumption (days 1-2), short-term refrigeration (days 3-4), and freezer rotation (days 5-7)",
+          "Structure prep workflows using mise en place principles, parallel processing, and equipment maximization to achieve 15-minute daily meal assembly from prepped components",
+          "Calculate precise container ecosystems with portion control built-in, using modular sizing that prevents decision fatigue while maintaining nutritional targets per meal",
+          "Implement quality maintenance protocols including blast chilling, vacuum sealing, and strategic sauce separation to preserve texture and flavor integrity throughout the week",
+          "Design ingredient prep strategies that create versatile base components transformable into multiple cuisines through seasoning and assembly variations",
+          "The plan should reduce daily cooking time to under 10 minutes while providing restaurant-quality variety through systematic Sunday prep sessions"
         ],
         filterAdjustments: {
-          encourageOverlap: false,
-          availableIngredientUsagePercent: 50,
-          varietyPreference: "high_variety"
+          encourageOverlap: true,
+          availableIngredientUsagePercent: 75,
+          prepTimePreference: "batch_cooking"
         }
       },
       {
         value: "Gain Muscle",
-        label: "\u{1F3CB}\uFE0F Build Muscle",
+        label: "\u{1F4AA} Gain Muscle",
         nutritionFocus: "muscle_gain",
         prompts: [
-          "Generate a structured daily meal plan for a user training regularly to build muscle",
-          "Meals should emphasize foods naturally rich in protein, complex carbohydrates, and healthy fats to support muscle growth and recovery",
-          "Prioritize nutrient-dense, satisfying foods that aid physical repair and consistent energy",
-          "Structure the plan with [number] main meals, spaced to fuel workouts and recovery periods",
-          "Each meal should include portion sizes, estimated protein content, calorie estimates, and preparation instructions",
-          "Include a variety of lean proteins (e.g., chicken, fish, tofu, legumes), whole grains, and colorful vegetables",
-          "The plan should promote steady nourishment, muscle repair, and strength gains throughout the day"
+          "Create high-protein meal plans for one person focusing on muscle growth",
+          "Each meal should contain 40-50g of protein minimum",
+          "Ensure total daily protein intake of 150-180g",
+          "Focus on portion sizes appropriate for one person",
+          "Include post-workout meal timing suggestions",
+          "Balance protein with complex carbs and healthy fats for recovery"
         ],
         filterAdjustments: {
           encourageOverlap: true,
@@ -8808,13 +9286,12 @@ var init_intelligentPromptBuilderV2 = __esm({
         label: "\u2696\uFE0F Lose Weight",
         nutritionFocus: "weight_loss",
         prompts: [
-          "Generate a structured daily meal plan for a user aiming to reduce body fat while staying satisfied and energized",
-          "Meals should support a lower total calorie intake but maintain high food volume and routine",
-          "Use foods that are filling, high in fiber or protein, and take time to eat and digest",
-          "Structure the plan to include [number] main meals, spaced evenly throughout the day",
-          "Each meal should include portion sizes, calorie estimates, and preparation instructions",
-          "Avoid high-calorie, low-volume foods and minimize added sugars and processed fats",
-          "The plan should naturally reduce overconsumption through meal timing, food choices, and eating rhythm"
+          "Suggest calorie-conscious meals for one person with portion control",
+          "Focus on high-volume, low-calorie foods that promote satiety",
+          "Include balanced nutrition to support healthy weight loss",
+          "Provide single-serving portions to prevent overeating",
+          "Emphasize protein and fiber for fullness",
+          "Avoid meal prep fatigue with variety"
         ],
         filterAdjustments: {
           encourageOverlap: false,
@@ -8824,19 +9301,22 @@ var init_intelligentPromptBuilderV2 = __esm({
         }
       },
       {
-        value: "Family Nutrition",
-        label: "\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466} Family Nutrition",
+        value: "Eat Healthier",
+        label: "\u{1F957} Eat Healthier",
         nutritionFocus: "general_wellness",
         prompts: [
-          "FAMILY-FRIENDLY: Create meals that appeal to all family members",
-          "Include kid-friendly options that are still nutritious",
-          "Balance adult nutrition needs with children's preferences",
-          "Ensure appropriate portions for different age groups"
+          "Construct a personalized nutrition optimization plan for solo dining that systematically elevates dietary quality through evidence-based whole food integration",
+          "Engineer meals achieving maximum nutrient density per calorie using superfoods, phytonutrient-rich vegetables, and bioavailable protein sources scaled for individual consumption",
+          "Design weekly rotations ensuring comprehensive micronutrient coverage across 40+ essential nutrients while preventing single-person portion monotony through strategic variety",
+          "Calculate single-serving portions that optimize satiety indices while maintaining caloric appropriateness, using volumetrics principles and protein-fiber combinations",
+          "Develop sustainable behavior modification protocols transitioning from processed foods to whole food alternatives through incremental substitutions and habit stacking",
+          "Balance nutritional ideals with solo dining practicalities through 20-minute recipes, minimal prep strategies, and convenience modifications that preserve nutrient integrity",
+          "The plan should achieve measurable biomarker improvements while establishing lifetime healthy eating patterns through systematic, achievable daily practices"
         ],
         filterAdjustments: {
-          encourageOverlap: true,
-          availableIngredientUsagePercent: 65,
-          varietyPreference: "moderate"
+          encourageOverlap: false,
+          availableIngredientUsagePercent: 50,
+          varietyPreference: "high_variety"
         }
       },
       {
@@ -8844,12 +9324,12 @@ var init_intelligentPromptBuilderV2 = __esm({
         label: "\u26A1 Energy & Performance",
         nutritionFocus: "energy_performance",
         prompts: [
-          "Design a meal plan to sustain steady energy and focus for a physically and mentally active user",
-          "Emphasize meals with balanced macronutrients and a steady release of energy (complex carbs, lean proteins, healthy fats)",
-          "Structure the plan with [number] main meals, timed to align with periods of activity and rest",
-          "Avoid foods that cause energy spikes or crashes (e.g., high sugar, refined carbs)",
-          "For each meal, provide a description, ingredients, and timing guidance",
-          "The plan should support reliable energy, focus, and performance throughout the day"
+          "Provide meal plans for one active person that boost energy",
+          "Support an active lifestyle with complex carbs and healthy fats",
+          "Time meals around workout and activity schedules",
+          "Include pre and post-workout nutrition guidance",
+          "Focus on sustained energy throughout the day",
+          "Balance macronutrients for optimal performance"
         ],
         filterAdjustments: {
           availableIngredientUsagePercent: 60,
@@ -8861,12 +9341,12 @@ var init_intelligentPromptBuilderV2 = __esm({
         label: "\u{1F966} Digestive Health",
         nutritionFocus: "digestive_health",
         prompts: [
-          "Create a meal plan that promotes digestive comfort, ease, and regularity",
-          "Meals should be light, soft, and simple, using easily digestible ingredients and gentle cooking methods",
-          "Include fiber-rich foods and fermented items",
-          "Structure the plan with [number] main meals, spaced for natural digestive pacing",
-          "For each meal, provide a description, ingredients, and preparation steps",
-          "The goal is to reduce digestive strain and support regular, comfortable digestion"
+          "Suggest meals for one person that are easy to digest",
+          "Include high fiber foods and fermented options",
+          "Support gut health while avoiding common irritants",
+          "Provide gentle cooking methods and simple ingredients",
+          "Focus on anti-inflammatory foods",
+          "Include probiotic and prebiotic rich options"
         ],
         filterAdjustments: {
           availableIngredientUsagePercent: 60,
@@ -8874,6 +9354,7 @@ var init_intelligentPromptBuilderV2 = __esm({
         }
       }
     ];
+    UNIFIED_GOALS2 = [...FAMILY_GOALS, ...INDIVIDUAL_GOALS];
   }
 });
 
@@ -12184,7 +12665,7 @@ async function registerRoutes(app2) {
         dayStructure.push(`"day_${i}"`);
       }
       if (useIntelligentPrompt && (userProfile || culturalBackground.length > 0)) {
-        const { buildIntelligentPrompt: buildIntelligentPrompt3 } = await Promise.resolve().then(() => (init_intelligentPromptBuilder(), intelligentPromptBuilder_exports));
+        const { buildIntelligentPrompt: buildIntelligentPrompt2 } = await Promise.resolve().then(() => (init_intelligentPromptBuilder(), intelligentPromptBuilder_exports));
         const { mergeFamilyDietaryRestrictions: mergeFamilyDietaryRestrictions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
         const profileRestrictions = userProfile?.preferences || [];
         const familyMembers = Array.isArray(userProfile?.members) ? userProfile.members : [];
@@ -12225,7 +12706,7 @@ async function registerRoutes(app2) {
           culturalCuisineData,
           culturalBackground: userProfile?.cultural_background || culturalBackground || []
         };
-        prompt = await buildIntelligentPrompt3(filters);
+        prompt = await buildIntelligentPrompt2(filters);
         console.log("Using intelligent prompt with family profile data");
       } else {
         prompt = `Create exactly a ${numDays}-day meal plan with ${mealsPerDay} meals per day.
@@ -12423,6 +12904,8 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
     }
   });
   app2.post("/api/meal-plan/generate-weight-based", authenticateToken, async (req, res) => {
+    console.log("\n\u{1F680} HYBRID SYSTEM ACTIVATION - Weight-based meal plan generation started");
+    console.log("\u23F0 Timestamp:", (/* @__PURE__ */ new Date()).toISOString());
     const startTime = Date.now();
     try {
       const userId = req.user?.id;
@@ -12445,8 +12928,12 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         availableIngredients = "",
         excludeIngredients = "",
         familySize = 2,
-        planTargets = ["Everyone"]
+        planTargets = ["Everyone"],
         // New parameter for family member targeting (array)
+        maxCookTime = 45,
+        // Default 45 minutes, but can be overridden from UI
+        maxDifficulty = 3
+        // Default difficulty 3, but can be overridden from UI
       } = req.body;
       let weightBasedProfile = null;
       let userProfile = null;
@@ -12599,16 +13086,23 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       }
       let prompt;
       const primaryGoal = userProfile?.primary_goal || "Save Money";
-      console.log("Weight-based system: Processing main goal:", primaryGoal);
+      console.log("\n\u{1F3AF} HYBRID GOAL SYSTEM DEBUG:");
+      console.log("  - User profile primary_goal:", userProfile?.primary_goal);
+      console.log("  - Final primaryGoal:", primaryGoal);
+      console.log("  - Goal weights:", JSON.stringify(finalGoalWeights, null, 2));
+      console.log("  - Cultural background:", finalCulturalBackground);
+      console.log("  - Cultural weight value:", finalGoalWeights?.cultural);
       try {
+        console.log("\u{1F680} ROUTES: Starting V2/V3 prompt generation...");
         const { buildWeightBasedIntelligentPrompt: buildWeightBasedIntelligentPrompt2 } = await Promise.resolve().then(() => (init_intelligentPromptBuilderV2(), intelligentPromptBuilderV2_exports));
+        console.log("\u{1F4E6} ROUTES: Building advanced filters...");
         const advancedFilters = {
           numDays,
           mealsPerDay,
-          cookTime: 45,
-          // Default reasonable cook time
-          difficulty: 3,
-          // Default moderate difficulty  
+          cookTime: maxCookTime,
+          // Use value from request (UI)
+          difficulty: maxDifficulty,
+          // Use value from request (UI)
           primaryGoal,
           familySize: finalFamilySize,
           familyMembers: Array.isArray(userProfile?.members) ? userProfile.members : [],
@@ -12628,11 +13122,13 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
           heroIngredients,
           weightBasedEnhanced: true
         };
+        console.log("\u{1F528} ROUTES: Calling buildWeightBasedIntelligentPrompt...");
         prompt = await buildWeightBasedIntelligentPrompt2(
           advancedFilters,
           finalGoalWeights,
           heroIngredients
         );
+        console.log("\u2705 ROUTES: Received prompt from V2/V3 system");
         console.log("\u2705 Generated V2 weight-based prompt with main goal integration");
         console.log("Main goal:", primaryGoal);
         console.log("Goal weights:", finalGoalWeights);
@@ -12715,8 +13211,19 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
           advanced_prompt_used: true,
           prompt_builder_version: "V2",
           generation_time_ms: Date.now() - startTime
+        },
+        debugInfo: {
+          promptSystem: "V3-Template",
+          promptLength: prompt.length,
+          isNewGeneration: true,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          maxCookTime,
+          maxDifficulty
         }
       };
+      if (process.env.NODE_ENV === "development") {
+        finalMealPlan.debugPrompt = prompt;
+      }
       console.log(`\u2705 Generated weight-based meal plan in ${Date.now() - startTime}ms`);
       res.json(finalMealPlan);
     } catch (error) {
