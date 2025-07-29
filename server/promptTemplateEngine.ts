@@ -77,8 +77,13 @@ MEAL SELECTION ALGORITHM:
 4. Select top meals within difficulty constraint ({MAX_DIFFICULTY})
 5. Ensure variety across {MEAL_PLAN_DAYS} days
 
-RETURN FORMAT: Enhanced JSON structure:
-{JSON_STRUCTURE}`;
+RETURN FORMAT: Enhanced JSON structure with BOTH standard fields (cook_time_minutes, difficulty) and detailed breakdowns:
+{JSON_STRUCTURE}
+
+IMPORTANT: Each meal MUST include:
+- cook_time_minutes: Total cooking time as a single integer
+- difficulty: Overall difficulty as integer from 1-{MAX_DIFFICULTY}
+- nutrition_info: (not just "nutrition") with calories, protein_g, carbs_g, fat_g`;
 
   /**
    * Generate prompt from template and data
@@ -306,27 +311,30 @@ RETURN FORMAT: Enhanced JSON structure:
     
     const mealExample = {
       title: "Recipe Name",
+      cook_time_minutes: "{integer ≤ " + data.maxCookTime + "}",
+      difficulty: "{1-" + data.maxDifficulty + " integer}",
+      ingredients: ["ingredient with amount"],
+      instructions: ["Step 1", "Step 2"],
+      nutrition_info: {
+        calories: "{integer}",
+        protein_g: "{integer}",
+        carbs_g: "{integer}",
+        fat_g: "{integer}"
+      },
+      // Enhanced fields for template system
       complexity_score: "{float between 0-1}",
       cultural_rank: "{1-10 based on cultural alignment}",
       time_breakdown: {
         prep_minutes: "{integer}",
-        active_minutes: "{integer}",
+        active_minutes: "{integer}", 
         passive_minutes: "{integer}",
-        total_minutes: "{integer ≤ " + data.maxCookTime + "}"
+        total_minutes: "{same as cook_time_minutes}"
       },
       primary_techniques: ["technique1", "technique2"],
       difficulty_factors: {
         technique_complexity: "{1-5 scale}",
         ingredient_complexity: "{1-5 scale}",
         timing_precision: "{1-5 scale}"
-      },
-      ingredients: ["ingredient with amount"],
-      instructions: ["Step 1", "Step 2"],
-      nutrition: {
-        calories: "{integer}",
-        protein_g: "{integer}",
-        carbs_g: "{integer}",
-        fat_g: "{integer}"
       }
     };
     
