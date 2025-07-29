@@ -225,7 +225,7 @@ export default function MealPlanner() {
             numDays: numDays[0],
             mealsPerDay: mealsPerDay[0],
             maxCookTime: cookTime[0],
-            maxDifficulty: difficulty[0] / 5, // Convert to 0-1 scale
+            maxDifficulty: difficulty[0], // Use raw 1-5 scale (backend expects this)
             familySize: selectedFamilyMembers.length || 2,
             planTargets: planTargets, // Who this meal plan is specifically designed for
             // dietaryRestrictions and goalWeights are fetched from user's weight-based profile

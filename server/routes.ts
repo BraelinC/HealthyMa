@@ -1368,6 +1368,9 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
 
   // Weight-based meal plan generation
   app.post("/api/meal-plan/generate-weight-based", authenticateToken, async (req: AuthRequest, res) => {
+    console.log('\n🚀 HYBRID SYSTEM ACTIVATION - Weight-based meal plan generation started');
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    
     const startTime = Date.now();
     try {
       const userId = req.user?.id;
@@ -1393,7 +1396,9 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         availableIngredients = "",
         excludeIngredients = "",
         familySize = 2,
-        planTargets = ["Everyone"] // New parameter for family member targeting (array)
+        planTargets = ["Everyone"], // New parameter for family member targeting (array)
+        maxCookTime = 45, // Default 45 minutes, but can be overridden from UI
+        maxDifficulty = 3 // Default difficulty 3, but can be overridden from UI
       } = req.body;
 
       // Get weight-based profile and user profile for advanced prompt integration
@@ -1405,15 +1410,23 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         userProfile = await storage.getProfile(Number(userId));
         console.log('Retrieved user profile for weight-based system:', userProfile?.profile_name);
         
-        if (userProfile && userProfile.profile_type === 'weight-based') {
+        console.log('🔍 PROFILE TYPE DEBUG:', {
+          profile_type: userProfile?.profile_type,
+          has_goals: !!userProfile?.goals,
+          goals_length: userProfile?.goals?.length,
+          profile_name: userProfile?.profile_name
+        });
+        
+        // FIXED: Handle profiles with goals regardless of profile_type
+        if (userProfile && userProfile.goals && Array.isArray(userProfile.goals) && userProfile.goals.length > 0) {
           // Parse goal weights from stored goals
           const storedGoalWeights: any = {};
-          if (userProfile.goals && Array.isArray(userProfile.goals)) {
-            userProfile.goals.forEach((goal: string) => {
-              const [key, value] = goal.split(':');
-              storedGoalWeights[key] = parseFloat(value) || 0.5;
-            });
-          }
+          userProfile.goals.forEach((goal: string) => {
+            const [key, value] = goal.split(':');
+            storedGoalWeights[key] = parseFloat(value) || 0.5;
+          });
+          
+          console.log('✅ PARSED GOAL WEIGHTS:', storedGoalWeights);
           
           weightBasedProfile = {
             profileName: userProfile.profile_name,
@@ -1422,6 +1435,13 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
             dietaryRestrictions: userProfile.preferences || [],
             culturalBackground: userProfile.cultural_background || []
           };
+          
+          console.log('✅ WEIGHT-BASED PROFILE CREATED:', {
+            goalWeights: weightBasedProfile.goalWeights,
+            culturalBackground: weightBasedProfile.culturalBackground
+          });
+        } else {
+          console.log('❌ No weight-based profile data found - no goals in profile');
         }
 
         // Get cultural cuisine data if user has cultural preferences (for advanced prompt integration)
@@ -1524,12 +1544,29 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
       }
 
       // Use profile data or fallback to request data
-      const finalGoalWeights = goalWeights || weightBasedProfile?.goalWeights || {
-        cost: 0.5, health: 0.5, cultural: 0.5, variety: 0.5, time: 0.5
-      };
+      // FIXED: Properly prioritize profile data over request data when request data is empty/undefined
+      const finalGoalWeights = (goalWeights && Object.keys(goalWeights || {}).length > 0) ? 
+        goalWeights : (weightBasedProfile?.goalWeights || {
+          cost: 0.5, health: 0.5, cultural: 0.5, variety: 0.5, time: 0.5
+        });
       const finalDietaryRestrictions = targetMemberRestrictions; // Use member-filtered restrictions
-      const finalCulturalBackground = culturalBackground.length > 0 ? 
+      const finalCulturalBackground = (culturalBackground && culturalBackground.length > 0) ? 
         culturalBackground : (weightBasedProfile?.culturalBackground || []);
+
+      // 🔍 DEBUG: Check the final values being passed to prompt builder
+      console.log('\n🎯 CULTURAL INTEGRATION CHECK:');
+      console.log('  - Cultural weight:', finalGoalWeights.cultural);
+      console.log('  - Cultural weight > 0.3?', finalGoalWeights.cultural > 0.3);
+      console.log('  - Cultural background:', finalCulturalBackground);
+      console.log('  - Will integrate cultural meals?', finalGoalWeights.cultural > 0.3 && finalCulturalBackground.length > 0);
+      console.log('🔍 FINAL VALUES DEBUG:');
+      console.log('  - Final goal weights:', JSON.stringify(finalGoalWeights, null, 2));
+      console.log('  - Final cultural background:', finalCulturalBackground);
+      console.log('  - Request goalWeights:', goalWeights ? 'provided' : 'undefined');
+      console.log('  - Request culturalBackground:', culturalBackground?.length > 0 ? culturalBackground : 'empty/undefined');
+      console.log('  - Profile goalWeights:', weightBasedProfile?.goalWeights ? 'available' : 'not available');
+      console.log('  - Profile culturalBackground:', weightBasedProfile?.culturalBackground || 'not available');
+
       // Adjust final family size based on plan targets
       let finalFamilySize;
       if (!planTargets.includes("Everyone") && userProfile?.members && Array.isArray(userProfile.members)) {
@@ -1572,25 +1609,33 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
       let prompt: string;
       
       // Extract main goal from profile for advanced prompt integration
-      const primaryGoal = userProfile?.primary_goal || 'Weight-Based Planning';
-      console.log('Weight-based system: Processing main goal:', primaryGoal);
+      const primaryGoal = userProfile?.primary_goal || 'Save Money'; // Default to Save Money instead of Weight-Based Planning
+      console.log('\n🎯 HYBRID GOAL SYSTEM DEBUG:');
+      console.log('  - User profile primary_goal:', userProfile?.primary_goal);
+      console.log('  - Final primaryGoal:', primaryGoal);
+      console.log('  - Goal weights:', JSON.stringify(finalGoalWeights, null, 2));
+      console.log('  - Cultural background:', finalCulturalBackground);
+      console.log('  - Cultural weight value:', finalGoalWeights?.cultural);
       
       try {
+        console.log('🚀 ROUTES: Starting V2/V3 prompt generation...');
         // Import V2 prompt builder with weight-based intelligence
         const { buildWeightBasedIntelligentPrompt } = await import('./intelligentPromptBuilderV2');
         
+        console.log('📦 ROUTES: Building advanced filters...');
         // Build advanced filters for V2 prompt builder
         const advancedFilters = {
           numDays,
           mealsPerDay,
-          cookTime: 45, // Default reasonable cook time
-          difficulty: 3, // Default moderate difficulty  
+          cookTime: maxCookTime, // Use value from request (UI)
+          difficulty: maxDifficulty, // Use value from request (UI)
           primaryGoal,
           familySize: finalFamilySize,
           familyMembers: Array.isArray(userProfile?.members) ? userProfile.members : [],
           profileType: userProfile?.profile_type as 'individual' | 'family' || 'individual',
           dietaryRestrictions: finalDietaryRestrictions.join(', '),
           culturalBackground: finalCulturalBackground,
+          userId: Number(userId), // Pass userId for cultural ranking engine
           culturalCuisineData: culturalCuisineData,
           availableIngredients,
           excludeIngredients,
@@ -1603,6 +1648,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
           weightBasedEnhanced: true
         };
         
+        console.log('🔨 ROUTES: Calling buildWeightBasedIntelligentPrompt...');
         // Generate prompt using V2 system (main goals + weight-based intelligence)
         prompt = await buildWeightBasedIntelligentPrompt(
           advancedFilters,
@@ -1610,6 +1656,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
           heroIngredients
         );
         
+        console.log('✅ ROUTES: Received prompt from V2/V3 system');
         console.log('✅ Generated V2 weight-based prompt with main goal integration');
         console.log('Main goal:', primaryGoal);
         console.log('Goal weights:', finalGoalWeights);
@@ -1659,7 +1706,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
         ],
         response_format: { type: "json_object" },
         temperature: 0.3,
-        max_tokens: 4000
+        max_tokens: 6000  // Increased from 4000 to allow for more detailed cultural integration
       });
 
       let mealPlan;
@@ -1671,30 +1718,25 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
       }
 
       // Validate and enhance meal plan with cultural meal integration
+      console.log('\n🎯 CULTURAL INTEGRATION CHECK:');
+      console.log('  - Cultural weight:', finalGoalWeights.cultural);
+      console.log('  - Cultural weight > 0.3?', finalGoalWeights.cultural > 0.3);
+      console.log('  - Cultural background:', finalCulturalBackground);
+      console.log('  - Has cultural background?', finalCulturalBackground.length > 0);
+      console.log('  - Will integrate cultural meals?', finalGoalWeights.cultural > 0.3 && finalCulturalBackground.length > 0);
+      
       if (finalGoalWeights.cultural > 0.3 && finalCulturalBackground.length > 0) {
-        const { SmartCulturalMealSelector } = await import('./SmartCulturalMealSelector');
-        const culturalSelector = new SmartCulturalMealSelector();
-        
-        try {
-          const culturalMeals = await (culturalSelector as any).getCompatibleCulturalMeals(
-            Number(userId),
-            finalCulturalBackground,
-            finalDietaryRestrictions
-          );
-          
-          if (culturalMeals.length > 0) {
-            // Integrate cultural meals into the plan
-            const enhancedPlan = await (culturalSelector as any).integrateCulturalMeals(
-              mealPlan,
-              culturalMeals,
-              finalGoalWeights,
-              { numDays, mealsPerDay }
-            );
-            mealPlan = enhancedPlan;
-            console.log('Enhanced meal plan with cultural integration');
-          }
-        } catch (culturalError) {
-          console.log('Cultural meal integration failed, using basic plan:', culturalError);
+        console.log('✅ Cultural integration conditions met! Using prompt-based cultural integration...');
+        console.log(`   - Cultural weight: ${finalGoalWeights.cultural} (${Math.round(finalGoalWeights.cultural * 100)}% priority)`);
+        console.log(`   - Cultural background: ${finalCulturalBackground.join(', ')}`);
+        console.log('   - Cultural elements will be integrated through enhanced AI prompting');
+      } else {
+        console.log('❌ Cultural integration skipped - conditions not met');
+        if (finalGoalWeights.cultural <= 0.3) {
+          console.log('   Reason: Cultural weight too low (need > 0.3, have', finalGoalWeights.cultural, ')');
+        }
+        if (finalCulturalBackground.length === 0) {
+          console.log('   Reason: No cultural background specified');
         }
       }
 
@@ -2149,7 +2191,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
       const profileData = {
         user_id: Number(userId),
         profile_name: profileName,
-        primary_goal: 'Weight-Based Planning',
+        primary_goal: 'Save Money', // Default to Save Money for weight-based profiles
         family_size: familySize,
         members: [], // Empty for weight-based approach
         profile_type: 'individual' as const,
@@ -2210,7 +2252,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(', ')}) in t
       // Update profile using existing schema structure
       const profileData = {
         profile_name: profileName,
-        primary_goal: 'Weight-Based Planning',
+        primary_goal: 'Save Money', // Default to Save Money for weight-based profiles
         family_size: familySize,
         members: [],
         profile_type: 'individual' as const,

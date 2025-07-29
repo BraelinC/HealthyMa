@@ -430,6 +430,11 @@ export class CulturalMealRankingEngine {
   }
 
   private meetsDietaryRestrictions(meal: StructuredMeal, restrictions: string[]): boolean {
+    // Handle undefined or non-array restrictions
+    if (!restrictions || !Array.isArray(restrictions)) {
+      return true; // No restrictions means all meals are allowed
+    }
+    
     for (const restriction of restrictions) {
       const lowerRestriction = restriction.toLowerCase();
       

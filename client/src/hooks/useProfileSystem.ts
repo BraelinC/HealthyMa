@@ -32,6 +32,20 @@ export function useProfileSystem() {
                 setIsLoading(false);
                 return;
               }
+              
+              // NEW: Also activate smart profile if user has ANY profile data
+              // This makes it easier to activate the advanced planner
+              const hasAnyProfileData = profileData?.dietaryRestrictions?.length > 0 || 
+                                       profileData?.culturalBackground?.length > 0 ||
+                                       profileData?.familySize > 1;
+              
+              if (hasAnyProfileData) {
+                console.log('✅ Profile data detected, enabling smart system for better personalization');
+                hasWeightBasedData = true;
+                setProfileSystem('smart');
+                setIsLoading(false);
+                return;
+              }
             }
           } catch (error) {
             console.log('ℹ️ Could not fetch weight-based profile data, checking localStorage');

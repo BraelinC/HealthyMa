@@ -8,6 +8,7 @@
 import { calculateCookingTimeAndDifficulty, getEasyAlternatives } from "./cookingTimeCalculator";
 import { EnhancedRecipeGenerationService } from "./enhancedRecipeGenerationService";
 import { resolveDietaryCulturalConflicts, hasQuickConflict, type ConflictResolution } from "./dietaryCulturalConflictResolver";
+import { PromptTemplateEngine, PromptTemplateData, determineNutritionGoal } from "./promptTemplateEngine";
 
 interface MealPlanFilters {
   // Basic filters
@@ -25,6 +26,8 @@ interface MealPlanFilters {
   familySize?: number;
   familyMembers?: FamilyMember[];
   profileType?: 'individual' | 'family';
+  profileName?: string;
+  userId?: number;
   
   // Cultural cuisine integration
   culturalCuisineData?: any; // Cached cultural cuisine data from Perplexity
@@ -61,6 +64,86 @@ interface GoalWeights {
 }
 
 /**
+ * V3 TEMPLATE-BASED: Dynamic prompt builder using template engine
+ * This is the new recommended approach for full dynamic prompt generation
+ */
+export async function buildTemplateBasedPrompt(
+  filters: MealPlanFilters,
+  goalWeights: GoalWeights,
+  heroIngredients: string[] = []
+): Promise<string> {
+  console.log('🚀 Using Template-Based Prompt Builder V3');
+  console.log('📍 TEMPLATE SYSTEM ACTIVATED - This should replace old prompt system');
+  console.log('📍 Input filters:', {
+    numDays: filters.numDays,
+    mealsPerDay: filters.mealsPerDay,
+    cookTime: filters.cookTime,
+    difficulty: filters.difficulty,
+    primaryGoal: filters.primaryGoal,
+    culturalBackground: filters.culturalBackground
+  });
+  
+  const templateEngine = new PromptTemplateEngine();
+  
+  // Try to get ranked meals if cultural background is present
+  let rankedMeals = undefined;
+  if (filters.culturalBackground && filters.culturalBackground.length > 0 && filters.userId) {
+    try {
+      const { culturalMealRankingEngine } = await import('./culturalMealRankingEngine.js');
+      
+      // Build user profile for ranking
+      const culturalPreferences: { [cuisine: string]: number } = {};
+      filters.culturalBackground.forEach(culture => {
+        culturalPreferences[culture] = 1.0;
+      });
+      
+      const userProfile = {
+        cultural_preferences: culturalPreferences,
+        priority_weights: goalWeights,
+        dietary_restrictions: filters.dietaryRestrictions?.split(',').map(r => r.trim()).filter(Boolean) || [],
+        preferences: []
+      };
+      
+      console.log('  🔍 Getting ranked meals with template engine');
+      rankedMeals = await culturalMealRankingEngine.getRankedMeals(
+        filters.userId,
+        userProfile,
+        10, // top 10 meals
+        0.7 // relevance threshold
+      );
+      
+      console.log(`  ✅ Got ${rankedMeals.length} ranked meals for template`);
+    } catch (error) {
+      console.error('  ❌ Failed to get ranked meals:', error.message);
+    }
+  }
+  
+  // Build template data
+  const templateData: PromptTemplateData = {
+    mealPlanDays: filters.numDays,
+    mealsPerDay: filters.mealsPerDay,
+    maxCookTime: filters.cookTime,
+    maxDifficulty: filters.difficulty,
+    primaryGoal: filters.primaryGoal || 'Save Money',
+    nutritionGoal: determineNutritionGoal(filters.primaryGoal || 'Save Money'),
+    goalWeights: goalWeights,
+    culturalBackground: filters.culturalBackground || [],
+    rankedMeals: rankedMeals,
+    dietaryRestrictions: filters.dietaryRestrictions?.split(',').map(r => r.trim()).filter(Boolean) || [],
+    userId: filters.userId || 1,
+    profileName: filters.profileName || 'User',
+    familySize: filters.familySize || 1
+  };
+  
+  const prompt = templateEngine.generatePrompt(templateData);
+  
+  console.log('✅ Generated template-based prompt');
+  console.log('📝 Prompt length:', prompt.length, 'characters');
+  
+  return prompt;
+}
+
+/**
  * V2 ENHANCED: Weight-based intelligent prompt builder
  * Processes main goals first, then applies weight-based enhancements
  */
@@ -70,31 +153,40 @@ export async function buildWeightBasedIntelligentPrompt(
   heroIngredients: string[] = []
 ): Promise<string> {
   console.log('🚀 Using Prompt Builder V2 with weight-based intelligence');
+  console.log('📊 PROMPT DEBUG - Input parameters:');
+  console.log('  - Goal weights:', JSON.stringify(goalWeights, null, 2));
+  console.log('  - Cultural background:', filters.culturalBackground);
+  console.log('  - Hero ingredients:', heroIngredients);
+  console.log('  - Dietary restrictions:', filters.dietaryRestrictions);
+  console.log('  - Cook time:', filters.cookTime);
+  console.log('  - Difficulty:', filters.difficulty);
   
-  // STEP 1: Process main goals using existing advanced logic
-  const basePrompt = await buildIntelligentPrompt({
-    ...filters,
-    goalWeights,
-    heroIngredients,
-    weightBasedEnhanced: true
-  });
-
-  // STEP 2: Apply weight-based priority enhancements
-  const weightEnhancedPrompt = applyWeightBasedEnhancements(
-    basePrompt, 
-    goalWeights, 
-    heroIngredients, 
-    filters
-  );
-
-  console.log('✅ V2 prompt generated with main goals + weight-based priorities');
-  return weightEnhancedPrompt;
+  // Use the new template-based system
+  try {
+    console.log('🔄 Calling buildTemplateBasedPrompt (V3)...');
+    const prompt = await buildTemplateBasedPrompt(filters, goalWeights, heroIngredients);
+    
+    // Log the complete final prompt for debugging
+    console.log('\n🎯 PROMPT DEBUG - COMPLETE FINAL PROMPT (FROM V3 TEMPLATE):');
+    console.log('=====================================');
+    console.log(prompt);
+    console.log('=====================================\n');
+    
+    return prompt;
+  } catch (error) {
+    console.error('❌ Template-based prompt builder failed:', error);
+    console.error('Stack trace:', error.stack);
+    throw error; // Re-throw to trigger fallback in routes.ts
+  }
 }
 
 /**
  * V2 ENHANCED: Original buildIntelligentPrompt with weight-based awareness
+ * @deprecated Use buildTemplateBasedPrompt instead
  */
-export async function buildIntelligentPrompt(filters: MealPlanFilters): Promise<string> {
+async function buildIntelligentPrompt_OLD(filters: MealPlanFilters): Promise<string> {
+  console.log('⚠️ WARNING: Old buildIntelligentPrompt_OLD is being called! This should not happen!');
+  console.log('Stack trace:', new Error().stack);
   let prompt = `Create exactly a ${filters.numDays}-day meal plan with ${filters.mealsPerDay} meals per day`;
 
   // Add family context if available
@@ -192,45 +284,110 @@ export async function buildIntelligentPrompt(filters: MealPlanFilters): Promise<
   }
 
   // Cultural cuisine integration from Perplexity API
-  console.log('Cultural cuisine data:', filters.culturalCuisineData);
-  console.log('Cultural background:', filters.culturalBackground);
+  console.log('\n🌍 PROMPT DEBUG - Cultural Integration Check:');
+  console.log('  - Cultural cuisine data available:', !!filters.culturalCuisineData);
+  console.log('  - Cultural background:', filters.culturalBackground);
+  console.log('  - Goal weights available:', !!filters.goalWeights);
+  console.log('  - Cultural weight value:', filters.goalWeights?.cultural);
   
-  if (filters.culturalCuisineData && filters.culturalBackground && filters.culturalBackground.length > 0) {
+  // WEIGHT-BASED CULTURAL RANKING INTEGRATION
+  if (filters.culturalCuisineData && filters.culturalBackground && filters.culturalBackground.length > 0 && filters.goalWeights) {
+    console.log('  ✅ Adding WEIGHT-BASED CULTURAL RANKING section');
     prompt += `\n\n🌍 CULTURAL CUISINE INTEGRATION:`;
     prompt += `\n- Include authentic dishes from user's cultural background: ${filters.culturalBackground.join(', ')}`;
     
-    // Add specific cultural meal suggestions from Perplexity data
-    for (const culture of filters.culturalBackground) {
-      if (filters.culturalCuisineData[culture]) {
-        const cultureData = filters.culturalCuisineData[culture];
-        const mealNames = cultureData.meals ? cultureData.meals.map((meal: any) => meal.name).slice(0, 3) : [];
-        const keyIngredients = cultureData.key_ingredients ? cultureData.key_ingredients.slice(0, 5) : [];
-        const cookingStyles = cultureData.styles ? cultureData.styles.slice(0, 3) : [];
+    try {
+      // Import and use the cultural meal ranking engine
+      const { culturalMealRankingEngine } = await import('./culturalMealRankingEngine.js');
+      
+      // Build UserCulturalProfile from weight-based data
+      const culturalPreferences: { [cuisine: string]: number } = {};
+      filters.culturalBackground.forEach(culture => {
+        culturalPreferences[culture] = 1.0; // Strong preference for user's cultural background
+      });
+      
+      const userCulturalProfile = {
+        cultural_preferences: culturalPreferences,
+        priority_weights: {
+          cultural: filters.goalWeights.cultural || 0.5,
+          health: filters.goalWeights.health || 0.5,
+          cost: filters.goalWeights.cost || 0.5,
+          time: filters.goalWeights.time || 0.5,
+          variety: filters.goalWeights.variety || 0.5
+        }
+      };
+      
+      console.log('  🔍 Getting ranked meals with full weight profile:', userCulturalProfile.priority_weights);
+      
+      // Get top-ranked meals based on ALL weights combined
+      const rankedMeals = await culturalMealRankingEngine.getRankedMeals(
+        filters.userId || 1, // Use provided userId or fallback
+        userCulturalProfile,
+        8, // Get top 8 meals for selection
+        0.6 // Relevance threshold
+      );
+      
+      console.log(`  📊 Got ${rankedMeals.length} weight-ranked cultural meals`);
+      
+      if (rankedMeals.length > 0) {
+        // Add top-ranked meals with their scoring details
+        const topMeals = rankedMeals.slice(0, 5); // Top 5 meals
+        const mealNames = topMeals.map(meal => meal.meal.name);
+        const mealIngredients = [...new Set(topMeals.flatMap(meal => meal.meal.ingredients))].slice(0, 8);
+        const mealTechniques = [...new Set(topMeals.flatMap(meal => meal.meal.cooking_techniques))].slice(0, 5);
         
-        if (mealNames.length > 0) {
-          prompt += `\n- ${culture} dishes to consider: ${mealNames.join(', ')}`;
-        }
-        if (keyIngredients.length > 0) {
-          prompt += `\n- ${culture} key ingredients: ${keyIngredients.join(', ')}`;
-        }
-        if (cookingStyles.length > 0) {
-          prompt += `\n- ${culture} cooking styles: ${cookingStyles.join(', ')}`;
+        prompt += `\n- TOP-RANKED ${filters.culturalBackground[0].toUpperCase()} MEALS (based on your complete weight profile):`;
+        prompt += `\n  ${mealNames.join(', ')}`;
+        
+        if (mealIngredients.length > 0) {
+          prompt += `\n- Key ingredients from top-ranked meals: ${mealIngredients.join(', ')}`;
         }
         
-        // Add healthy modifications from Perplexity data
-        if (cultureData.meals && cultureData.meals.length > 0) {
-          const healthyMods = cultureData.meals.flatMap((meal: any) => meal.healthy_mods || []).slice(0, 3);
-          if (healthyMods.length > 0) {
-            prompt += `\n- ${culture} healthy modifications: ${healthyMods.join(', ')}`;
-          }
+        if (mealTechniques.length > 0) {
+          prompt += `\n- Cooking techniques from top-ranked meals: ${mealTechniques.join(', ')}`;
         }
+        
+        // Add scoring explanation
+        const avgCulturalScore = topMeals.reduce((sum, meal) => sum + meal.component_scores.cultural_score, 0) / topMeals.length;
+        const avgCostScore = topMeals.reduce((sum, meal) => sum + meal.component_scores.cost_score, 0) / topMeals.length;
+        const avgHealthScore = topMeals.reduce((sum, meal) => sum + meal.component_scores.health_score, 0) / topMeals.length;
+        const avgTimeScore = topMeals.reduce((sum, meal) => sum + meal.component_scores.time_score, 0) / topMeals.length;
+        
+        prompt += `\n- These meals rank highest based on best alignment with your complete profile across all weighted factors`;
+        prompt += `\n- Average scores: Cultural ${Math.round(avgCulturalScore * 100)}%, Cost ${Math.round(avgCostScore * 100)}%, Health ${Math.round(avgHealthScore * 100)}%, Time ${Math.round(avgTimeScore * 100)}%`;
+        
+        console.log('  ✅ Added weight-based ranked meal data to prompt');
+      } else {
+        console.log('  ⚠️ No ranked meals found, using fallback cultural data');
+        // Fallback to basic cultural data processing
+        prompt += addBasicCulturalDataFallback(filters);
       }
+      
+    } catch (error) {
+      console.log('  ❌ Cultural ranking engine failed, using fallback:', error.message);
+      // Fallback to basic cultural data processing
+      prompt += addBasicCulturalDataFallback(filters);
     }
     
-    prompt += `\n- Aim for exactly 50% of meals to incorporate cultural cuisine elements`;
-    prompt += `\n- For cultural meals, use the specific dish suggestions provided above when possible`;
+    // Use cultural weight as intensity/priority, not percentage
+    const culturalWeight = filters.goalWeights?.cultural || 0.5;
+    const culturalIntensity = Math.round(culturalWeight * 100);
+    
+    if (culturalWeight >= 0.7) {
+      prompt += `\n- VERY HIGH CULTURAL PRIORITY (${culturalIntensity}%): Strongly emphasize authentic cultural flavors, ingredients, and techniques in most meals`;
+      prompt += `\n- Weave cultural elements into regular meal types rather than creating separate "cultural meals"`;
+      prompt += `\n- Use cultural spices, cooking methods, and ingredient combinations as primary choices`;
+    } else if (culturalWeight >= 0.5) {
+      prompt += `\n- HIGH CULTURAL PRIORITY (${culturalIntensity}%): Include cultural flavors and techniques when possible`;
+      prompt += `\n- Blend cultural ingredients with familiar meal formats`;
+      prompt += `\n- Use cultural elements as flavor enhancers and inspiration`;
+    } else {
+      prompt += `\n- MODERATE CULTURAL INFLUENCE (${culturalIntensity}%): Incorporate cultural elements subtly`;
+      prompt += `\n- Use cultural spices and ingredients as accent flavors`;
+    }
+    
     prompt += `\n- Balance cultural authenticity with dietary restrictions and family preferences`;
-    prompt += `\n- Non-cultural meals should focus on variety and user's primary dietary goals`;
+    prompt += `\n- Cultural dishes listed above are suggestions - adapt them to meal contexts naturally`;
     
     // Add conflict resolution guidance
     prompt += await addConflictResolutionGuidance(filters);
@@ -299,24 +456,40 @@ function applyWeightBasedEnhancements(
   heroIngredients: string[],
   filters: MealPlanFilters
 ): string {
+  console.log('\n🔧 WEIGHT ENHANCEMENT DEBUG - Applying selective weight-based enhancements');
+  console.log('  - Primary goal from base prompt:', filters.primaryGoal);
+  console.log('  - Cultural weight:', goalWeights.cultural);
+  console.log('  - Cost weight:', goalWeights.cost);
+  console.log('  - Health weight:', goalWeights.health);
+  console.log('  - Variety weight:', goalWeights.variety);
+  console.log('  - Time weight:', goalWeights.time);
+  console.log('  - Cultural background in filters:', filters.culturalBackground);
+  
   let enhancedPrompt = basePrompt;
 
   // Add weight-based priority section
   enhancedPrompt += `\n\n⚖️ WEIGHT-BASED PRIORITY REFINEMENTS:`;
   enhancedPrompt += `\nWhen the main goal guidance creates conflicts, use these weights to resolve decisions:`;
 
-  // Priority order based on weights
+  // Priority order based on weights - Use 0.3 threshold to reduce system stress
   const sortedWeights = Object.entries(goalWeights)
     .sort(([,a], [,b]) => b - a)
-    .filter(([,weight]) => weight >= 0.5);
+    .filter(([,weight]) => weight >= 0.3);
+
+  console.log('  - Sorted weights above 0.3 threshold:', sortedWeights);
 
   for (const [goal, weight] of sortedWeights) {
     const percentage = Math.round(weight * 100);
     
     if (weight >= 0.7) {
       enhancedPrompt += `\n- VERY HIGH PRIORITY (${percentage}%): ${getWeightDescription(goal)}`;
+      console.log(`  - Added VERY HIGH priority for ${goal}: ${percentage}%`);
     } else if (weight >= 0.5) {
       enhancedPrompt += `\n- HIGH PRIORITY (${percentage}%): ${getWeightDescription(goal)}`;
+      console.log(`  - Added HIGH priority for ${goal}: ${percentage}%`);
+    } else if (weight >= 0.3) {
+      enhancedPrompt += `\n- MODERATE PRIORITY (${percentage}%): ${getWeightDescription(goal)}`;
+      console.log(`  - Added MODERATE priority for ${goal}: ${percentage}%`);
     }
   }
 
@@ -514,9 +687,17 @@ export function getUnifiedGoal(goalValue: string): UnifiedGoal | null {
 export { UNIFIED_GOALS };
 
 function applyPrimaryGoalLogic(primaryGoal: string, filters: MealPlanFilters) {
+  console.log('\n📋 PRIMARY GOAL LOGIC DEBUG:');
+  console.log('  - Requested primaryGoal:', primaryGoal);
+  
   const unifiedGoal = getUnifiedGoal(primaryGoal);
+  console.log('  - Found unified goal:', unifiedGoal ? unifiedGoal.value : 'NOT FOUND');
   
   if (unifiedGoal) {
+    console.log('  - Using goal-specific prompts for:', unifiedGoal.label);
+    console.log('  - Goal prompts count:', unifiedGoal.prompts.length);
+    console.log('  - Nutrition focus:', unifiedGoal.nutritionFocus);
+    
     // Use unified goal system
     let prompt = ` ${unifiedGoal.prompts[0].toLowerCase().replace(':', '')}`;
     
@@ -529,6 +710,9 @@ function applyPrimaryGoalLogic(primaryGoal: string, filters: MealPlanFilters) {
       ...unifiedGoal.filterAdjustments,
       nutritionGoal: unifiedGoal.nutritionFocus
     };
+    
+    console.log('  - Generated goal prompt length:', prompt.length);
+    console.log('  - Applied filter adjustments:', Object.keys(adjustedFilters));
     
     return { prompt, adjustedFilters };
   }
@@ -719,7 +903,7 @@ export function generateStandardMealPlan(filters: MealPlanFilters): any {
   console.log('📝 Using Standard Recipe Generation System (fallback)');
   
   // Build the prompt using your existing system
-  const prompt = buildIntelligentPrompt(filters);
+  const prompt = buildIntelligentPrompt_OLD(filters);
   
   return {
     success: true,
@@ -744,7 +928,7 @@ export async function buildEnhancedIntelligentPrompt(filters: MealPlanFilters): 
     const mealAnalysis = await (enhancedService as any).analyzeMealRequirements(filters);
     
     // Start with your existing prompt
-    let enhancedPrompt = buildIntelligentPrompt(filters);
+    let enhancedPrompt = buildIntelligentPrompt_OLD(filters);
     
     // Add enhanced guidance based on pre-analysis
     enhancedPrompt += `\n\n🧠 ENHANCED MEAL-SPECIFIC GUIDANCE:`;
@@ -771,7 +955,7 @@ export async function buildEnhancedIntelligentPrompt(filters: MealPlanFilters): 
     
   } catch (error) {
     console.warn('Enhanced prompt building failed, using standard prompt:', error);
-    return buildIntelligentPrompt(filters);
+    return buildIntelligentPrompt_OLD(filters);
   }
 }
 
@@ -956,4 +1140,49 @@ function getCulturalDishExamples(culturalBackground: string[]): string[] {
   }
   
   return examples;
+}
+
+/**
+ * Fallback function for basic cultural data processing when ranking engine fails
+ */
+function addBasicCulturalDataFallback(filters: any): string {
+  let culturalContent = '';
+  
+  for (const culture of filters.culturalBackground) {
+    if (filters.culturalCuisineData[culture]) {
+      const cultureData = filters.culturalCuisineData[culture];
+      const mealNames = cultureData.meals ? cultureData.meals.map((meal: any) => meal.name).slice(0, 3) : [];
+      const keyIngredients = cultureData.key_ingredients ? cultureData.key_ingredients.slice(0, 5) : [];
+      const cookingStyles = cultureData.styles ? cultureData.styles.slice(0, 3) : [];
+      
+      if (mealNames.length > 0) {
+        culturalContent += `\n- ${culture} dishes to consider: ${mealNames.join(', ')}`;
+      }
+      
+      // Enhanced cultural guidance with fallback cultural knowledge
+      if (culture.toLowerCase() === 'peruvian') {
+        culturalContent += `\n- Peruvian flavor profile: Aji amarillo (yellow chili), cumin, cilantro, lime, garlic`;
+        culturalContent += `\n- Peruvian ingredients: Quinoa, potatoes, corn, plantains, yuca, black beans, fish/seafood`;
+        culturalContent += `\n- Peruvian techniques: Marinating with citrus, anticuchos grilling, stir-frying (saltado style)`;
+        culturalContent += `\n- Peruvian adaptations: Add aji amarillo to sauces, use lime in marinades, incorporate quinoa and potatoes`;
+      }
+      
+      if (keyIngredients.length > 0) {
+        culturalContent += `\n- ${culture} key ingredients: ${keyIngredients.join(', ')}`;
+      }
+      if (cookingStyles.length > 0) {
+        culturalContent += `\n- ${culture} cooking styles: ${cookingStyles.join(', ')}`;
+      }
+      
+      // Add healthy modifications from Perplexity data
+      if (cultureData.meals && cultureData.meals.length > 0) {
+        const healthyMods = cultureData.meals.flatMap((meal: any) => meal.healthy_mods || []).slice(0, 3);
+        if (healthyMods.length > 0) {
+          culturalContent += `\n- ${culture} healthy modifications: ${healthyMods.join(', ')}`;
+        }
+      }
+    }
+  }
+  
+  return culturalContent;
 }

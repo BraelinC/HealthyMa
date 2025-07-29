@@ -134,6 +134,10 @@ var init_schema = __esm({
       // For individual profiles
       cultural_background: json("cultural_background").default([]),
       // Array of cultural cuisine tags
+      questionnaire_answers: json("questionnaire_answers").default({}),
+      // Questionnaire answers for smart profile
+      questionnaire_selections: json("questionnaire_selections").default([]),
+      // Selected options from questionnaire
       created_at: timestamp("created_at").defaultNow(),
       updated_at: timestamp("updated_at").defaultNow()
     });
@@ -156,13 +160,23 @@ var init_schema = __esm({
       profile_type: true,
       preferences: true,
       goals: true,
-      cultural_background: true
+      cultural_background: true,
+      questionnaire_answers: true,
+      questionnaire_selections: true
     }).extend({
       members: z.array(familyMemberSchema).optional(),
       profile_type: z.enum(["individual", "family"]).optional(),
       preferences: z.array(z.string()).optional(),
       goals: z.array(z.string()).optional(),
-      cultural_background: z.array(z.string()).optional()
+      cultural_background: z.array(z.string()).optional(),
+      questionnaire_answers: z.record(z.array(z.string())).optional(),
+      questionnaire_selections: z.array(z.object({
+        questionId: z.string(),
+        questionTitle: z.string(),
+        optionId: z.string(),
+        optionLabel: z.string(),
+        optionDescription: z.string()
+      })).optional()
     });
     goalWeightsSchema = z.object({
       cost: z.number().min(0).max(1).default(0.5),
@@ -184,7 +198,17 @@ var init_schema = __esm({
       // Basic info
       culturalBackground: z.array(z.string()).default([]),
       familySize: z.number().min(1).max(12).default(1),
-      availableIngredients: z.array(z.string()).optional()
+      availableIngredients: z.array(z.string()).optional(),
+      // Optional questionnaire data
+      profileName: z.string().optional(),
+      questionnaire_answers: z.record(z.array(z.string())).optional(),
+      questionnaire_selections: z.array(z.object({
+        questionId: z.string(),
+        questionTitle: z.string(),
+        optionId: z.string(),
+        optionLabel: z.string(),
+        optionDescription: z.string()
+      })).optional()
     });
     mealPlanRequestSchema = z.object({
       profile: simplifiedUserProfileSchema,
@@ -570,7 +594,9 @@ var init_dbStorage = __esm({
             profile_type: profile.profile_type || "family",
             preferences: profile.preferences || [],
             goals: profile.goals || [],
-            cultural_background: profile.cultural_background || []
+            cultural_background: profile.cultural_background || [],
+            questionnaire_answers: profile.questionnaire_answers || {},
+            questionnaire_selections: profile.questionnaire_selections || []
           }).returning();
           console.log("DatabaseStorage: Successfully created profile:", createdProfile);
           return createdProfile;
@@ -590,6 +616,8 @@ var init_dbStorage = __esm({
             preferences: profile.preferences,
             goals: profile.goals,
             cultural_background: profile.cultural_background,
+            questionnaire_answers: profile.questionnaire_answers,
+            questionnaire_selections: profile.questionnaire_selections,
             updated_at: /* @__PURE__ */ new Date()
           }).where(eq(profiles.user_id, userId)).returning();
           return updatedProfile || null;
@@ -4271,12 +4299,10 @@ var init_recipeComplexityCalculator = __esm({
        */
       calculateComplexity(factors) {
         let score = 0;
-        score += factors.techniqueComplexity * 0.4;
+        score += factors.techniqueComplexity * 0.45;
         const ingredientScore = this.calculateIngredientComplexity(factors.ingredientCount);
-        score += ingredientScore * 0.2;
-        const equipmentScore = this.calculateEquipmentComplexity(factors.equipmentRequired);
-        score += equipmentScore * 0.15;
-        score += factors.timingCritical ? 1.5 : 0;
+        score += ingredientScore * 0.25;
+        score += factors.timingCritical ? 2 : 0;
         score += factors.multiStep ? 1 : 0;
         const roundedScore = Math.round(score * 2) / 2;
         return Math.min(Math.max(roundedScore, 1), 5);
@@ -7683,6 +7709,312 @@ var init_HeroIngredientManager = __esm({
   }
 });
 
+// server/culturalMealRankingEngine.ts
+var culturalMealRankingEngine_exports = {};
+__export(culturalMealRankingEngine_exports, {
+  CulturalMealRankingEngine: () => CulturalMealRankingEngine,
+  culturalMealRankingEngine: () => culturalMealRankingEngine
+});
+var CulturalMealRankingEngine, culturalMealRankingEngine;
+var init_culturalMealRankingEngine = __esm({
+  "server/culturalMealRankingEngine.ts"() {
+    "use strict";
+    init_cultureCacheManager();
+    CulturalMealRankingEngine = class {
+      structuredMeals = [];
+      lastCacheUpdate = 0;
+      cachedCultures = [];
+      CACHE_TTL = 5 * 60 * 1e3;
+      // 5 minutes
+      constructor() {
+        console.log("\u{1F3AF} Cultural Meal Ranking Engine initialized");
+      }
+      /**
+       * Convert cached cultural cuisine data to structured meal format
+       */
+      async buildStructuredMealDatabase(userId, cultures) {
+        console.log(`\u{1F4DA} Building structured meal database for cultures: ${cultures.join(", ")}`);
+        const culturalData = await getCachedCulturalCuisine(userId, cultures, { useBatch: true, forceRefresh: true });
+        console.log(`\u{1F4CA} Cultural data keys received: ${culturalData ? Object.keys(culturalData).join(", ") : "null"}`);
+        if (!culturalData) {
+          console.log("\u274C No cultural data available");
+          return [];
+        }
+        const structuredMeals = [];
+        let mealCounter = 0;
+        for (const [cuisine, cultureData] of Object.entries(culturalData)) {
+          console.log(`\u{1F37D}\uFE0F Processing ${cultureData.meals?.length || 0} meals from ${cuisine}`);
+          if (!cultureData.meals) continue;
+          for (const meal of cultureData.meals) {
+            const structuredMeal = {
+              id: `${cuisine.toLowerCase()}_${++mealCounter}`,
+              name: meal.name,
+              cuisine,
+              description: meal.description || "",
+              // Calculate core scores from cached data
+              authenticity_score: this.calculateAuthenticityScore(meal, cultureData),
+              health_score: this.calculateHealthScore(meal),
+              cost_score: this.calculateCostScore(meal),
+              time_score: this.calculateTimeScore(meal),
+              // Extract metadata
+              cooking_techniques: meal.cooking_techniques || this.extractCookingTechniques(meal.description),
+              ingredients: meal.full_ingredients || meal.healthy_ingredients || [],
+              healthy_modifications: meal.healthy_modifications || [],
+              estimated_prep_time: this.estimatePrepTime(meal),
+              estimated_cook_time: this.estimateCookTime(meal),
+              difficulty_level: this.estimateDifficulty(meal),
+              // Dietary compliance analysis
+              dietary_tags: this.analyzeDietaryTags(meal),
+              egg_free: this.isEggFree(meal),
+              vegetarian: this.isVegetarian(meal),
+              vegan: this.isVegan(meal),
+              gluten_free: this.isGlutenFree(meal),
+              dairy_free: this.isDairyFree(meal),
+              // Source metadata
+              source_quality: cultureData.source_quality_score || 0.8,
+              cache_data: cultureData
+            };
+            structuredMeals.push(structuredMeal);
+          }
+        }
+        console.log(`\u2705 Built structured database with ${structuredMeals.length} meals`);
+        return structuredMeals;
+      }
+      /**
+       * Score a meal based on user's cultural profile and weights
+       */
+      scoreMeal(meal, userProfile) {
+        const culturalPreference = userProfile.cultural_preferences[meal.cuisine] || 0.5;
+        const cultural_score = culturalPreference * meal.authenticity_score;
+        const component_scores = {
+          cultural_score,
+          health_score: meal.health_score,
+          cost_score: meal.cost_score,
+          time_score: meal.time_score
+        };
+        const total_score = (userProfile.priority_weights.cultural * cultural_score + userProfile.priority_weights.health * meal.health_score + userProfile.priority_weights.cost * meal.cost_score + userProfile.priority_weights.time * meal.time_score) / (userProfile.priority_weights.cultural + userProfile.priority_weights.health + userProfile.priority_weights.cost + userProfile.priority_weights.time);
+        const ranking_explanation = this.generateRankingExplanation(meal, component_scores, userProfile);
+        return {
+          meal,
+          total_score,
+          component_scores,
+          ranking_explanation
+        };
+      }
+      /**
+       * Get top-ranked meals for a user with dietary filtering
+       */
+      async getRankedMeals(userId, userProfile, limit = 20, relevanceThreshold = 0.8) {
+        const cultures = Object.keys(userProfile.cultural_preferences);
+        console.log(`\u{1F3AF} Requested cultures: ${cultures.join(", ")}`);
+        console.log(`\u{1F4CA} Current cache has ${this.structuredMeals.length} meals`);
+        console.log(`\u23F0 Cache age: ${Date.now() - this.lastCacheUpdate}ms (TTL: ${this.CACHE_TTL}ms)`);
+        const culturesDifferent = JSON.stringify(cultures.sort()) !== JSON.stringify(this.cachedCultures.sort());
+        if (this.structuredMeals.length === 0 || Date.now() - this.lastCacheUpdate > this.CACHE_TTL || culturesDifferent) {
+          console.log(`\u{1F504} Refreshing meal database. Cultures different: ${culturesDifferent}`);
+          console.log(`\u{1F9F9} Clearing old cache of ${this.structuredMeals.length} meals`);
+          this.structuredMeals = [];
+          this.structuredMeals = await this.buildStructuredMealDatabase(userId, cultures);
+          this.cachedCultures = [...cultures];
+          this.lastCacheUpdate = Date.now();
+          console.log(`\u2705 New cache built with ${this.structuredMeals.length} meals for ${cultures.join(", ")}`);
+        }
+        console.log(`\u{1F50D} Ranking ${this.structuredMeals.length} meals for user preferences`);
+        const filteredMeals = this.structuredMeals.filter(
+          (meal) => this.meetsDietaryRestrictions(meal, userProfile.dietary_restrictions)
+        );
+        console.log(`\u2705 ${filteredMeals.length} meals after dietary filtering`);
+        const scoredMeals = filteredMeals.map((meal) => this.scoreMeal(meal, userProfile));
+        scoredMeals.sort((a, b) => b.total_score - a.total_score);
+        const maxScore = scoredMeals[0]?.total_score || 0;
+        const relevantMeals = scoredMeals.filter(
+          (meal) => meal.total_score >= relevanceThreshold * maxScore
+        );
+        console.log(`\u{1F3AF} ${relevantMeals.length} meals within relevance threshold (${relevanceThreshold})`);
+        return relevantMeals.slice(0, limit);
+      }
+      // Helper methods for scoring
+      calculateAuthenticityScore(meal, cultureData) {
+        let score = 0.7;
+        if (cultureData.summary?.common_healthy_ingredients) {
+          const traditionalIngredients = cultureData.summary.common_healthy_ingredients.filter(
+            (ingredient) => meal.description?.toLowerCase().includes(ingredient.toLowerCase()) || meal.name?.toLowerCase().includes(ingredient.toLowerCase())
+          );
+          score += Math.min(traditionalIngredients.length * 0.1, 0.3);
+        }
+        return Math.min(score, 1);
+      }
+      calculateHealthScore(meal) {
+        let score = 0.4;
+        const description = meal.description?.toLowerCase() || "";
+        const name = meal.name?.toLowerCase() || "";
+        if (description.includes("steamed") || description.includes("grilled")) score += 0.3;
+        if (description.includes("fried") || description.includes("deep-fried")) score -= 0.2;
+        if (description.includes("boiled") || description.includes("poached")) score += 0.2;
+        if (description.includes("vegetable") || description.includes("tofu")) score += 0.2;
+        if (description.includes("lean") || description.includes("fish")) score += 0.25;
+        if (description.includes("oil") || description.includes("butter")) score -= 0.1;
+        if (description.includes("cream") || description.includes("cheese")) score -= 0.15;
+        if (name.includes("soup") || name.includes("salad")) score += 0.2;
+        if (name.includes("dumpling") || name.includes("roll")) score += 0.1;
+        if (name.includes("duck") || name.includes("pork")) score -= 0.1;
+        return Math.max(0.3, Math.min(score, 1));
+      }
+      calculateCostScore(meal) {
+        let score = 0.7;
+        const description = meal.description?.toLowerCase() || "";
+        const name = meal.name?.toLowerCase() || "";
+        if (description.includes("duck") || description.includes("beef")) score -= 0.2;
+        if (description.includes("saffron") || description.includes("truffle")) score -= 0.3;
+        if (description.includes("wine") || description.includes("cream")) score -= 0.1;
+        if (description.includes("seafood") || description.includes("fish")) score -= 0.15;
+        if (description.includes("tofu") || description.includes("bean")) score += 0.2;
+        if (description.includes("noodle") || description.includes("rice")) score += 0.15;
+        if (description.includes("vegetable") || description.includes("cabbage")) score += 0.1;
+        if (description.includes("egg") || description.includes("chicken")) score += 0.1;
+        if (description.includes("stir-fry") || description.includes("steamed")) score += 0.1;
+        if (description.includes("soup") || description.includes("boiled")) score += 0.15;
+        if (description.includes("stuffed") || description.includes("marinated")) score -= 0.1;
+        if (description.includes("slow-cooked") || description.includes("braised")) score -= 0.05;
+        return Math.max(0.3, Math.min(score, 1));
+      }
+      calculateTimeScore(meal) {
+        let score = 0.5;
+        const description = meal.description?.toLowerCase() || "";
+        const name = meal.name?.toLowerCase() || "";
+        if (description.includes("stir-fry") || description.includes("stir-fried")) score += 0.4;
+        if (description.includes("steamed") && !description.includes("slow")) score += 0.3;
+        if (description.includes("grilled") || description.includes("saut\xE9ed")) score += 0.3;
+        if (description.includes("boiled") || description.includes("poached")) score += 0.2;
+        if (description.includes("braised") || description.includes("slow-cook")) score -= 0.3;
+        if (description.includes("roasted") || description.includes("baked")) score -= 0.2;
+        if (description.includes("marinated") || description.includes("cured")) score -= 0.4;
+        if (description.includes("stuffed") || description.includes("layered")) score -= 0.2;
+        if (name.includes("soup") || name.includes("noodle")) score += 0.1;
+        if (name.includes("dumpling") || name.includes("spring roll")) score += 0.1;
+        if (name.includes("duck") || name.includes("whole")) score -= 0.3;
+        if (name.includes("risotto") || name.includes("lasagne")) score -= 0.2;
+        if (description.includes("homemade") || description.includes("fresh pasta")) score -= 0.1;
+        if (description.includes("sauce") && description.includes("from scratch")) score -= 0.15;
+        return Math.max(0.2, Math.min(score, 1));
+      }
+      extractCookingTechniques(description) {
+        const techniques = [];
+        const text2 = description.toLowerCase();
+        const techniqueKeywords = [
+          "stir-fry",
+          "steam",
+          "boil",
+          "saute",
+          "grill",
+          "roast",
+          "braise",
+          "fry",
+          "bake",
+          "simmer",
+          "poach",
+          "blanch"
+        ];
+        for (const technique of techniqueKeywords) {
+          if (text2.includes(technique)) {
+            techniques.push(technique);
+          }
+        }
+        return techniques.length > 0 ? techniques : ["saute"];
+      }
+      estimatePrepTime(meal) {
+        const ingredientCount = meal.full_ingredients?.length || 5;
+        return Math.min(ingredientCount * 2, 20);
+      }
+      estimateCookTime(meal) {
+        const techniques = meal.cooking_techniques || this.extractCookingTechniques(meal.description);
+        if (techniques.includes("stir-fry")) return 10;
+        if (techniques.includes("steam")) return 15;
+        if (techniques.includes("saute")) return 12;
+        if (techniques.includes("braise")) return 45;
+        if (techniques.includes("roast")) return 30;
+        return 20;
+      }
+      estimateDifficulty(meal) {
+        const techniques = meal.cooking_techniques || this.extractCookingTechniques(meal.description);
+        const ingredientCount = meal.full_ingredients?.length || 5;
+        let difficulty = 2;
+        if (techniques.includes("braise") || techniques.includes("roast")) difficulty += 1;
+        if (ingredientCount > 10) difficulty += 0.5;
+        if (meal.healthy_modifications && meal.healthy_modifications.length > 2) difficulty += 0.5;
+        return Math.min(difficulty, 5);
+      }
+      analyzeDietaryTags(meal) {
+        const tags = [];
+        const text2 = `${meal.name} ${meal.description}`.toLowerCase();
+        if (this.isVegetarian(meal)) tags.push("vegetarian");
+        if (this.isVegan(meal)) tags.push("vegan");
+        if (this.isGlutenFree(meal)) tags.push("gluten-free");
+        if (this.isDairyFree(meal)) tags.push("dairy-free");
+        if (this.isEggFree(meal)) tags.push("egg-free");
+        return tags;
+      }
+      isEggFree(meal) {
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const eggKeywords = ["egg", "eggs", "mayonnaise", "mayo"];
+        return !eggKeywords.some((keyword) => text2.includes(keyword));
+      }
+      isVegetarian(meal) {
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const meatKeywords = ["chicken", "beef", "pork", "fish", "meat", "lamb", "turkey"];
+        return !meatKeywords.some((keyword) => text2.includes(keyword));
+      }
+      isVegan(meal) {
+        if (!this.isVegetarian(meal)) return false;
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const animalProducts = ["dairy", "milk", "cheese", "butter", "cream", "yogurt", "honey"];
+        return !animalProducts.some((product) => text2.includes(product));
+      }
+      isGlutenFree(meal) {
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const glutenKeywords = ["wheat", "flour", "bread", "pasta", "noodles", "soy sauce"];
+        return !glutenKeywords.some((keyword) => text2.includes(keyword));
+      }
+      isDairyFree(meal) {
+        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
+        const dairyKeywords = ["milk", "cheese", "butter", "cream", "yogurt", "dairy"];
+        return !dairyKeywords.some((keyword) => text2.includes(keyword));
+      }
+      meetsDietaryRestrictions(meal, restrictions) {
+        for (const restriction of restrictions) {
+          const lowerRestriction = restriction.toLowerCase();
+          if (lowerRestriction.includes("egg") && !meal.egg_free) return false;
+          if (lowerRestriction.includes("dairy") && !meal.dairy_free) return false;
+          if (lowerRestriction.includes("gluten") && !meal.gluten_free) return false;
+          if (lowerRestriction.includes("vegetarian") && !meal.vegetarian) return false;
+          if (lowerRestriction.includes("vegan") && !meal.vegan) return false;
+        }
+        return true;
+      }
+      generateRankingExplanation(meal, scores, userProfile) {
+        const explanations = [];
+        if (scores.cultural_score > 0.8) {
+          explanations.push(`High cultural match (${(scores.cultural_score * 100).toFixed(0)}%)`);
+        }
+        if (meal.authenticity_score > 0.8) {
+          explanations.push(`Authentic ${meal.cuisine} recipe`);
+        }
+        if (scores.health_score > 0.7) {
+          explanations.push(`Good health score`);
+        }
+        if (scores.cost_score > 0.7) {
+          explanations.push(`Cost-efficient ingredients`);
+        }
+        if (scores.time_score > 0.7) {
+          explanations.push(`Quick preparation`);
+        }
+        return explanations.join(", ") || "Balanced meal option";
+      }
+    };
+    culturalMealRankingEngine = new CulturalMealRankingEngine();
+  }
+});
+
 // server/intelligentPromptBuilderV2.ts
 var intelligentPromptBuilderV2_exports = {};
 __export(intelligentPromptBuilderV2_exports, {
@@ -7701,19 +8033,32 @@ __export(intelligentPromptBuilderV2_exports, {
 });
 async function buildWeightBasedIntelligentPrompt(filters, goalWeights, heroIngredients = []) {
   console.log("\u{1F680} Using Prompt Builder V2 with weight-based intelligence");
+  console.log("\u{1F4CA} PROMPT DEBUG - Input parameters:");
+  console.log("  - Goal weights:", JSON.stringify(goalWeights, null, 2));
+  console.log("  - Cultural background:", filters.culturalBackground);
+  console.log("  - Hero ingredients:", heroIngredients);
+  console.log("  - Dietary restrictions:", filters.dietaryRestrictions);
   const basePrompt = await buildIntelligentPrompt2({
     ...filters,
     goalWeights,
     heroIngredients,
     weightBasedEnhanced: true
   });
+  console.log("\n\u{1F4DD} PROMPT DEBUG - Base prompt length:", basePrompt.length);
+  console.log("\u{1F4DD} PROMPT DEBUG - Base prompt preview:", basePrompt.substring(0, 500) + "...");
   const weightEnhancedPrompt = applyWeightBasedEnhancements(
     basePrompt,
     goalWeights,
     heroIngredients,
     filters
   );
-  console.log("\u2705 V2 prompt generated with main goals + weight-based priorities");
+  console.log("\n\u2705 V2 prompt generated with main goals + weight-based priorities");
+  console.log("\u{1F4DD} PROMPT DEBUG - Final prompt length:", weightEnhancedPrompt.length);
+  console.log("\u{1F4DD} PROMPT DEBUG - Weight enhancements added:", weightEnhancedPrompt.length - basePrompt.length, "characters");
+  console.log("\n\u{1F3AF} PROMPT DEBUG - COMPLETE FINAL PROMPT:");
+  console.log("=====================================");
+  console.log(weightEnhancedPrompt);
+  console.log("=====================================\n");
   return weightEnhancedPrompt;
 }
 async function buildIntelligentPrompt2(filters) {
@@ -7807,49 +8152,105 @@ REQUIREMENTS:`;
     prompt += `
 - Suggest bulk buying opportunities when possible`;
   }
-  console.log("Cultural cuisine data:", filters.culturalCuisineData);
-  console.log("Cultural background:", filters.culturalBackground);
-  if (filters.culturalCuisineData && filters.culturalBackground && filters.culturalBackground.length > 0) {
+  console.log("\n\u{1F30D} PROMPT DEBUG - Cultural Integration Check:");
+  console.log("  - Cultural cuisine data available:", !!filters.culturalCuisineData);
+  console.log("  - Cultural background:", filters.culturalBackground);
+  console.log("  - Goal weights available:", !!filters.goalWeights);
+  console.log("  - Cultural weight value:", filters.goalWeights?.cultural);
+  if (filters.culturalCuisineData && filters.culturalBackground && filters.culturalBackground.length > 0 && filters.goalWeights) {
+    console.log("  \u2705 Adding WEIGHT-BASED CULTURAL RANKING section");
     prompt += `
 
 \u{1F30D} CULTURAL CUISINE INTEGRATION:`;
     prompt += `
 - Include authentic dishes from user's cultural background: ${filters.culturalBackground.join(", ")}`;
-    for (const culture of filters.culturalBackground) {
-      if (filters.culturalCuisineData[culture]) {
-        const cultureData = filters.culturalCuisineData[culture];
-        const mealNames = cultureData.meals ? cultureData.meals.map((meal) => meal.name).slice(0, 3) : [];
-        const keyIngredients = cultureData.key_ingredients ? cultureData.key_ingredients.slice(0, 5) : [];
-        const cookingStyles = cultureData.styles ? cultureData.styles.slice(0, 3) : [];
-        if (mealNames.length > 0) {
+    try {
+      const { culturalMealRankingEngine: culturalMealRankingEngine2 } = await Promise.resolve().then(() => (init_culturalMealRankingEngine(), culturalMealRankingEngine_exports));
+      const culturalPreferences = {};
+      filters.culturalBackground.forEach((culture) => {
+        culturalPreferences[culture] = 1;
+      });
+      const userCulturalProfile = {
+        cultural_preferences: culturalPreferences,
+        priority_weights: {
+          cultural: filters.goalWeights.cultural || 0.5,
+          health: filters.goalWeights.health || 0.5,
+          cost: filters.goalWeights.cost || 0.5,
+          time: filters.goalWeights.time || 0.5,
+          variety: filters.goalWeights.variety || 0.5
+        }
+      };
+      console.log("  \u{1F50D} Getting ranked meals with full weight profile:", userCulturalProfile.priority_weights);
+      const rankedMeals = await culturalMealRankingEngine2.getRankedMeals(
+        filters.userId || 1,
+        // Use provided userId or fallback
+        userCulturalProfile,
+        8,
+        // Get top 8 meals for selection
+        0.6
+        // Relevance threshold
+      );
+      console.log(`  \u{1F4CA} Got ${rankedMeals.length} weight-ranked cultural meals`);
+      if (rankedMeals.length > 0) {
+        const topMeals = rankedMeals.slice(0, 5);
+        const mealNames = topMeals.map((meal) => meal.meal.name);
+        const mealIngredients = [...new Set(topMeals.flatMap((meal) => meal.meal.ingredients))].slice(0, 8);
+        const mealTechniques = [...new Set(topMeals.flatMap((meal) => meal.meal.cooking_techniques))].slice(0, 5);
+        prompt += `
+- TOP-RANKED ${filters.culturalBackground[0].toUpperCase()} MEALS (based on your complete weight profile):`;
+        prompt += `
+  ${mealNames.join(", ")}`;
+        if (mealIngredients.length > 0) {
           prompt += `
-- ${culture} dishes to consider: ${mealNames.join(", ")}`;
+- Key ingredients from top-ranked meals: ${mealIngredients.join(", ")}`;
         }
-        if (keyIngredients.length > 0) {
+        if (mealTechniques.length > 0) {
           prompt += `
-- ${culture} key ingredients: ${keyIngredients.join(", ")}`;
+- Cooking techniques from top-ranked meals: ${mealTechniques.join(", ")}`;
         }
-        if (cookingStyles.length > 0) {
-          prompt += `
-- ${culture} cooking styles: ${cookingStyles.join(", ")}`;
-        }
-        if (cultureData.meals && cultureData.meals.length > 0) {
-          const healthyMods = cultureData.meals.flatMap((meal) => meal.healthy_mods || []).slice(0, 3);
-          if (healthyMods.length > 0) {
-            prompt += `
-- ${culture} healthy modifications: ${healthyMods.join(", ")}`;
-          }
-        }
+        const avgCulturalScore = topMeals.reduce((sum, meal) => sum + meal.component_scores.cultural_score, 0) / topMeals.length;
+        const avgCostScore = topMeals.reduce((sum, meal) => sum + meal.component_scores.cost_score, 0) / topMeals.length;
+        const avgHealthScore = topMeals.reduce((sum, meal) => sum + meal.component_scores.health_score, 0) / topMeals.length;
+        const avgTimeScore = topMeals.reduce((sum, meal) => sum + meal.component_scores.time_score, 0) / topMeals.length;
+        prompt += `
+- These meals rank highest based on best alignment with your complete profile across all weighted factors`;
+        prompt += `
+- Average scores: Cultural ${Math.round(avgCulturalScore * 100)}%, Cost ${Math.round(avgCostScore * 100)}%, Health ${Math.round(avgHealthScore * 100)}%, Time ${Math.round(avgTimeScore * 100)}%`;
+        console.log("  \u2705 Added weight-based ranked meal data to prompt");
+      } else {
+        console.log("  \u26A0\uFE0F No ranked meals found, using fallback cultural data");
+        prompt += addBasicCulturalDataFallback(filters);
       }
+    } catch (error) {
+      console.log("  \u274C Cultural ranking engine failed, using fallback:", error.message);
+      prompt += addBasicCulturalDataFallback(filters);
     }
-    prompt += `
-- Aim for exactly 50% of meals to incorporate cultural cuisine elements`;
-    prompt += `
-- For cultural meals, use the specific dish suggestions provided above when possible`;
+    const culturalWeight = filters.goalWeights?.cultural || 0.5;
+    const culturalIntensity = Math.round(culturalWeight * 100);
+    if (culturalWeight >= 0.7) {
+      prompt += `
+- VERY HIGH CULTURAL PRIORITY (${culturalIntensity}%): Strongly emphasize authentic cultural flavors, ingredients, and techniques in most meals`;
+      prompt += `
+- Weave cultural elements into regular meal types rather than creating separate "cultural meals"`;
+      prompt += `
+- Use cultural spices, cooking methods, and ingredient combinations as primary choices`;
+    } else if (culturalWeight >= 0.5) {
+      prompt += `
+- HIGH CULTURAL PRIORITY (${culturalIntensity}%): Include cultural flavors and techniques when possible`;
+      prompt += `
+- Blend cultural ingredients with familiar meal formats`;
+      prompt += `
+- Use cultural elements as flavor enhancers and inspiration`;
+    } else {
+      prompt += `
+- MODERATE CULTURAL INFLUENCE (${culturalIntensity}%): Incorporate cultural elements subtly`;
+      prompt += `
+- Use cultural spices and ingredients as accent flavors`;
+    }
     prompt += `
 - Balance cultural authenticity with dietary restrictions and family preferences`;
     prompt += `
-- Non-cultural meals should focus on variety and user's primary dietary goals`;
+- Cultural dishes listed above are suggestions - adapt them to meal contexts naturally`;
     prompt += await addConflictResolutionGuidance2(filters);
   }
   if (filters.varietyPreference === "high_variety") {
@@ -7907,21 +8308,31 @@ ${mealExamples}
   return prompt;
 }
 function applyWeightBasedEnhancements(basePrompt, goalWeights, heroIngredients, filters) {
+  console.log("\n\u{1F527} PROMPT DEBUG - Applying weight-based enhancements");
+  console.log("  - Cultural weight:", goalWeights.cultural);
+  console.log("  - Cultural background in filters:", filters.culturalBackground);
   let enhancedPrompt = basePrompt;
   enhancedPrompt += `
 
 \u2696\uFE0F WEIGHT-BASED PRIORITY REFINEMENTS:`;
   enhancedPrompt += `
 When the main goal guidance creates conflicts, use these weights to resolve decisions:`;
-  const sortedWeights = Object.entries(goalWeights).sort(([, a], [, b]) => b - a).filter(([, weight]) => weight >= 0.5);
+  const sortedWeights = Object.entries(goalWeights).sort(([, a], [, b]) => b - a).filter(([, weight]) => weight >= 0.3);
+  console.log("  - Sorted weights above 0.3 threshold:", sortedWeights);
   for (const [goal, weight] of sortedWeights) {
     const percentage = Math.round(weight * 100);
     if (weight >= 0.7) {
       enhancedPrompt += `
 - VERY HIGH PRIORITY (${percentage}%): ${getWeightDescription(goal)}`;
+      console.log(`  - Added VERY HIGH priority for ${goal}: ${percentage}%`);
     } else if (weight >= 0.5) {
       enhancedPrompt += `
 - HIGH PRIORITY (${percentage}%): ${getWeightDescription(goal)}`;
+      console.log(`  - Added HIGH priority for ${goal}: ${percentage}%`);
+    } else if (weight >= 0.3) {
+      enhancedPrompt += `
+- MODERATE PRIORITY (${percentage}%): ${getWeightDescription(goal)}`;
+      console.log(`  - Added MODERATE priority for ${goal}: ${percentage}%`);
     }
   }
   if (heroIngredients.length > 0) {
@@ -8287,6 +8698,47 @@ function getCulturalDishExamples2(culturalBackground) {
   }
   return examples;
 }
+function addBasicCulturalDataFallback(filters) {
+  let culturalContent = "";
+  for (const culture of filters.culturalBackground) {
+    if (filters.culturalCuisineData[culture]) {
+      const cultureData = filters.culturalCuisineData[culture];
+      const mealNames = cultureData.meals ? cultureData.meals.map((meal) => meal.name).slice(0, 3) : [];
+      const keyIngredients = cultureData.key_ingredients ? cultureData.key_ingredients.slice(0, 5) : [];
+      const cookingStyles = cultureData.styles ? cultureData.styles.slice(0, 3) : [];
+      if (mealNames.length > 0) {
+        culturalContent += `
+- ${culture} dishes to consider: ${mealNames.join(", ")}`;
+      }
+      if (culture.toLowerCase() === "peruvian") {
+        culturalContent += `
+- Peruvian flavor profile: Aji amarillo (yellow chili), cumin, cilantro, lime, garlic`;
+        culturalContent += `
+- Peruvian ingredients: Quinoa, potatoes, corn, plantains, yuca, black beans, fish/seafood`;
+        culturalContent += `
+- Peruvian techniques: Marinating with citrus, anticuchos grilling, stir-frying (saltado style)`;
+        culturalContent += `
+- Peruvian adaptations: Add aji amarillo to sauces, use lime in marinades, incorporate quinoa and potatoes`;
+      }
+      if (keyIngredients.length > 0) {
+        culturalContent += `
+- ${culture} key ingredients: ${keyIngredients.join(", ")}`;
+      }
+      if (cookingStyles.length > 0) {
+        culturalContent += `
+- ${culture} cooking styles: ${cookingStyles.join(", ")}`;
+      }
+      if (cultureData.meals && cultureData.meals.length > 0) {
+        const healthyMods = cultureData.meals.flatMap((meal) => meal.healthy_mods || []).slice(0, 3);
+        if (healthyMods.length > 0) {
+          culturalContent += `
+- ${culture} healthy modifications: ${healthyMods.join(", ")}`;
+        }
+      }
+    }
+  }
+  return culturalContent;
+}
 var UNIFIED_GOALS2;
 var init_intelligentPromptBuilderV2 = __esm({
   "server/intelligentPromptBuilderV2.ts"() {
@@ -8422,297 +8874,6 @@ var init_intelligentPromptBuilderV2 = __esm({
         }
       }
     ];
-  }
-});
-
-// server/SmartCulturalMealSelector.ts
-var SmartCulturalMealSelector_exports = {};
-__export(SmartCulturalMealSelector_exports, {
-  SmartCulturalMealSelector: () => SmartCulturalMealSelector
-});
-var SmartCulturalMealSelector;
-var init_SmartCulturalMealSelector = __esm({
-  "server/SmartCulturalMealSelector.ts"() {
-    "use strict";
-    SmartCulturalMealSelector = class {
-      OPTIMAL_CULTURAL_PERCENTAGE = {
-        min: 0.2,
-        // 20% minimum
-        baseline: 0.25,
-        // 25% baseline
-        max: 0.35
-        // 35% maximum
-      };
-      DYNAMIC_THRESHOLDS = {
-        low_cultural_weight: 0.2,
-        medium_cultural_weight: 0.4,
-        high_cultural_weight: 0.6
-      };
-      RECENCY_DAYS = 14;
-      // Avoid same meal within 2 weeks
-      /**
-       * Calculate optimal number of cultural meals for a meal plan
-       */
-      calculateOptimalCulturalMealCount(totalMeals, culturalWeight) {
-        console.log(`Calculating cultural meal count for ${totalMeals} meals with weight ${culturalWeight}`);
-        const basePortion = totalMeals * this.OPTIMAL_CULTURAL_PERCENTAGE.baseline;
-        const weightAdjustment = culturalWeight * 0.15;
-        const optimalCount = Math.ceil(basePortion + basePortion * weightAdjustment);
-        let clampedCount;
-        if (totalMeals <= 5) {
-          clampedCount = Math.min(Math.max(optimalCount, 1), 2);
-        } else if (totalMeals <= 7) {
-          clampedCount = Math.min(Math.max(optimalCount, 1), 3);
-        } else if (totalMeals <= 14) {
-          clampedCount = Math.min(Math.max(optimalCount, 2), 4);
-        } else {
-          clampedCount = Math.min(Math.max(optimalCount, 3), 6);
-        }
-        console.log(`Optimal cultural meals: ${clampedCount} (${(clampedCount / totalMeals * 100).toFixed(1)}% of total)`);
-        return clampedCount;
-      }
-      /**
-       * Determine if a cultural meal should be used for this slot
-       */
-      shouldUseCulturalMeal(planningContext, mealSlotContext, userGoalWeights) {
-        const {
-          culturalMealsUsed,
-          optimalCulturalMealCount,
-          availableCulturalMeals,
-          totalMeals
-        } = planningContext;
-        if (culturalMealsUsed >= optimalCulturalMealCount) {
-          console.log(`Cultural meal quota reached: ${culturalMealsUsed}/${optimalCulturalMealCount}`);
-          return false;
-        }
-        if (availableCulturalMeals.length === 0) {
-          console.log("No available cultural meals");
-          return false;
-        }
-        const culturalWeight = userGoalWeights.cultural;
-        if (culturalWeight < this.DYNAMIC_THRESHOLDS.low_cultural_weight) {
-          console.log(`Cultural weight too low: ${culturalWeight} < ${this.DYNAMIC_THRESHOLDS.low_cultural_weight}`);
-          return false;
-        }
-        const compatibleMeals = this.getCompatibleMealsForSlot(
-          availableCulturalMeals,
-          mealSlotContext,
-          userGoalWeights
-        );
-        if (compatibleMeals.length === 0) {
-          console.log("No compatible cultural meals for this slot");
-          return false;
-        }
-        const remainingSlots = totalMeals - mealSlotContext.slotIndex;
-        const remainingCulturalNeeded = optimalCulturalMealCount - culturalMealsUsed;
-        const urgency = remainingCulturalNeeded / remainingSlots;
-        let probability = culturalWeight;
-        if (urgency > 0.5) {
-          probability += 0.2;
-        }
-        const recentCulturalMeals = mealSlotContext.previousMeals.slice(-3).filter((meal) => meal.culturalSource);
-        if (recentCulturalMeals.length >= 2) {
-          probability -= 0.3;
-        }
-        const shouldUse = Math.random() < probability;
-        console.log(`Cultural meal decision for slot ${mealSlotContext.slotIndex}: ${shouldUse} (probability: ${probability.toFixed(2)})`);
-        return shouldUse;
-      }
-      /**
-       * Select the best cultural meal for a specific slot
-       */
-      selectBestCulturalMeal(availableCulturalMeals, userGoalWeights, mealSlotContext) {
-        console.log(`Selecting best cultural meal from ${availableCulturalMeals.length} options`);
-        const scoredMeals = availableCulturalMeals.map(
-          (meal) => this.scoreMealCompatibility(meal, userGoalWeights, mealSlotContext)
-        ).filter((scored) => scored.dietary_safe && !scored.recently_used);
-        if (scoredMeals.length === 0) {
-          console.warn("No safe, recent cultural meals available - using first available");
-          return availableCulturalMeals[0];
-        }
-        scoredMeals.sort((a, b) => b.compatibility_score - a.compatibility_score);
-        const topChoices = scoredMeals.slice(0, Math.min(3, scoredMeals.length));
-        const selectedMeal = topChoices[Math.floor(Math.random() * topChoices.length)];
-        console.log(`Selected cultural meal: ${selectedMeal.meal.name} (score: ${selectedMeal.compatibility_score.toFixed(2)})`);
-        this.updateMealUsageTracking(selectedMeal.meal);
-        return selectedMeal.meal;
-      }
-      /**
-       * Score how well a cultural meal fits the current context
-       */
-      scoreMealCompatibility(meal, userGoalWeights, mealSlotContext) {
-        let totalScore = 0;
-        const goalAlignment = {
-          cost: 0,
-          health: 0,
-          cultural: 0,
-          variety: 0,
-          time: 0
-        };
-        goalAlignment.cost = this.scoreCostAlignment(meal);
-        goalAlignment.health = this.scoreHealthAlignment(meal);
-        goalAlignment.cultural = meal.authenticity_score || 0.7;
-        goalAlignment.variety = this.scoreVarietyAlignment(meal, mealSlotContext);
-        goalAlignment.time = this.scoreTimeAlignment(meal, userGoalWeights.time);
-        totalScore = goalAlignment.cost * userGoalWeights.cost + goalAlignment.health * userGoalWeights.health + goalAlignment.cultural * userGoalWeights.cultural + goalAlignment.variety * userGoalWeights.variety + goalAlignment.time * userGoalWeights.time;
-        totalScore = Math.min(1, totalScore);
-        return {
-          meal,
-          compatibility_score: totalScore,
-          goal_alignment: goalAlignment,
-          dietary_safe: true,
-          // Assuming pre-filtered
-          adaptation_needed: false,
-          // Would be determined by adaptation engine
-          recently_used: this.isRecentlyUsed(meal)
-        };
-      }
-      /**
-       * Get cultural meals compatible with the current slot
-       */
-      getCompatibleMealsForSlot(availableCulturalMeals, mealSlotContext, userGoalWeights) {
-        return availableCulturalMeals.filter((meal) => {
-          if (this.isRecentlyUsed(meal)) {
-            return false;
-          }
-          if (!this.isMealTypeAppropriate(meal, mealSlotContext.mealType)) {
-            return false;
-          }
-          const compatibility = this.scoreMealCompatibility(meal, userGoalWeights, mealSlotContext);
-          return compatibility.compatibility_score >= 0.3;
-        });
-      }
-      // Scoring helper methods
-      scoreCostAlignment(meal) {
-        const simpleIngredients = meal.ingredients.filter(
-          (ingredient) => this.isSimpleIngredient(ingredient)
-        ).length;
-        const ingredientScore = Math.min(1, simpleIngredients / meal.ingredients.length);
-        const cookTimeScore = meal.cook_time_minutes <= 30 ? 1 : Math.max(0.3, 1 - (meal.cook_time_minutes - 30) / 60);
-        return (ingredientScore + cookTimeScore) / 2;
-      }
-      scoreHealthAlignment(meal) {
-        const { calories, protein_g } = meal.nutrition;
-        let healthScore = 0.5;
-        if (calories >= 300 && calories <= 600) {
-          healthScore += 0.25;
-        }
-        if (protein_g >= 20) {
-          healthScore += 0.25;
-        }
-        return Math.min(1, healthScore);
-      }
-      scoreVarietyAlignment(meal, mealSlotContext) {
-        const recentCuisines = mealSlotContext.previousMeals.slice(-5).map((m) => m.culturalSource || m.cuisine_type).filter(Boolean);
-        const hasSimilarRecent = recentCuisines.includes(meal.culture);
-        return hasSimilarRecent ? 0.3 : 0.9;
-      }
-      scoreTimeAlignment(meal, timeWeight) {
-        if (timeWeight >= 0.7) {
-          return meal.cook_time_minutes <= 20 ? 1 : Math.max(0.2, 1 - (meal.cook_time_minutes - 20) / 40);
-        } else if (timeWeight >= 0.4) {
-          return meal.cook_time_minutes <= 45 ? 0.8 : Math.max(0.3, 1 - (meal.cook_time_minutes - 45) / 60);
-        } else {
-          return 0.7;
-        }
-      }
-      // Utility helper methods
-      isSimpleIngredient(ingredient) {
-        const simpleIngredients = [
-          "rice",
-          "pasta",
-          "chicken",
-          "beef",
-          "pork",
-          "eggs",
-          "beans",
-          "lentils",
-          "onion",
-          "garlic",
-          "tomato",
-          "potato",
-          "carrot",
-          "bell pepper",
-          "olive oil",
-          "salt",
-          "pepper",
-          "herbs",
-          "spices"
-        ];
-        return simpleIngredients.some(
-          (simple) => ingredient.toLowerCase().includes(simple)
-        );
-      }
-      isMealTypeAppropriate(meal, mealType) {
-        const breakfastKeywords = ["pancake", "waffle", "omelette", "egg", "toast", "porridge", "oatmeal"];
-        const dinnerKeywords = ["stew", "roast", "curry", "pasta", "rice dish", "soup"];
-        const mealName = meal.name.toLowerCase();
-        if (mealType === "breakfast") {
-          return breakfastKeywords.some((keyword) => mealName.includes(keyword)) || meal.cook_time_minutes <= 15;
-        } else if (mealType === "dinner") {
-          return !breakfastKeywords.some((keyword) => mealName.includes(keyword));
-        }
-        return true;
-      }
-      isRecentlyUsed(meal) {
-        if (!meal.usage_tracking.last_used) {
-          return false;
-        }
-        const daysSinceUsed = (Date.now() - meal.usage_tracking.last_used.getTime()) / (1e3 * 60 * 60 * 24);
-        return daysSinceUsed < this.RECENCY_DAYS;
-      }
-      updateMealUsageTracking(meal) {
-        meal.usage_tracking.last_used = /* @__PURE__ */ new Date();
-        meal.usage_tracking.usage_count += 1;
-        console.log(`Updated usage tracking for ${meal.name}: count ${meal.usage_tracking.usage_count}`);
-      }
-      /**
-       * Get statistics about cultural meal usage in a plan
-       */
-      getCulturalMealStats(mealPlan, totalMeals) {
-        const culturalMeals = mealPlan.filter((meal) => meal.culturalSource);
-        const culturalCount = culturalMeals.length;
-        const culturalPercentage = culturalCount / totalMeals * 100;
-        const cultureDistribution = {};
-        culturalMeals.forEach((meal) => {
-          const culture = meal.culturalSource;
-          cultureDistribution[culture] = (cultureDistribution[culture] || 0) + 1;
-        });
-        const uniqueCultures = Object.keys(cultureDistribution).length;
-        const varietyScore = culturalCount > 0 ? uniqueCultures / culturalCount : 0;
-        return {
-          cultural_meal_count: culturalCount,
-          cultural_percentage: Math.round(culturalPercentage * 10) / 10,
-          cultural_distribution: cultureDistribution,
-          variety_score: Math.round(varietyScore * 100) / 100
-        };
-      }
-      /**
-       * Validate cultural meal insertion meets optimal targets
-       */
-      validateCulturalMealInsertion(mealPlan, totalMeals, targetCulturalCount) {
-        const stats = this.getCulturalMealStats(mealPlan, totalMeals);
-        const isOptimal = stats.cultural_meal_count === targetCulturalCount;
-        const withinRange = stats.cultural_percentage >= 20 && stats.cultural_percentage <= 35;
-        const recommendations = [];
-        if (stats.cultural_percentage < 20) {
-          recommendations.push("Consider increasing cultural meal frequency");
-        } else if (stats.cultural_percentage > 35) {
-          recommendations.push("Consider reducing cultural meal frequency for better variety");
-        }
-        if (stats.variety_score < 0.5) {
-          recommendations.push("Improve cultural variety by using different cuisine types");
-        }
-        return {
-          is_optimal: isOptimal,
-          actual_count: stats.cultural_meal_count,
-          target_count: targetCulturalCount,
-          percentage: stats.cultural_percentage,
-          within_range: withinRange,
-          recommendations
-        };
-      }
-    };
   }
 });
 
@@ -9216,318 +9377,7 @@ var init_save_cultural_meals = __esm({
   }
 });
 
-// server/culturalMealRankingEngine.ts
-var culturalMealRankingEngine_exports = {};
-__export(culturalMealRankingEngine_exports, {
-  CulturalMealRankingEngine: () => CulturalMealRankingEngine,
-  culturalMealRankingEngine: () => culturalMealRankingEngine
-});
-var CulturalMealRankingEngine, culturalMealRankingEngine;
-var init_culturalMealRankingEngine = __esm({
-  "server/culturalMealRankingEngine.ts"() {
-    "use strict";
-    init_cultureCacheManager();
-    CulturalMealRankingEngine = class {
-      structuredMeals = [];
-      lastCacheUpdate = 0;
-      cachedCultures = [];
-      CACHE_TTL = 5 * 60 * 1e3;
-      // 5 minutes
-      constructor() {
-        console.log("\u{1F3AF} Cultural Meal Ranking Engine initialized");
-      }
-      /**
-       * Convert cached cultural cuisine data to structured meal format
-       */
-      async buildStructuredMealDatabase(userId, cultures) {
-        console.log(`\u{1F4DA} Building structured meal database for cultures: ${cultures.join(", ")}`);
-        const culturalData = await getCachedCulturalCuisine(userId, cultures, { useBatch: true, forceRefresh: true });
-        console.log(`\u{1F4CA} Cultural data keys received: ${culturalData ? Object.keys(culturalData).join(", ") : "null"}`);
-        if (!culturalData) {
-          console.log("\u274C No cultural data available");
-          return [];
-        }
-        const structuredMeals = [];
-        let mealCounter = 0;
-        for (const [cuisine, cultureData] of Object.entries(culturalData)) {
-          console.log(`\u{1F37D}\uFE0F Processing ${cultureData.meals?.length || 0} meals from ${cuisine}`);
-          if (!cultureData.meals) continue;
-          for (const meal of cultureData.meals) {
-            const structuredMeal = {
-              id: `${cuisine.toLowerCase()}_${++mealCounter}`,
-              name: meal.name,
-              cuisine,
-              description: meal.description || "",
-              // Calculate core scores from cached data
-              authenticity_score: this.calculateAuthenticityScore(meal, cultureData),
-              health_score: this.calculateHealthScore(meal),
-              cost_score: this.calculateCostScore(meal),
-              time_score: this.calculateTimeScore(meal),
-              // Extract metadata
-              cooking_techniques: meal.cooking_techniques || this.extractCookingTechniques(meal.description),
-              ingredients: meal.full_ingredients || meal.healthy_ingredients || [],
-              healthy_modifications: meal.healthy_modifications || [],
-              estimated_prep_time: this.estimatePrepTime(meal),
-              estimated_cook_time: this.estimateCookTime(meal),
-              difficulty_level: this.estimateDifficulty(meal),
-              // Dietary compliance analysis
-              dietary_tags: this.analyzeDietaryTags(meal),
-              egg_free: this.isEggFree(meal),
-              vegetarian: this.isVegetarian(meal),
-              vegan: this.isVegan(meal),
-              gluten_free: this.isGlutenFree(meal),
-              dairy_free: this.isDairyFree(meal),
-              // Source metadata
-              source_quality: cultureData.source_quality_score || 0.8,
-              cache_data: cultureData
-            };
-            structuredMeals.push(structuredMeal);
-          }
-        }
-        console.log(`\u2705 Built structured database with ${structuredMeals.length} meals`);
-        return structuredMeals;
-      }
-      /**
-       * Score a meal based on user's cultural profile and weights
-       */
-      scoreMeal(meal, userProfile) {
-        const culturalPreference = userProfile.cultural_preferences[meal.cuisine] || 0.5;
-        const cultural_score = culturalPreference * meal.authenticity_score;
-        const component_scores = {
-          cultural_score,
-          health_score: meal.health_score,
-          cost_score: meal.cost_score,
-          time_score: meal.time_score
-        };
-        const total_score = (userProfile.priority_weights.cultural * cultural_score + userProfile.priority_weights.health * meal.health_score + userProfile.priority_weights.cost * meal.cost_score + userProfile.priority_weights.time * meal.time_score) / (userProfile.priority_weights.cultural + userProfile.priority_weights.health + userProfile.priority_weights.cost + userProfile.priority_weights.time);
-        const ranking_explanation = this.generateRankingExplanation(meal, component_scores, userProfile);
-        return {
-          meal,
-          total_score,
-          component_scores,
-          ranking_explanation
-        };
-      }
-      /**
-       * Get top-ranked meals for a user with dietary filtering
-       */
-      async getRankedMeals(userId, userProfile, limit = 20, relevanceThreshold = 0.8) {
-        const cultures = Object.keys(userProfile.cultural_preferences);
-        console.log(`\u{1F3AF} Requested cultures: ${cultures.join(", ")}`);
-        console.log(`\u{1F4CA} Current cache has ${this.structuredMeals.length} meals`);
-        console.log(`\u23F0 Cache age: ${Date.now() - this.lastCacheUpdate}ms (TTL: ${this.CACHE_TTL}ms)`);
-        const culturesDifferent = JSON.stringify(cultures.sort()) !== JSON.stringify(this.cachedCultures.sort());
-        if (this.structuredMeals.length === 0 || Date.now() - this.lastCacheUpdate > this.CACHE_TTL || culturesDifferent) {
-          console.log(`\u{1F504} Refreshing meal database. Cultures different: ${culturesDifferent}`);
-          console.log(`\u{1F9F9} Clearing old cache of ${this.structuredMeals.length} meals`);
-          this.structuredMeals = [];
-          this.structuredMeals = await this.buildStructuredMealDatabase(userId, cultures);
-          this.cachedCultures = [...cultures];
-          this.lastCacheUpdate = Date.now();
-          console.log(`\u2705 New cache built with ${this.structuredMeals.length} meals for ${cultures.join(", ")}`);
-        }
-        console.log(`\u{1F50D} Ranking ${this.structuredMeals.length} meals for user preferences`);
-        const filteredMeals = this.structuredMeals.filter(
-          (meal) => this.meetsDietaryRestrictions(meal, userProfile.dietary_restrictions)
-        );
-        console.log(`\u2705 ${filteredMeals.length} meals after dietary filtering`);
-        const scoredMeals = filteredMeals.map((meal) => this.scoreMeal(meal, userProfile));
-        scoredMeals.sort((a, b) => b.total_score - a.total_score);
-        const maxScore = scoredMeals[0]?.total_score || 0;
-        const relevantMeals = scoredMeals.filter(
-          (meal) => meal.total_score >= relevanceThreshold * maxScore
-        );
-        console.log(`\u{1F3AF} ${relevantMeals.length} meals within relevance threshold (${relevanceThreshold})`);
-        return relevantMeals.slice(0, limit);
-      }
-      // Helper methods for scoring
-      calculateAuthenticityScore(meal, cultureData) {
-        let score = 0.7;
-        if (cultureData.summary?.common_healthy_ingredients) {
-          const traditionalIngredients = cultureData.summary.common_healthy_ingredients.filter(
-            (ingredient) => meal.description?.toLowerCase().includes(ingredient.toLowerCase()) || meal.name?.toLowerCase().includes(ingredient.toLowerCase())
-          );
-          score += Math.min(traditionalIngredients.length * 0.1, 0.3);
-        }
-        return Math.min(score, 1);
-      }
-      calculateHealthScore(meal) {
-        let score = 0.4;
-        const description = meal.description?.toLowerCase() || "";
-        const name = meal.name?.toLowerCase() || "";
-        if (description.includes("steamed") || description.includes("grilled")) score += 0.3;
-        if (description.includes("fried") || description.includes("deep-fried")) score -= 0.2;
-        if (description.includes("boiled") || description.includes("poached")) score += 0.2;
-        if (description.includes("vegetable") || description.includes("tofu")) score += 0.2;
-        if (description.includes("lean") || description.includes("fish")) score += 0.25;
-        if (description.includes("oil") || description.includes("butter")) score -= 0.1;
-        if (description.includes("cream") || description.includes("cheese")) score -= 0.15;
-        if (name.includes("soup") || name.includes("salad")) score += 0.2;
-        if (name.includes("dumpling") || name.includes("roll")) score += 0.1;
-        if (name.includes("duck") || name.includes("pork")) score -= 0.1;
-        return Math.max(0.3, Math.min(score, 1));
-      }
-      calculateCostScore(meal) {
-        let score = 0.7;
-        const description = meal.description?.toLowerCase() || "";
-        const name = meal.name?.toLowerCase() || "";
-        if (description.includes("duck") || description.includes("beef")) score -= 0.2;
-        if (description.includes("saffron") || description.includes("truffle")) score -= 0.3;
-        if (description.includes("wine") || description.includes("cream")) score -= 0.1;
-        if (description.includes("seafood") || description.includes("fish")) score -= 0.15;
-        if (description.includes("tofu") || description.includes("bean")) score += 0.2;
-        if (description.includes("noodle") || description.includes("rice")) score += 0.15;
-        if (description.includes("vegetable") || description.includes("cabbage")) score += 0.1;
-        if (description.includes("egg") || description.includes("chicken")) score += 0.1;
-        if (description.includes("stir-fry") || description.includes("steamed")) score += 0.1;
-        if (description.includes("soup") || description.includes("boiled")) score += 0.15;
-        if (description.includes("stuffed") || description.includes("marinated")) score -= 0.1;
-        if (description.includes("slow-cooked") || description.includes("braised")) score -= 0.05;
-        return Math.max(0.3, Math.min(score, 1));
-      }
-      calculateTimeScore(meal) {
-        let score = 0.5;
-        const description = meal.description?.toLowerCase() || "";
-        const name = meal.name?.toLowerCase() || "";
-        if (description.includes("stir-fry") || description.includes("stir-fried")) score += 0.4;
-        if (description.includes("steamed") && !description.includes("slow")) score += 0.3;
-        if (description.includes("grilled") || description.includes("saut\xE9ed")) score += 0.3;
-        if (description.includes("boiled") || description.includes("poached")) score += 0.2;
-        if (description.includes("braised") || description.includes("slow-cook")) score -= 0.3;
-        if (description.includes("roasted") || description.includes("baked")) score -= 0.2;
-        if (description.includes("marinated") || description.includes("cured")) score -= 0.4;
-        if (description.includes("stuffed") || description.includes("layered")) score -= 0.2;
-        if (name.includes("soup") || name.includes("noodle")) score += 0.1;
-        if (name.includes("dumpling") || name.includes("spring roll")) score += 0.1;
-        if (name.includes("duck") || name.includes("whole")) score -= 0.3;
-        if (name.includes("risotto") || name.includes("lasagne")) score -= 0.2;
-        if (description.includes("homemade") || description.includes("fresh pasta")) score -= 0.1;
-        if (description.includes("sauce") && description.includes("from scratch")) score -= 0.15;
-        return Math.max(0.2, Math.min(score, 1));
-      }
-      extractCookingTechniques(description) {
-        const techniques = [];
-        const text2 = description.toLowerCase();
-        const techniqueKeywords = [
-          "stir-fry",
-          "steam",
-          "boil",
-          "saute",
-          "grill",
-          "roast",
-          "braise",
-          "fry",
-          "bake",
-          "simmer",
-          "poach",
-          "blanch"
-        ];
-        for (const technique of techniqueKeywords) {
-          if (text2.includes(technique)) {
-            techniques.push(technique);
-          }
-        }
-        return techniques.length > 0 ? techniques : ["saute"];
-      }
-      estimatePrepTime(meal) {
-        const ingredientCount = meal.full_ingredients?.length || 5;
-        return Math.min(ingredientCount * 2, 20);
-      }
-      estimateCookTime(meal) {
-        const techniques = meal.cooking_techniques || this.extractCookingTechniques(meal.description);
-        if (techniques.includes("stir-fry")) return 10;
-        if (techniques.includes("steam")) return 15;
-        if (techniques.includes("saute")) return 12;
-        if (techniques.includes("braise")) return 45;
-        if (techniques.includes("roast")) return 30;
-        return 20;
-      }
-      estimateDifficulty(meal) {
-        const techniques = meal.cooking_techniques || this.extractCookingTechniques(meal.description);
-        const ingredientCount = meal.full_ingredients?.length || 5;
-        let difficulty = 2;
-        if (techniques.includes("braise") || techniques.includes("roast")) difficulty += 1;
-        if (ingredientCount > 10) difficulty += 0.5;
-        if (meal.healthy_modifications && meal.healthy_modifications.length > 2) difficulty += 0.5;
-        return Math.min(difficulty, 5);
-      }
-      analyzeDietaryTags(meal) {
-        const tags = [];
-        const text2 = `${meal.name} ${meal.description}`.toLowerCase();
-        if (this.isVegetarian(meal)) tags.push("vegetarian");
-        if (this.isVegan(meal)) tags.push("vegan");
-        if (this.isGlutenFree(meal)) tags.push("gluten-free");
-        if (this.isDairyFree(meal)) tags.push("dairy-free");
-        if (this.isEggFree(meal)) tags.push("egg-free");
-        return tags;
-      }
-      isEggFree(meal) {
-        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
-        const eggKeywords = ["egg", "eggs", "mayonnaise", "mayo"];
-        return !eggKeywords.some((keyword) => text2.includes(keyword));
-      }
-      isVegetarian(meal) {
-        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
-        const meatKeywords = ["chicken", "beef", "pork", "fish", "meat", "lamb", "turkey"];
-        return !meatKeywords.some((keyword) => text2.includes(keyword));
-      }
-      isVegan(meal) {
-        if (!this.isVegetarian(meal)) return false;
-        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
-        const animalProducts = ["dairy", "milk", "cheese", "butter", "cream", "yogurt", "honey"];
-        return !animalProducts.some((product) => text2.includes(product));
-      }
-      isGlutenFree(meal) {
-        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
-        const glutenKeywords = ["wheat", "flour", "bread", "pasta", "noodles", "soy sauce"];
-        return !glutenKeywords.some((keyword) => text2.includes(keyword));
-      }
-      isDairyFree(meal) {
-        const text2 = `${meal.name} ${meal.description} ${meal.full_ingredients?.join(" ") || ""}`.toLowerCase();
-        const dairyKeywords = ["milk", "cheese", "butter", "cream", "yogurt", "dairy"];
-        return !dairyKeywords.some((keyword) => text2.includes(keyword));
-      }
-      meetsDietaryRestrictions(meal, restrictions) {
-        for (const restriction of restrictions) {
-          const lowerRestriction = restriction.toLowerCase();
-          if (lowerRestriction.includes("egg") && !meal.egg_free) return false;
-          if (lowerRestriction.includes("dairy") && !meal.dairy_free) return false;
-          if (lowerRestriction.includes("gluten") && !meal.gluten_free) return false;
-          if (lowerRestriction.includes("vegetarian") && !meal.vegetarian) return false;
-          if (lowerRestriction.includes("vegan") && !meal.vegan) return false;
-        }
-        return true;
-      }
-      generateRankingExplanation(meal, scores, userProfile) {
-        const explanations = [];
-        if (scores.cultural_score > 0.8) {
-          explanations.push(`High cultural match (${(scores.cultural_score * 100).toFixed(0)}%)`);
-        }
-        if (meal.authenticity_score > 0.8) {
-          explanations.push(`Authentic ${meal.cuisine} recipe`);
-        }
-        if (scores.health_score > 0.7) {
-          explanations.push(`Good health score`);
-        }
-        if (scores.cost_score > 0.7) {
-          explanations.push(`Cost-efficient ingredients`);
-        }
-        if (scores.time_score > 0.7) {
-          explanations.push(`Quick preparation`);
-        }
-        return explanations.join(", ") || "Balanced meal option";
-      }
-    };
-    culturalMealRankingEngine = new CulturalMealRankingEngine();
-  }
-});
-
 // server/llamaMealRanker.ts
-var llamaMealRanker_exports = {};
-__export(llamaMealRanker_exports, {
-  LlamaMealRanker: () => LlamaMealRanker,
-  llamaMealRanker: () => llamaMealRanker
-});
 import fetch4 from "node-fetch";
 var LlamaMealRanker, llamaMealRanker;
 var init_llamaMealRanker = __esm({
@@ -12604,14 +12454,19 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       try {
         userProfile = await storage.getProfile(Number(userId));
         console.log("Retrieved user profile for weight-based system:", userProfile?.profile_name);
-        if (userProfile && userProfile.profile_type === "weight-based") {
+        console.log("\u{1F50D} PROFILE TYPE DEBUG:", {
+          profile_type: userProfile?.profile_type,
+          has_goals: !!userProfile?.goals,
+          goals_length: userProfile?.goals?.length,
+          profile_name: userProfile?.profile_name
+        });
+        if (userProfile && userProfile.goals && Array.isArray(userProfile.goals) && userProfile.goals.length > 0) {
           const storedGoalWeights = {};
-          if (userProfile.goals && Array.isArray(userProfile.goals)) {
-            userProfile.goals.forEach((goal) => {
-              const [key, value] = goal.split(":");
-              storedGoalWeights[key] = parseFloat(value) || 0.5;
-            });
-          }
+          userProfile.goals.forEach((goal) => {
+            const [key, value] = goal.split(":");
+            storedGoalWeights[key] = parseFloat(value) || 0.5;
+          });
+          console.log("\u2705 PARSED GOAL WEIGHTS:", storedGoalWeights);
           weightBasedProfile = {
             profileName: userProfile.profile_name,
             familySize: userProfile.family_size,
@@ -12619,6 +12474,12 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
             dietaryRestrictions: userProfile.preferences || [],
             culturalBackground: userProfile.cultural_background || []
           };
+          console.log("\u2705 WEIGHT-BASED PROFILE CREATED:", {
+            goalWeights: weightBasedProfile.goalWeights,
+            culturalBackground: weightBasedProfile.culturalBackground
+          });
+        } else {
+          console.log("\u274C No weight-based profile data found - no goals in profile");
         }
         if (userProfile && userProfile.cultural_background && Array.isArray(userProfile.cultural_background) && userProfile.cultural_background.length > 0) {
           console.log("Weight-based system: User has cultural background:", userProfile.cultural_background);
@@ -12686,7 +12547,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       } else if (!planTargets.includes("Everyone") && planTargets.length > 0) {
         console.log(`\u2139\uFE0F Plan targets "${planTargets.join(", ")}" specified but no family members found, using merged restrictions`);
       }
-      const finalGoalWeights = goalWeights || weightBasedProfile?.goalWeights || {
+      const finalGoalWeights = goalWeights && Object.keys(goalWeights || {}).length > 0 ? goalWeights : weightBasedProfile?.goalWeights || {
         cost: 0.5,
         health: 0.5,
         cultural: 0.5,
@@ -12694,7 +12555,19 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         time: 0.5
       };
       const finalDietaryRestrictions = targetMemberRestrictions;
-      const finalCulturalBackground = culturalBackground.length > 0 ? culturalBackground : weightBasedProfile?.culturalBackground || [];
+      const finalCulturalBackground = culturalBackground && culturalBackground.length > 0 ? culturalBackground : weightBasedProfile?.culturalBackground || [];
+      console.log("\n\u{1F3AF} CULTURAL INTEGRATION CHECK:");
+      console.log("  - Cultural weight:", finalGoalWeights.cultural);
+      console.log("  - Cultural weight > 0.3?", finalGoalWeights.cultural > 0.3);
+      console.log("  - Cultural background:", finalCulturalBackground);
+      console.log("  - Will integrate cultural meals?", finalGoalWeights.cultural > 0.3 && finalCulturalBackground.length > 0);
+      console.log("\u{1F50D} FINAL VALUES DEBUG:");
+      console.log("  - Final goal weights:", JSON.stringify(finalGoalWeights, null, 2));
+      console.log("  - Final cultural background:", finalCulturalBackground);
+      console.log("  - Request goalWeights:", goalWeights ? "provided" : "undefined");
+      console.log("  - Request culturalBackground:", culturalBackground?.length > 0 ? culturalBackground : "empty/undefined");
+      console.log("  - Profile goalWeights:", weightBasedProfile?.goalWeights ? "available" : "not available");
+      console.log("  - Profile culturalBackground:", weightBasedProfile?.culturalBackground || "not available");
       let finalFamilySize;
       if (!planTargets.includes("Everyone") && userProfile?.members && Array.isArray(userProfile.members)) {
         const validTargetCount = planTargets.filter(
@@ -12725,7 +12598,7 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         console.log("Selected hero ingredients:", heroIngredients);
       }
       let prompt;
-      const primaryGoal = userProfile?.primary_goal || "Weight-Based Planning";
+      const primaryGoal = userProfile?.primary_goal || "Save Money";
       console.log("Weight-based system: Processing main goal:", primaryGoal);
       try {
         const { buildWeightBasedIntelligentPrompt: buildWeightBasedIntelligentPrompt2 } = await Promise.resolve().then(() => (init_intelligentPromptBuilderV2(), intelligentPromptBuilderV2_exports));
@@ -12742,6 +12615,8 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
           profileType: userProfile?.profile_type || "individual",
           dietaryRestrictions: finalDietaryRestrictions.join(", "),
           culturalBackground: finalCulturalBackground,
+          userId: Number(userId),
+          // Pass userId for cultural ranking engine
           culturalCuisineData,
           availableIngredients,
           excludeIngredients,
@@ -12799,7 +12674,8 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         ],
         response_format: { type: "json_object" },
         temperature: 0.3,
-        max_tokens: 4e3
+        max_tokens: 6e3
+        // Increased from 4000 to allow for more detailed cultural integration
       });
       let mealPlan;
       try {
@@ -12808,27 +12684,24 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         console.error("Failed to parse AI response:", parseError);
         throw new Error("Invalid response format from AI");
       }
+      console.log("\n\u{1F3AF} CULTURAL INTEGRATION CHECK:");
+      console.log("  - Cultural weight:", finalGoalWeights.cultural);
+      console.log("  - Cultural weight > 0.3?", finalGoalWeights.cultural > 0.3);
+      console.log("  - Cultural background:", finalCulturalBackground);
+      console.log("  - Has cultural background?", finalCulturalBackground.length > 0);
+      console.log("  - Will integrate cultural meals?", finalGoalWeights.cultural > 0.3 && finalCulturalBackground.length > 0);
       if (finalGoalWeights.cultural > 0.3 && finalCulturalBackground.length > 0) {
-        const { SmartCulturalMealSelector: SmartCulturalMealSelector2 } = await Promise.resolve().then(() => (init_SmartCulturalMealSelector(), SmartCulturalMealSelector_exports));
-        const culturalSelector = new SmartCulturalMealSelector2();
-        try {
-          const culturalMeals = await culturalSelector.getCompatibleCulturalMeals(
-            Number(userId),
-            finalCulturalBackground,
-            finalDietaryRestrictions
-          );
-          if (culturalMeals.length > 0) {
-            const enhancedPlan = await culturalSelector.integrateCulturalMeals(
-              mealPlan,
-              culturalMeals,
-              finalGoalWeights,
-              { numDays, mealsPerDay }
-            );
-            mealPlan = enhancedPlan;
-            console.log("Enhanced meal plan with cultural integration");
-          }
-        } catch (culturalError) {
-          console.log("Cultural meal integration failed, using basic plan:", culturalError);
+        console.log("\u2705 Cultural integration conditions met! Using prompt-based cultural integration...");
+        console.log(`   - Cultural weight: ${finalGoalWeights.cultural} (${Math.round(finalGoalWeights.cultural * 100)}% priority)`);
+        console.log(`   - Cultural background: ${finalCulturalBackground.join(", ")}`);
+        console.log("   - Cultural elements will be integrated through enhanced AI prompting");
+      } else {
+        console.log("\u274C Cultural integration skipped - conditions not met");
+        if (finalGoalWeights.cultural <= 0.3) {
+          console.log("   Reason: Cultural weight too low (need > 0.3, have", finalGoalWeights.cultural, ")");
+        }
+        if (finalCulturalBackground.length === 0) {
+          console.log("   Reason: No cultural background specified");
         }
       }
       const finalMealPlan = {
@@ -13093,16 +12966,71 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       }
       const existingProfile = await storage.getProfile(Number(userId));
       if (existingProfile) {
+        console.log("\u{1F50D} Processing existing profile for weight extraction:", {
+          profile_name: existingProfile.profile_name,
+          goals: existingProfile.goals,
+          goalsType: typeof existingProfile.goals,
+          goalsIsArray: Array.isArray(existingProfile.goals),
+          goalsLength: existingProfile.goals?.length
+        });
+        const storedGoalWeights = {
+          cost: 0.5,
+          health: 0.5,
+          cultural: 0.5,
+          variety: 0.5,
+          time: 0.5
+        };
+        let parsedWeightsCount = 0;
+        if (existingProfile.goals) {
+          console.log("\u{1F4CB} Processing goals data:", existingProfile.goals, "type:", typeof existingProfile.goals);
+          if (typeof existingProfile.goals === "object" && !Array.isArray(existingProfile.goals)) {
+            console.log("\u{1F4CB} Processing goals as object format");
+            Object.entries(existingProfile.goals).forEach(([key, value]) => {
+              console.log(`\u{1F50D} Processing goal object entry: key="${key}", value="${value}"`);
+              if (typeof value === "number" && value >= 0 && value <= 1) {
+                storedGoalWeights[key] = value;
+                parsedWeightsCount++;
+                console.log(`   \u2705 Set ${key} = ${value}`);
+              } else {
+                console.log(`   \u274C Invalid weight value: ${value}`);
+              }
+            });
+          } else if (Array.isArray(existingProfile.goals)) {
+            console.log("\u{1F4CB} Processing goals as array format");
+            existingProfile.goals.forEach((goal, index2) => {
+              console.log(`\u{1F50D} Processing goal ${index2}:`, goal, typeof goal);
+              if (typeof goal === "string" && goal.includes(":")) {
+                const [key, value] = goal.split(":");
+                console.log(`   Split result: key="${key}", value="${value}"`);
+                if (key && value) {
+                  const weight = parseFloat(value);
+                  console.log(`   Parsed weight: ${weight}, isNaN: ${isNaN(weight)}`);
+                  if (!isNaN(weight) && weight >= 0 && weight <= 1) {
+                    storedGoalWeights[key] = weight;
+                    parsedWeightsCount++;
+                    console.log(`   \u2705 Set ${key} = ${weight}`);
+                  } else {
+                    console.log(`   \u274C Invalid weight value: ${weight}`);
+                  }
+                } else {
+                  console.log(`   \u274C Missing key or value after split`);
+                }
+              } else {
+                console.log(`   \u274C Goal is not string or doesn't contain ":"`);
+              }
+            });
+          } else {
+            console.log("\u274C Goals is neither object nor array");
+          }
+        } else {
+          console.log("\u274C Goals is null/undefined");
+        }
+        console.log("\u{1F4CA} Final extracted stored goal weights:", storedGoalWeights);
+        console.log(`\u{1F4CA} Successfully parsed ${parsedWeightsCount} weights from ${existingProfile.goals?.length || 0} goals`);
         const weightBasedProfile = {
           profileName: existingProfile.profile_name || "My Profile",
           familySize: existingProfile.family_size || 2,
-          goalWeights: {
-            cost: 0.5,
-            health: 0.5,
-            cultural: 0.5,
-            variety: 0.5,
-            time: 0.5
-          },
+          goalWeights: storedGoalWeights,
           dietaryRestrictions: existingProfile.preferences || [],
           culturalBackground: existingProfile.cultural_background || []
         };
@@ -13121,27 +13049,47 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      console.log("\u{1F4BE} Creating weight-based profile with data:", {
+        profileName,
+        familySize,
+        goalWeights,
+        dietaryRestrictions,
+        culturalBackground,
+        questionnaire_answers,
+        questionnaire_selections
+      });
+      const goalsArray = Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`);
+      console.log("\u{1F4BE} Converted goalWeights to goals array for creation:", goalsArray);
       const profileData = {
         user_id: Number(userId),
         profile_name: profileName,
-        primary_goal: "Weight-Based Planning",
+        primary_goal: "Save Money",
+        // Default to Save Money for weight-based profiles
         family_size: familySize,
         members: [],
         // Empty for weight-based approach
         profile_type: "individual",
         preferences: dietaryRestrictions,
-        goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
+        goals: goalsArray,
         cultural_background: culturalBackground
       };
+      console.log("\u{1F4BE} Final profileData being created:", profileData);
       const profile = await storage.createProfile(profileData);
-      res.json({
+      console.log("\u{1F4BE} Profile created successfully:", {
+        profile_name: profile.profile_name,
+        goals: profile.goals,
+        savedGoalWeights: goalWeights
+      });
+      const response = {
         profileName: profile.profile_name,
         familySize: profile.family_size,
         goalWeights,
         dietaryRestrictions: profile.preferences,
         culturalBackground: profile.cultural_background
-      });
+      };
+      console.log("\u{1F4BE} Returning creation response to client:", response);
+      res.json(response);
     } catch (error) {
       console.error("Error creating weight-based profile:", error);
       res.status(500).json({ message: "Failed to create weight-based profile" });
@@ -13153,28 +13101,48 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      console.log("\u{1F4BE} Saving weight-based profile with data:", {
+        profileName,
+        familySize,
+        goalWeights,
+        dietaryRestrictions,
+        culturalBackground,
+        questionnaire_answers,
+        questionnaire_selections
+      });
+      const goalsArray = Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`);
+      console.log("\u{1F4BE} Converted goalWeights to goals array:", goalsArray);
       const profileData = {
         profile_name: profileName,
-        primary_goal: "Weight-Based Planning",
+        primary_goal: "Save Money",
+        // Default to Save Money for weight-based profiles
         family_size: familySize,
         members: [],
         profile_type: "individual",
         preferences: dietaryRestrictions,
-        goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
+        goals: goalsArray,
         cultural_background: culturalBackground
       };
+      console.log("\u{1F4BE} Final profileData being saved:", profileData);
       const profile = await storage.updateProfile(Number(userId), profileData);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      res.json({
+      console.log("\u{1F4BE} Profile saved successfully:", {
+        profile_name: profile.profile_name,
+        goals: profile.goals,
+        savedGoalWeights: goalWeights
+      });
+      const response = {
         profileName: profile.profile_name,
         familySize: profile.family_size,
         goalWeights,
         dietaryRestrictions: profile.preferences,
         culturalBackground: profile.cultural_background
-      });
+      };
+      console.log("\u{1F4BE} Returning response to client:", response);
+      res.json(response);
     } catch (error) {
       console.error("Error updating weight-based profile:", error);
       res.status(500).json({ message: "Failed to update weight-based profile" });
@@ -13510,64 +13478,6 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
   });
   app2.get("/api/test-simple", (req, res) => {
     res.json({ message: "API is working", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
-  });
-  app2.post("/api/test-cultural-ranking", async (req, res) => {
-    try {
-      const body = req.body || {};
-      const userId = body.userId || 1;
-      console.log("\u{1F9EA} Test endpoint called with userId:", userId);
-      const { cultures, userProfile, limit = 10 } = body;
-      console.log("\u{1F9EA} Testing cultural ranking for cultures:", cultures);
-      console.log("\u{1F9EA} User profile weights:", userProfile.priority_weights);
-      console.log("\u{1F9EA} User cultural preferences:", userProfile.cultural_preferences);
-      const { culturalMealRankingEngine: culturalMealRankingEngine2 } = await Promise.resolve().then(() => (init_culturalMealRankingEngine(), culturalMealRankingEngine_exports));
-      const { llamaMealRanker: llamaMealRanker2 } = await Promise.resolve().then(() => (init_llamaMealRanker(), llamaMealRanker_exports));
-      const scoredMeals = await culturalMealRankingEngine2.getRankedMeals(
-        Number(userId),
-        userProfile,
-        limit * 2,
-        // Get extra meals for better selection
-        0.3
-        // Lower threshold to ensure all 10 meals pass through for AI ranking
-      );
-      console.log(`\u2705 Got ${scoredMeals.length} scored meals from ranking engine`);
-      if (scoredMeals.length === 0) {
-        return res.json({
-          rankedMeals: [],
-          reasoning: "No meals found matching the criteria",
-          processingTime: 0
-        });
-      }
-      const rankingResult = await llamaMealRanker2.rankMealsInParallel({
-        meals: scoredMeals,
-        userProfile,
-        maxMeals: limit
-      });
-      console.log(`\u{1F999} Llama ranking complete: ${rankingResult.rankedMeals.length} meals ranked`);
-      res.json({
-        rankedMeals: rankingResult.rankedMeals.map((mealScore) => ({
-          meal: {
-            name: mealScore.meal.name,
-            cuisine: mealScore.meal.cuisine,
-            description: mealScore.meal.description,
-            authenticity_score: mealScore.meal.authenticity_score,
-            health_score: mealScore.meal.health_score,
-            cost_score: mealScore.meal.cost_score,
-            time_score: mealScore.meal.time_score
-          },
-          total_score: mealScore.total_score,
-          ranking_explanation: mealScore.ranking_explanation
-        })),
-        reasoning: rankingResult.reasoning,
-        processingTime: rankingResult.processingTime
-      });
-    } catch (error) {
-      console.error("\u274C Cultural ranking test failed:", error);
-      res.status(500).json({
-        message: "Failed to test cultural ranking",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
   });
   app2.post("/api/intelligent-meal-selection", async (req, res) => {
     try {

@@ -75,22 +75,21 @@ export class RecipeComplexityCalculator {
   calculateComplexity(factors: RecipeComplexityFactors): number {
     let score = 0;
     
-    // Base technique complexity (40% weight)
-    score += factors.techniqueComplexity * 0.4;
+    // Base technique complexity (45% weight - increased from 40%)
+    score += factors.techniqueComplexity * 0.45;
     
-    // Ingredient count factor (20% weight)
+    // Ingredient count factor (25% weight - increased from 20%)
     // Scale: 1-3 ingredients = 1, 4-6 = 2, 7-10 = 3, 11-15 = 4, 16+ = 5
     const ingredientScore = this.calculateIngredientComplexity(factors.ingredientCount);
-    score += ingredientScore * 0.2;
+    score += ingredientScore * 0.25;
     
-    // Equipment complexity (15% weight)
-    const equipmentScore = this.calculateEquipmentComplexity(factors.equipmentRequired);
-    score += equipmentScore * 0.15;
+    // Equipment complexity removed - no longer affects scoring
+    // Equipment data still extracted for future features
     
-    // Timing critical factor (15% weight)
-    score += factors.timingCritical ? 1.5 : 0;
+    // Timing critical factor (20% weight - increased from 15%)
+    score += factors.timingCritical ? 2.0 : 0;
     
-    // Multi-step factor (10% weight)
+    // Multi-step factor (10% weight - unchanged)
     score += factors.multiStep ? 1.0 : 0;
     
     // Round to nearest 0.5 and ensure between 1-5
