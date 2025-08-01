@@ -134,6 +134,10 @@ var init_schema = __esm({
       // For individual profiles
       cultural_background: json("cultural_background").default([]),
       // Array of cultural cuisine tags
+      questionnaire_answers: json("questionnaire_answers").default({}),
+      // Questionnaire answers for smart profile
+      questionnaire_selections: json("questionnaire_selections").default([]),
+      // Selected options from questionnaire
       created_at: timestamp("created_at").defaultNow(),
       updated_at: timestamp("updated_at").defaultNow()
     });
@@ -156,13 +160,23 @@ var init_schema = __esm({
       profile_type: true,
       preferences: true,
       goals: true,
-      cultural_background: true
+      cultural_background: true,
+      questionnaire_answers: true,
+      questionnaire_selections: true
     }).extend({
       members: z.array(familyMemberSchema).optional(),
       profile_type: z.enum(["individual", "family"]).optional(),
       preferences: z.array(z.string()).optional(),
       goals: z.array(z.string()).optional(),
-      cultural_background: z.array(z.string()).optional()
+      cultural_background: z.array(z.string()).optional(),
+      questionnaire_answers: z.record(z.array(z.string())).optional(),
+      questionnaire_selections: z.array(z.object({
+        questionId: z.string(),
+        questionTitle: z.string(),
+        optionId: z.string(),
+        optionLabel: z.string(),
+        optionDescription: z.string()
+      })).optional()
     });
     goalWeightsSchema = z.object({
       cost: z.number().min(0).max(1).default(0.5),
@@ -184,7 +198,17 @@ var init_schema = __esm({
       // Basic info
       culturalBackground: z.array(z.string()).default([]),
       familySize: z.number().min(1).max(12).default(1),
-      availableIngredients: z.array(z.string()).optional()
+      availableIngredients: z.array(z.string()).optional(),
+      // Optional questionnaire data
+      profileName: z.string().optional(),
+      questionnaire_answers: z.record(z.array(z.string())).optional(),
+      questionnaire_selections: z.array(z.object({
+        questionId: z.string(),
+        questionTitle: z.string(),
+        optionId: z.string(),
+        optionLabel: z.string(),
+        optionDescription: z.string()
+      })).optional()
     });
     mealPlanRequestSchema = z.object({
       profile: simplifiedUserProfileSchema,
@@ -570,7 +594,9 @@ var init_dbStorage = __esm({
             profile_type: profile.profile_type || "family",
             preferences: profile.preferences || [],
             goals: profile.goals || [],
-            cultural_background: profile.cultural_background || []
+            cultural_background: profile.cultural_background || [],
+            questionnaire_answers: profile.questionnaire_answers || {},
+            questionnaire_selections: profile.questionnaire_selections || []
           }).returning();
           console.log("DatabaseStorage: Successfully created profile:", createdProfile);
           return createdProfile;
@@ -590,6 +616,8 @@ var init_dbStorage = __esm({
             preferences: profile.preferences,
             goals: profile.goals,
             cultural_background: profile.cultural_background,
+            questionnaire_answers: profile.questionnaire_answers,
+            questionnaire_selections: profile.questionnaire_selections,
             updated_at: /* @__PURE__ */ new Date()
           }).where(eq(profiles.user_id, userId)).returning();
           return updatedProfile || null;
@@ -1316,6 +1344,7 @@ var init_instacart = __esm({
 // server/auth.ts
 var auth_exports = {};
 __export(auth_exports, {
+  authenticateFlexible: () => authenticateFlexible,
   authenticateToken: () => authenticateToken,
   generateToken: () => generateToken,
   getCurrentUser: () => getCurrentUser,
@@ -1341,6 +1370,16 @@ function verifyToken(token) {
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded;
   } catch (error) {
+    if (error.name !== "JsonWebTokenError" || error.message !== "invalid signature") {
+      return null;
+    }
+    for (const oldSecret of OLD_JWT_SECRETS) {
+      try {
+        const decoded = jwt.verify(token, oldSecret);
+        return { ...decoded, needsRefresh: true };
+      } catch {
+      }
+    }
     return null;
   }
 }
@@ -1360,10 +1399,56 @@ async function authenticateToken(req, res, next) {
       return res.status(403).json({ message: "User not found" });
     }
     req.user = user;
+    if (decoded.needsRefresh) {
+      const newToken = generateToken(decoded.userId);
+      res.setHeader("X-New-Token", newToken);
+      res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
+      console.log(`\u{1F504} Auto-refreshed token for user ${decoded.userId}`);
+    }
     next();
   } catch (error) {
     return res.status(500).json({ message: "Authentication error" });
   }
+}
+async function authenticateFlexible(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (token) {
+    const decoded = verifyToken(token);
+    if (decoded) {
+      try {
+        const user = await storage.getUser(Number(decoded.userId));
+        if (user) {
+          req.user = user;
+          if (decoded.needsRefresh) {
+            const newToken = generateToken(decoded.userId);
+            res.setHeader("X-New-Token", newToken);
+            res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
+            console.log(`\u{1F504} Auto-refreshed token for user ${decoded.userId}`);
+          }
+          return next();
+        }
+      } catch (error) {
+        console.error("JWT user lookup error:", error);
+      }
+    }
+  }
+  if (req.session && req.session.userId) {
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (user) {
+        req.user = user;
+        const newToken = generateToken(user.id.toString());
+        res.setHeader("X-New-Token", newToken);
+        res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
+        console.log(`\u{1F510} Generated new token for session user ${user.id}`);
+        return next();
+      }
+    } catch (error) {
+      console.error("Session user lookup error:", error);
+    }
+  }
+  return res.status(401).json({ message: "Authentication required" });
 }
 async function registerUser(req, res) {
   try {
@@ -1408,6 +1493,13 @@ async function loginUser(req, res) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
     const token = generateToken(user.id.toString());
+    if (req.session) {
+      req.session.userId = user.id;
+      req.session.save((err) => {
+        if (err) console.error("Session save error:", err);
+        else console.log(`\u2705 Session created for user ${user.id}`);
+      });
+    }
     const { password_hash, ...userWithoutPassword } = user;
     res.json({
       user: userWithoutPassword,
@@ -1437,14 +1529,21 @@ async function getCurrentUser(req, res) {
     res.status(500).json({ message: "Failed to get user" });
   }
 }
-var JWT_SECRET, JWT_EXPIRES_IN;
+var JWT_SECRET, JWT_EXPIRES_IN, OLD_JWT_SECRETS;
 var init_auth = __esm({
   "server/auth.ts"() {
     "use strict";
     init_storage();
     init_schema();
     JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
-    JWT_EXPIRES_IN = "7d";
+    JWT_EXPIRES_IN = "30d";
+    OLD_JWT_SECRETS = process.env.OLD_JWT_SECRETS ? process.env.OLD_JWT_SECRETS.split(",") : ["your-secret-key-change-in-production"];
+    console.log("\u{1F510} JWT Configuration:", {
+      hasEnvSecret: !!process.env.JWT_SECRET,
+      secretLength: JWT_SECRET.length,
+      expiresIn: JWT_EXPIRES_IN,
+      oldSecretsCount: OLD_JWT_SECRETS.length
+    });
   }
 });
 
@@ -9523,11 +9622,6 @@ var init_culturalMealRankingEngine = __esm({
 });
 
 // server/llamaMealRanker.ts
-var llamaMealRanker_exports = {};
-__export(llamaMealRanker_exports, {
-  LlamaMealRanker: () => LlamaMealRanker,
-  llamaMealRanker: () => llamaMealRanker
-});
 import fetch4 from "node-fetch";
 var LlamaMealRanker, llamaMealRanker;
 var init_llamaMealRanker = __esm({
@@ -10231,6 +10325,8 @@ var init_intelligentMealBaseSelector = __esm({
 
 // server/index.ts
 import express2 from "express";
+import session from "express-session";
+import dotenv from "dotenv";
 
 // server/routes.ts
 init_storage();
@@ -13093,16 +13189,71 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       }
       const existingProfile = await storage.getProfile(Number(userId));
       if (existingProfile) {
+        console.log("\u{1F50D} Processing existing profile for weight extraction:", {
+          profile_name: existingProfile.profile_name,
+          goals: existingProfile.goals,
+          goalsType: typeof existingProfile.goals,
+          goalsIsArray: Array.isArray(existingProfile.goals),
+          goalsLength: existingProfile.goals?.length
+        });
+        const storedGoalWeights = {
+          cost: 0.5,
+          health: 0.5,
+          cultural: 0.5,
+          variety: 0.5,
+          time: 0.5
+        };
+        let parsedWeightsCount = 0;
+        if (existingProfile.goals) {
+          console.log("\u{1F4CB} Processing goals data:", existingProfile.goals, "type:", typeof existingProfile.goals);
+          if (typeof existingProfile.goals === "object" && !Array.isArray(existingProfile.goals)) {
+            console.log("\u{1F4CB} Processing goals as object format");
+            Object.entries(existingProfile.goals).forEach(([key, value]) => {
+              console.log(`\u{1F50D} Processing goal object entry: key="${key}", value="${value}"`);
+              if (typeof value === "number" && value >= 0 && value <= 1) {
+                storedGoalWeights[key] = value;
+                parsedWeightsCount++;
+                console.log(`   \u2705 Set ${key} = ${value}`);
+              } else {
+                console.log(`   \u274C Invalid weight value: ${value}`);
+              }
+            });
+          } else if (Array.isArray(existingProfile.goals)) {
+            console.log("\u{1F4CB} Processing goals as array format");
+            existingProfile.goals.forEach((goal, index2) => {
+              console.log(`\u{1F50D} Processing goal ${index2}:`, goal, typeof goal);
+              if (typeof goal === "string" && goal.includes(":")) {
+                const [key, value] = goal.split(":");
+                console.log(`   Split result: key="${key}", value="${value}"`);
+                if (key && value) {
+                  const weight = parseFloat(value);
+                  console.log(`   Parsed weight: ${weight}, isNaN: ${isNaN(weight)}`);
+                  if (!isNaN(weight) && weight >= 0 && weight <= 1) {
+                    storedGoalWeights[key] = weight;
+                    parsedWeightsCount++;
+                    console.log(`   \u2705 Set ${key} = ${weight}`);
+                  } else {
+                    console.log(`   \u274C Invalid weight value: ${weight}`);
+                  }
+                } else {
+                  console.log(`   \u274C Missing key or value after split`);
+                }
+              } else {
+                console.log(`   \u274C Goal is not string or doesn't contain ":"`);
+              }
+            });
+          } else {
+            console.log("\u274C Goals is neither object nor array");
+          }
+        } else {
+          console.log("\u274C Goals is null/undefined");
+        }
+        console.log("\u{1F4CA} Final extracted stored goal weights:", storedGoalWeights);
+        console.log(`\u{1F4CA} Successfully parsed ${parsedWeightsCount} weights from ${existingProfile.goals?.length || 0} goals`);
         const weightBasedProfile = {
           profileName: existingProfile.profile_name || "My Profile",
           familySize: existingProfile.family_size || 2,
-          goalWeights: {
-            cost: 0.5,
-            health: 0.5,
-            cultural: 0.5,
-            variety: 0.5,
-            time: 0.5
-          },
+          goalWeights: storedGoalWeights,
           dietaryRestrictions: existingProfile.preferences || [],
           culturalBackground: existingProfile.cultural_background || []
         };
@@ -13121,7 +13272,18 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      console.log("\u{1F4BE} Creating weight-based profile with data:", {
+        profileName,
+        familySize,
+        goalWeights,
+        dietaryRestrictions,
+        culturalBackground,
+        questionnaire_answers,
+        questionnaire_selections
+      });
+      const goalsArray = Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`);
+      console.log("\u{1F4BE} Converted goalWeights to goals array for creation:", goalsArray);
       const profileData = {
         user_id: Number(userId),
         profile_name: profileName,
@@ -13131,17 +13293,25 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         // Empty for weight-based approach
         profile_type: "individual",
         preferences: dietaryRestrictions,
-        goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
+        goals: goalsArray,
         cultural_background: culturalBackground
       };
+      console.log("\u{1F4BE} Final profileData being created:", profileData);
       const profile = await storage.createProfile(profileData);
-      res.json({
+      console.log("\u{1F4BE} Profile created successfully:", {
+        profile_name: profile.profile_name,
+        goals: profile.goals,
+        savedGoalWeights: goalWeights
+      });
+      const response = {
         profileName: profile.profile_name,
         familySize: profile.family_size,
         goalWeights,
         dietaryRestrictions: profile.preferences,
         culturalBackground: profile.cultural_background
-      });
+      };
+      console.log("\u{1F4BE} Returning creation response to client:", response);
+      res.json(response);
     } catch (error) {
       console.error("Error creating weight-based profile:", error);
       res.status(500).json({ message: "Failed to create weight-based profile" });
@@ -13153,7 +13323,18 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      console.log("\u{1F4BE} Saving weight-based profile with data:", {
+        profileName,
+        familySize,
+        goalWeights,
+        dietaryRestrictions,
+        culturalBackground,
+        questionnaire_answers,
+        questionnaire_selections
+      });
+      const goalsArray = Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`);
+      console.log("\u{1F4BE} Converted goalWeights to goals array:", goalsArray);
       const profileData = {
         profile_name: profileName,
         primary_goal: "Weight-Based Planning",
@@ -13161,20 +13342,28 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
         members: [],
         profile_type: "individual",
         preferences: dietaryRestrictions,
-        goals: Object.entries(goalWeights).map(([goal, weight]) => `${goal}:${weight}`),
+        goals: goalsArray,
         cultural_background: culturalBackground
       };
+      console.log("\u{1F4BE} Final profileData being saved:", profileData);
       const profile = await storage.updateProfile(Number(userId), profileData);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      res.json({
+      console.log("\u{1F4BE} Profile saved successfully:", {
+        profile_name: profile.profile_name,
+        goals: profile.goals,
+        savedGoalWeights: goalWeights
+      });
+      const response = {
         profileName: profile.profile_name,
         familySize: profile.family_size,
         goalWeights,
         dietaryRestrictions: profile.preferences,
         culturalBackground: profile.cultural_background
-      });
+      };
+      console.log("\u{1F4BE} Returning response to client:", response);
+      res.json(response);
     } catch (error) {
       console.error("Error updating weight-based profile:", error);
       res.status(500).json({ message: "Failed to update weight-based profile" });
@@ -13511,64 +13700,6 @@ Remember: You MUST include all ${numDays} days (${dayStructure.join(", ")}) in t
   app2.get("/api/test-simple", (req, res) => {
     res.json({ message: "API is working", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
   });
-  app2.post("/api/test-cultural-ranking", async (req, res) => {
-    try {
-      const body = req.body || {};
-      const userId = body.userId || 1;
-      console.log("\u{1F9EA} Test endpoint called with userId:", userId);
-      const { cultures, userProfile, limit = 10 } = body;
-      console.log("\u{1F9EA} Testing cultural ranking for cultures:", cultures);
-      console.log("\u{1F9EA} User profile weights:", userProfile.priority_weights);
-      console.log("\u{1F9EA} User cultural preferences:", userProfile.cultural_preferences);
-      const { culturalMealRankingEngine: culturalMealRankingEngine2 } = await Promise.resolve().then(() => (init_culturalMealRankingEngine(), culturalMealRankingEngine_exports));
-      const { llamaMealRanker: llamaMealRanker2 } = await Promise.resolve().then(() => (init_llamaMealRanker(), llamaMealRanker_exports));
-      const scoredMeals = await culturalMealRankingEngine2.getRankedMeals(
-        Number(userId),
-        userProfile,
-        limit * 2,
-        // Get extra meals for better selection
-        0.3
-        // Lower threshold to ensure all 10 meals pass through for AI ranking
-      );
-      console.log(`\u2705 Got ${scoredMeals.length} scored meals from ranking engine`);
-      if (scoredMeals.length === 0) {
-        return res.json({
-          rankedMeals: [],
-          reasoning: "No meals found matching the criteria",
-          processingTime: 0
-        });
-      }
-      const rankingResult = await llamaMealRanker2.rankMealsInParallel({
-        meals: scoredMeals,
-        userProfile,
-        maxMeals: limit
-      });
-      console.log(`\u{1F999} Llama ranking complete: ${rankingResult.rankedMeals.length} meals ranked`);
-      res.json({
-        rankedMeals: rankingResult.rankedMeals.map((mealScore) => ({
-          meal: {
-            name: mealScore.meal.name,
-            cuisine: mealScore.meal.cuisine,
-            description: mealScore.meal.description,
-            authenticity_score: mealScore.meal.authenticity_score,
-            health_score: mealScore.meal.health_score,
-            cost_score: mealScore.meal.cost_score,
-            time_score: mealScore.meal.time_score
-          },
-          total_score: mealScore.total_score,
-          ranking_explanation: mealScore.ranking_explanation
-        })),
-        reasoning: rankingResult.reasoning,
-        processingTime: rankingResult.processingTime
-      });
-    } catch (error) {
-      console.error("\u274C Cultural ranking test failed:", error);
-      res.status(500).json({
-        message: "Failed to test cultural ranking",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
-  });
   app2.post("/api/intelligent-meal-selection", async (req, res) => {
     try {
       console.log("\u{1F916} Intelligent meal selection endpoint called");
@@ -13742,12 +13873,98 @@ function serveStatic(app2) {
   });
 }
 
+// server/googleAuth.ts
+init_storage();
+init_auth();
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+var GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+var GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+var GOOGLE_CALLBACK_URL = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback` : "https://workspace-braelincarranz1.replit.app/api/auth/google/callback";
+var isGoogleOAuthConfigured = GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET;
+if (isGoogleOAuthConfigured) {
+  console.log("Google OAuth configured:", GOOGLE_CLIENT_SECRET?.substring(0, 10) + "...");
+  console.log("GOOGLE_CLIENT_ID:", GOOGLE_CLIENT_ID ? "Set" : "Not set");
+  console.log("GOOGLE_CLIENT_SECRET:", GOOGLE_CLIENT_SECRET ? "Set" : "Not set");
+  console.log("Callback URL:", GOOGLE_CALLBACK_URL);
+}
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await storage.getUser(Number(id));
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
+if (isGoogleOAuthConfigured) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: GOOGLE_CLIENT_ID,
+        clientSecret: GOOGLE_CLIENT_SECRET,
+        callbackURL: GOOGLE_CALLBACK_URL,
+        scope: ["profile", "email"]
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const email = profile.emails?.[0]?.value;
+          if (!email) {
+            return done(new Error("No email found in Google profile"), false);
+          }
+          let user = await storage.getUserByEmail(email);
+          if (!user) {
+            user = await storage.createUser({
+              email,
+              full_name: profile.displayName || email.split("@")[0],
+              password_hash: null,
+              // No password for OAuth users
+              phone: "",
+              // Optional for OAuth users
+              google_id: profile.id
+            });
+          } else if (!user.google_id) {
+            await storage.updateUserGoogleId(user.id, profile.id);
+            user.google_id = profile.id;
+          }
+          return done(null, user);
+        } catch (error) {
+          console.error("Google OAuth error:", error);
+          return done(error, false);
+        }
+      }
+    )
+  );
+} else {
+  console.log("Google OAuth not configured - skipping Google strategy setup");
+}
+
 // server/index.ts
-import dotenv from "dotenv";
 dotenv.config();
 var app = express2();
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || "healthy-mama-session-secret-2025",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 30 * 24 * 60 * 60 * 1e3,
+    // 30 days for better persistence
+    sameSite: "lax"
+    // Helps with CSRF protection
+  },
+  name: "healthy-mama-session",
+  // Custom session name
+  rolling: true
+  // Reset expiry on activity
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 app.use((req, res, next) => {
   const start = Date.now();
   const path5 = req.path;
