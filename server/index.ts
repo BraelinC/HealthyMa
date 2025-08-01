@@ -1,15 +1,36 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import dotenv from "dotenv";
+
+// Load environment variables from .env file BEFORE any other imports that use them
+dotenv.config();
+
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { exec } from "child_process";
-import dotenv from "dotenv";
-
-// Load environment variables from .env file
-dotenv.config();
+import { passport } from "./googleAuth";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Configure session middleware (required for passport and fallback auth)
+app.use(session({
+  secret: process.env.SESSION_SECRET || "healthy-mama-session-secret-2025",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for better persistence
+    sameSite: 'lax' // Helps with CSRF protection
+  },
+  name: 'healthy-mama-session', // Custom session name
+  rolling: true // Reset expiry on activity
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use((req, res, next) => {
   const start = Date.now();

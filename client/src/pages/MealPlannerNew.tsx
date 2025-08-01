@@ -164,15 +164,8 @@ export default function MealPlanner() {
           if (profile.profile_type === 'family' && profile.members) {
             setSelectedFamilyMembers(profile.members.map((member: any) => member.name));
           }
-          // Auto-fill primary goal from profile
-          if (profile.primary_goal) {
-            setPrimaryGoal(profile.primary_goal);
-            // Auto-set nutrition goal based on primary goal using unified system
-            const matchedGoal = unifiedGoals.find(g => g.value === profile.primary_goal);
-            if (matchedGoal) {
-              setNutritionGoal(matchedGoal.nutritionFocus);
-            }
-          }
+          // Don't auto-fill primary goal from profile - let user select in the planner
+          // This allows the meal planner to have its own goal selection independent of profile
         } else {
           console.error('❌ Profile fetch failed:', response.status, response.statusText);
         }

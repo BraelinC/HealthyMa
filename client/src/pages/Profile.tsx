@@ -25,15 +25,24 @@ import ProfilePromptPreview from '@/components/ProfilePromptPreview';
 import AIPoweredMealPlanGenerator from '@/components/AIPoweredMealPlanGenerator';
 
 
-const commonGoals = [
-  'Lose Weight',
-  'Gain Muscle',
-  'Improve Health',
+// Define goals based on profile type
+const familyGoals = [
   'Save Money',
-  'Save Time',
-  'Eat More Variety',
-  'Learn New Recipes',
-  'Meal Prep Efficiency'
+  'Quick & Simple Meals',
+  'Complex Meals',
+  'Cook Big Batches',
+  'Baby-Friendly',
+  'Young Kid-Friendly'
+];
+
+const individualGoals = [
+  'Save Money',
+  'Meal Prep',
+  'Gain Muscle',
+  'Lose Weight',
+  'Eat Healthier',
+  'Energy & Performance',
+  'Digestive Health'
 ];
 
 const ageGroups = ['Child', 'Teen', 'Adult'] as const;
@@ -119,6 +128,7 @@ export default function Profile() {
   // Individual profile state
   const [individualPreferences, setIndividualPreferences] = useState<string[]>([]);
   const [individualGoals, setIndividualGoals] = useState<string[]>([]);
+  const [individualDietaryRestrictions, setIndividualDietaryRestrictions] = useState<string[]>([]);
   const [culturalBackground, setCulturalBackground] = useState<string[]>([]);
 
   // Extract questionnaire weights from profile goals (handle both object and array formats)
@@ -164,7 +174,12 @@ export default function Profile() {
     console.log('Error:', error);
     console.log('Profile:', profile);
     console.log('WeightBasedProfile:', weightBasedProfile);
-  }, [user, isLoading, error, profile, weightBasedProfile]);
+    console.log('=== DROPDOWN STATE ===');
+    console.log('isEditing:', isEditing);
+    console.log('profileType:', profileType);
+    console.log('primaryGoal:', primaryGoal);
+    console.log('Available goals:', profileType === 'family' ? familyGoals : individualGoals);
+  }, [user, isLoading, error, profile, weightBasedProfile, isEditing, profileType, primaryGoal]);
 
   const createProfileMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -275,7 +290,16 @@ export default function Profile() {
       console.log('Loading profile data:', profileData);
       console.log('Profile members:', profileData.members);
       setProfileName(profileData.profile_name || '');
-      setPrimaryGoal(profileData.primary_goal || '');
+      
+      // Set primary goal with default if not present
+      if (profileData.primary_goal) {
+        setPrimaryGoal(profileData.primary_goal);
+      } else {
+        // Set default goal based on profile type
+        const defaultGoal = profileData.profile_type === 'individual' ? 'Eat Healthier' : 'Save Money';
+        setPrimaryGoal(defaultGoal);
+      }
+      
       setFamilySize(profileData.family_size || 1);
       setMembers(profileData.members || []);
 
@@ -298,10 +322,23 @@ export default function Profile() {
       if (profileType === 'individual' || 
           (profileData.family_size === 1 && (!profileData.members || profileData.members.length === 0))) {
         if (profileData.preferences) {
-          setIndividualPreferences(profileData.preferences);
+          // Separate dietary restrictions from other preferences
+          const dietaryItems = profileData.preferences.filter((pref: string) => 
+            commonDietaryRestrictions.includes(pref)
+          );
+          const nonDietaryItems = profileData.preferences.filter((pref: string) => 
+            !commonDietaryRestrictions.includes(pref)
+          );
+          
+          setIndividualPreferences(nonDietaryItems);
+          setIndividualDietaryRestrictions(dietaryItems);
         }
         if (profileData.goals) {
           setIndividualGoals(profileData.goals);
+        }
+        // Legacy support for old dietary_restrictions field
+        if (profileData.dietary_restrictions && !profileData.preferences) {
+          setIndividualDietaryRestrictions(profileData.dietary_restrictions);
         }
       }
 
@@ -508,9 +545,10 @@ export default function Profile() {
       members: profileType === 'individual' ? [] : members,
       profile_type: profileType,
       cultural_background: culturalBackground,
-      // For individual profiles, store preferences and goals directly
+      // For individual profiles, store preferences and goals
+      // NOTE: dietary restrictions are stored in the preferences field
       ...(profileType === 'individual' && {
-        preferences: individualPreferences,
+        preferences: [...individualPreferences, ...individualDietaryRestrictions].filter((v, i, a) => a.indexOf(v) === i),
         goals: individualGoals
       })
     };
@@ -562,9 +600,10 @@ export default function Profile() {
       members: members.length > 0 ? members : (profile as any).members,
       profile_type: profileType,
       cultural_background: cuisinesToSave,
-      // Preserve existing preferences and goals
+      // Preserve existing preferences, goals, and dietary restrictions
       ...(profileType === 'individual' && {
-        preferences: individualPreferences.length > 0 ? individualPreferences : (profile as any).preferences,
+        // Combine preferences and dietary restrictions into the preferences field
+        preferences: [...individualPreferences, ...individualDietaryRestrictions].filter((v, i, a) => a.indexOf(v) === i),
         goals: individualGoals.length > 0 ? individualGoals : (profile as any).goals
       })
     };
@@ -969,20 +1008,45 @@ export default function Profile() {
                 </div>
                 <div>
                   <Label htmlFor="primaryGoal">Primary Goal</Label>
-                  <Select 
-                    value={primaryGoal} 
-                    onValueChange={setPrimaryGoal}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select your main goal" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {commonGoals.map(goal => (
-                        <SelectItem key={goal} value={goal}>{goal}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {isEditing ? (
+                    <Select 
+                      value={primaryGoal} 
+                      onValueChange={(value) => {
+                        console.log('Primary goal changed to:', value);
+                        setPrimaryGoal(value);
+                      }}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select your main goal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {profileType === 'family' ? (
+                          <>
+                            <SelectItem value="Save Money">Save Money</SelectItem>
+                            <SelectItem value="Quick & Simple Meals">Quick & Simple Meals</SelectItem>
+                            <SelectItem value="Complex Meals">Complex Meals</SelectItem>
+                            <SelectItem value="Cook Big Batches">Cook Big Batches</SelectItem>
+                            <SelectItem value="Baby-Friendly">Baby-Friendly</SelectItem>
+                            <SelectItem value="Young Kid-Friendly">Young Kid-Friendly</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="Save Money">Save Money</SelectItem>
+                            <SelectItem value="Meal Prep">Meal Prep</SelectItem>
+                            <SelectItem value="Gain Muscle">Gain Muscle</SelectItem>
+                            <SelectItem value="Lose Weight">Lose Weight</SelectItem>
+                            <SelectItem value="Eat Healthier">Eat Healthier</SelectItem>
+                            <SelectItem value="Energy & Performance">Energy & Performance</SelectItem>
+                            <SelectItem value="Digestive Health">Digestive Health</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md">
+                      <span className="text-gray-800">{primaryGoal || 'Not set'}</span>
+                    </div>
+                  )}
                 </div>
 
 
@@ -1021,28 +1085,82 @@ export default function Profile() {
                     </div>
 
                     <div>
-                      <Label>Personal Goals</Label>
+                      <Label className="flex items-center gap-2">
+                        <span className="text-red-500">*</span>
+                        Dietary Restrictions
+                      </Label>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {personalGoals.map(goal => (
-                          <Button
-                            key={goal}
-                            onClick={() => addIndividualGoal(goal)}
-                            variant={individualGoals.includes(goal) ? "default" : "outline"}
-                            size="sm"
-                            className="text-xs"
-                          >
-                            {goal}
-                          </Button>
-                        ))}
+                        <Button
+                          onClick={() => {
+                            if (!individualDietaryRestrictions.includes('Gluten-Free')) {
+                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Gluten-Free']);
+                            }
+                          }}
+                          variant={individualDietaryRestrictions.includes('Gluten-Free') ? "destructive" : "outline"}
+                          size="sm"
+                          className="text-xs"
+                        >
+                          Gluten-Free
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            if (!individualDietaryRestrictions.includes('Dairy-Free/Lactose Intolerance')) {
+                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Dairy-Free/Lactose Intolerance']);
+                            }
+                          }}
+                          variant={individualDietaryRestrictions.includes('Dairy-Free/Lactose Intolerance') ? "destructive" : "outline"}
+                          size="sm"
+                          className="text-xs"
+                        >
+                          Dairy-Free/Lactose Intolerance
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            if (!individualDietaryRestrictions.includes('Nut-Free')) {
+                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Nut-Free']);
+                            }
+                          }}
+                          variant={individualDietaryRestrictions.includes('Nut-Free') ? "destructive" : "outline"}
+                          size="sm"
+                          className="text-xs"
+                        >
+                          Nut-Free
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            if (!individualDietaryRestrictions.includes('Vegetarian or Vegan')) {
+                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Vegetarian or Vegan']);
+                            }
+                          }}
+                          variant={individualDietaryRestrictions.includes('Vegetarian or Vegan') ? "destructive" : "outline"}
+                          size="sm"
+                          className="text-xs"
+                        >
+                          Vegetarian or Vegan
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            if (!individualDietaryRestrictions.includes('Egg-Free')) {
+                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Egg-Free']);
+                            }
+                          }}
+                          variant={individualDietaryRestrictions.includes('Egg-Free') ? "destructive" : "outline"}
+                          size="sm"
+                          className="text-xs"
+                        >
+                          Egg-Free
+                        </Button>
                       </div>
-                      {individualGoals.length > 0 && (
+                      {individualDietaryRestrictions.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {individualGoals.map((goal: string) => (
-                            <Badge key={goal} variant="secondary" className="flex items-center gap-1">
-                              {goal}
+                          {individualDietaryRestrictions.map((restriction: string) => (
+                            <Badge key={restriction} variant="destructive" className="flex items-center gap-1">
+                              {restriction}
                               <button
-                                onClick={() => removeIndividualGoal(goal)}
-                                className="ml-1 text-red-500 hover:text-red-700"
+                                onClick={() => setIndividualDietaryRestrictions(
+                                  individualDietaryRestrictions.filter(r => r !== restriction)
+                                )}
+                                className="ml-1 text-white hover:text-gray-200"
                               >
                                 <X className="h-3 w-3" />
                               </button>
@@ -1067,12 +1185,12 @@ export default function Profile() {
                       </div>
                     )}
 
-                    {individualGoals.length > 0 && (
+                    {individualDietaryRestrictions.length > 0 && (
                       <div>
-                        <Label className="text-sm font-medium">Personal Goals:</Label>
+                        <Label className="text-sm font-medium text-red-600">Dietary Restrictions:</Label>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {individualGoals.map((goal: string) => (
-                            <Badge key={goal} variant="outline">{goal}</Badge>
+                          {individualDietaryRestrictions.map((restriction: string) => (
+                            <Badge key={restriction} variant="destructive">{restriction}</Badge>
                           ))}
                         </div>
                       </div>
@@ -1090,21 +1208,28 @@ export default function Profile() {
                   Cultural Cuisine Preferences
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <CulturalCuisineDropdown
                   selectedCuisines={culturalBackground}
-                  onCuisineChange={setCulturalBackground}
+                  onCuisineChange={(newCuisines) => {
+                    const previousCuisines = culturalBackground;
+                    setCulturalBackground(newCuisines);
+                    
+                    // If we're not in edit mode and profile exists, auto-save
+                    if (!isEditing && profile) {
+                      // Check if cuisines actually changed
+                      const added = newCuisines.filter(c => !previousCuisines.includes(c));
+                      const removed = previousCuisines.filter(c => !newCuisines.includes(c));
+                      
+                      if (added.length > 0 || removed.length > 0) {
+                        console.log('🔄 Cultural cuisines changed:', { added, removed });
+                        // Auto-save the changes
+                        handleSaveCulturalPreferences(newCuisines);
+                      }
+                    }
+                  }}
+                  isEditing={isEditing}
                 />
-
-                {culturalBackground.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {culturalBackground.map((cuisine) => (
-                      <Badge key={cuisine} variant="outline" className="bg-emerald-50 border-emerald-200">
-                        {cuisine}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </CardContent>
             </Card>
 

@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-// Centralized API request function with robust error handling
+// Centralized API request function with robust error handling and auto token refresh
 export async function apiRequest(
   url: string,
   options: RequestInit = {}
@@ -24,11 +24,22 @@ export async function apiRequest(
       headers,
     });
 
+    // Check for auto-refreshed token in response header
+    const newToken = res.headers.get('X-New-Token');
+    if (newToken) {
+      console.log('🔄 Received refreshed token from server, updating localStorage');
+      localStorage.setItem('auth_token', newToken);
+      
+      // Notify the app about token refresh
+      window.dispatchEvent(new CustomEvent('auth-token-refreshed', { detail: { token: newToken } }));
+    }
+
     console.log('API Response:', { 
       url, 
       status: res.status, 
       ok: res.ok,
-      contentType: res.headers.get('content-type')
+      contentType: res.headers.get('content-type'),
+      hasNewToken: !!newToken
     });
 
     // Check if response is JSON
