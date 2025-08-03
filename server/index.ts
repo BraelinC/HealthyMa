@@ -100,5 +100,11 @@ app.use((req, res, next) => {
   
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
+    
+    // Log API key status
+    console.log("🔑 API Keys Status:");
+    console.log(`   - Instacart: ${process.env.INSTACART_API_KEY ? '✅ Available' : '❌ Not found'}`);
+    console.log(`   - YouTube: ${process.env.YOUTUBE_API_KEY ? '✅ Available' : '❌ Not found'}`);
+    console.log(`   - OpenAI: ${process.env.OPENAI_API_KEY ? '✅ Available' : '❌ Not found'}`);
   });
 })();

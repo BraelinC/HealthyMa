@@ -828,6 +828,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create shopping list" });
     }
   });
+  
+  // Create shopping list from meal plan (for Grocery List Panel)
+  app.post("/api/create-shopping-list", authenticateToken, async (req: any, res) => {
+    console.log("🛒 Create shopping list endpoint hit");
+    console.log("Request body:", req.body);
+    console.log("User:", req.user);
+    
+    try {
+      const { mealPlanId } = req.body;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        console.log("❌ No user ID found");
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      if (!mealPlanId) {
+        console.log("❌ No meal plan ID provided");
+        return res.status(400).json({ message: "Meal plan ID is required" });
+      }
+      
+      // Get the meal plan
+      console.log("📋 Fetching meal plan:", mealPlanId, "for user:", userId);
+      const mealPlan = await storage.getMealPlan(userId, mealPlanId);
+      if (!mealPlan) {
+        console.log("❌ Meal plan not found");
+        return res.status(404).json({ message: "Meal plan not found" });
+      }
+      console.log("✅ Meal plan found:", mealPlan.name);
+      
+      // Extract all ingredients from the meal plan
+      const allIngredients: string[] = [];
+      Object.entries(mealPlan.mealPlan).forEach(([day, dayMeals]: [string, any]) => {
+        Object.entries(dayMeals).forEach(([mealType, meal]: [string, any]) => {
+          if (meal && meal.ingredients) {
+            allIngredients.push(...meal.ingredients);
+          }
+        });
+      });
+      
+      // Format ingredients for Instacart API
+      const formattedIngredients = allIngredients.map((ingredient: string) => ({
+        name: ingredient,
+        display_text: ingredient,
+        measurements: [{
+          quantity: 1,
+          unit: "unit"
+        }]
+      }));
+      
+      const recipeData = {
+        title: `Grocery List for ${mealPlan.name}`,
+        image_url: "",
+        link_type: "recipe",
+        instructions: ["Shop for ingredients"],
+        ingredients: formattedIngredients,
+        landing_page_configuration: {
+          partner_linkback_url: process.env.REPLIT_DOMAINS ? 
+            `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 
+            "https://example.com",
+          enable_pantry_items: true
+        }
+      };
+      
+      // Check if Instacart API key is available
+      console.log("🔑 Instacart API key status:", process.env.INSTACART_API_KEY ? "Available" : "Not found");
+      if (!process.env.INSTACART_API_KEY) {
+        console.log("Instacart API key not configured - returning mock URL");
+        // Return a mock URL for testing
+        return res.json({ 
+          shoppingUrl: `https://www.instacart.com/store/search?q=${encodeURIComponent(mealPlan.name)}`,
+          message: "Instacart API key not configured. Using direct search link instead.",
+          ingredients: allIngredients 
+        });
+      }
+      
+      const { createInstacartRecipePage } = await import("./instacart");
+      const shoppableRecipe: any = await createInstacartRecipePage(recipeData);
+      
+      // Return the shopping URL
+      res.json({ 
+        shoppingUrl: shoppableRecipe?.products_link_url || shoppableRecipe?.link_url || shoppableRecipe?.url,
+        ...shoppableRecipe 
+      });
+    } catch (error) {
+      console.error("Error creating shopping list:", error);
+      res.status(500).json({ message: "Failed to create shopping list" });
+    }
+  });
 
   // Meal plan CRUD operations
   app.get("/api/meal-plans/saved", authenticateToken, async (req: any, res) => {

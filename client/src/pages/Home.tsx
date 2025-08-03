@@ -68,6 +68,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { GroceryListPanel } from "@/components/GroceryListPanel";
 
 interface Meal {
   title: string;
@@ -121,6 +122,7 @@ export default function Home() {
   const [dayOrder, setDayOrder] = useState<string[]>([]);
   const [findButtonLoading, setFindButtonLoading] = useState<string | null>(null); // STEP 4.1: Loading state for Find button
   const [completions, setCompletions] = useState<MealCompletion[]>([]);
+  const [showGroceryPanel, setShowGroceryPanel] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -820,6 +822,16 @@ export default function Home() {
               {/* Complete Plan Button - REMOVED per user request */}
 
               <Button
+                variant="outline"
+                onClick={() => setShowGroceryPanel(true)}
+                className="border-green-600 text-green-600 hover:bg-green-50 shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium rounded-lg text-sm sm:text-base flex-1 sm:flex-none"
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Grocery List</span>
+                <span className="sm:hidden">Groceries</span>
+              </Button>
+
+              <Button
                 variant={isEditing ? "default" : "outline"}
                 onClick={() => setIsEditing(!isEditing)}
                 className={`${isEditing ? "bg-purple-600 hover:bg-purple-700 shadow-lg" : "border-purple-600 text-purple-600 hover:bg-purple-50 shadow-md"} transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium rounded-lg text-sm sm:text-base flex-1 sm:flex-none`}
@@ -1465,6 +1477,13 @@ export default function Home() {
           </div>
         </div>
       )}
+      
+      {/* Grocery List Panel */}
+      <GroceryListPanel 
+        isOpen={showGroceryPanel}
+        onClose={() => setShowGroceryPanel(false)}
+        mealPlan={currentPlan}
+      />
       </div>
     </div>
   );
