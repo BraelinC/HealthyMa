@@ -851,7 +851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get the meal plan
       console.log("📋 Fetching meal plan:", mealPlanId, "for user:", userId);
-      const mealPlan = await storage.getMealPlan(userId, mealPlanId);
+      const mealPlan = await storage.getMealPlan(mealPlanId, userId);
       if (!mealPlan) {
         console.log("❌ Meal plan not found");
         return res.status(404).json({ message: "Meal plan not found" });
