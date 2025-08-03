@@ -1405,7 +1405,7 @@ __export(auth_exports, {
   verifyToken: () => verifyToken
 });
 import bcrypt from "bcryptjs";
-import jwt2 from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { z as z2 } from "zod";
 async function hashPassword(password) {
   return await bcrypt.hash(password, 12);
@@ -1414,11 +1414,11 @@ async function verifyPassword(password, hashedPassword) {
   return await bcrypt.compare(password, hashedPassword);
 }
 function generateToken(userId) {
-  return jwt2.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 function verifyToken(token) {
   try {
-    const decoded = jwt2.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     return decoded;
   } catch (error) {
     if (error.name !== "JsonWebTokenError" || error.message !== "invalid signature") {
@@ -1426,7 +1426,7 @@ function verifyToken(token) {
     }
     for (const oldSecret of OLD_JWT_SECRETS) {
       try {
-        const decoded = jwt2.verify(token, oldSecret);
+        const decoded = jwt.verify(token, oldSecret);
         return { ...decoded, needsRefresh: true };
       } catch {
       }
@@ -3222,6 +3222,170 @@ var init_dietaryValidationService = __esm({
   }
 });
 
+// server/intelligentGroceryListOptimizer.ts
+var intelligentGroceryListOptimizer_exports = {};
+__export(intelligentGroceryListOptimizer_exports, {
+  consolidateIngredientsWithAI: () => consolidateIngredientsWithAI,
+  formatForInstacart: () => formatForInstacart
+});
+import OpenAI2 from "openai";
+async function consolidateIngredientsWithAI(ingredients) {
+  try {
+    const prompt = `You are a grocery shopping expert. Consolidate this list of ingredients into a smart shopping list.
+
+INGREDIENTS TO CONSOLIDATE:
+${ingredients.map((ing, i) => `${i + 1}. ${ing}`).join("\n")}
+
+RULES:
+1. Combine duplicate ingredients (e.g., "2 eggs" + "3 eggs" = "5 eggs")
+2. Convert to realistic purchase quantities:
+   - Eggs: 1-6 \u2192 "half dozen eggs", 7-12 \u2192 "1 dozen eggs", 13-18 \u2192 "1.5 dozen eggs"
+   - Milk: <2 cups \u2192 "1 pint milk", 2-4 cups \u2192 "1 quart milk", >4 cups \u2192 "half gallon milk"
+   - Flour: <3 cups \u2192 "2 lb bag flour", 3-6 cups \u2192 "5 lb bag flour", >6 cups \u2192 "10 lb bag flour"
+   - Chicken: combine all and round up to nearest pound
+   - Produce: round to nearest whole or half pound
+   - Spices/condiments: only buy once regardless of quantity
+3. Group similar items (e.g., "olive oil" and "extra virgin olive oil" \u2192 "1 bottle olive oil")
+4. For oils/vinegars/condiments: always just "1 bottle" regardless of how many times they appear
+5. Use realistic grocery store units (dozen, pound, gallon, bag, bottle, container)
+
+Return ONLY a JSON object with this structure:
+{
+  "consolidatedIngredients": [
+    {
+      "name": "eggs",
+      "displayText": "1 dozen eggs",
+      "quantity": 12,
+      "unit": "eggs",
+      "category": "dairy",
+      "notes": "Combined from 5 recipes"
+    }
+  ],
+  "savings": {
+    "duplicatesRemoved": 3,
+    "itemsConsolidated": 8
+  },
+  "recommendations": [
+    "Buy eggs in dozen for better value",
+    "Single olive oil bottle will cover all recipes"
+  ]
+}`;
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 2e3
+    });
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("Empty response from OpenAI");
+    }
+    const result = JSON.parse(content);
+    if (!result.consolidatedIngredients || !Array.isArray(result.consolidatedIngredients)) {
+      throw new Error("Invalid response format from AI");
+    }
+    result.consolidatedIngredients = result.consolidatedIngredients.map((ing) => ({
+      ...ing,
+      name: ing.name || "Unknown item",
+      displayText: ing.displayText || ing.name || "Unknown item",
+      quantity: ing.quantity || 1,
+      unit: ing.unit || "unit",
+      category: ing.category || categorizeIngredient(ing.name)
+    }));
+    return result;
+  } catch (error) {
+    console.error("AI ingredient consolidation error:", error);
+    return fallbackConsolidation(ingredients);
+  }
+}
+function formatForInstacart(ingredients) {
+  return ingredients.map((ing) => ({
+    name: ing.name,
+    display_text: ing.displayText,
+    measurements: [{
+      quantity: ing.quantity,
+      unit: normalizeUnitForInstacart(ing.unit)
+    }]
+  }));
+}
+function fallbackConsolidation(ingredients) {
+  const ingredientMap = /* @__PURE__ */ new Map();
+  ingredients.forEach((ing) => {
+    const normalized = ing.toLowerCase().trim();
+    ingredientMap.set(normalized, (ingredientMap.get(normalized) || 0) + 1);
+  });
+  const consolidated = Array.from(ingredientMap.entries()).map(([name, count]) => ({
+    name,
+    displayText: count > 1 ? `${name} (\xD7${count})` : name,
+    quantity: count,
+    unit: "unit",
+    category: categorizeIngredient(name)
+  }));
+  return {
+    consolidatedIngredients: consolidated,
+    savings: {
+      duplicatesRemoved: ingredients.length - consolidated.length,
+      itemsConsolidated: 0
+    },
+    recommendations: [
+      "Consider buying in bulk for frequently used items",
+      "Check your pantry before shopping"
+    ]
+  };
+}
+function categorizeIngredient(ingredient) {
+  const lowerIngredient = ingredient.toLowerCase();
+  if (lowerIngredient.includes("chicken") || lowerIngredient.includes("beef") || lowerIngredient.includes("pork") || lowerIngredient.includes("turkey") || lowerIngredient.includes("lamb") || lowerIngredient.includes("bacon")) {
+    return "meat";
+  }
+  if (lowerIngredient.includes("fish") || lowerIngredient.includes("salmon") || lowerIngredient.includes("shrimp") || lowerIngredient.includes("crab")) {
+    return "seafood";
+  }
+  if (lowerIngredient.includes("milk") || lowerIngredient.includes("cheese") || lowerIngredient.includes("yogurt") || lowerIngredient.includes("butter") || lowerIngredient.includes("cream")) {
+    return "dairy";
+  }
+  if (lowerIngredient.includes("egg")) {
+    return "dairy";
+  }
+  if (lowerIngredient.includes("bread") || lowerIngredient.includes("tortilla") || lowerIngredient.includes("roll") || lowerIngredient.includes("bagel")) {
+    return "bakery";
+  }
+  if (lowerIngredient.includes("tomato") || lowerIngredient.includes("lettuce") || lowerIngredient.includes("onion") || lowerIngredient.includes("garlic") || lowerIngredient.includes("carrot") || lowerIngredient.includes("pepper") || lowerIngredient.includes("apple") || lowerIngredient.includes("banana")) {
+    return "produce";
+  }
+  return "pantry";
+}
+function normalizeUnitForInstacart(unit) {
+  const unitMap = {
+    "dozen": "unit",
+    "half dozen": "unit",
+    "eggs": "unit",
+    "cups": "cup",
+    "tbsp": "tablespoon",
+    "tsp": "teaspoon",
+    "lbs": "pound",
+    "lb": "pound",
+    "oz": "ounce",
+    "kg": "kilogram",
+    "g": "gram",
+    "ml": "milliliter",
+    "l": "liter",
+    "gallon": "gallon",
+    "quart": "quart",
+    "pint": "pint"
+  };
+  const lowerUnit = unit.toLowerCase();
+  return unitMap[lowerUnit] || lowerUnit;
+}
+var openai;
+var init_intelligentGroceryListOptimizer = __esm({
+  "server/intelligentGroceryListOptimizer.ts"() {
+    "use strict";
+    openai = new OpenAI2({ apiKey: process.env.OPENAI_API_KEY });
+  }
+});
+
 // server/perplexitySearchLogger.ts
 var perplexitySearchLogger_exports = {};
 __export(perplexitySearchLogger_exports, {
@@ -3914,7 +4078,9 @@ function validateProfileForMealGeneration(profile) {
   if (profile.profile_type === "family" && (!profile.family_size || profile.family_size < 1)) {
     missingFields.push("Family Size");
   }
-  if (!profile.goal_weights || typeof profile.goal_weights !== "object") {
+  const hasGoalWeights = profile.goal_weights && typeof profile.goal_weights === "object";
+  const hasGoalsArray = profile.goals && Array.isArray(profile.goals) && profile.goals.length > 0;
+  if (!hasGoalWeights && !hasGoalsArray) {
     missingFields.push("Goal Weights (generated from Primary Goal)");
   }
   const recommendedFields = [];
@@ -10651,10 +10817,10 @@ async function generateRecipeWithGrok(params) {
   if (!API_KEY) {
     throw new Error("Grok API key is required. Set the XAI_API_KEY environment variable.");
   }
-  const openai = new OpenAI({ baseURL: "https://api.x.ai/v1", apiKey: API_KEY });
+  const openai2 = new OpenAI({ baseURL: "https://api.x.ai/v1", apiKey: API_KEY });
   const prompt = buildPromptFromParams(params);
   try {
-    const response = await openai.chat.completions.create({
+    const response = await openai2.chat.completions.create({
       model: "grok-2-1212",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" }
@@ -12443,6 +12609,71 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to create shopping list" });
     }
   });
+  app2.post("/api/create-shopping-list", authenticateToken2, async (req, res) => {
+    console.log("\u{1F6D2} Create shopping list endpoint hit");
+    console.log("Request body:", req.body);
+    console.log("User:", req.user);
+    try {
+      const { mealPlanId } = req.body;
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log("\u274C No user ID found");
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      if (!mealPlanId) {
+        console.log("\u274C No meal plan ID provided");
+        return res.status(400).json({ message: "Meal plan ID is required" });
+      }
+      console.log("\u{1F4CB} Fetching meal plan:", mealPlanId, "for user:", userId);
+      const mealPlan = await storage.getMealPlan(mealPlanId, userId);
+      if (!mealPlan) {
+        console.log("\u274C Meal plan not found");
+        return res.status(404).json({ message: "Meal plan not found" });
+      }
+      console.log("\u2705 Meal plan found:", mealPlan.name);
+      const allIngredients = [];
+      Object.entries(mealPlan.mealPlan).forEach(([day, dayMeals]) => {
+        Object.entries(dayMeals).forEach(([mealType, meal]) => {
+          if (meal && meal.ingredients) {
+            allIngredients.push(...meal.ingredients);
+          }
+        });
+      });
+      console.log("\u{1F916} Consolidating ingredients with AI...");
+      const { consolidateIngredientsWithAI: consolidateIngredientsWithAI2, formatForInstacart: formatForInstacart2 } = await Promise.resolve().then(() => (init_intelligentGroceryListOptimizer(), intelligentGroceryListOptimizer_exports));
+      const consolidationResult = await consolidateIngredientsWithAI2(allIngredients);
+      console.log(`\u2705 Consolidated ${allIngredients.length} ingredients into ${consolidationResult.consolidatedIngredients.length} items`);
+      console.log(`\u{1F4B0} Removed ${consolidationResult.savings.duplicatesRemoved} duplicates`);
+      const formattedIngredients = formatForInstacart2(consolidationResult.consolidatedIngredients);
+      const recipeData = {
+        title: `Grocery List for ${mealPlan.name}`,
+        image_url: "",
+        link_type: "recipe",
+        instructions: ["Shop for ingredients"],
+        ingredients: formattedIngredients,
+        landing_page_configuration: {
+          partner_linkback_url: process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}` : "https://example.com",
+          enable_pantry_items: true
+        }
+      };
+      console.log("\u{1F511} Instacart API key status:", process.env.INSTACART_API_KEY ? "Available" : "Not found");
+      if (!process.env.INSTACART_API_KEY) {
+        throw new Error("Instacart API key is required. Set the INSTACART_API_KEY environment variable.");
+      }
+      const { createInstacartRecipePage: createInstacartRecipePage2 } = await Promise.resolve().then(() => (init_instacart(), instacart_exports));
+      const shoppableRecipe = await createInstacartRecipePage2(recipeData);
+      res.json({
+        shoppingUrl: shoppableRecipe?.products_link_url || shoppableRecipe?.link_url || shoppableRecipe?.url,
+        consolidatedIngredients: consolidationResult.consolidatedIngredients,
+        savings: consolidationResult.savings,
+        recommendations: consolidationResult.recommendations,
+        ...shoppableRecipe
+      });
+    } catch (error) {
+      console.error("Error creating shopping list:", error);
+      res.status(500).json({ message: "Failed to create shopping list" });
+    }
+  });
   app2.get("/api/meal-plans/saved", authenticateToken2, async (req, res) => {
     try {
       const userId = req.user?.id;
@@ -12636,28 +12867,12 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch latest meal plan" });
     }
   });
-  app2.post("/api/meal-plan/generate", async (req, res) => {
+  app2.post("/api/meal-plan/generate", authenticateToken2, async (req, res) => {
     const startTime = Date.now();
     try {
-      let userId = "anonymous";
-      const authHeader = req.headers.authorization;
-      console.log("\u{1F50D} JWT DEBUG - Authorization header:", authHeader ? "Present" : "Missing");
-      if (authHeader && authHeader.startsWith("Bearer ")) {
-        try {
-          const token = authHeader.substring(7);
-          console.log("\u{1F50D} JWT DEBUG - Token length:", token.length);
-          console.log("\u{1F50D} JWT DEBUG - JWT_SECRET available:", !!process.env.JWT_SECRET);
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          userId = decoded.userId;
-          console.log("\u{1F50D} JWT DEBUG - Decoded userId:", userId);
-          console.log("\u{1F50D} JWT DEBUG - Decoded token payload:", { userId: decoded.userId, email: decoded.email });
-        } catch (error) {
-          console.log("\u274C JWT DEBUG - Token verification failed:", error.message);
-          userId = req.ip || "anonymous";
-        }
-      } else {
-        console.log("\u{1F50D} JWT DEBUG - No Bearer token found");
-        userId = req.ip || "anonymous";
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
       }
       if (!rateLimiter.isAllowed(userId)) {
         return res.status(429).json({
@@ -12724,6 +12939,20 @@ async function registerRoutes(app2) {
             message: "Profile not found. Please update your profile before generating meal plans.",
             error: "PROFILE_MISSING"
           });
+        }
+        if (userProfile && userProfile.goals && Array.isArray(userProfile.goals)) {
+          const goalWeights2 = {};
+          userProfile.goals.forEach((goal) => {
+            if (typeof goal === "string" && goal.includes(":")) {
+              const [key, value] = goal.split(":");
+              const weight = parseFloat(value);
+              if (!isNaN(weight)) {
+                goalWeights2[key] = weight;
+              }
+            }
+          });
+          userProfile.goal_weights = goalWeights2;
+          console.log("Parsed goal weights from goals array:", goalWeights2);
         }
         if (userProfile) {
           const validation = validateProfileForMealGeneration2(userProfile);
@@ -12894,6 +13123,219 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error generating meal plan:", error);
       res.status(500).json({ message: "Failed to generate meal plan" });
+    }
+  });
+  app2.post("/api/meal-plan/generate-stream", authenticateToken2, async (req, res) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    const sendData = (data) => {
+      res.write(`data: ${data}
+
+`);
+    };
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        sendData(JSON.stringify({ error: "Authentication required" }));
+        return res.end();
+      }
+      if (!rateLimiter.isAllowed(userId)) {
+        sendData(JSON.stringify({
+          error: "Rate limit exceeded. Please try again later.",
+          remainingRequests: rateLimiter.getRemainingRequests(userId),
+          resetTime: rateLimiter.getResetTime(userId)
+        }));
+        return res.end();
+      }
+      const {
+        numDays,
+        mealsPerDay,
+        cookTime,
+        difficulty,
+        nutritionGoal,
+        dietaryRestrictions,
+        availableIngredients,
+        excludeIngredients,
+        primaryGoal,
+        selectedFamilyMembers = [],
+        useIntelligentPrompt = true,
+        culturalBackground = [],
+        planTargets = ["Everyone"]
+      } = req.body;
+      let userProfile = null;
+      let culturalCuisineData = null;
+      try {
+        if (userId !== "anonymous" && useIntelligentPrompt) {
+          userProfile = await storage.getProfile(userId);
+          console.log("Streaming: User profile found:", userProfile?.profile_name);
+          if (userProfile && userProfile.cultural_background && Array.isArray(userProfile.cultural_background) && userProfile.cultural_background.length > 0) {
+            const { getCachedCulturalCuisine: getCachedCulturalCuisine2 } = await Promise.resolve().then(() => (init_cultureCacheManager(), cultureCacheManager_exports));
+            culturalCuisineData = await getCachedCulturalCuisine2(userId, userProfile.cultural_background);
+            console.log(`Streaming: Retrieved cultural cuisine data for: ${userProfile.cultural_background.join(", ")}`);
+          }
+        }
+      } catch (error) {
+        console.log("Streaming: Could not fetch user profile, using basic prompt. Error:", error);
+      }
+      let goalWeights = {};
+      if (userProfile && userProfile.goals && Array.isArray(userProfile.goals)) {
+        userProfile.goals.forEach((goal) => {
+          if (typeof goal === "string" && goal.includes(":")) {
+            const [key, value] = goal.split(":");
+            const weight = parseFloat(value);
+            if (!isNaN(weight)) {
+              goalWeights[key] = weight;
+            }
+          }
+        });
+        userProfile.goal_weights = goalWeights;
+      }
+      const { validateProfileForMealGeneration: validateProfileForMealGeneration2, getDefaultGoalWeights: getDefaultGoalWeights2 } = await Promise.resolve().then(() => (init_profileValidator(), profileValidator_exports));
+      if (userId === "anonymous") {
+        userProfile = {
+          primary_goal: primaryGoal || "Eat Healthier",
+          profile_type: "individual",
+          family_size: 1,
+          preferences: dietaryRestrictions ? dietaryRestrictions.split(",").map((r) => r.trim()) : [],
+          cultural_background: culturalBackground || [],
+          goal_weights: getDefaultGoalWeights2(primaryGoal || "Eat Healthier")
+        };
+      } else if (!userProfile) {
+        sendData(JSON.stringify({ error: "Profile not found. Please update your profile before generating meal plans." }));
+        return res.end();
+      }
+      if (userProfile) {
+        const validation = validateProfileForMealGeneration2(userProfile);
+        if (!validation.isValid) {
+          sendData(JSON.stringify({
+            error: validation.errorMessage,
+            missingFields: validation.missingFields
+          }));
+          return res.end();
+        }
+      }
+      const { buildIntelligentPrompt: buildIntelligentPrompt3 } = await Promise.resolve().then(() => (init_intelligentPromptBuilderV2(), intelligentPromptBuilderV2_exports));
+      const { mergeFamilyDietaryRestrictions: mergeFamilyDietaryRestrictions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const dietaryRestrictionsArray = typeof dietaryRestrictions === "string" ? dietaryRestrictions.split(",").map((r) => r.trim()).filter(Boolean) : dietaryRestrictions || [];
+      const profileRestrictions = userProfile?.preferences || [];
+      const familyMembers = Array.isArray(userProfile?.members) ? userProfile.members : [];
+      const familyRestrictions = mergeFamilyDietaryRestrictions2(familyMembers);
+      const allRestrictions = /* @__PURE__ */ new Set();
+      if (dietaryRestrictions) {
+        dietaryRestrictionsArray.forEach((r) => {
+          if (r.trim()) allRestrictions.add(r.trim());
+        });
+      }
+      familyRestrictions.forEach((r) => allRestrictions.add(r));
+      profileRestrictions.forEach((r) => allRestrictions.add(r));
+      const mergedRestrictions = Array.from(allRestrictions).join(", ");
+      const prompt = await buildIntelligentPrompt3({
+        numDays,
+        mealsPerDay,
+        cookTime,
+        difficulty,
+        nutritionGoal,
+        dietaryRestrictions: mergedRestrictions,
+        availableIngredients,
+        excludeIngredients,
+        primaryGoal: primaryGoal || userProfile?.primary_goal || "Eat Healthier",
+        familySize: userProfile?.family_size || void 0,
+        familyMembers,
+        profileType: userProfile?.profile_type || "individual",
+        encourageOverlap: primaryGoal === "Save Money" || userProfile?.primary_goal === "Save Money",
+        availableIngredientUsagePercent: primaryGoal === "Save Money" ? 80 : 60,
+        culturalCuisineData,
+        culturalBackground: userProfile?.cultural_background || culturalBackground || [],
+        goalWeights,
+        weightBasedEnhanced: true,
+        heroIngredients: []
+      });
+      const OpenAI3 = (await import("openai")).default;
+      const openai2 = new OpenAI3({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      const openaiStream = await openai2.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        stream: true,
+        temperature: 0.7,
+        max_tokens: 4096
+      });
+      let buffer = "";
+      let mealCount = 0;
+      let currentDay = 0;
+      const mealTypes = ["breakfast", "lunch", "dinner"];
+      const processedMeals = /* @__PURE__ */ new Set();
+      const getMealType = (dayNum, mealNum) => {
+        const mealIndex = (mealNum - 1) % mealsPerDay;
+        return mealTypes[mealIndex] || "meal";
+      };
+      for await (const chunk of openaiStream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          buffer += content;
+          if (content.includes('"title"')) {
+            console.log("\u{1F4E1} Title found in stream:", content);
+          }
+          const dayMatches = [...buffer.matchAll(/"day_(\d+)"/g)];
+          if (dayMatches.length > 0) {
+            currentDay = parseInt(dayMatches[dayMatches.length - 1][1]);
+          }
+          const mealRegex = /"title":\s*"([^"]+)"[^}]*"cook_time_minutes":\s*(\d+)[^}]*"difficulty":\s*(\d+)/g;
+          let lastSearchPosition = buffer.length - content.length;
+          mealRegex.lastIndex = Math.max(0, lastSearchPosition - 200);
+          let match;
+          while ((match = mealRegex.exec(buffer)) !== null) {
+            const [fullMatch, mealTitle, cookTime2, difficulty2] = match;
+            const mealPosition = buffer.indexOf(fullMatch);
+            const mealKey = `${mealTitle}_${mealPosition}`;
+            if (processedMeals.has(mealKey)) {
+              console.log(`\u23ED\uFE0F Skipping duplicate meal: ${mealTitle} at position ${mealPosition}`);
+              continue;
+            }
+            const mealType = mealTypes[mealCount % 3];
+            processedMeals.add(mealKey);
+            mealCount++;
+            console.log(`\u{1F37D}\uFE0F NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount}`);
+            const mealData = {
+              title: mealTitle,
+              name: mealTitle,
+              // For compatibility
+              cook_time_minutes: parseInt(cookTime2),
+              cook_time: parseInt(cookTime2),
+              // For compatibility
+              prep_time: 10,
+              // Default prep time
+              difficulty: parseInt(difficulty2),
+              mealType,
+              day: currentDay || 1,
+              totalTime: parseInt(cookTime2) + 10,
+              id: `${mealType}_${mealCount}_${Date.now()}`
+            };
+            sendData(JSON.stringify({
+              type: "meal",
+              data: mealData
+            }));
+          }
+        }
+      }
+      try {
+        const cleanBuffer = buffer.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        const completeMealPlan = JSON.parse(cleanBuffer);
+        sendData(JSON.stringify({
+          type: "complete",
+          data: completeMealPlan
+        }));
+      } catch (e) {
+        sendData(JSON.stringify({ type: "done" }));
+      }
+      res.end();
+    } catch (error) {
+      console.error("Streaming generation error:", error);
+      sendData(JSON.stringify({ error: error instanceof Error ? error.message : "Failed to generate meal plan" }));
+      res.end();
     }
   });
   app2.post("/api/meal-plan/generate-weight-based", authenticateToken2, async (req, res) => {
@@ -13106,10 +13548,10 @@ async function registerRoutes(app2) {
         console.log("Goal weights:", finalGoalWeights);
         console.log("Hero ingredients:", heroIngredients);
       }
-      const openai = new (await import("openai")).OpenAI({
+      const openai2 = new (await import("openai")).OpenAI({
         apiKey: process.env.OPENAI_API_KEY
       });
-      const completion = await openai.chat.completions.create({
+      const completion = await openai2.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
@@ -14196,5 +14638,9 @@ app.use((req, res, next) => {
   });
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
+    console.log("\u{1F511} API Keys Status:");
+    console.log(`   - Instacart: ${process.env.INSTACART_API_KEY ? "\u2705 Available" : "\u274C Not found"}`);
+    console.log(`   - YouTube: ${process.env.YOUTUBE_API_KEY ? "\u2705 Available" : "\u274C Not found"}`);
+    console.log(`   - OpenAI: ${process.env.OPENAI_API_KEY ? "\u2705 Available" : "\u274C Not found"}`);
   });
 })();

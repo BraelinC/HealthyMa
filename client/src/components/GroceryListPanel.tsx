@@ -26,6 +26,8 @@ interface Ingredient {
   quantity: number;
   unit: string;
   category?: string;
+  displayText?: string;
+  notes?: string;
 }
 
 interface MealPlan {
@@ -111,7 +113,25 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan }: GroceryListPanel
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [categorizedIngredients, setCategorizedIngredients] = useState<{ [key: string]: Ingredient[] }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [savings, setSavings] = useState<{ duplicatesRemoved: number; itemsConsolidated: number } | null>(null);
+  const [recommendations, setRecommendations] = useState<string[]>([]);
   const { toast } = useToast();
+
+  // Handle opening Instacart
+  const handleOpenInstacart = async () => {
+    // If we already have the URL from initial load, just open it
+    if ((window as any).__instacartUrl) {
+      window.open((window as any).__instacartUrl, '_blank');
+      toast({
+        title: "Shopping List Opened",
+        description: "Your optimized Instacart shopping list has been opened!",
+      });
+      return;
+    }
+    
+    // Otherwise, create a new shopping list
+    createShoppingListMutation.mutate();
+  };
 
   // Create shopping list mutation
   const createShoppingListMutation = useMutation({
@@ -124,13 +144,14 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan }: GroceryListPanel
       });
     },
     onSuccess: (data) => {
+      // Open Instacart if URL is available
       if (data.shoppingUrl) {
         window.open(data.shoppingUrl, '_blank');
+        toast({
+          title: "Shopping List Created",
+          description: "Your optimized Instacart shopping list has been created!",
+        });
       }
-      toast({
-        title: "Shopping List Created",
-        description: "Your Instacart shopping list has been created!",
-      });
     },
     onError: (error) => {
       toast({
@@ -141,44 +162,56 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan }: GroceryListPanel
     },
   });
 
-  // Extract ingredients from meal plan
+  // Fetch consolidated ingredients when panel opens
   useEffect(() => {
     if (!mealPlan || !isOpen) return;
     
-    setIsLoading(true);
-    const allIngredients: Ingredient[] = [];
-    
-    // Extract ingredients from all meals
-    Object.entries(mealPlan.mealPlan).forEach(([day, dayMeals]: [string, any]) => {
-      Object.entries(dayMeals).forEach(([mealType, meal]: [string, any]) => {
-        if (meal && meal.ingredients) {
-          meal.ingredients.forEach((ingredient: string) => {
-            // For now, just set quantity to 1 as requested
-            const category = categorizeIngredient(ingredient);
-            allIngredients.push({
-              name: ingredient,
-              quantity: 1,
-              unit: 'unit',
-              category
-            });
-          });
+    const fetchConsolidatedList = async () => {
+      setIsLoading(true);
+      try {
+        // Get the consolidated ingredients from the API
+        const response = await safeApiRequest('/api/create-shopping-list', {
+          method: 'POST',
+          body: JSON.stringify({ mealPlanId: mealPlan.id }),
+        });
+        
+        if (response.consolidatedIngredients) {
+          const consolidatedIngredients: Ingredient[] = response.consolidatedIngredients.map((ing: any) => ({
+            name: ing.name,
+            displayText: ing.displayText || ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+            category: ing.category || categorizeIngredient(ing.name),
+            notes: ing.notes
+          }));
+          
+          // Group by category
+          const grouped = consolidatedIngredients.reduce((acc, ingredient) => {
+            const category = ingredient.category || 'other';
+            if (!acc[category]) {
+              acc[category] = [];
+            }
+            acc[category].push(ingredient);
+            return acc;
+          }, {} as { [key: string]: Ingredient[] });
+          
+          setIngredients(consolidatedIngredients);
+          setCategorizedIngredients(grouped);
+          setSavings(response.savings);
+          setRecommendations(response.recommendations || []);
+          
+          // Store the response for later use
+          if (response.shoppingUrl) {
+            (window as any).__instacartUrl = response.shoppingUrl;
+          }
         }
-      });
-    });
-    
-    // Group by category
-    const grouped = allIngredients.reduce((acc, ingredient) => {
-      const category = ingredient.category || 'other';
-      if (!acc[category]) {
-        acc[category] = [];
+      } catch (error) {
+        console.error("Error fetching consolidated list:", error);
       }
-      acc[category].push(ingredient);
-      return acc;
-    }, {} as { [key: string]: Ingredient[] });
+      setIsLoading(false);
+    };
     
-    setIngredients(allIngredients);
-    setCategorizedIngredients(grouped);
-    setIsLoading(false);
+    fetchConsolidatedList();
   }, [mealPlan, isOpen]);
 
   return (
@@ -211,18 +244,20 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan }: GroceryListPanel
         </div>
         
         {/* Content */}
-        <ScrollArea className="h-[calc(100vh-140px)]">
-          <div className="p-6">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-6">
+        <div className="relative h-[calc(100vh-140px)]">
+          <ScrollArea className="h-full">
+            <div className="p-6">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                
                 {/* Summary */}
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Summary</CardTitle>
+                    <CardTitle className="text-sm">Smart Shopping Summary</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between text-sm">
@@ -233,8 +268,39 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan }: GroceryListPanel
                       <span className="text-muted-foreground">Categories:</span>
                       <span className="font-medium">{Object.keys(categorizedIngredients).length}</span>
                     </div>
+                    {savings && (
+                      <>
+                        <div className="flex items-center justify-between text-sm mt-2">
+                          <span className="text-muted-foreground">Duplicates removed:</span>
+                          <span className="font-medium text-green-600">{savings.duplicatesRemoved}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm mt-2">
+                          <span className="text-muted-foreground">Items consolidated:</span>
+                          <span className="font-medium text-green-600">{savings.itemsConsolidated}</span>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
+                
+                {/* Recommendations */}
+                {recommendations.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm">Smart Shopping Tips</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        {recommendations.map((rec, index) => (
+                          <li key={index} className="text-sm text-muted-foreground flex items-start">
+                            <ChevronRight className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
                 
                 {/* Categorized ingredients */}
                 {Object.entries(categorizedIngredients).map(([category, items]) => (
@@ -252,31 +318,34 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan }: GroceryListPanel
                           key={`${category}-${index}`}
                           className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                         >
-                          <span className="text-sm">{ingredient.name}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {ingredient.quantity} {ingredient.unit}
-                          </span>
+                          <div className="flex-1">
+                            <span className="text-sm font-medium">{ingredient.displayText || ingredient.name}</span>
+                            {ingredient.notes && (
+                              <span className="text-xs text-muted-foreground block mt-1">{ingredient.notes}</span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
         
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background">
           <Button
             className="w-full bg-green-600 hover:bg-green-700"
-            onClick={() => createShoppingListMutation.mutate()}
+            onClick={handleOpenInstacart}
             disabled={createShoppingListMutation.isPending || ingredients.length === 0}
           >
             {createShoppingListMutation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating List...
+                Opening Instacart...
               </>
             ) : (
               <>

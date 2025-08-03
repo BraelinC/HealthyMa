@@ -868,15 +868,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
       
+      // Intelligently consolidate ingredients using AI
+      console.log("🤖 Consolidating ingredients with AI...");
+      const { consolidateIngredientsWithAI, formatForInstacart } = await import("./intelligentGroceryListOptimizer");
+      const consolidationResult = await consolidateIngredientsWithAI(allIngredients);
+      
+      console.log(`✅ Consolidated ${allIngredients.length} ingredients into ${consolidationResult.consolidatedIngredients.length} items`);
+      console.log(`💰 Removed ${consolidationResult.savings.duplicatesRemoved} duplicates`);
+      
       // Format ingredients for Instacart API
-      const formattedIngredients = allIngredients.map((ingredient: string) => ({
-        name: ingredient,
-        display_text: ingredient,
-        measurements: [{
-          quantity: 1,
-          unit: "unit"
-        }]
-      }));
+      const formattedIngredients = formatForInstacart(consolidationResult.consolidatedIngredients);
       
       const recipeData = {
         title: `Grocery List for ${mealPlan.name}`,
@@ -895,21 +896,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if Instacart API key is available
       console.log("🔑 Instacart API key status:", process.env.INSTACART_API_KEY ? "Available" : "Not found");
       if (!process.env.INSTACART_API_KEY) {
-        console.log("Instacart API key not configured - returning mock URL");
-        // Return a mock URL for testing
-        return res.json({ 
-          shoppingUrl: `https://www.instacart.com/store/search?q=${encodeURIComponent(mealPlan.name)}`,
-          message: "Instacart API key not configured. Using direct search link instead.",
-          ingredients: allIngredients 
-        });
+        throw new Error("Instacart API key is required. Set the INSTACART_API_KEY environment variable.");
       }
       
       const { createInstacartRecipePage } = await import("./instacart");
       const shoppableRecipe: any = await createInstacartRecipePage(recipeData);
       
-      // Return the shopping URL
+      // Return the shopping URL with consolidation info
       res.json({ 
         shoppingUrl: shoppableRecipe?.products_link_url || shoppableRecipe?.link_url || shoppableRecipe?.url,
+        consolidatedIngredients: consolidationResult.consolidatedIngredients,
+        savings: consolidationResult.savings,
+        recommendations: consolidationResult.recommendations,
         ...shoppableRecipe 
       });
     } catch (error) {
