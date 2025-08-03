@@ -1,0 +1,163 @@
+Based on your new reference image and requirements, it seems you want to enhance your Replit app to include a video header, a clean recipe layout with tags, ingredients with checkmarks, nutrition facts, and a "View Full Recipe" button, while also integrating an AI agent to scrape ingredients from websites as an alternative data source. You also want to use Grok for specific recipes when needed. Here's how you can approach this and a prompt to guide your Replit development.
+
+### Approach
+1. **Video Header**: Embed a YouTube video using an iframe, dynamically fetching a relevant video based on the recipe name.
+2. **Recipe Layout**: Structure the UI to match the reference image with a title, source, rating, time, tags, ingredients, and a call-to-action button.
+3. **AI Agent for Web Scraping**: Use an AI agent to read recipe websites (e.g., Pinch of Yum) and extract ingredients, reducing reliance on Grok for common recipes.
+4. **Grok for Specific Recipes**: Fall back to Grok when users request highly specific or custom recipes.
+5. **Checkmarks for Ingredients**: Add a toggle feature to mark ingredients as available based on user input or a pantry list.
+
+### Prompt for Replit
+You can use the following prompt in your Replit environment (e.g., in a README or as a comment in your main code file) to guide the development process. This prompt assumes you're working with a React-based app and can be adjusted based on your setup.
+
+---
+
+**Development Prompt for Replit:**
+
+Create a React component for a recipe page in my app that matches the following design and functionality, inspired by the attached screenshot of a "Soft Scramble" recipe page:
+
+- **Video Header Section**:
+  - Embed a YouTube video at the top, dynamically fetched based on the recipe name (e.g., "Life Changing Soft Scrambled Eggs") using the YouTube Data API (replace with a valid API key).
+  - Display video duration and play controls, with overlaid text (e.g., "A NON-STICK PAN") from the recipe instructions.
+  - Use an iframe with dimensions 100% width and 200px height, responsive for mobile.
+
+- **Recipe Title & Source**:
+  - Display a bold title (e.g., "Life Changing Soft Scrambled Eggs").
+  - Show the source/author (e.g., "Pinch of Yum") with a link to the original site.
+  - Include a 5-star rating system (e.g., 4.5 stars) and prep time (e.g., "5 mins") side by side.
+
+- **Tags Section**:
+  - List clickable tags (e.g., "american", "scrambled eggs", "how to make…") in green boxes, horizontally scrollable if needed.
+
+- **Ingredients List**:
+  - Display a minimalist list of ingredients (e.g., "4 eggs", "1/2 tablespoon butter", "salt to taste").
+  - Add a checkbox next to each ingredient, initially unchecked, with a toggle feature to mark as "have" (green checkmark) based on user input or a pantry list API (optional integration).
+
+- **Nutrition Facts Section**:
+  - Include a collapsible section or a "View Nutrition Facts" link that can expand to show details or link to an external source.
+
+- **Call to Action Button**:
+  - Add a pink "View Full Recipe" button at the bottom, linking to the original recipe URL (e.g., "pinchofyum.com") or an internal full-recipe page.
+
+- **Data Source Integration**:
+  - Implement an AI agent to scrape ingredients and basic recipe details from a website (e.g., pinchofyum.com) when a recipe name is provided. Use a library like `cheerio` or a web scraping API (e.g., ScrapingBee) to parse HTML content.
+  - If the recipe is highly specific or not found on a common site, fall back to an AI model (e.g., Grok) to generate the recipe details.
+  - Store scraped or generated data in the component state for rendering.
+
+- **Styling**:
+  - Use Tailwind CSS for a modern, clean design.
+  - Ensure the layout is responsive, with the video and recipe card stacking vertically on mobile.
+  - Add a sticky footer for the "View Full Recipe" button on mobile screens.
+
+- **Initial Implementation**:
+  - Start with a static version using hardcoded data (e.g., the "Soft Scramble" recipe).
+  - Gradually add dynamic fetching from websites and API fallbacks.
+  - Include error handling if the video or data fetch fails (e.g., show a placeholder).
+
+Test the component in `client/src/components/RecipePage.tsx` and integrate it into the `Home.tsx` page, ensuring it works with the existing `RecipeGenerator` component.
+
+---
+
+### Sample React Component
+To get you started, here's a basic implementation based on your requirements. You can paste this into `client/src/components/RecipePage.tsx` in Replit.
+
+```typescript
+import React, { useState, useEffect } from "react";
+
+const RecipePage = ({ recipeName = "Life Changing Soft Scrambled Eggs" }) => {
+  const [videoId, setVideoId] = useState("");
+  const [ingredients, setIngredients] = useState([]);
+  const [hasIngredients, setHasIngredients] = useState({});
+
+  useEffect(() => {
+    // Mock fetching video ID (replace with YouTube API call)
+    const fetchVideo = async () => {
+      // Placeholder: Replace with actual API call
+      setVideoId("dQw4w9WgXcQ"); // Example video ID
+    };
+    fetchVideo();
+
+    // Mock scraping ingredients (replace with web scraping logic)
+    const mockIngredients = [
+      "4 eggs",
+      "1/2 tablespoon butter",
+      "salt to taste",
+    ];
+    setIngredients(mockIngredients);
+    setHasIngredients(mockIngredients.reduce((acc, ing) => ({ ...acc, [ing]: false }), {}));
+  }, [recipeName]);
+
+  const toggleIngredient = (ingredient) => {
+    setHasIngredients((prev) => ({ ...prev, [ingredient]: !prev[ingredient] }));
+  };
+
+  return (
+    <div className="p-4">
+      <div className="relative w-full h-48">
+        <iframe
+          width="100%"
+          height="200"
+          src={`https://www.youtube.com/embed/${videoId}`}
+          title="Recipe Video"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+        <div className="absolute bottom-2 left-2 text-white bg-black bg-opacity-50 p-1">
+          A NON-STICK PAN
+        </div>
+      </div>
+      <h1 className="text-2xl font-bold mt-2">Life Changing Soft Scrambled Eggs</h1>
+      <p className="text-gray-600">by <a href="https://pinchofyum.com" target="_blank" rel="noopener noreferrer">Pinch of Yum</a></p>
+      <div className="flex items-center mt-2">
+        <span className="text-yellow-400">★★★★☆</span>
+        <span className="ml-2 text-gray-600">5 mins</span>
+      </div>
+      <div className="flex space-x-2 mt-2 overflow-x-auto">
+        <span className="bg-green-200 text-green-800 px-2 py-1 rounded">american</span>
+        <span className="bg-green-200 text-green-800 px-2 py-1 rounded">scrambled eggs</span>
+        <span className="bg-green-200 text-green-800 px-2 py-1 rounded">how to make</span>
+      </div>
+      <div className="mt-4">
+        <h2 className="text-lg font-semibold">Ingredients</h2>
+        <ul className="list-none">
+          {ingredients.map((ing) => (
+            <li key={ing} className="flex items-center mt-1">
+              <input
+                type="checkbox"
+                checked={hasIngredients[ing] || false}
+                onChange={() => toggleIngredient(ing)}
+                className="mr-2"
+              />
+              <span>{ing}</span>
+              {hasIngredients[ing] && <span className="ml-2 text-green-500">✓</span>}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="mt-4">
+        <h2 className="text-lg font-semibold">Nutrition Facts</h2>
+        <p className="text-gray-600">View details...</p>
+      </div>
+      <a
+        href="https://pinchofyum.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="bg-pink-500 text-white px-4 py-2 rounded mt-4 inline-block"
+      >
+        View Full Recipe
+      </a>
+    </div>
+  );
+};
+
+export default RecipePage;
+```
+
+### Next Steps
+- **Integrate APIs**: Replace the mock data with actual calls to the YouTube API and a web scraping library.
+- **Web Scraping**: Use a tool like `axios` with `cheerio` to scrape websites (e.g., pinchofyum.com). Install dependencies in Replit via `npm install axios cheerio`.
+- **Grok Fallback**: Add a condition to call Grok via an API endpoint when scraping fails or the recipe is specific.
+- **Test**: Run the app in Replit and check the layout on mobile.
+
+Let me know if you need help with any specific part!

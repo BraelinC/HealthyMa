@@ -1,0 +1,86 @@
+chunk-276SZO74.js?v=019c9ddc:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:113 Query function called for: /api/profile
+queryClient.ts:18 API Request: Object
+queryClient.ts:113 Query function called for: /api/profile/weight-based
+queryClient.ts:18 API Request: Object
+Profile.tsx:161 === PROFILE QUERY STATE ===
+Profile.tsx:162 User: Object
+Profile.tsx:163 IsLoading: true
+Profile.tsx:164 Error: null
+Profile.tsx:165 Profile: undefined
+Profile.tsx:166 WeightBasedProfile: undefined
+Profile.tsx:463 🎯 Cultural background state changed: Array(0)
+queryClient.ts:27 API Response: Object
+queryClient.ts:27 API Response: Object
+queryClient.ts:43 API Response Text: {"id":2,"user_id":9,"profile_name":"braelin","primary_goal":"Lose Weight","family_size":2,"members":[{"name":"tyler","preferences":["Enjoys Asian"],"dietaryRestrictions":["Paleo"],"goals":["Gain Muscle"],"avatar":"https://api.dicebear.com/7.x/fun-emoji/svg?seed=t&backgroundColor=transparent","role":"Mom","avatarStyle":"fun-emoji"},{"name":"braelin","ageGroup":"Adult","preferences":["Loves Italian"],"dietaryRestrictions":["Vegetarian"],"goals":["Try New Foods"],"avatar":"https://api.dicebear.com/7.x/fun-emoji/svg?seed=b&backgroundColor=transparent","role":"Mom","avatarStyle":"fun-emoji"}],"profile_type":"family","preferences":["Keto"],"goals":{"cost":0.8,"health":0.5,"cultural":0.5,"variety":0.5,"time":0.5},"cultural_background":["Chinese"],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-07-15T16:57:02.782Z","updated_at":"2025-07-27T00:59:17.674Z"}
+queryClient.ts:65 API Parsed Response: Object
+queryClient.ts:116 Query result: Object
+queryClient.ts:43 API Response Text: {"profileName":"braelin","familySize":2,"goalWeights":{"cost":0.8,"health":0.5,"cultural":0.5,"variety":0.5,"time":0.5},"dietaryRestrictions":["Keto"],"culturalBackground":["Chinese"]}
+queryClient.ts:65 API Parsed Response: Object
+queryClient.ts:116 Query result: Object
+queryClient.ts:113 Query function called for: /api/culture-cache-stats
+queryClient.ts:18 API Request: Object
+Profile.tsx:161 === PROFILE QUERY STATE ===
+Profile.tsx:162 User: Object
+Profile.tsx:163 IsLoading: false
+Profile.tsx:164 Error: null
+Profile.tsx:165 Profile: Object
+Profile.tsx:166 WeightBasedProfile: Object
+Profile.tsx:275 Loading profile data: Object
+Profile.tsx:276 Profile members: Array(2)
+Profile.tsx:310 🔄 Loading cultural background from profile: Array(1)
+Profile.tsx:315 🔄 Cultural background changed, updating state
+Profile.tsx:330 🔍 Extracting questionnaire weights from profile data: Object
+Profile.tsx:342 ✅ Found goalWeights in weight-based profile: Object
+Profile.tsx:456 📊 Extracted questionnaire weights: Object
+Profile.tsx:1130 DEBUG Member 0: Object
+Profile.tsx:1130 DEBUG Member 1: Object
+Profile.tsx:463 🎯 Cultural background state changed: Array(1)
+api/cultural-cuisine/Chinese:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+api/profile/weight-based:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+queryClient.ts:126 Query retry attempt: 0 for error: Error: Failed to fetch profile
+    at queryFn (AIPoweredMealPlanGenerator.tsx:70:31)
+api/perplexity-cache:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+queryClient.ts:27 API Response: Object
+queryClient.ts:43 API Response Text: {"totalUsers":0,"totalCuisines":0,"cacheSize":"0 KB","hitRate":0,"metrics":{"hits":0,"misses":0,"errors":0,"last_cleanup":"2025-07-27T02:13:54.840Z","total_entries":0,"memory_usage_bytes":2},"topCultures":[],"memoryUsageMB":0}
+queryClient.ts:65 API Parsed Response: Object
+queryClient.ts:116 Query result: Object
+Profile.tsx:1130 DEBUG Member 0: Object
+Profile.tsx:1130 DEBUG Member 1: Object
+api/profile/weight-based:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+queryClient.ts:126 Query retry attempt: 1 for error: Error: Failed to fetch profile
+    at queryFn (AIPoweredMealPlanGenerator.tsx:70:31)
+api/profile/weight-based:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+queryClient.ts:126 Query retry attempt: 2 for error: Error: Failed to fetch profile
+    at queryFn (AIPoweredMealPlanGenerator.tsx:70:31)
+AIPoweredMealPlanGenerator.tsx:425 🤖 AI Configuration complete: Object
+AIPoweredMealPlanGenerator.tsx:152 🤖 AI Generator: Questionnaire completed with result: Object
+Profile.tsx:1130 DEBUG Member 0: Object
+Profile.tsx:1130 DEBUG Member 1: Object
+AIPoweredMealPlanGenerator.tsx:86 🤖 AI Generator: Starting save process
+AIPoweredMealPlanGenerator.tsx:87 🤖 AI Generator: Weights to save: Object
+AIPoweredMealPlanGenerator.tsx:96 🤖 AI Generator: Validated weights: Object
+api/profile/weight-based:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+AIPoweredMealPlanGenerator.tsx:106 🤖 AI Generator: Save failed with status: 401
+mutationFn @ AIPoweredMealPlanGenerator.tsx:106
+AIPoweredMealPlanGenerator.tsx:107 🤖 AI Generator: Error response: {"message":"Access token required"}
+mutationFn @ AIPoweredMealPlanGenerator.tsx:107
+AIPoweredMealPlanGenerator.tsx:141 ❌ AI Generator: Failed to save weights: Error: Failed to save weights: 401 {"message":"Access token required"}
+    at Object.mutationFn (AIPoweredMealPlanGenerator.tsx:108:15)
+onError @ AIPoweredMealPlanGenerator.tsx:141
+Profile.tsx:1130 DEBUG Member 0: Object
+Profile.tsx:1130 DEBUG Member 1: Object
+Profile.tsx:1130 DEBUG Member 0: Object
+Profile.tsx:1130 DEBUG Member 1: Object
+Profile.tsx:1130 DEBUG Member 0: Object
+Profile.tsx:1130 DEBUG Member 1: Object
+queryClient.ts:113 Query function called for: /api/culture-cache-stats
+queryClient.ts:18 API Request: {url: '/api/culture-cache-stats', method: 'GET', hasBody: false}
+queryClient.ts:27 API Response: {url: '/api/culture-cache-stats', status: 200, ok: true, contentType: 'application/json; charset=utf-8'}
+queryClient.ts:43 API Response Text: {"totalUsers":0,"totalCuisines":0,"cacheSize":"0 KB","hitRate":0,"metrics":{"hits":0,"misses":1,"errors":0,"last_cleanup":"2025-07-27T02:13:54.840Z","total_entries":0,"memory_usage_bytes":2},"topCultures":[],"memoryUsageMB":0}
+queryClient.ts:65 API Parsed Response: {totalUsers: 0, totalCuisines: 0, cacheSize: '0 KB', hitRate: 0, metrics: {…}, …}
+queryClient.ts:116 Query result: {totalUsers: 0, totalCuisines: 0, cacheSize: '0 KB', hitRate: 0, metrics: {…}, …}
+Profile.tsx:1130 DEBUG Member 0: {name: 'tyler', preferences: Array(1), dietaryRestrictions: Array(1), goals: Array(1), avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=t&backgroundColor=transparent', …}
+Profile.tsx:1130 DEBUG Member 1: {name: 'braelin', ageGroup: 'Adult', preferences: Array(1), dietaryRestrictions: Array(1), goals: Array(1), …}

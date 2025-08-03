@@ -1,0 +1,77 @@
+oprupose but the second inage works btetr. 🤖 AI-Powered Meal Plan Generator
+Take a smart questionnaire to determine your meal planning priorities, then get an intelligent meal plan tailored to your preferences using advanced AI ranking. heer the text saerch for the one wiht this text adn egt rid oif that compenet
+
+BC
+
+braelincarranz1
+Assistant
+3 minutes ago
+I can see from the images that you have two different "AI-Powered Meal Plan Generator" components - one with the questionnaire setup (first image) and one with the sliders interface (second image). You want to remove the first one since the second one works better.
+
+Looking at the code, I can see the AIPoweredMealPlanGenerator component is being used in the Profile page. Let me remove the component that shows the questionnaire interface and keep only the slider-based one.
+
+client/src/pages/Profile.tsx
+Now the Profile page will only show the slider-based AI meal planning priorities interface (which is the second image you showed) and not the questionnaire-based setup from the first image.
+
+Checkpoint made
+Removed duplicate AI meal plan generator component
+4 minutes ago
+•
+this is the oen i wnated n teher you git ruid fo the wortng one i wntaed the oetehr one switch them
+
+BC
+
+braelincarranz1
+Assistant
+1 minute ago
+I can see from your screenshot that you want to switch the Profile systems. Looking at the current setup, it appears you have both a traditional family profile system and a smart profile system, and you want to switch which one is active.
+
+From the code I can see, there's a ProfileSystemToggle component that handles switching between "Smart" and "Traditional" profile modes. Let me help you switch to the system you want.
+
+Looking at your Profile page, I can see it needs to properly integrate the profile system toggle. Let me add the toggle component to your Profile page so you can easily switch between systems:
+
+client/src/pages/Profile.tsx
+Add ProfileSystemToggle to Profile page, Add profile system state and toggle functionality, Add ProfileSystemToggle component to the profile page layout
+Now you'll have a toggle switch at the top of your Profile page that lets you switch between:
+
+Traditional Profile System - The family-based profile system you currently see
+Smart Profile System - The weight-based intelligent meal planning system
+The toggle will:
+
+Save your preference to localStorage so it persists between sessions
+Show you which mode is currently active
+Let you switch between the two systems easily
+To switch to the system you want, just click the toggle switch when you're on the Profile page. The setting will be remembered for future visits.
+
+no t what i wntwed o mist tyepd i said before that you got rifd of the wrong compenent i wnated to keep the otehr one. and get rid of the one in the picture
+
+BC
+
+braelincarranz1
+Assistant
+1 minute ago
+I understand! You want to keep the Smart Profile Setup questionnaire component (the one currently shown in the screenshot) and remove the WeightBasedProfile component. Let me fix this by removing the WeightBasedProfile component from the Profile page.
+
+client/src/pages/Profile.tsx
+Remove WeightBasedProfile component import and usage, Remove WeightBasedProfile component from render
+The Smart Profile Setup questionnaire component you see in the screenshot will remain as it is. The WeightBasedProfile component has been removed from the imports and will no longer appear on the Profile page.
+
+no. I can see from the images that you have two different "AI-Powered Meal Plan Generator" components - one with the questionnaire setup (first image) and one with the sliders interface (second image). You want to remove the first one since the second one works better.
+
+Looking at the code, I can see the AIPoweredMealPlanGenerator component is being used in the Profile page. Let me remove the component that shows the questionnaire interface and keep only the slider-based one.
+
+client/src/pages/Profile.tsx
+Now the Profile page will only show the slider-based AI meal planning priorities interface (which is the second image you showed) and not the questionnaire-based setup from the first image. this one you got rid of i wnat back. the currebnt one in my app in the image is the wrong image
+
+BC
+
+braelincarranz1
+Assistant saved your work
+Assistant
+just now
+I understand! You want to keep the Smart Profile Setup questionnaire component (the one shown in your screenshot) and remove the current slider-based component. Looking at the Profile.tsx code, I can see that the AIPoweredMealPlanGenerator component (which shows sliders) was added, but you want the original questionnaire-based component back.
+
+Let me restore the Smart Profile Setup questionnaire component and remove the slider-based one:
+
+client/src/pages/Profile.tsx
+Remove AIPoweredMealPlanGenerator import and restore Smart Profile Setup questionnaire Remove AIPoweredMealPlanGenerator import and restore Smart Profile Setup questionnaire

@@ -1,0 +1,97 @@
+chunk-276SZO74.js?v=e7ded87d:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:124 Query function called for: /api/auth/user
+queryClient.ts:18 API Request: Object
+queryClient.ts:37 API Response: Object
+queryClient.ts:54 API Response Text: {"user":{"id":"3","email":"braelincarranza@gmail.com","phone":"","full_name":"Braelin Carranza","created_at":"2025-06-01T21:39:25.202Z","updated_at":"2025-08-01T14:44:51.872Z","profileImageUrl":null}}
+queryClient.ts:76 API Parsed Response: Object
+queryClient.ts:127 Query result: Object
+queryClient.ts:124 Query function called for: /api/meal-plans/saved
+queryClient.ts:18 API Request: Object
+queryClient.ts:37 API Response: Object
+queryClient.ts:54 API Response Text: []
+queryClient.ts:76 API Parsed Response: Array(0)
+queryClient.ts:127 Query result: Array(0)
+@radix-ui_react-dialog.js?v=e7ded87d:328 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+(anonymous) @ @radix-ui_react-dialog.js?v=e7ded87d:328
+@radix-ui_react-dialog.js?v=e7ded87d:342 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ @radix-ui_react-dialog.js?v=e7ded87d:342
+queryClient.ts:124 Query function called for: /api/profile
+queryClient.ts:18 API Request: Object
+queryClient.ts:124 Query function called for: /api/profile/weight-based
+queryClient.ts:18 API Request: Object
+Profile.tsx:171 === PROFILE QUERY STATE ===
+Profile.tsx:172 User: Object
+Profile.tsx:173 IsLoading: true
+Profile.tsx:174 Error: null
+Profile.tsx:175 Profile: undefined
+Profile.tsx:176 WeightBasedProfile: undefined
+Profile.tsx:177 === DROPDOWN STATE ===
+Profile.tsx:178 isEditing: false
+Profile.tsx:179 profileType: family
+Profile.tsx:180 primaryGoal: 
+Profile.tsx:181 Available goals: Array(6)
+Profile.tsx:500 🎯 Cultural background state changed: Array(0)
+queryClient.ts:37 API Response: Object
+queryClient.ts:37 API Response: Object
+queryClient.ts:54 API Response Text: {"id":1,"user_id":"3","profile_name":"carramza","primary_goal":"Weight-Based Planning","family_size":2,"members":[{"name":"tyler","ageGroup":"Child","preferences":["Keto"],"goals":[]},{"name":"dad","ageGroup":"Adult","preferences":["Low-Carb"],"goals":[]}],"profile_type":"individual","preferences":[],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":["Peruvian"],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-07-03T18:16:35.600Z","updated_at":"2025-08-01T14:42:03.839Z"}
+queryClient.ts:76 API Parsed Response: Object
+queryClient.ts:127 Query result: Object
+queryClient.ts:54 API Response Text: {"profileName":"carramza","familySize":2,"goalWeights":{"cost":0.5333333333333333,"health":0.3,"cultural":0.5333333333333333,"variety":0.3,"time":0.8},"dietaryRestrictions":[],"culturalBackground":["Peruvian"]}
+queryClient.ts:76 API Parsed Response: Object
+queryClient.ts:127 Query result: Object
+queryClient.ts:18 API Request: Object
+queryClient.ts:124 Query function called for: /api/culture-cache-stats
+queryClient.ts:18 API Request: Object
+Profile.tsx:171 === PROFILE QUERY STATE ===
+Profile.tsx:172 User: Object
+Profile.tsx:173 IsLoading: false
+Profile.tsx:174 Error: null
+Profile.tsx:175 Profile: Object
+Profile.tsx:176 WeightBasedProfile: Object
+Profile.tsx:177 === DROPDOWN STATE ===
+Profile.tsx:178 isEditing: false
+Profile.tsx:179 profileType: family
+Profile.tsx:180 primaryGoal: 
+Profile.tsx:181 Available goals: Array(6)
+Profile.tsx:290 Loading profile data: Object
+Profile.tsx:291 Profile members: Array(2)
+Profile.tsx:347 🔄 Loading cultural background from profile: Array(1)
+Profile.tsx:352 🔄 Cultural background changed, updating state
+Profile.tsx:367 🔍 Extracting questionnaire weights from profile data: Object
+Profile.tsx:379 ✅ Found goalWeights in weight-based profile: Object
+Profile.tsx:493 📊 Extracted questionnaire weights: Object
+achievementService.ts:53 No auth token available for achievements
+getAchievements @ achievementService.ts:53
+achievementService.ts:53 No auth token available for achievements
+getAchievements @ achievementService.ts:53
+achievementService.ts:53 No auth token available for achievements
+getAchievements @ achievementService.ts:53
+achievementService.ts:53 No auth token available for achievements
+getAchievements @ achievementService.ts:53
+Profile.tsx:171 === PROFILE QUERY STATE ===
+Profile.tsx:172 User: Object
+Profile.tsx:173 IsLoading: false
+Profile.tsx:174 Error: null
+Profile.tsx:175 Profile: Object
+Profile.tsx:176 WeightBasedProfile: Object
+Profile.tsx:177 === DROPDOWN STATE ===
+Profile.tsx:178 isEditing: false
+Profile.tsx:179 profileType: individual
+Profile.tsx:180 primaryGoal: Weight-Based Planning
+Profile.tsx:181 Available goals: Array(0)
+Profile.tsx:500 🎯 Cultural background state changed: Array(1)
+api/perplexity-cache:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+queryClient.ts:37 API Response: Object
+queryClient.ts:37 API Response: Object
+queryClient.ts:54 API Response Text: {"totalUsers":0,"totalCuisines":0,"cacheSize":"0 KB","hitRate":0,"metrics":{"hits":0,"misses":0,"errors":0,"last_cleanup":"2025-08-01T14:44:59.050Z","total_entries":0,"memory_usage_bytes":2},"topCultures":[],"memoryUsageMB":0}
+queryClient.ts:76 API Parsed Response: Object
+queryClient.ts:127 Query result: Object
+queryClient.ts:54 API Response Text: {"profileName":"carramza","familySize":2,"goalWeights":{"cost":0.5333333333333333,"health":0.3,"cultural":0.5333333333333333,"variety":0.3,"time":0.8},"dietaryRestrictions":[],"culturalBackground":["Peruvian"]}
+queryClient.ts:76 API Parsed Response: Object
+AIPoweredMealPlanGenerator.tsx:75 🤖 AI Generator: Loading saved weights from profile: Object

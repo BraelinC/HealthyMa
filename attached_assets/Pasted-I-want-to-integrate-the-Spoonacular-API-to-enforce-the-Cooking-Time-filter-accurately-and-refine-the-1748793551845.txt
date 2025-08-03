@@ -1,0 +1,48 @@
+I want to integrate the Spoonacular API to enforce the Cooking Time filter accurately and refine the YouTube search accordingly. Here’s the updated workflow for the time filter:
+
+User Input & Filter Parsing
+Parse the Cooking Time filter from the UI (e.g., "25 min") and store it as a variable (e.g., cookingTime = 25).
+Query Spoonacular API for Time-Filtered Recipes
+Use the Spoonacular API to fetch recipes that strictly match the Cooking Time filter.
+API Key: [Insert your Spoonacular API key here; get one at https://spoonacular.com/food-api].
+Endpoint: https://api.spoonacular.com/recipes/complexSearch.
+Parameters:
+query: User’s recipe query (e.g., "apple pie").
+maxReadyTime: Set to the Cooking Time filter (e.g., "25" for 25 min).
+number: Set to 3 (fetch top 3 recipes).
+Store the response, specifically the recipe titles and readyInMinutes (to confirm it’s ≤ 25 min).
+Enhanced YouTube Video Selection with Time Filter
+Use the Spoonacular recipe titles to refine the YouTube API search query.
+Construct the query as: "[recipe title] recipe how to make [cooking time]".
+Example: "apple pie recipe how to make 25min".
+Fetch top 3 videos (to reduce API usage).
+Score videos:
+View count: Primary factor.
+Video duration ≤ Cooking Time (e.g., +3 points if duration ≤ 25 min, using YouTube API’s videoDuration field).
+Description mentions cooking time ≤ user’s filter (use regex \d+\s*(min|minute|hour); e.g., +2 points if "cooks in 20 minutes" is found).
+Select the highest-scoring video.
+Recipe Extraction & Assembly
+Use Spoonacular’s readyInMinutes as the authoritative cooking time in the final recipe object.
+Extract ingredients and instructions from the YouTube video as per the current workflow.
+If no video matches the time filter, return the Spoonacular recipe with a message: "No video found matching your time filter, but here’s a recipe."
+Additional Requirements
+Error Handling: If Spoonacular API fails (e.g., quota exceeded), fall back to the current YouTube-only workflow and notify the user: "Unable to fetch recipe time data; using video search only."
+API Usage: Log Spoonacular API calls and aim for 1-2 units per recipe (free tier: 150 calls/day).
+Performance: Keep generation time under 15 seconds by caching Spoonacular results for frequent queries (e.g., "apple pie 25min").
+Example Input/Output
+Input: Query: "apple pie", Cooking Time: "25 min".
+
+Output: A recipe object with:
+
+Title: "Apple Pie".
+Cooking Time: ≤ 25 min (from Spoonacular’s readyInMinutes).
+Ingredients/Instructions: From YouTube video (if found).
+Video Link: YouTube video matching the time filter (if found).
+Please update videoRecipeExtractor.ts.bak to implement these changes for the Cooking Time filter. Add necessary dependencies (e.g., axios for API calls), handle errors, and log API usage. Test with the example input above and ensure the Cooking Time filter is strictly enforced (recipes must take ≤ 25 min). Let me know if you need more details!"**
+
+Notes for Execution
+API Key: Replace [Insert your Spoonacular API key here] with your actual Spoonacular API key (sign up at https://spoonacular.com/food-api if needed).
+Dependencies: Ensure axios or a similar HTTP client is installed (npm install axios).
+Testing: The prompt includes an example input/output to verify the time filter works.
+Quota: Spoonacular’s free tier (150 calls/day) should be sufficient for testing, and the prompt includes logging to monitor usage.
+This prompt focuses on making the Cooking Time filter functional and accurate while leveraging Spoonacular’s structured data. Let me know if you’d like to tweak it further!

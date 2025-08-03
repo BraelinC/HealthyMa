@@ -1,0 +1,152 @@
+Got it. You're building a generalized weekly recipe planner that uses Mixtral to generate recipes based on user-defined constraints (budget, dietary needs, preferences, servings, etc.) — then returns a full week's plan + shopping list.
+
+Here’s the Replit-ready, generalized Python system to do that using Ollama + Mixtral locally or via an API bridge.
+
+
+---
+
+1. Generalized Prompt Function (All Recipes)
+
+def build_prompt(user_constraints, num_recipes=7):
+    return f"""
+You are a meal planner and recipe generation AI.
+
+Your job is to generate {num_recipes} complete recipes in structured JSON format based on the following constraints.
+
+Constraints:
+{user_constraints}
+
+Output only valid JSON — no commentary or markdown.
+
+Format:
+[
+  {{
+    "title": "",
+    "ingredients": ["ingredient 1", "ingredient 2", "..."],
+    "instructions": ["step 1", "step 2", "..."],
+    "cook_time_minutes": 0,
+    "difficulty": 1,
+    "nutrition_info": {{
+      "calories": 0,
+      "protein_g": 0,
+      "fat_g": 0,
+      "carbs_g": 0
+    }}
+  }},
+  ...
+]
+"""
+
+
+---
+
+2. Call Mixtral via Ollama
+
+import subprocess
+import json
+
+def query_mixtral(prompt):
+    cmd = ["ollama", "run", "mixtral"]
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate(prompt.encode())
+
+    try:
+        json_start = stdout.find(b"[")
+        json_data = stdout[json_start:].decode()
+        recipes = json.loads(json_data)
+        return recipes
+    except Exception as e:
+        print("Error parsing response:", e)
+        return []
+
+
+---
+
+3. Generate Weekly Plan
+
+def generate_week_plan(user_constraints):
+    prompt = build_prompt(user_constraints)
+    recipes = query_mixtral(prompt)
+    
+    if not recipes:
+        raise Exception("Failed to generate recipes.")
+    
+    print("Generated Recipes:")
+    for r in recipes:
+        print("-", r["title"])
+    return recipes
+
+
+---
+
+4. Group Shopping List Logic
+
+from collections import Counter
+
+def generate_shopping_list(recipes):
+    all_ingredients = []
+    for recipe in recipes:
+        all_ingredients.extend(recipe['ingredients'])
+
+    ingredient_counts = Counter(all_ingredients)
+    shopping_list = [f"{item} ×{count}" for item, count in ingredient_counts.items()]
+    return shopping_list
+
+
+---
+
+5. Example Usage (Generalized)
+
+if __name__ == "__main__":
+    user_constraints = """
+- 2 servings per meal
+- Max cook time: 30 minutes
+- High protein, no dairy, low sugar
+- Budget: under $4 per meal
+- Cuisine preference: global fusion
+- Cooking skill: beginner (difficulty 2–4)
+    """
+
+    recipes = generate_week_plan(user_constraints)
+    shopping_list = generate_shopping_list(recipes)
+
+    print("\nWeekly Shopping List:")
+    for item in shopping_list:
+        print("-", item)
+
+
+---
+
+Deploy on Replit:
+
+Use Replit Nix template to install Python and Ollama
+
+Set up a simple Flask or FastAPI route to return:
+
+JSON list of recipes
+
+Aggregated shopping list
+
+
+Optional: Add caching + persistent PostgreSQL storage
+
+
+
+---
+
+Next-Level Upgrade Ideas (if you want max power):
+
+Add user profile preferences (store last-used constraints)
+
+Allow dynamic number of days (3, 5, 7, 14)
+
+Add tags like “meal prep,” “bulk cook,” “reheat friendly”
+
+Later, fine-tune Mixtral on real recipes for 10× accuracy
+
+
+
+---
+
+Let me know if you want me to wrap this in a Flask API so you can call it directly from your app frontend or pass user input into Replit dynamically.
+

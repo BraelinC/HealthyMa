@@ -1,0 +1,63 @@
+🔍 Problem Breakdown
+From what I see:
+
+You try to click and drag below July 10 (to, say, July 11+), and it blocks you from extending the range vertically.
+
+Yet diagonal (e.g., from July 3 to July 10) works. That suggests your component is stopping at a hard boundary, possibly because:
+
+A limit is set (like maxRange = 7 days)
+
+The date grid boundaries (rows/cells) are interfering
+
+The range is being recalculated prematurely during hover/drag
+
+✅ What You Want
+Let the user click-and-drag or click-start → click-end freely across any number of days
+
+No hardcoded 7-day cap
+
+Highlight from startDate to wherever the mouse or second click lands — even multiple weeks down
+
+🧠 How to Explain to Replit (or AI agent)
+The calendar component blocks range selection after a certain date — it seems hardcoded to stop the range before July 11 or restricts drag selection beyond one row or week.
+
+I need to:
+
+Remove any artificial cap (like 7-day limit)
+
+Allow full manual range from startDate to endDate, even across multiple weeks
+
+Allow both click-click and click-drag behaviors
+
+Handle diagonal/vertical drags cleanly
+
+🧰 If You're Using a Specific Library (e.g. react-day-picker)
+If you’re using react-day-picker v8+, this is how to set a flexible range:
+
+jsx
+Copy
+Edit
+<DayPicker
+  mode="range"
+  selected={range}
+  onSelect={setRange}
+  numberOfMonths={2}
+/>
+Make sure there’s no defaultSelected or disabled or maxRange logic like:
+
+js
+Copy
+Edit
+if (differenceInDays(end, start) > 7) return; // ❌ remove this
+Also check for CSS issues — if your calendar container has height limits, overflow-hidden, or pointer-events: none on some weeks, it will kill the drag behavior.
+
+🔧 Suggested Fix / Diagnostic Checklist:
+ Check if you're clamping max date range in code
+
+ Verify you don’t block pointer events in certain calendar rows
+
+ Confirm you're not resetting startDate or hoveredDate before drag ends
+
+ If using a library, confirm you're using mode="range" properly without caps
+
+ Add a log on each onDayClick and onDayMouseEnter to verify expected flow

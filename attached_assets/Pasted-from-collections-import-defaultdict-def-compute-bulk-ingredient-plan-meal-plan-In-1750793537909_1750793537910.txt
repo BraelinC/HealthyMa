@@ -1,0 +1,71 @@
+from collections import defaultdict
+
+def compute_bulk_ingredient_plan(meal_plan):
+    """
+    Input: list of meals, each with list of ingredients
+    Output: grocery list grouped by ingredient, with total quantity per ingredient
+    """
+
+    ingredient_totals = defaultdict(int)
+    for meal in meal_plan:
+        for ing in meal['ingredients']:
+            key = ing['name'].lower()
+            quantity = float(ing.get('quantity', 1))  # default to 1 if missing
+            ingredient_totals[key] += quantity
+
+    return ingredient_totals
+🧠 Optimize Meal Selection Based on Overlapping Ingredients
+python
+Copy
+Edit
+def score_meal_overlap(meal1, meal2):
+    set1 = set(i['name'] for i in meal1['ingredients'])
+    set2 = set(i['name'] for i in meal2['ingredients'])
+    return len(set1 & set2) / len(set1 | set2)
+
+def build_day_plan(meals):
+    best_score = -1
+    best_combo = None
+    for combo in itertools.combinations(meals, 3):
+        score = (
+            score_meal_overlap(combo[0], combo[1]) +
+            score_meal_overlap(combo[1], combo[2]) +
+            score_meal_overlap(combo[0], combo[2])
+        )
+        if score > best_score:
+            best_score = score
+            best_combo = combo
+    return best_combo
+🧠 Simple Pricing Assumption (Even Without Real API)
+You can assume:
+
+Small quantity (e.g., 100g spinach) = $1.50
+
+Bulk (e.g., 300g spinach) = $2.50
+→ So: If reused across meals → $0.83 per use vs $1.50 → 44% savings
+
+Add this multiplier in your cost score:
+
+python
+Copy
+Edit
+def simulate_bulk_saving(total_ingredient_dict):
+    total_cost = 0
+    for ingredient, qty in total_ingredient_dict.items():
+        if qty >= 3:  # arbitrary threshold for bulk
+            price_per_unit = 0.8
+        else:
+            price_per_unit = 1.5
+        total_cost += price_per_unit * qty
+    return round(total_cost, 2)
+✅ So Your Flow Becomes:
+Input: Pool of meals (with ingredients + quantity)
+
+Select 3 meals/day × 7 days that maximize ingredient reuse
+
+Compute total ingredients used
+
+Simulate or fetch price per ingredient based on quantity
+
+Output: Grocery list + total cost after assumed bulk savings
+

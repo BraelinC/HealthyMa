@@ -1,0 +1,96 @@
+Great analysis! You’ve already identified two of the most common causes for this kind of bug:
+
+1. **API requests are not reaching the correct endpoints** (HTML returned instead of JSON, leading to JSON parse errors).
+2. **Inconsistent use of `apiRequest` functions and authentication token keys** (which can cause failed authentication or requests going to the wrong place).
+
+Let’s make your API usage consistent and robust. Here’s a step-by-step approach and a sample refactor:
+
+---
+
+### **1. Standardize Your API Request Function**
+
+Create a single, reusable `apiRequest` function that always:
+- Uses the correct base URL and endpoint.
+- Sends the authentication token using the same key (e.g., `Authorization` header).
+- Handles JSON parsing and errors gracefully.
+
+```js
+// utils/apiRequest.js
+export async function apiRequest(endpoint, method = 'GET', data = null, token = null) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const options = {
+    method,
+    headers,
+  };
+  if (data) options.body = JSON.stringify(data);
+
+  const response = await fetch(endpoint, options);
+
+  // Handle non-JSON responses (like HTML error pages)
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    throw new Error('Server did not return JSON. Check endpoint and server logs.');
+  }
+
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || 'API request failed');
+  }
+  return json;
+}
+```
+
+---
+
+### **2. Use the Same Token Key Everywhere**
+
+Decide on a single key for storing your auth token (e.g., `authToken`):
+
+```js
+// When saving token
+localStorage.setItem('authToken', token);
+
+// When retrieving token
+const token = localStorage.getItem('authToken');
+```
+
+---
+
+### **3. Update Your Profile Save/Update Function**
+
+```js
+import { apiRequest } from './utils/apiRequest';
+
+async function saveProfile(profileData) {
+  const token = localStorage.getItem('authToken');
+  try {
+    const result = await apiRequest('/api/profile', 'POST', profileData, token);
+    // Handle success (e.g., show a success message or redirect)
+  } catch (error) {
+    // Handle error (e.g., show error message to user)
+    console.error(error.message);
+  }
+}
+```
+
+---
+
+### **4. Debugging Tips**
+
+- If you still get HTML instead of JSON, double-check the endpoint URL and method.
+- Make sure your backend is set up to handle the route and return JSON for all API requests (including errors).
+- Add logging on the backend to see if the request is received and what’s being returned.
+
+---
+
+### **Summary Prompt for ChatGPT**
+
+> I’m fixing my profile save functionality. I found inconsistent use of API request functions and token storage. I want to standardize all API calls to use the same function and token key, and ensure the backend always returns JSON. Here’s my current code: [paste code]. Can you help me refactor it for consistency and reliability?
+
+---
+
+If you want, paste your current `apiRequest` and profile save code here, and I’ll help you refactor it directly!

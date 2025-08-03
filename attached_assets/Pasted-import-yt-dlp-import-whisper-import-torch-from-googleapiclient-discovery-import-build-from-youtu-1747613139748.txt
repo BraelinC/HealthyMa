@@ -1,0 +1,192 @@
+import yt_dlp
+import whisper
+import torch
+from googleapiclient.discovery import build
+from youtube_transcript_api import YouTubeTranscriptApi
+import os
+import re
+from transformers import BartForConditionalGeneration, BartTokenizer
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+
+# Initialize models and API
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
+
+# Load Whisper model
+WHISPER_MODEL = whisper.load_model("base").to(device)
+
+# Initialize YouTube API
+youtube = build('youtube', 'v3', developerKey='AIzaSyCjHUGWGW9Zv1UXjLbSTjYE4-PqyHGWJJg')
+
+# Cookies file path for restricted videos
+COOKIES_FILE = "cookies.txt"
+
+def simple_sentence_tokenize(text):
+    """A simple rule-based sentence tokenizer."""
+    sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text)
+    return [s.strip() for s in sentences if s.strip()]
+
+class TranscriptionSummarizer:
+    def __init__(self, model_name="facebook/bart-large-cnn", device="cuda" if torch.cuda.is_available() else "cpu"):
+        self.device = device
+        self.model_name = model_name
+
+        print(f"Loading model {model_name} on {device}...")
+
+        self.tokenizer = BartTokenizer.from_pretrained(model_name)
+        self.model = BartForConditionalGeneration.from_pretrained(model_name).to(device)
+
+        print("Model loaded successfully!")
+
+    def preprocess_transcription(self, text):
+        text = re.sub(r'\[\d+:\d+\]', '', text)
+        text = re.sub(r'\b[A-Z][a-z]*\s*:', '', text)
+        text = re.sub(r'$$[^)]*$$', '', text)
+        filler_words = r'\b(um|uh|like|you know|i mean|sort of|kind of)\b'
+        text = re.sub(filler_words, '', text, flags=re.IGNORECASE)
+        text = re.sub(r'\s+', ' ', text)
+        return text.strip()
+
+    def split_into_chunks(self, text, max_chunk_size=1024):
+        sentences = simple_sentence_tokenize(text)
+        chunks = []
+        current_chunk = []
+        current_length = 0
+
+        for sentence in sentences:
+            sentence_length = len(sentence.split())
+
+            if current_length + sentence_length <= max_chunk_size:
+                current_chunk.append(sentence)
+                current_length += sentence_length
+            else:
+                if current_chunk:
+                    chunks.append(' '.join(current_chunk))
+                current_chunk = [sentence]
+                current_length = sentence_length
+
+        if current_chunk:
+            chunks.append(' '.join(current_chunk))
+
+        return chunks
+
+    def extract_relevant_sections(self, text, keywords=["hormone", "mood", "serotonin", "puberty"]):
+        relevant_sentences = []
+        sentences = simple_sentence_tokenize(text)
+
+        for sentence in sentences:
+            if any(keyword in sentence.lower() for keyword in keywords):
+                relevant_sentences.append(sentence)
+
+        return ' '.join(relevant_sentences)
+
+    def abstractive_summarization(self, text, max_length=150, min_length=40):
+        inputs = self.tokenizer(text, return_tensors="pt", max_length=1024, truncation=True).to(self.device)
+
+        summary_ids = self.model.generate(
+            inputs["input_ids"],
+            num_beams=4,
+            max_length=max_length,
+            min_length=min_length,
+            length_penalty=2.0,
+            early_stopping=True
+        )
+
+        summary = self.tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+        return summary
+
+    def summarize(self, transcription, summary_ratio=0.3):
+        cleaned_text = self.preprocess_transcription(transcription)
+        relevant_text = self.extract_relevant_sections(cleaned_text)  # Only extract sections related to the query
+
+        word_count = len(relevant_text.split())
+        target_length = int(word_count * summary_ratio)
+        max_length = min(250, max(target_length + 50, 100))
+        min_length = min(100, max(target_length - 50, 30))
+
+        final_summary = self.abstractive_summarization(
+            relevant_text,
+            max_length=max_length,
+            min_length=min_length
+        )
+
+        original_word_count = len(transcription.split())
+        summary_word_count = len(final_summary.split())
+        compression_ratio = (summary_word_count / original_word_count) * 100
+
+        metadata = {
+            "original_word_count": original_word_count,
+            "summary_word_count": summary_word_count,
+            "compression_ratio": f"{compression_ratio:.1f}%",
+            "model_used": self.model_name
+        }
+
+        return final_summary, metadata
+
+class SemanticSearch:
+    def __init__(self, model_name="all-MiniLM-L6-v2"):
+        self.model = SentenceTransformer(model_name)
+
+    def encode_sentences(self, sentences):
+        return self.model.encode(sentences, convert_to_tensor=True)
+
+    def encode_query(self, query):
+        return self.model.encode(query, convert_to_tensor=True)
+
+    def retrieve_relevant_sentences(self, query, transcript, top_k=5):
+        sentences = simple_sentence_tokenize(transcript)
+        sentence_embeddings = self.encode_sentences(sentences)
+        query_embedding = self.encode_query(query)
+        similarities = cosine_similarity(query_embedding.unsqueeze(0).cpu(), sentence_embeddings.cpu())[0]
+        top_k_indices = similarities.argsort()[-top_k:][::-1]
+        relevant_sentences = [sentences[i] for i in top_k_indices]
+        return relevant_sentences
+
+def process_video():
+    query = input("Enter your search query: ")
+    video_id = search_video(query)  # Implement search_video function or retrieve it from elsewhere
+    if not video_id:
+        print("Could not find video. Please try again.")
+        return
+
+    print(f"Found video ID: {video_id}")
+    transcript = fetch_transcript(video_id)  # Implement fetch_transcript function or use YouTube API
+
+    if not transcript:
+        print("No transcript available. Downloading audio...")
+        audio_file = download_audio(video_id)  # Implement download_audio function
+        if audio_file:
+            transcript = transcribe_with_whisper(audio_file)
+            os.remove(audio_file)
+
+    if transcript:
+        print("\nTranscript obtained. Summarizing...")
+
+        # Semantic Search for relevant sentences
+        semantic_search = SemanticSearch()
+        relevant_sentences = semantic_search.retrieve_relevant_sentences(query, transcript, top_k=5)
+        print("\nTop Relevant Sections:")  # Display the relevant sentences
+        for idx, sentence in enumerate(relevant_sentences):
+            print(f"{idx + 1}. {sentence}")
+
+        # Summarizing the transcript
+        summarizer = TranscriptionSummarizer(model_name="facebook/bart-large-cnn")
+        summary, metadata = summarizer.summarize(transcript, summary_ratio=0.3)
+
+        print("\n=== Original Transcript ===")
+        print(transcript[:500] + "..." if len(transcript) > 500 else transcript)
+
+        print("\n=== Summary ===")
+        print(summary)
+
+        print("\n=== Metadata ===")
+        for key, value in metadata.items():
+            print(f"{key}: {value}")
+    else:
+        print("Failed to obtain transcript.")
+
+if __name__ == "__main__":
+    process_video()

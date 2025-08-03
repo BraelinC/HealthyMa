@@ -1,0 +1,264 @@
+To effectively use **LLaVA-Chef** on **Replit** for extracting a structured recipe (ingredients and steps) from noisy YouTube video transcripts, you need a clear and precise prompt that communicates your requirements to the model. The prompt should instruct LLaVA-Chef to process the incoherent transcript, identify ingredients (with quantities and units where possible), and outline sequential steps, outputting the result in a structured JSON format. Below, I provide a tailored prompt for your use case, along with explanations and instructions for integrating it into your Replit project. I’ll also include variations for handling multimodal input (text + images) and tips for ensuring clarity.
+
+---
+
+### Recommended Prompt
+This prompt is designed for **text-only input** (YouTube transcript) and assumes LLaVA-Chef’s ability to handle noisy, domain-specific culinary text.
+
+```text
+You are an expert chef specializing in recipe extraction. Your task is to analyze the following noisy YouTube video transcript and extract a structured recipe. The transcript may contain filler words (e.g., "uh," "like"), vague quantities (e.g., "a handful"), or out-of-order information. Identify all ingredients with their quantities and units where possible (e.g., "1 cup flour"), and list the preparation steps in sequential order. Output the result as a JSON object with two keys: "ingredients" (a list of strings) and "steps" (a list of strings). If quantities or units are unclear, make reasonable assumptions (e.g., "a handful of parsley" becomes "1/4 cup parsley"). Ignore irrelevant text (e.g., commentary, jokes). If no recipe is found, return an empty JSON object.
+
+Transcript: {transcript}
+
+Output format:
+{
+  "ingredients": ["ingredient 1", "ingredient 2", ...],
+  "steps": ["step 1", "step 2", ...]
+}
+```
+
+**Example Usage**:
+For a transcript like:
+```
+Alright, uh, you need like one cup of flour, some sugar, maybe two tablespoons? Oh, and three eggs. Mix it all together, then bake at 350 for 20 minutes.
+```
+
+The expected output would be:
+```json
+{
+  "ingredients": ["1 cup flour", "2 tablespoons sugar", "3 eggs"],
+  "steps": ["Mix all ingredients together.", "Bake at 350°F for 20 minutes."]
+}
+```
+
+---
+
+### Prompt for Multimodal Input (Text + Images)
+If you’re using video frames (e.g., to capture on-screen ingredient lists), modify the prompt to include image context. LLaVA-Chef supports multimodal input via CLIP embeddings.
+
+```text
+You are an expert chef specializing in recipe extraction. Your task is to analyze the following noisy YouTube video transcript and an accompanying image (e.g., a video frame showing ingredients or steps). The transcript may contain filler words (e.g., "uh," "like"), vague quantities (e.g., "a handful"), or incomplete information. The image may provide additional context, such as ingredient lists or visual cues. Combine information from the transcript and image to extract a structured recipe. Identify all ingredients with their quantities and units where possible (e.g., "1 cup flour"), and list the preparation steps in sequential order. Output the result as a JSON object with two keys: "ingredients" (a list of strings) and "steps" (a list of strings). If quantities or units are unclear, make reasonable assumptions (e.g., "a handful of parsley" becomes "1/4 cup parsley"). Ignore irrelevant text or image content (e.g., commentary, unrelated visuals). If no recipe is found, return an empty JSON object.
+
+Transcript: {transcript}
+Image: [Analyze the provided image for additional recipe context.]
+
+Output format:
+{
+  "ingredients": ["ingredient 1", "ingredient 2", ...],
+  "steps": ["step 1", "step 2", ...]
+}
+```
+
+**Note**: The `[Analyze the provided image...]` placeholder is interpreted by LLaVA-Chef’s multimodal pipeline, which processes the image automatically when provided.
+
+---
+
+### Integrating the Prompt into Your Replit Code
+Here’s how to incorporate the prompt into the Replit code from the previous response, ensuring it works with LLaVA-Chef for text or multimodal input.
+
+#### Updated Code
+This code uses the text-only prompt but includes comments for adding image support.
+
+```python
+from youtube_transcript_api import YouTubeTranscriptApi
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+from PIL import Image
+import json
+from pydantic import BaseModel
+
+# Define structured output schema
+class Recipe(BaseModel):
+    ingredients: list[str]
+    steps: list[str]
+
+# Function to extract transcript
+def get_transcript(video_id):
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        return " ".join([entry['text'] for entry in transcript])
+    except Exception as e:
+        return f"Error fetching transcript: {e}"
+
+# Function to process input and generate recipe
+def generate_recipe(transcript, model, tokenizer, image_path=None, device='cpu'):
+    # Define the prompt
+    prompt = f"""
+    You are an expert chef specializing in recipe extraction. Your task is to analyze the following noisy YouTube video transcript and extract a structured recipe. The transcript may contain filler words (e.g., "uh," "like"), vague quantities (e.g., "a handful"), or out-of-order information. Identify all ingredients with their quantities and units where possible (e Pullman, "1 cup flour"), and list the preparation steps in sequential order. Output the result as a JSON object with two keys: "ingredients" (a list of strings) and "steps" (a list of strings). If quantities or units are unclear, make reasonable assumptions (e.g., "a handful of parsley" becomes "1/4 cup parsley"). Ignore irrelevant text (e.g., commentary, jokes). If no recipe is found, return an empty JSON object.
+
+    Transcript: {transcript}
+
+    Output format:
+    {{
+      "ingredients": ["ingredient 1", "ingredient 2", ...],
+      "steps": ["step 1", "step 2", ...]
+    }}
+    """
+    
+    # Add image input if provided
+    if image_path:
+        prompt += "\nImage: [Analyze the provided image for additional recipe context.]"
+        # LLaVA-Chef handles image processing internally via CLIP
+
+    # Tokenize input
+    inputs = tokenizer(prompt, return_tensors="pt").to(device)
+
+    # Generate output
+    outputs = model.generate(
+        **inputs,
+        max_length=500,
+        do_sample=False,
+        temperature=0.1,
+        repetition_penalty=1.0
+    )
+    
+    # Decode and parse JSON
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    try:
+        recipe_data = json.loads(response)
+        return Recipe(**recipe_data)
+    except:
+        return {"error": "Failed to parse JSON", "raw": response}
+
+# Main execution
+def main():
+    # Model setup (replace with actual LLaVA-Chef path or Hugging Face ID)
+    model_path = "llava-hf/llava-13b"  # Fallback; use LLaVA-Chef path if available
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # Load model with quantization for low memory
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.float16,
+        load_in_4bit=True if device == "cuda" else False,
+        device_map="auto"
+    )
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+    # Example YouTube video ID
+    video_id = "your_video_id"  # Replace with actual ID (e.g., "dQw4w9WgXcQ")
+    transcript = get_transcript(video_id)
+
+    # Optional: Image path (e.g., video frame)
+    image_path = None  # Set to "frame.jpg" if using images
+
+    # Generate recipe
+    recipe = generate_recipe(transcript, model, tokenizer, image_path, device)
+    print(json.dumps(recipe.dict() if isinstance(recipe, Recipe) else recipe, indent=2))
+
+if __name__ == "__main__":
+    main()
+```
+
+#### Key Changes
+- **Prompt**: Embedded the text-only prompt in the `generate_recipe` function.
+- **Image Support**: Added conditional logic to append image instructions if `image_path` is provided.
+- **Output Validation**: Uses `Pydantic` to enforce the JSON schema (`Recipe` class).
+- **Error Handling**: Catches JSON parsing errors and returns raw output for debugging.
+
+---
+
+### Tips for Effective Prompting
+1. **Be Specific**:
+   - Explicitly instruct the model to ignore filler words and irrelevant content.
+   - Define the output format clearly (JSON with `ingredients` and `steps`).
+
+2. **Handle Vague Inputs**:
+   - The prompt includes instructions to make reasonable assumptions (e.g., "a handful" → "1/4 cup").
+   - You can add a mapping dictionary in the code for consistency:
+     ```python
+     vague_units = {"handful": "1/4 cup", "pinch": "1/8 tsp"}
+     ```
+
+3. **Test with Small Inputs**:
+   - Before running on a full transcript, test the prompt with a short sample:
+     ```python
+     transcript = "Take 1 cup flour, 2 eggs, mix well, bake at 350."
+     recipe = generate_recipe(transcript, model, tokenizer)
+     print(json.dumps(recipe.dict(), indent=2))
+     ```
+
+4. **Iterate on Prompt**:
+   - If the model misses ingredients or steps, adjust the prompt. For example, add:
+     ```
+     Prioritize identifying all mentioned ingredients, even if quantities are missing (e.g., "salt" becomes "1 pinch salt").
+     ```
+
+5. **Multimodal Debugging**:
+   - If using images, ensure the frame contains relevant content (e.g., ingredient list). Test with a clear image first.
+   - Log the raw model output (`response`) to verify image context is being used.
+
+---
+
+### Adding the Prompt to Replit
+1. **Copy the Prompt**:
+   - Replace the `prompt` string in the `generate_recipe` function with the text-only or multimodal version above.
+2. **Set the Video ID**:
+   - Update `video_id` in the `main` function with the YouTube video’s ID.
+3. **Optional Image**:
+   - If using an image, upload a video frame (e.g., `frame.jpg`) to Replit’s **Files** panel and set `image_path="frame.jpg"`.
+4. **Run**:
+   - Click **Run** in Replit. Check the console for the JSON output.
+
+---
+
+### Troubleshooting
+- **Model Fails to Load**:
+  - Ensure `model_path` points to the correct LLaVA-Chef weights or a Hugging Face model.
+  - Use a paid Replit plan with GPU for large models, or enable 4-bit quantization (`load_in_4bit=True`).
+- **JSON Parsing Error**:
+  - Check the raw output (`response`) to see if the model deviated from JSON format.
+  - Adjust the prompt to reinforce the output format (e.g., repeat the format example).
+- **Transcript Unavailable**:
+  - Some YouTube videos lack transcripts. Manually provide a sample transcript or choose a video with auto-generated captions.
+- **Memory Issues**:
+  - Replit’s free tier may crash with LLaVA-Chef. Upgrade to a paid plan or use a smaller model (e.g., LLaVA-7B).
+
+---
+
+### Example with Sample Transcript
+To test, modify the `main` function to use a hardcoded transcript:
+
+```python
+def main():
+    model_path = "llava-hf/llava-13b"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.float16,
+        load_in_4bit=True if device == "cuda" else False,
+        device_map="auto"
+    )
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+    # Sample transcript
+    transcript = """
+    Alright, uh, you need like one cup of flour, some sugar, maybe two tablespoons?
+    Oh, and three eggs. Mix it all together, then bake at 350 for 20 minutes.
+    """
+    recipe = generate_recipe(transcript, model, tokenizer, device=device)
+    print(json.dumps(recipe.dict() if isinstance(recipe, Recipe) else recipe, indent=2))
+```
+
+**Expected Output**:
+```json
+{
+  "ingredients": ["1 cup flour", "2 tablespoons sugar", "3 eggs"],
+  "steps": ["Mix all ingredients together.", "Bake at 350°F for 20 minutes."]
+}
+```
+
+---
+
+### Additional Notes
+- **LLaVA-Chef Availability**: If LLaVA-Chef isn’t publicly available on Hugging Face, check the GitHub repo (`mohbattharani/LLaVA-Chef`) or contact the authors for weights. As a fallback, `llava-hf/llava-13b` with the above prompt should work reasonably well.
+- **Replit Constraints**: Free Replit may struggle with LLaVA-Chef’s 13B parameters. A paid plan (~$10/month) provides 8GB RAM and GPU, ideal for this task.
+- **Image Extraction**: To use video frames, extract them with `yt-dlp` and `opencv-python` (see previous response for code).
+- **Prompt Tuning**: If results are inconsistent, experiment with prompt phrasing or add examples in the prompt:
+  ```text
+  Example:
+  Transcript: "Grab some flour, like a cup, and 2 eggs. Stir it."
+  Output: {"ingredients": ["1 cup flour", "2 eggs"], "steps": ["Stir the ingredients."]}
+  ```
+
+If you have a specific YouTube video URL or sample transcript, share it, and I can refine the prompt or code further. Let me know if you need help with Replit setup or debugging!

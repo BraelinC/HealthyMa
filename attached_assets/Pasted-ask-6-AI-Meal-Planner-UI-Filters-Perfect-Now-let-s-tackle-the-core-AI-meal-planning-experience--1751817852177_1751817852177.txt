@@ -1,0 +1,60 @@
+ask 6: AI Meal Planner UI & Filters
+Perfect! Now let's tackle the core AI meal planning experience. This is where users spend most of their time and where the magic happens. From your technical architecture, I can see you have MealPlannerNew.tsx - let me ask specific questions about the interface and filters:
+Sidebar Design & Layout:
+Sidebar Position: You mentioned keeping it "portable and user-friendly." Should it be:
+Fixed left sidebar (desktop) that collapses on mobile?
+Collapsible panel that slides in from left/right?
+Top horizontal bar on mobile, sidebar on desktop?
+Sidebar Content Hierarchy: What order should filters appear in?
+Primary Goal (from profile) at top?
+Diet/allergies (safety-critical) next?
+Meal types, cooking time, difficulty at bottom?
+Sidebar State Management: Should filters persist between sessions?
+Save user's preferred filter settings?
+Reset to defaults each time?
+Remember last used settings?
+Filter Categories & Options:
+Diet & Allergies (Critical Filters):
+Checkboxes: "Vegetarian," "Vegan," "Keto," "Gluten-free," "Dairy-free"?
+How specific should you get? (Mediterranean, Paleo, etc.)
+Allergies as separate critical section?
+Practical Filters:
+Cooking Time: Slider (15-120 minutes) or presets (Quick <30min, Standard 30-60min, Long >60min)?
+Difficulty: 1-5 stars or Simple/Intermediate/Advanced?
+Meal Types: Checkboxes for Breakfast/Lunch/Dinner/Snacks?
+Family-Specific Filters: If they set up family profile:
+"Who is this meal for?" with family member avatars?
+"Kid-friendly" toggle?
+Portion size adjustment based on family size?
+Real-Time Updates & AI Integration:
+Filter Application Timing: When should meal suggestions update?
+Instantly as user clicks each filter (real-time)?
+After user clicks "Update Suggestions" button?
+Debounced after 1-2 seconds of no filter changes?
+AI Prompt Engineering: How do filters translate to AI prompts?
+Simple append: "vegetarian, gluten-free, under 30 minutes"?
+Structured prompt: "Create a [meal type] that is [dietary restrictions] and takes [time] to prepare for [family members]"?
+Priority weighting: some filters more important than others?
+Suggestion Refresh: How many meal options should AI generate at once?
+3-5 suggestions per meal slot?
+Infinite scroll with "Generate More" button?
+Batch of 10-12 with shuffle/refresh option?
+Mobile Experience:
+Mobile Filter UX: How should filters work on mobile where space is limited?
+Bottom sheet that slides up?
+Horizontal scrollable chips/tags?
+Collapsible accordion sections?
+Mobile Meal Selection: How should meal browsing work on mobile?
+Swipe cards (Tinder-style)?
+Vertical scroll list?
+Grid layout with tap to select?
+User Control vs AI Autonomy:
+Filter Override: Can users override AI suggestions?
+"Not this meal" button to regenerate alternatives?
+Manual search/add custom meals?
+Save favorite meals for future use?
+Learning & Personalization: Should the AI learn from user choices?
+Track which suggestions they accept/reject?
+Adjust future suggestions based on preferences?
+Ask "Why didn't you like this?" for feedback?
+Which aspect of the AI meal planner should we dive into first? The filter interface design, the real-time suggestion updates, or the mobile experience optimization?

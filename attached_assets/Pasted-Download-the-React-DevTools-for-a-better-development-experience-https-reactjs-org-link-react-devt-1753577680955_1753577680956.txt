@@ -1,0 +1,130 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:113 Query function called for: /api/meal-plans/saved
+queryClient.ts:18 API Request: Object
+queryClient.ts:27 API Response: Object
+queryClient.ts:43 API Response Text: [{"id":45,"userId":9,"name":"yes","description":"","isAutoSaved":false,"createdAt":"2025-07-26T04:19:05.779Z","updatedAt":"2025-07-26T04:19:05.779Z","meal_plan":{"day_1":{"breakfast":{"title":"Spinach and Feta Omelette","cook_time_minutes":15,"difficulty":2,"ingredients":["3 eggs","1 cup spinach","1/4 cup feta cheese","salt","pepper"],"instructions":["Whisk the eggs in a bowl and season with salt and pepper.","Heat a non-stick skillet over medium heat and add spinach.","Pour the eggs over the spinach and cook until edges start to set.","Sprinkle feta cheese on top, fold the omelette, and cook for another minute."],"nutrition":{"calories":350,"protein_g":25,"carbs_g":5,"fat_g":25}},"lunch":{"title":"Chicken Stir-Fry","cook_time_minutes":20,"difficulty":2.5,"ingredients":["200g chicken breast","1 cup mixed vegetables","2 tbsp soy sauce","1 tbsp olive oil","1 tsp ginger"],"instructions":["Slice chicken breast into thin strips.","Heat olive oil in a pan, add ginger and chicken, and cook until browned.","Add mixed vegetables and soy sauce, stir-fry for 5-7 minutes."],"nutrition":{"calories":400,"protein_g":30,"carbs_g":20,"fat_g":15}},"dinner":{"title":"Quinoa and Black Bean Salad","cook_time_minutes":25,"difficulty":2,"ingredients":["1 cup cooked quinoa","1 can black beans","1/2 cup corn","1 avocado","lime juice","cilantro"],"instructions":["In a bowl, combine quinoa, rinsed black beans, corn, and diced avocado.","Drizzle with lime juice and mix well.","Garnish with chopped cilantro before serving."],"nutrition":{"calories":450,"protein_g":25,"carbs_g":60,"fat_g":15}}},"day_2":{"breakfast":{"title":"Greek Yogurt Parfait","cook_time_minutes":10,"difficulty":1.5,"ingredients":["1 cup Greek yogurt","1/2 cup mixed berries","1/4 cup granola","1 tbsp honey"],"instructions":["Layer Greek yogurt, mixed berries, and granola in a bowl.","Drizzle honey on top and serve."],"nutrition":{"calories":300,"protein_g":25,"carbs_g":40,"fat_g":5}},"lunch":{"title":"Turkey Tacos","cook_time_minutes":20,"difficulty":2,"ingredients":["200g ground turkey","4 taco shells","1 cup lettuce","1/2 cup diced tomatoes","1/4 cup shredded cheese"],"instructions":["Cook ground turkey in a skillet until browned.","Fill taco shells with turkey, lettuce, tomatoes, and cheese."],"nutrition":{"calories":450,"protein_g":30,"carbs_g":35,"fat_g":20}},"dinner":{"title":"Salmon with Asparagus","cook_time_minutes":25,"difficulty":2.5,"ingredients":["200g salmon fillet","1 bunch asparagus","2 tbsp olive oil","lemon","salt","pepper"],"instructions":["Preheat oven to 400°F (200°C).","Place salmon and asparagus on a baking sheet, drizzle with olive oil, and season with salt and pepper.","Bake for 15-20 minutes, squeezing lemon juice over before serving."],"nutrition":{"calories":500,"protein_g":35,"carbs_g":10,"fat_g":30}}}}},{"id":33,"userId":9,"name":"2-Day Healthy Plan - Jul 23 (22:42)","description":"Auto-generated meal plan: 2 days with 2 meals per day, under 30 minutes cook time, focused on eat healthier.","isAutoSaved":false,"createdAt":"2025-07-23T02:42:41.346Z","updatedAt":"2025-07-23T02:42:41.346Z","meal_plan":{"day_1":{"breakfast":{"title":"Mediterranean Veggie Omelette","cook_time_minutes":15,"difficulty":2,"ingredients":["2 eggs","1/4 cup spinach","1/4 cup cherry tomatoes","1/4 cup feta cheese","1 tbsp olive oil"],"instructions":["Heat olive oil in a non-stick skillet over medium heat.","Whisk eggs in a bowl and pour into the skillet.","Add spinach and cherry tomatoes on top of the eggs.","Cook until the eggs are set, then sprinkle feta cheese and fold the omelette."],"nutrition":{"calories":300,"protein_g":20,"carbs_g":10,"fat_g":20}},"lunch":{"title":"Chicken Stir-Fry","cook_time_minutes":20,"difficulty":2.5,"ingredients":["1 chicken breast","1 cup mixed bell peppers","1 cup broccoli","2 tbsp soy sauce","1 tbsp sesame oil"],"instructions":["Slice chicken breast into strips.","Heat sesame oil in a pan and add chicken, cooking until browned.","Add bell peppers and broccoli, stir-frying for 5-7 minutes.","Pour soy sauce over the stir-fry and mix well before serving."],"nutrition":{"calories":400,"protein_g":30,"carbs_g":25,"fat_g":15}}},"day_2":{"breakfast":{"title":"Avocado Toast with Poached Egg","cook_time_minutes":10,"difficulty":1.5,"ingredients":["1 slice whole grain bread","1/2 avocado","1 egg","salt","pepper"],"instructions":["Toast the bread until golden brown.","Mash avocado and spread it on the toast, seasoning with salt and pepper.","Poach the egg in simmering water for about 3 minutes and place it on top of the avocado toast."],"nutrition":{"calories":250,"protein_g":10,"carbs_g":30,"fat_g":12}},"lunch":{"title":"Taco Salad with Ground Turkey","cook_time_minutes":25,"difficulty":2,"ingredients":["1 lb ground turkey","1 cup lettuce","1/2 cup cherry tomatoes","1/4 cup shredded cheese","1/4 cup salsa"],"instructions":["Cook ground turkey in a skillet over medium heat until browned.","In a bowl, layer lettuce, cooked turkey, cherry tomatoe
+queryClient.ts:65 API Parsed Response: Array(8)
+queryClient.ts:116 Query result: Array(8)
+queryClient.ts:113 Query function called for: /api/meal-plans/45/completions
+queryClient.ts:18 API Request: Object
+queryClient.ts:27 API Response: Object
+queryClient.ts:43 API Response Text: []
+queryClient.ts:65 API Parsed Response: Array(0)
+queryClient.ts:116 Query result: Array(0)
+@radix-ui_react-dialog.js?v=019c9ddc:328 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+(anonymous) @ @radix-ui_react-dialog.js?v=019c9ddc:328
+@radix-ui_react-dialog.js?v=019c9ddc:342 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ @radix-ui_react-dialog.js?v=019c9ddc:342
+queryClient.ts:113 Query function called for: /api/profile
+queryClient.ts:18 API Request: Object
+queryClient.ts:113 Query function called for: /api/profile/weight-based
+queryClient.ts:18 API Request: Object
+Profile.tsx:159 === PROFILE QUERY STATE ===
+Profile.tsx:160 User: Object
+Profile.tsx:161 IsLoading: true
+Profile.tsx:162 Error: null
+Profile.tsx:163 Profile: undefined
+Profile.tsx:164 WeightBasedProfile: undefined
+Profile.tsx:461 🎯 Cultural background state changed: Array(0)
+queryClient.ts:27 API Response: Object
+queryClient.ts:43 API Response Text: {"id":2,"user_id":9,"profile_name":"braelin","primary_goal":"Lose Weight","family_size":2,"members":[{"name":"tyler","preferences":["Enjoys Asian"],"dietaryRestrictions":["Paleo"],"goals":["Gain Muscle"],"avatar":"https://api.dicebear.com/7.x/fun-emoji/svg?seed=t&backgroundColor=transparent","role":"Mom","avatarStyle":"fun-emoji"},{"name":"braelin","ageGroup":"Adult","preferences":["Loves Italian"],"dietaryRestrictions":["Vegetarian"],"goals":["Try New Foods"],"avatar":"https://api.dicebear.com/7.x/fun-emoji/svg?seed=b&backgroundColor=transparent","role":"Mom","avatarStyle":"fun-emoji"}],"profile_type":"family","preferences":["Keto"],"goals":{"cost":0.8,"health":0.5,"cultural":0.5,"variety":0.5,"time":0.5},"cultural_background":["Chinese"],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-07-15T16:57:02.782Z","updated_at":"2025-07-26T22:37:51.611Z"}
+queryClient.ts:65 API Parsed Response: Object
+queryClient.ts:116 Query result: Object
+queryClient.ts:113 Query function called for: /api/culture-cache-stats
+queryClient.ts:18 API Request: Object
+Profile.tsx:159 === PROFILE QUERY STATE ===
+Profile.tsx:160 User: Object
+Profile.tsx:161 IsLoading: false
+Profile.tsx:162 Error: null
+Profile.tsx:163 Profile: Object
+Profile.tsx:164 WeightBasedProfile: undefined
+Profile.tsx:273 Loading profile data: Object
+Profile.tsx:274 Profile members: Array(2)
+Profile.tsx:308 🔄 Loading cultural background from profile: Array(1)
+Profile.tsx:313 🔄 Cultural background changed, updating state
+Profile.tsx:328 🔍 Extracting questionnaire weights from profile data: Object
+Profile.tsx:412 ✅ Found weights in goals object field: Object
+Profile.tsx:454 📊 Extracted questionnaire weights: Object
+Profile.tsx:1134 DEBUG Member 0: Object
+Profile.tsx:1134 DEBUG Member 1: Object
+DynamicMealRanking.tsx:67 🎯 DynamicMealRanking weights state changed: Object
+queryClient.ts:18 API Request: Object
+DynamicMealRanking.tsx:100 🎛️ DynamicMealRanking received props: Object
+DynamicMealRanking.tsx:108 🔒 Setting weights from questionnaire: Object
+DynamicMealRanking.tsx:109 🔒 Previous weights: Object
+Profile.tsx:461 🎯 Cultural background state changed: Array(1)
+queryClient.ts:27 API Response: Object
+api/cultural-cuisine/Chinese:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+api/perplexity-cache:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+queryClient.ts:27 API Response: Object
+queryClient.ts:43 API Response Text: {"profileName":"braelin","familySize":2,"goalWeights":{"cost":0.5,"health":0.5,"cultural":0.5,"variety":0.5,"time":0.5},"dietaryRestrictions":["Keto"],"culturalBackground":["Chinese"]}
+queryClient.ts:65 API Parsed Response: Object
+queryClient.ts:116 Query result: Object
+queryClient.ts:43 API Response Text: {"totalUsers":0,"totalCuisines":0,"cacheSize":"0 KB","hitRate":0,"metrics":{"hits":0,"misses":0,"errors":0,"last_cleanup":"2025-07-27T00:54:01.367Z","total_entries":0,"memory_usage_bytes":2},"topCultures":[],"memoryUsageMB":0}
+queryClient.ts:65 API Parsed Response: Object
+queryClient.ts:116 Query result: Object
+Profile.tsx:1134 DEBUG Member 0: Object
+Profile.tsx:1134 DEBUG Member 1: Object
+Profile.tsx:159 === PROFILE QUERY STATE ===
+Profile.tsx:160 User: Object
+Profile.tsx:161 IsLoading: false
+Profile.tsx:162 Error: null
+Profile.tsx:163 Profile: Object
+Profile.tsx:164 WeightBasedProfile: Object
+Profile.tsx:273 Loading profile data: Object
+Profile.tsx:274 Profile members: Array(2)
+Profile.tsx:308 🔄 Loading cultural background from profile: Array(1)
+Profile.tsx:316 🔄 Cultural background unchanged, keeping current state
+Profile.tsx:328 🔍 Extracting questionnaire weights from profile data: Object
+Profile.tsx:340 ✅ Found goalWeights in weight-based profile: Object
+Profile.tsx:454 📊 Extracted questionnaire weights: Object
+Profile.tsx:1134 DEBUG Member 0: Object
+Profile.tsx:1134 DEBUG Member 1: Object
+DynamicMealRanking.tsx:100 🎛️ DynamicMealRanking received props: Object
+DynamicMealRanking.tsx:108 🔒 Setting weights from questionnaire: Object
+DynamicMealRanking.tsx:109 🔒 Previous weights: Object
+DynamicMealRanking.tsx:67 🎯 DynamicMealRanking weights state changed: Object
+queryClient.ts:18 API Request: Object
+DynamicMealRanking.tsx:115 🚀 Auto-triggering ranking with questionnaire weights: Object
+DynamicMealRanking.tsx:115 🚀 Auto-triggering ranking with questionnaire weights: Object
+IntelligentMealSelector.tsx:55 📊 Questionnaire completed with result: {weights: {…}, answers: {…}, selectedOptions: Array(3)}
+IntelligentMealSelector.tsx:117 ❌ Error getting meal recommendations: ReferenceError: Cannot access 'result2' before initialization
+    at handleQuestionnaireComplete (IntelligentMealSelector.tsx:71:21)
+    at handleNext (SmartProfileQuestionnaire.tsx:298:7)
+    at HTMLUnknownElement.callCallback2 (chunk-276SZO74.js?v=019c9ddc:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-276SZO74.js?v=019c9ddc:3699:24)
+    at invokeGuardedCallback (chunk-276SZO74.js?v=019c9ddc:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (chunk-276SZO74.js?v=019c9ddc:3736:33)
+    at executeDispatch (chunk-276SZO74.js?v=019c9ddc:7014:11)
+    at processDispatchQueueItemsInOrder (chunk-276SZO74.js?v=019c9ddc:7034:15)
+    at processDispatchQueue (chunk-276SZO74.js?v=019c9ddc:7043:13)
+    at dispatchEventsForPlugins (chunk-276SZO74.js?v=019c9ddc:7051:11)
+handleQuestionnaireComplete @ IntelligentMealSelector.tsx:117
+handleNext @ SmartProfileQuestionnaire.tsx:298
+callCallback2 @ chunk-276SZO74.js?v=019c9ddc:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=019c9ddc:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=019c9ddc:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=019c9ddc:3736
+executeDispatch @ chunk-276SZO74.js?v=019c9ddc:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=019c9ddc:7034
+processDispatchQueue @ chunk-276SZO74.js?v=019c9ddc:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=019c9ddc:7051
+(anonymous) @ chunk-276SZO74.js?v=019c9ddc:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=019c9ddc:18913
+batchedUpdates @ chunk-276SZO74.js?v=019c9ddc:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=019c9ddc:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=019c9ddc:5478
+dispatchEvent @ chunk-276SZO74.js?v=019c9ddc:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=019c9ddc:5449
+queryClient.ts:27 API Response: {url: '/api/test-cultural-ranking', status: 200, ok: true, contentType: 'application/json; charset=utf-8'}
+queryClient.ts:43 API Response Text: {"rankedMeals":[{"meal":{"name":"Stir Fried Tofu with Rice","cuisine":"Chinese","description":"A simple and nutritious dish made with stir-fried tofu and mixed vegetables, served over rice. It is a staple in many Chinese households.","authenticity_score":0.8999999999999999,"health_score":0.4,"cost_score":1,"time_score":0.9},"total_score":0.85,"ranking_explanation":"AI Score: 85% (C:90% H:80% $:90% T:80%)"},{"meal":{"name":"Wonton Noodles","cuisine":"Chinese","description":"A Cantonese dish featuring thin noodles served in a light broth with wontons filled with shrimp or pork. It is a comforting and popular meal.","authenticity_score":0.7,"health_score":0.4,"cost_score":0.85,"time_score":0.6},"total_score":0.83,"ranking_explanation":"AI Score: 83% (C:85% H:80% $:90% T:80%)"},{"meal":{"name":"Dim Sums","cuisine":"Chinese","description":"Steamed dumplings filled with vegetables or meat, popular as a snack or appetizer. They are a staple in Cantonese cuisine.","authenticity_score":0.7999999999999999,"health_score":0.8999999999999999,"cost_score":0.8999999999999999,"time_score":0.8},"total_score":0.82,"ranking_explanation":"AI Score: 82% (C:80% H:80% $:90% T:80%)"},{"meal":{"name":"Hot and Sour Soup","cuisine":"Chinese","description":"A spicy and sour soup made with mushrooms, tofu, and vegetables. It is a comforting dish during winter.","authenticity_score":0.8999999999999999,"health_score":0.8,"cost_score":1,"time_score":0.6},"total_score":0.82,"ranking_explanation":"AI Score: 82% (C:90% H:80% $:90% T:70%)"},{"meal":{"name":"Spring Rolls","cuisine":"Chinese","description":"Crispy rolls filled with shredded vegetables, often served as an appetizer. They are a popular snack in Chinese cuisine.","authenticity_score":0.7999999999999999,"health_score":0.7000000000000001,"cost_score":0.7999999999999999,"time_score":0.6},"total_score":0.77,"ranking_explanation":"AI Score: 77% (C:80% H:60% $:90% T:80%)"},{"meal":{"name":"Shitake Fried Rice with Water Chestnuts","cuisine":"Chinese","description":"A flavorful rice dish made with shitake mushrooms and water chestnuts, often served as a main course. It is a popular dish in Chinese restaurants.","authenticity_score":0.7,"health_score":0.4,"cost_score":0.85,"time_score":0.5},"total_score":0.73,"ranking_explanation":"AI Score: 73% (C:85% H:60% $:80% T:70%)"},{"meal":{"name":"Szechwan Chilli Chicken","cuisine":"Chinese","description":"A spicy dish from the Sichuan region, known for its bold flavors and chili peppers. It is a favorite among those who enjoy spicy food.","authenticity_score":0.7,"health_score":0.4,"cost_score":0.7,"time_score":0.5},"total_score":0.73,"ranking_explanation":"AI Score: 73% (C:85% H:60% $:80% T:70%)"},{"meal":{"name":"Peking Duck","cuisine":"Chinese","description":"A classic dish from Beijing, known for its crispy skin and tender meat, often served with pancakes, scallions, and hoisin sauce. It symbolizes wealth and prosperity.","authenticity_score":0.7,"health_score":0.30000000000000004,"cost_score":0.7,"time_score":0.2},"total_score":0.71,"ranking_explanation":"AI Score: 71% (C:85% H:80% $:70% T:50%)"},{"meal":{"name":"Yangrou Paomo (Lamb Soup with Bread)","cuisine":"Chinese","description":"A hearty soup from Shaanxi province, made with lamb and bread, often served during special occasions. It is a symbol of hospitality.","authenticity_score":0.7,"health_score":0.6000000000000001,"cost_score":0.85,"time_score":0.6},"total_score":0.69,"ranking_explanation":"AI Score: 69% (C:70% H:80% $:70% T:50%)"},{"meal":{"name":"La Mian (Hand-Pulled Noodles)","cuisine":"Chinese","description":"A traditional noodle dish from northern China, known for its chewy texture and flavorful sauces. It is often served with vegetables or meat.","authenticity_score":0.7999999999999999,"health_score":0.6000000000000001,"cost_score":0.95,"time_score":0.6},"total_score":0.65,"ranking_explanation":"AI Score: 65% (C:80% H:70% $:70% T:50%)"}],"reasoning":"Parallel AI ranking of 10 meals using GPT-4o mini with user weight preferences","processingTime":2102}
+queryClient.ts:65 API Parsed Response: {rankedMeals: Array(10), reasoning: 'Parallel AI ranking of 10 meals using GPT-4o mini with user weight preferences', processingTime: 2102}
+queryClient.ts:27 API Response: {url: '/api/test-cultural-ranking', status: 200, ok: true, contentType: 'application/json; charset=utf-8'}
+queryClient.ts:43 API Response Text: {"rankedMeals":[{"meal":{"name":"Dim Sums","cuisine":"Chinese","description":"Steamed dumplings filled with vegetables or meat, popular as a snack or appetizer. They are a staple in Cantonese cuisine.","authenticity_score":0.7999999999999999,"health_score":0.8999999999999999,"cost_score":0.8999999999999999,"time_score":0.8},"total_score":0.85,"ranking_explanation":"AI Score: 85% (C:80% H:90% $:90% T:80%)"},{"meal":{"name":"Hot and Sour Soup","cuisine":"Chinese","description":"A spicy and sour soup made with mushrooms, tofu, and vegetables. It is a comforting dish during cold weather.","authenticity_score":0.8999999999999999,"health_score":0.8,"cost_score":1,"time_score":0.6},"total_score":0.85,"ranking_explanation":"AI Score: 85% (C:90% H:80% $:90% T:80%)"},{"meal":{"name":"Liangpi (Cold Skin Noodles)","cuisine":"Chinese","description":"A Xi'an specialty made from wheat flour noodles and served cold with spicy sauces and vegetables.","authenticity_score":0.8999999999999999,"health_score":0.6000000000000001,"cost_score":0.95,"time_score":0.6},"total_score":0.83,"ranking_explanation":"AI Score: 83% (C:90% H:70% $:90% T:80%)"},{"meal":{"name":"Chuan'r (Kebabs)","cuisine":"Chinese","description":"Skewers of marinated meat, typically lamb or chicken, grilled over an open flame. Popular street food in northern China.","authenticity_score":0.7,"health_score":0.7,"cost_score":0.7,"time_score":0.4},"total_score":0.78,"ranking_explanation":"AI Score: 78% (C:70% H:80% $:90% T:80%)"},{"meal":{"name":"Shuan Yangrou (Instant-Boiled Mutton)","cuisine":"Chinese","description":"A traditional Beijing dish where mutton is boiled in a flavorful broth. It is often served with dipping sauces.","authenticity_score":0.7,"health_score":0.5000000000000001,"cost_score":0.85,"time_score":0.7},"total_score":0.77,"ranking_explanation":"AI Score: 77% (C:70% H:80% $:90% T:70%)"},{"meal":{"name":"La Mian (Hand-Pulled Noodles)","cuisine":"Chinese","description":"A traditional Chinese noodle dish made by hand-pulling dough into long strands. Often served in soups or stir-fries.","authenticity_score":0.7,"health_score":0.4,"cost_score":1,"time_score":0.6},"total_score":0.76,"ranking_explanation":"AI Score: 76% (C:70% H:80% $:90% T:70%)"},{"meal":{"name":"Spring Rolls","cuisine":"Chinese","description":"Crisp fried or steamed rolls filled with shredded vegetables and sometimes meat. They are a versatile snack or appetizer.","authenticity_score":0.7999999999999999,"health_score":0.7999999999999999,"cost_score":0.8999999999999999,"time_score":0.9},"total_score":0.73,"ranking_explanation":"AI Score: 73% (C:80% H:60% $:80% T:70%)"},{"meal":{"name":"Zhajiangmian (Fried Sauce Noodles)","cuisine":"Chinese","description":"A popular Beijing noodle dish topped with a savory fermented soybean paste sauce and vegetables.","authenticity_score":0.7999999999999999,"health_score":0.6000000000000001,"cost_score":1,"time_score":0.6},"total_score":0.73,"ranking_explanation":"AI Score: 73% (C:80% H:60% $:80% T:70%)"},{"meal":{"name":"Szechwan Chilli Chicken","cuisine":"Chinese","description":"A spicy dish from Sichuan province, known for its bold flavors and chili peppers. It is a popular choice for those who enjoy spicy food.","authenticity_score":0.7,"health_score":0.4,"cost_score":0.7,"time_score":0.5},"total_score":0.61,"ranking_explanation":"AI Score: 61% (C:56% H:40% $:80% T:80%)"},{"meal":{"name":"Peking Duck","cuisine":"Chinese","description":"A classic Beijing dish known for its crispy skin and tender meat, often served with pancakes and scallions. It symbolizes wealth and prosperity.","authenticity_score":0.7,"health_score":0.30000000000000004,"cost_score":0.7,"time_score":0.2},"total_score":0.61,"ranking_explanation":"AI Score: 61% (C:56% H:70% $:70% T:50%)"}],"reasoning":"Parallel AI ranking of 10 meals using GPT-4o mini with user weight preferences","processingTime":2828}
+queryClient.ts:65 API Parsed Response: {rankedMeals: Array(10), reasoning: 'Parallel AI ranking of 10 meals using GPT-4o mini with user weight preferences', processingTime: 2828}

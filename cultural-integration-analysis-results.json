@@ -1,0 +1,4125 @@
+[
+  {
+    "scenario": "Chinese + Vegetarian (High Conflict)",
+    "success": true,
+    "responseTime": 30540,
+    "analysis": {
+      "culturalDistribution": {
+        "totalMeals": 21,
+        "culturalMeals": 15,
+        "genericMeals": 6,
+        "culturalPercentage": 71.42857142857143,
+        "expectedPercentage": 50,
+        "meetsTarget": false,
+        "culturalMealDetails": [
+          {
+            "day": "day_1",
+            "type": "breakfast",
+            "title": "Vegetable Omelette",
+            "ingredients": [
+              "2 eggs",
+              "1/4 cup bell peppers",
+              "1/4 cup spinach",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Whisk eggs with salt and pepper.",
+              "Sauté vegetables in a non-stick pan.",
+              "Pour eggs over vegetables and cook until set."
+            ],
+            "cookTime": 15,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 250,
+              "protein_g": 18,
+              "carbs_g": 5,
+              "fat_g": 18
+            },
+            "fullText": "vegetable omelette 2 eggs 1/4 cup bell peppers 1/4 cup spinach salt pepper whisk eggs with salt and pepper. sauté vegetables in a non-stick pan. pour eggs over vegetables and cook until set.",
+            "cultures": [
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_1",
+            "type": "lunch",
+            "title": "Chickpea Salad",
+            "ingredients": [
+              "1 can chickpeas",
+              "1/2 cucumber",
+              "1/2 cup cherry tomatoes",
+              "1 tbsp olive oil",
+              "lemon juice",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Rinse and drain chickpeas.",
+              "Chop cucumber and tomatoes.",
+              "Mix all ingredients in a bowl."
+            ],
+            "cookTime": 20,
+            "difficulty": 1.5,
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 15,
+              "carbs_g": 45,
+              "fat_g": 10
+            },
+            "fullText": "chickpea salad 1 can chickpeas 1/2 cucumber 1/2 cup cherry tomatoes 1 tbsp olive oil lemon juice salt pepper rinse and drain chickpeas. chop cucumber and tomatoes. mix all ingredients in a bowl.",
+            "cultures": [
+              {
+                "culture": "Italian",
+                "indicators": [
+                  "olive oil"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_1",
+            "type": "dinner",
+            "title": "Vegetable Stir-Fry",
+            "ingredients": [
+              "1 cup mixed vegetables",
+              "1 tbsp soy sauce",
+              "1 tsp sesame oil",
+              "1/2 cup cooked rice"
+            ],
+            "instructions": [
+              "Heat oil in a pan.",
+              "Add vegetables and stir-fry for 5-7 minutes.",
+              "Add soy sauce and serve over rice."
+            ],
+            "cookTime": 25,
+            "difficulty": 2.5,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 10,
+              "carbs_g": 60,
+              "fat_g": 15
+            },
+            "fullText": "vegetable stir-fry 1 cup mixed vegetables 1 tbsp soy sauce 1 tsp sesame oil 1/2 cup cooked rice heat oil in a pan. add vegetables and stir-fry for 5-7 minutes. add soy sauce and serve over rice.",
+            "cultures": [
+              {
+                "culture": "Chinese",
+                "indicators": [
+                  "stir-fry",
+                  "soy sauce",
+                  "sesame oil"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_2",
+            "type": "breakfast",
+            "title": "Greek Yogurt with Honey and Nuts",
+            "ingredients": [
+              "1 cup Greek yogurt",
+              "1 tbsp honey",
+              "2 tbsp mixed nuts"
+            ],
+            "instructions": [
+              "Spoon yogurt into a bowl.",
+              "Drizzle honey on top and sprinkle nuts."
+            ],
+            "cookTime": 5,
+            "difficulty": 1,
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 20,
+              "carbs_g": 30,
+              "fat_g": 15
+            },
+            "fullText": "greek yogurt with honey and nuts 1 cup greek yogurt 1 tbsp honey 2 tbsp mixed nuts spoon yogurt into a bowl. drizzle honey on top and sprinkle nuts.",
+            "cultures": [
+              {
+                "culture": "Greek",
+                "indicators": [
+                  "greek"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_2",
+            "type": "lunch",
+            "title": "Caprese Sandwich",
+            "ingredients": [
+              "1 ciabatta roll",
+              "1/2 cup fresh mozzarella",
+              "1 tomato",
+              "basil leaves",
+              "balsamic glaze"
+            ],
+            "instructions": [
+              "Slice the ciabatta roll.",
+              "Layer mozzarella, tomato, and basil.",
+              "Drizzle with balsamic glaze."
+            ],
+            "cookTime": 10,
+            "difficulty": 1.5,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 18,
+              "carbs_g": 45,
+              "fat_g": 18
+            },
+            "fullText": "caprese sandwich 1 ciabatta roll 1/2 cup fresh mozzarella 1 tomato basil leaves balsamic glaze slice the ciabatta roll. layer mozzarella, tomato, and basil. drizzle with balsamic glaze.",
+            "cultures": [
+              {
+                "culture": "Italian",
+                "indicators": [
+                  "basil",
+                  "mozzarella"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_2",
+            "type": "dinner",
+            "title": "Quinoa and Black Bean Bowl",
+            "ingredients": [
+              "1 cup cooked quinoa",
+              "1 can black beans",
+              "1/2 avocado",
+              "1/4 cup corn",
+              "lime juice"
+            ],
+            "instructions": [
+              "Mix quinoa, black beans, corn, and lime juice in a bowl.",
+              "Top with sliced avocado."
+            ],
+            "cookTime": 30,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 15,
+              "carbs_g": 60,
+              "fat_g": 20
+            },
+            "fullText": "quinoa and black bean bowl 1 cup cooked quinoa 1 can black beans 1/2 avocado 1/4 cup corn lime juice mix quinoa, black beans, corn, and lime juice in a bowl. top with sliced avocado.",
+            "cultures": [
+              {
+                "culture": "Mexican",
+                "indicators": [
+                  "lime"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_3",
+            "type": "lunch",
+            "title": "Mediterranean Couscous",
+            "ingredients": [
+              "1 cup couscous",
+              "1/2 cup cherry tomatoes",
+              "1/4 cup olives",
+              "1/4 cup feta",
+              "olive oil"
+            ],
+            "instructions": [
+              "Cook couscous according to package instructions.",
+              "Mix in chopped tomatoes, olives, and feta."
+            ],
+            "cookTime": 20,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 12,
+              "carbs_g": 60,
+              "fat_g": 15
+            },
+            "fullText": "mediterranean couscous 1 cup couscous 1/2 cup cherry tomatoes 1/4 cup olives 1/4 cup feta olive oil cook couscous according to package instructions. mix in chopped tomatoes, olives, and feta.",
+            "cultures": [
+              {
+                "culture": "Italian",
+                "indicators": [
+                  "olive oil"
+                ]
+              },
+              {
+                "culture": "Greek",
+                "indicators": [
+                  "mediterranean",
+                  "feta",
+                  "olives"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_3",
+            "type": "dinner",
+            "title": "Vegetable Tacos",
+            "ingredients": [
+              "4 corn tortillas",
+              "1 cup mixed sautéed vegetables",
+              "1/2 avocado",
+              "salsa"
+            ],
+            "instructions": [
+              "Warm tortillas in a pan.",
+              "Fill with sautéed vegetables and top with avocado and salsa."
+            ],
+            "cookTime": 25,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 10,
+              "carbs_g": 50,
+              "fat_g": 15
+            },
+            "fullText": "vegetable tacos 4 corn tortillas 1 cup mixed sautéed vegetables 1/2 avocado salsa warm tortillas in a pan. fill with sautéed vegetables and top with avocado and salsa.",
+            "cultures": [
+              {
+                "culture": "Mexican",
+                "indicators": [
+                  "tacos",
+                  "salsa"
+                ]
+              },
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_4",
+            "type": "lunch",
+            "title": "Lentil Soup",
+            "ingredients": [
+              "1 can lentils",
+              "1 carrot",
+              "1 celery stalk",
+              "1 onion",
+              "vegetable broth"
+            ],
+            "instructions": [
+              "Sauté chopped onion, carrot, and celery.",
+              "Add lentils and broth, simmer for 15 minutes."
+            ],
+            "cookTime": 30,
+            "difficulty": 2.5,
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 18,
+              "carbs_g": 50,
+              "fat_g": 5
+            },
+            "fullText": "lentil soup 1 can lentils 1 carrot 1 celery stalk 1 onion vegetable broth sauté chopped onion, carrot, and celery. add lentils and broth, simmer for 15 minutes.",
+            "cultures": [
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_4",
+            "type": "dinner",
+            "title": "Stuffed Bell Peppers",
+            "ingredients": [
+              "2 bell peppers",
+              "1 cup cooked rice",
+              "1 can black beans",
+              "1 tsp cumin"
+            ],
+            "instructions": [
+              "Cut tops off peppers and remove seeds.",
+              "Mix rice, beans, and cumin, stuff into peppers, and bake for 15 minutes."
+            ],
+            "cookTime": 30,
+            "difficulty": 2.5,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 15,
+              "carbs_g": 60,
+              "fat_g": 10
+            },
+            "fullText": "stuffed bell peppers 2 bell peppers 1 cup cooked rice 1 can black beans 1 tsp cumin cut tops off peppers and remove seeds. mix rice, beans, and cumin, stuff into peppers, and bake for 15 minutes.",
+            "cultures": [
+              {
+                "culture": "Mexican",
+                "indicators": [
+                  "cumin"
+                ]
+              },
+              {
+                "culture": "Indian",
+                "indicators": [
+                  "cumin"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_5",
+            "type": "lunch",
+            "title": "Vegetable Sushi Rolls",
+            "ingredients": [
+              "1 cup sushi rice",
+              "nori sheets",
+              "cucumber",
+              "carrot",
+              "avocado"
+            ],
+            "instructions": [
+              "Cook sushi rice and let cool.",
+              "Lay nori on a mat, spread rice, and add vegetables, roll tightly."
+            ],
+            "cookTime": 30,
+            "difficulty": 2.5,
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 8,
+              "carbs_g": 60,
+              "fat_g": 10
+            },
+            "fullText": "vegetable sushi rolls 1 cup sushi rice nori sheets cucumber carrot avocado cook sushi rice and let cool. lay nori on a mat, spread rice, and add vegetables, roll tightly.",
+            "cultures": [
+              {
+                "culture": "Japanese",
+                "indicators": [
+                  "sushi"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_5",
+            "type": "dinner",
+            "title": "Pasta Primavera",
+            "ingredients": [
+              "8 oz pasta",
+              "1 cup mixed vegetables",
+              "1/4 cup parmesan",
+              "olive oil"
+            ],
+            "instructions": [
+              "Cook pasta according to package instructions.",
+              "Sauté vegetables in olive oil, mix with pasta and top with parmesan."
+            ],
+            "cookTime": 25,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 15,
+              "carbs_g": 70,
+              "fat_g": 15
+            },
+            "fullText": "pasta primavera 8 oz pasta 1 cup mixed vegetables 1/4 cup parmesan olive oil cook pasta according to package instructions. sauté vegetables in olive oil, mix with pasta and top with parmesan.",
+            "cultures": [
+              {
+                "culture": "Italian",
+                "indicators": [
+                  "pasta",
+                  "parmesan",
+                  "olive oil"
+                ]
+              },
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_6",
+            "type": "dinner",
+            "title": "Zucchini Noodles with Pesto",
+            "ingredients": [
+              "2 zucchinis",
+              "1/4 cup pesto",
+              "1/4 cup cherry tomatoes"
+            ],
+            "instructions": [
+              "Spiralize zucchinis into noodles.",
+              "Sauté with pesto and halved cherry tomatoes."
+            ],
+            "cookTime": 25,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 8,
+              "carbs_g": 20,
+              "fat_g": 20
+            },
+            "fullText": "zucchini noodles with pesto 2 zucchinis 1/4 cup pesto 1/4 cup cherry tomatoes spiralize zucchinis into noodles. sauté with pesto and halved cherry tomatoes.",
+            "cultures": [
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_7",
+            "type": "lunch",
+            "title": "Spinach and Feta Quiche",
+            "ingredients": [
+              "1 pie crust",
+              "2 cups spinach",
+              "1/2 cup feta",
+              "3 eggs",
+              "1/2 cup milk"
+            ],
+            "instructions": [
+              "Preheat oven to 375°F.",
+              "Whisk eggs and milk, mix in spinach and feta, pour into crust, bake for 25 minutes."
+            ],
+            "cookTime": 30,
+            "difficulty": 2.5,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 20,
+              "carbs_g": 30,
+              "fat_g": 25
+            },
+            "fullText": "spinach and feta quiche 1 pie crust 2 cups spinach 1/2 cup feta 3 eggs 1/2 cup milk preheat oven to 375°f. whisk eggs and milk, mix in spinach and feta, pour into crust, bake for 25 minutes.",
+            "cultures": [
+              {
+                "culture": "Greek",
+                "indicators": [
+                  "feta"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_7",
+            "type": "dinner",
+            "title": "Vegetable Curry",
+            "ingredients": [
+              "1 can coconut milk",
+              "1 cup mixed vegetables",
+              "2 tbsp curry paste",
+              "1 cup cooked rice"
+            ],
+            "instructions": [
+              "Heat coconut milk and curry paste in a pan.",
+              "Add vegetables and simmer for 15 minutes, serve over rice."
+            ],
+            "cookTime": 30,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 10,
+              "carbs_g": 60,
+              "fat_g": 20
+            },
+            "fullText": "vegetable curry 1 can coconut milk 1 cup mixed vegetables 2 tbsp curry paste 1 cup cooked rice heat coconut milk and curry paste in a pan. add vegetables and simmer for 15 minutes, serve over rice.",
+            "cultures": [
+              {
+                "culture": "Thai",
+                "indicators": [
+                  "curry",
+                  "coconut milk"
+                ]
+              },
+              {
+                "culture": "Indian",
+                "indicators": [
+                  "curry"
+                ]
+              }
+            ]
+          }
+        ],
+        "genericMealTitles": [
+          "Smoothie Bowl",
+          "Avocado Toast",
+          "Chia Seed Pudding",
+          "Fruit Salad",
+          "Falafel Wrap",
+          "Peanut Butter Banana Toast"
+        ]
+      },
+      "conflictAnalysis": {
+        "dietaryCompliance": true,
+        "conflictsFound": [],
+        "conflictsAvoided": 9,
+        "potentialConflicts": 9,
+        "resolutionEffectiveness": 1,
+        "substitutionsFound": [
+          {
+            "meal": "Chickpea Salad",
+            "substitution": "chickpeas"
+          },
+          {
+            "meal": "Smoothie Bowl",
+            "substitution": "almond milk"
+          },
+          {
+            "meal": "Lentil Soup",
+            "substitution": "lentils"
+          },
+          {
+            "meal": "Chia Seed Pudding",
+            "substitution": "almond milk"
+          },
+          {
+            "meal": "Vegetable Curry",
+            "substitution": "coconut milk"
+          }
+        ],
+        "conflictResolutionScore": 10
+      },
+      "authenticityAssessment": {
+        "authenticityScore": 0.7936507936507936,
+        "rawScore": 20,
+        "maxPossibleScore": 252,
+        "culturalKeywords": [
+          "Italian: olive oil",
+          "Italian: tomato",
+          "Chinese: stir-fry",
+          "Chinese: soy sauce",
+          "Chinese: sesame oil",
+          "Italian: basil",
+          "Italian: mozzarella",
+          "Italian: parmesan",
+          "Italian: pasta"
+        ],
+        "authenticityDetails": [
+          {
+            "meal": "Vegetable Stir-Fry",
+            "culture": "Chinese",
+            "score": 7,
+            "markers": {
+              "traditional": [
+                "stir-fry"
+              ],
+              "ingredients": [
+                "soy sauce",
+                "sesame oil"
+              ],
+              "techniques": [
+                "stir-fry"
+              ]
+            }
+          },
+          {
+            "meal": "Pasta Primavera",
+            "culture": "Italian",
+            "score": 4,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "parmesan",
+                "olive oil"
+              ],
+              "techniques": [
+                "pasta"
+              ]
+            }
+          },
+          {
+            "meal": "Caprese Sandwich",
+            "culture": "Italian",
+            "score": 3,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "basil",
+                "mozzarella",
+                "tomato"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Chickpea Salad",
+            "culture": "Italian",
+            "score": 2,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "olive oil",
+                "tomato"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Mediterranean Couscous",
+            "culture": "Italian",
+            "score": 2,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "olive oil",
+                "tomato"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Falafel Wrap",
+            "culture": "Italian",
+            "score": 1,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "tomato"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Zucchini Noodles with Pesto",
+            "culture": "Italian",
+            "score": 1,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "tomato"
+              ],
+              "techniques": []
+            }
+          }
+        ],
+        "hasHighAuthenticity": false,
+        "hasMediumAuthenticity": false
+      },
+      "perplexityIntegration": {
+        "qualityScore": 0,
+        "rawScore": 0,
+        "indicators": [],
+        "avgIngredientsPerMeal": 4.4,
+        "avgInstructionsPerMeal": 2.1,
+        "culturalDiversity": 0,
+        "hasHighQuality": false,
+        "hasMediumQuality": false
+      },
+      "extractedMeals": [
+        {
+          "day": "day_1",
+          "type": "breakfast",
+          "title": "Vegetable Omelette",
+          "ingredients": [
+            "2 eggs",
+            "1/4 cup bell peppers",
+            "1/4 cup spinach",
+            "salt",
+            "pepper"
+          ],
+          "instructions": [
+            "Whisk eggs with salt and pepper.",
+            "Sauté vegetables in a non-stick pan.",
+            "Pour eggs over vegetables and cook until set."
+          ],
+          "cookTime": 15,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 250,
+            "protein_g": 18,
+            "carbs_g": 5,
+            "fat_g": 18
+          },
+          "fullText": "vegetable omelette 2 eggs 1/4 cup bell peppers 1/4 cup spinach salt pepper whisk eggs with salt and pepper. sauté vegetables in a non-stick pan. pour eggs over vegetables and cook until set."
+        },
+        {
+          "day": "day_1",
+          "type": "lunch",
+          "title": "Chickpea Salad",
+          "ingredients": [
+            "1 can chickpeas",
+            "1/2 cucumber",
+            "1/2 cup cherry tomatoes",
+            "1 tbsp olive oil",
+            "lemon juice",
+            "salt",
+            "pepper"
+          ],
+          "instructions": [
+            "Rinse and drain chickpeas.",
+            "Chop cucumber and tomatoes.",
+            "Mix all ingredients in a bowl."
+          ],
+          "cookTime": 20,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 15,
+            "carbs_g": 45,
+            "fat_g": 10
+          },
+          "fullText": "chickpea salad 1 can chickpeas 1/2 cucumber 1/2 cup cherry tomatoes 1 tbsp olive oil lemon juice salt pepper rinse and drain chickpeas. chop cucumber and tomatoes. mix all ingredients in a bowl."
+        },
+        {
+          "day": "day_1",
+          "type": "dinner",
+          "title": "Vegetable Stir-Fry",
+          "ingredients": [
+            "1 cup mixed vegetables",
+            "1 tbsp soy sauce",
+            "1 tsp sesame oil",
+            "1/2 cup cooked rice"
+          ],
+          "instructions": [
+            "Heat oil in a pan.",
+            "Add vegetables and stir-fry for 5-7 minutes.",
+            "Add soy sauce and serve over rice."
+          ],
+          "cookTime": 25,
+          "difficulty": 2.5,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 10,
+            "carbs_g": 60,
+            "fat_g": 15
+          },
+          "fullText": "vegetable stir-fry 1 cup mixed vegetables 1 tbsp soy sauce 1 tsp sesame oil 1/2 cup cooked rice heat oil in a pan. add vegetables and stir-fry for 5-7 minutes. add soy sauce and serve over rice."
+        },
+        {
+          "day": "day_2",
+          "type": "breakfast",
+          "title": "Greek Yogurt with Honey and Nuts",
+          "ingredients": [
+            "1 cup Greek yogurt",
+            "1 tbsp honey",
+            "2 tbsp mixed nuts"
+          ],
+          "instructions": [
+            "Spoon yogurt into a bowl.",
+            "Drizzle honey on top and sprinkle nuts."
+          ],
+          "cookTime": 5,
+          "difficulty": 1,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 20,
+            "carbs_g": 30,
+            "fat_g": 15
+          },
+          "fullText": "greek yogurt with honey and nuts 1 cup greek yogurt 1 tbsp honey 2 tbsp mixed nuts spoon yogurt into a bowl. drizzle honey on top and sprinkle nuts."
+        },
+        {
+          "day": "day_2",
+          "type": "lunch",
+          "title": "Caprese Sandwich",
+          "ingredients": [
+            "1 ciabatta roll",
+            "1/2 cup fresh mozzarella",
+            "1 tomato",
+            "basil leaves",
+            "balsamic glaze"
+          ],
+          "instructions": [
+            "Slice the ciabatta roll.",
+            "Layer mozzarella, tomato, and basil.",
+            "Drizzle with balsamic glaze."
+          ],
+          "cookTime": 10,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 18,
+            "carbs_g": 45,
+            "fat_g": 18
+          },
+          "fullText": "caprese sandwich 1 ciabatta roll 1/2 cup fresh mozzarella 1 tomato basil leaves balsamic glaze slice the ciabatta roll. layer mozzarella, tomato, and basil. drizzle with balsamic glaze."
+        },
+        {
+          "day": "day_2",
+          "type": "dinner",
+          "title": "Quinoa and Black Bean Bowl",
+          "ingredients": [
+            "1 cup cooked quinoa",
+            "1 can black beans",
+            "1/2 avocado",
+            "1/4 cup corn",
+            "lime juice"
+          ],
+          "instructions": [
+            "Mix quinoa, black beans, corn, and lime juice in a bowl.",
+            "Top with sliced avocado."
+          ],
+          "cookTime": 30,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 450,
+            "protein_g": 15,
+            "carbs_g": 60,
+            "fat_g": 20
+          },
+          "fullText": "quinoa and black bean bowl 1 cup cooked quinoa 1 can black beans 1/2 avocado 1/4 cup corn lime juice mix quinoa, black beans, corn, and lime juice in a bowl. top with sliced avocado."
+        },
+        {
+          "day": "day_3",
+          "type": "breakfast",
+          "title": "Smoothie Bowl",
+          "ingredients": [
+            "1 banana",
+            "1/2 cup spinach",
+            "1/2 cup almond milk",
+            "toppings: granola, berries"
+          ],
+          "instructions": [
+            "Blend banana, spinach, and almond milk until smooth.",
+            "Pour into a bowl and add toppings."
+          ],
+          "cookTime": 10,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 5,
+            "carbs_g": 50,
+            "fat_g": 8
+          },
+          "fullText": "smoothie bowl 1 banana 1/2 cup spinach 1/2 cup almond milk toppings: granola, berries blend banana, spinach, and almond milk until smooth. pour into a bowl and add toppings."
+        },
+        {
+          "day": "day_3",
+          "type": "lunch",
+          "title": "Mediterranean Couscous",
+          "ingredients": [
+            "1 cup couscous",
+            "1/2 cup cherry tomatoes",
+            "1/4 cup olives",
+            "1/4 cup feta",
+            "olive oil"
+          ],
+          "instructions": [
+            "Cook couscous according to package instructions.",
+            "Mix in chopped tomatoes, olives, and feta."
+          ],
+          "cookTime": 20,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 12,
+            "carbs_g": 60,
+            "fat_g": 15
+          },
+          "fullText": "mediterranean couscous 1 cup couscous 1/2 cup cherry tomatoes 1/4 cup olives 1/4 cup feta olive oil cook couscous according to package instructions. mix in chopped tomatoes, olives, and feta."
+        },
+        {
+          "day": "day_3",
+          "type": "dinner",
+          "title": "Vegetable Tacos",
+          "ingredients": [
+            "4 corn tortillas",
+            "1 cup mixed sautéed vegetables",
+            "1/2 avocado",
+            "salsa"
+          ],
+          "instructions": [
+            "Warm tortillas in a pan.",
+            "Fill with sautéed vegetables and top with avocado and salsa."
+          ],
+          "cookTime": 25,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 10,
+            "carbs_g": 50,
+            "fat_g": 15
+          },
+          "fullText": "vegetable tacos 4 corn tortillas 1 cup mixed sautéed vegetables 1/2 avocado salsa warm tortillas in a pan. fill with sautéed vegetables and top with avocado and salsa."
+        },
+        {
+          "day": "day_4",
+          "type": "breakfast",
+          "title": "Avocado Toast",
+          "ingredients": [
+            "1 slice whole grain bread",
+            "1/2 avocado",
+            "salt",
+            "pepper"
+          ],
+          "instructions": [
+            "Toast the bread.",
+            "Mash avocado and spread on toast, season with salt and pepper."
+          ],
+          "cookTime": 10,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 200,
+            "protein_g": 5,
+            "carbs_g": 30,
+            "fat_g": 10
+          },
+          "fullText": "avocado toast 1 slice whole grain bread 1/2 avocado salt pepper toast the bread. mash avocado and spread on toast, season with salt and pepper."
+        },
+        {
+          "day": "day_4",
+          "type": "lunch",
+          "title": "Lentil Soup",
+          "ingredients": [
+            "1 can lentils",
+            "1 carrot",
+            "1 celery stalk",
+            "1 onion",
+            "vegetable broth"
+          ],
+          "instructions": [
+            "Sauté chopped onion, carrot, and celery.",
+            "Add lentils and broth, simmer for 15 minutes."
+          ],
+          "cookTime": 30,
+          "difficulty": 2.5,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 18,
+            "carbs_g": 50,
+            "fat_g": 5
+          },
+          "fullText": "lentil soup 1 can lentils 1 carrot 1 celery stalk 1 onion vegetable broth sauté chopped onion, carrot, and celery. add lentils and broth, simmer for 15 minutes."
+        },
+        {
+          "day": "day_4",
+          "type": "dinner",
+          "title": "Stuffed Bell Peppers",
+          "ingredients": [
+            "2 bell peppers",
+            "1 cup cooked rice",
+            "1 can black beans",
+            "1 tsp cumin"
+          ],
+          "instructions": [
+            "Cut tops off peppers and remove seeds.",
+            "Mix rice, beans, and cumin, stuff into peppers, and bake for 15 minutes."
+          ],
+          "cookTime": 30,
+          "difficulty": 2.5,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 15,
+            "carbs_g": 60,
+            "fat_g": 10
+          },
+          "fullText": "stuffed bell peppers 2 bell peppers 1 cup cooked rice 1 can black beans 1 tsp cumin cut tops off peppers and remove seeds. mix rice, beans, and cumin, stuff into peppers, and bake for 15 minutes."
+        },
+        {
+          "day": "day_5",
+          "type": "breakfast",
+          "title": "Chia Seed Pudding",
+          "ingredients": [
+            "1/4 cup chia seeds",
+            "1 cup almond milk",
+            "1 tbsp maple syrup",
+            "berries"
+          ],
+          "instructions": [
+            "Mix chia seeds, almond milk, and maple syrup.",
+            "Refrigerate for at least 2 hours, serve with berries."
+          ],
+          "cookTime": 10,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 10,
+            "carbs_g": 40,
+            "fat_g": 15
+          },
+          "fullText": "chia seed pudding 1/4 cup chia seeds 1 cup almond milk 1 tbsp maple syrup berries mix chia seeds, almond milk, and maple syrup. refrigerate for at least 2 hours, serve with berries."
+        },
+        {
+          "day": "day_5",
+          "type": "lunch",
+          "title": "Vegetable Sushi Rolls",
+          "ingredients": [
+            "1 cup sushi rice",
+            "nori sheets",
+            "cucumber",
+            "carrot",
+            "avocado"
+          ],
+          "instructions": [
+            "Cook sushi rice and let cool.",
+            "Lay nori on a mat, spread rice, and add vegetables, roll tightly."
+          ],
+          "cookTime": 30,
+          "difficulty": 2.5,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 8,
+            "carbs_g": 60,
+            "fat_g": 10
+          },
+          "fullText": "vegetable sushi rolls 1 cup sushi rice nori sheets cucumber carrot avocado cook sushi rice and let cool. lay nori on a mat, spread rice, and add vegetables, roll tightly."
+        },
+        {
+          "day": "day_5",
+          "type": "dinner",
+          "title": "Pasta Primavera",
+          "ingredients": [
+            "8 oz pasta",
+            "1 cup mixed vegetables",
+            "1/4 cup parmesan",
+            "olive oil"
+          ],
+          "instructions": [
+            "Cook pasta according to package instructions.",
+            "Sauté vegetables in olive oil, mix with pasta and top with parmesan."
+          ],
+          "cookTime": 25,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 450,
+            "protein_g": 15,
+            "carbs_g": 70,
+            "fat_g": 15
+          },
+          "fullText": "pasta primavera 8 oz pasta 1 cup mixed vegetables 1/4 cup parmesan olive oil cook pasta according to package instructions. sauté vegetables in olive oil, mix with pasta and top with parmesan."
+        },
+        {
+          "day": "day_6",
+          "type": "breakfast",
+          "title": "Fruit Salad",
+          "ingredients": [
+            "1 apple",
+            "1 banana",
+            "1/2 cup grapes",
+            "1 orange"
+          ],
+          "instructions": [
+            "Chop all fruits and mix in a bowl."
+          ],
+          "cookTime": 10,
+          "difficulty": 1,
+          "nutrition": {
+            "calories": 200,
+            "protein_g": 2,
+            "carbs_g": 50,
+            "fat_g": 0
+          },
+          "fullText": "fruit salad 1 apple 1 banana 1/2 cup grapes 1 orange chop all fruits and mix in a bowl."
+        },
+        {
+          "day": "day_6",
+          "type": "lunch",
+          "title": "Falafel Wrap",
+          "ingredients": [
+            "4 falafel balls",
+            "1 whole wheat wrap",
+            "lettuce",
+            "tomato",
+            "tahini sauce"
+          ],
+          "instructions": [
+            "Warm falafel in a pan.",
+            "Place in wrap with lettuce, tomato, and drizzle with tahini."
+          ],
+          "cookTime": 20,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 15,
+            "carbs_g": 50,
+            "fat_g": 15
+          },
+          "fullText": "falafel wrap 4 falafel balls 1 whole wheat wrap lettuce tomato tahini sauce warm falafel in a pan. place in wrap with lettuce, tomato, and drizzle with tahini."
+        },
+        {
+          "day": "day_6",
+          "type": "dinner",
+          "title": "Zucchini Noodles with Pesto",
+          "ingredients": [
+            "2 zucchinis",
+            "1/4 cup pesto",
+            "1/4 cup cherry tomatoes"
+          ],
+          "instructions": [
+            "Spiralize zucchinis into noodles.",
+            "Sauté with pesto and halved cherry tomatoes."
+          ],
+          "cookTime": 25,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 8,
+            "carbs_g": 20,
+            "fat_g": 20
+          },
+          "fullText": "zucchini noodles with pesto 2 zucchinis 1/4 cup pesto 1/4 cup cherry tomatoes spiralize zucchinis into noodles. sauté with pesto and halved cherry tomatoes."
+        },
+        {
+          "day": "day_7",
+          "type": "breakfast",
+          "title": "Peanut Butter Banana Toast",
+          "ingredients": [
+            "1 slice whole grain bread",
+            "1 tbsp peanut butter",
+            "1/2 banana"
+          ],
+          "instructions": [
+            "Toast the bread.",
+            "Spread peanut butter and top with banana slices."
+          ],
+          "cookTime": 10,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 10,
+            "carbs_g": 40,
+            "fat_g": 12
+          },
+          "fullText": "peanut butter banana toast 1 slice whole grain bread 1 tbsp peanut butter 1/2 banana toast the bread. spread peanut butter and top with banana slices."
+        },
+        {
+          "day": "day_7",
+          "type": "lunch",
+          "title": "Spinach and Feta Quiche",
+          "ingredients": [
+            "1 pie crust",
+            "2 cups spinach",
+            "1/2 cup feta",
+            "3 eggs",
+            "1/2 cup milk"
+          ],
+          "instructions": [
+            "Preheat oven to 375°F.",
+            "Whisk eggs and milk, mix in spinach and feta, pour into crust, bake for 25 minutes."
+          ],
+          "cookTime": 30,
+          "difficulty": 2.5,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 20,
+            "carbs_g": 30,
+            "fat_g": 25
+          },
+          "fullText": "spinach and feta quiche 1 pie crust 2 cups spinach 1/2 cup feta 3 eggs 1/2 cup milk preheat oven to 375°f. whisk eggs and milk, mix in spinach and feta, pour into crust, bake for 25 minutes."
+        },
+        {
+          "day": "day_7",
+          "type": "dinner",
+          "title": "Vegetable Curry",
+          "ingredients": [
+            "1 can coconut milk",
+            "1 cup mixed vegetables",
+            "2 tbsp curry paste",
+            "1 cup cooked rice"
+          ],
+          "instructions": [
+            "Heat coconut milk and curry paste in a pan.",
+            "Add vegetables and simmer for 15 minutes, serve over rice."
+          ],
+          "cookTime": 30,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 450,
+            "protein_g": 10,
+            "carbs_g": 60,
+            "fat_g": 20
+          },
+          "fullText": "vegetable curry 1 can coconut milk 1 cup mixed vegetables 2 tbsp curry paste 1 cup cooked rice heat coconut milk and curry paste in a pan. add vegetables and simmer for 15 minutes, serve over rice."
+        }
+      ],
+      "overallScore": {
+        "overall": 7.5,
+        "breakdown": {
+          "cultural": 14.285714285714286,
+          "conflict": 10,
+          "authenticity": 0.7936507936507936,
+          "perplexity": 0
+        },
+        "weights": {
+          "cultural": 0.3,
+          "conflict": 0.3,
+          "authenticity": 0.25,
+          "perplexity": 0.15
+        }
+      }
+    },
+    "rawMealPlan": {
+      "meal_plan": {
+        "day_1": {
+          "breakfast": {
+            "title": "Vegetable Omelette",
+            "cook_time_minutes": 15,
+            "difficulty": 2,
+            "ingredients": [
+              "2 eggs",
+              "1/4 cup bell peppers",
+              "1/4 cup spinach",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Whisk eggs with salt and pepper.",
+              "Sauté vegetables in a non-stick pan.",
+              "Pour eggs over vegetables and cook until set."
+            ],
+            "nutrition": {
+              "calories": 250,
+              "protein_g": 18,
+              "carbs_g": 5,
+              "fat_g": 18
+            }
+          },
+          "lunch": {
+            "title": "Chickpea Salad",
+            "cook_time_minutes": 20,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1 can chickpeas",
+              "1/2 cucumber",
+              "1/2 cup cherry tomatoes",
+              "1 tbsp olive oil",
+              "lemon juice",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Rinse and drain chickpeas.",
+              "Chop cucumber and tomatoes.",
+              "Mix all ingredients in a bowl."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 15,
+              "carbs_g": 45,
+              "fat_g": 10
+            }
+          },
+          "dinner": {
+            "title": "Vegetable Stir-Fry",
+            "cook_time_minutes": 25,
+            "difficulty": 2.5,
+            "ingredients": [
+              "1 cup mixed vegetables",
+              "1 tbsp soy sauce",
+              "1 tsp sesame oil",
+              "1/2 cup cooked rice"
+            ],
+            "instructions": [
+              "Heat oil in a pan.",
+              "Add vegetables and stir-fry for 5-7 minutes.",
+              "Add soy sauce and serve over rice."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 10,
+              "carbs_g": 60,
+              "fat_g": 15
+            }
+          }
+        },
+        "day_2": {
+          "breakfast": {
+            "title": "Greek Yogurt with Honey and Nuts",
+            "cook_time_minutes": 5,
+            "difficulty": 1,
+            "ingredients": [
+              "1 cup Greek yogurt",
+              "1 tbsp honey",
+              "2 tbsp mixed nuts"
+            ],
+            "instructions": [
+              "Spoon yogurt into a bowl.",
+              "Drizzle honey on top and sprinkle nuts."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 20,
+              "carbs_g": 30,
+              "fat_g": 15
+            }
+          },
+          "lunch": {
+            "title": "Caprese Sandwich",
+            "cook_time_minutes": 10,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1 ciabatta roll",
+              "1/2 cup fresh mozzarella",
+              "1 tomato",
+              "basil leaves",
+              "balsamic glaze"
+            ],
+            "instructions": [
+              "Slice the ciabatta roll.",
+              "Layer mozzarella, tomato, and basil.",
+              "Drizzle with balsamic glaze."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 18,
+              "carbs_g": 45,
+              "fat_g": 18
+            }
+          },
+          "dinner": {
+            "title": "Quinoa and Black Bean Bowl",
+            "cook_time_minutes": 30,
+            "difficulty": 2,
+            "ingredients": [
+              "1 cup cooked quinoa",
+              "1 can black beans",
+              "1/2 avocado",
+              "1/4 cup corn",
+              "lime juice"
+            ],
+            "instructions": [
+              "Mix quinoa, black beans, corn, and lime juice in a bowl.",
+              "Top with sliced avocado."
+            ],
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 15,
+              "carbs_g": 60,
+              "fat_g": 20
+            }
+          }
+        },
+        "day_3": {
+          "breakfast": {
+            "title": "Smoothie Bowl",
+            "cook_time_minutes": 10,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1 banana",
+              "1/2 cup spinach",
+              "1/2 cup almond milk",
+              "toppings: granola, berries"
+            ],
+            "instructions": [
+              "Blend banana, spinach, and almond milk until smooth.",
+              "Pour into a bowl and add toppings."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 5,
+              "carbs_g": 50,
+              "fat_g": 8
+            }
+          },
+          "lunch": {
+            "title": "Mediterranean Couscous",
+            "cook_time_minutes": 20,
+            "difficulty": 2,
+            "ingredients": [
+              "1 cup couscous",
+              "1/2 cup cherry tomatoes",
+              "1/4 cup olives",
+              "1/4 cup feta",
+              "olive oil"
+            ],
+            "instructions": [
+              "Cook couscous according to package instructions.",
+              "Mix in chopped tomatoes, olives, and feta."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 12,
+              "carbs_g": 60,
+              "fat_g": 15
+            }
+          },
+          "dinner": {
+            "title": "Vegetable Tacos",
+            "cook_time_minutes": 25,
+            "difficulty": 2,
+            "ingredients": [
+              "4 corn tortillas",
+              "1 cup mixed sautéed vegetables",
+              "1/2 avocado",
+              "salsa"
+            ],
+            "instructions": [
+              "Warm tortillas in a pan.",
+              "Fill with sautéed vegetables and top with avocado and salsa."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 10,
+              "carbs_g": 50,
+              "fat_g": 15
+            }
+          }
+        },
+        "day_4": {
+          "breakfast": {
+            "title": "Avocado Toast",
+            "cook_time_minutes": 10,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1 slice whole grain bread",
+              "1/2 avocado",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Toast the bread.",
+              "Mash avocado and spread on toast, season with salt and pepper."
+            ],
+            "nutrition": {
+              "calories": 200,
+              "protein_g": 5,
+              "carbs_g": 30,
+              "fat_g": 10
+            }
+          },
+          "lunch": {
+            "title": "Lentil Soup",
+            "cook_time_minutes": 30,
+            "difficulty": 2.5,
+            "ingredients": [
+              "1 can lentils",
+              "1 carrot",
+              "1 celery stalk",
+              "1 onion",
+              "vegetable broth"
+            ],
+            "instructions": [
+              "Sauté chopped onion, carrot, and celery.",
+              "Add lentils and broth, simmer for 15 minutes."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 18,
+              "carbs_g": 50,
+              "fat_g": 5
+            }
+          },
+          "dinner": {
+            "title": "Stuffed Bell Peppers",
+            "cook_time_minutes": 30,
+            "difficulty": 2.5,
+            "ingredients": [
+              "2 bell peppers",
+              "1 cup cooked rice",
+              "1 can black beans",
+              "1 tsp cumin"
+            ],
+            "instructions": [
+              "Cut tops off peppers and remove seeds.",
+              "Mix rice, beans, and cumin, stuff into peppers, and bake for 15 minutes."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 15,
+              "carbs_g": 60,
+              "fat_g": 10
+            }
+          }
+        },
+        "day_5": {
+          "breakfast": {
+            "title": "Chia Seed Pudding",
+            "cook_time_minutes": 10,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1/4 cup chia seeds",
+              "1 cup almond milk",
+              "1 tbsp maple syrup",
+              "berries"
+            ],
+            "instructions": [
+              "Mix chia seeds, almond milk, and maple syrup.",
+              "Refrigerate for at least 2 hours, serve with berries."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 10,
+              "carbs_g": 40,
+              "fat_g": 15
+            }
+          },
+          "lunch": {
+            "title": "Vegetable Sushi Rolls",
+            "cook_time_minutes": 30,
+            "difficulty": 2.5,
+            "ingredients": [
+              "1 cup sushi rice",
+              "nori sheets",
+              "cucumber",
+              "carrot",
+              "avocado"
+            ],
+            "instructions": [
+              "Cook sushi rice and let cool.",
+              "Lay nori on a mat, spread rice, and add vegetables, roll tightly."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 8,
+              "carbs_g": 60,
+              "fat_g": 10
+            }
+          },
+          "dinner": {
+            "title": "Pasta Primavera",
+            "cook_time_minutes": 25,
+            "difficulty": 2,
+            "ingredients": [
+              "8 oz pasta",
+              "1 cup mixed vegetables",
+              "1/4 cup parmesan",
+              "olive oil"
+            ],
+            "instructions": [
+              "Cook pasta according to package instructions.",
+              "Sauté vegetables in olive oil, mix with pasta and top with parmesan."
+            ],
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 15,
+              "carbs_g": 70,
+              "fat_g": 15
+            }
+          }
+        },
+        "day_6": {
+          "breakfast": {
+            "title": "Fruit Salad",
+            "cook_time_minutes": 10,
+            "difficulty": 1,
+            "ingredients": [
+              "1 apple",
+              "1 banana",
+              "1/2 cup grapes",
+              "1 orange"
+            ],
+            "instructions": [
+              "Chop all fruits and mix in a bowl."
+            ],
+            "nutrition": {
+              "calories": 200,
+              "protein_g": 2,
+              "carbs_g": 50,
+              "fat_g": 0
+            }
+          },
+          "lunch": {
+            "title": "Falafel Wrap",
+            "cook_time_minutes": 20,
+            "difficulty": 2,
+            "ingredients": [
+              "4 falafel balls",
+              "1 whole wheat wrap",
+              "lettuce",
+              "tomato",
+              "tahini sauce"
+            ],
+            "instructions": [
+              "Warm falafel in a pan.",
+              "Place in wrap with lettuce, tomato, and drizzle with tahini."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 15,
+              "carbs_g": 50,
+              "fat_g": 15
+            }
+          },
+          "dinner": {
+            "title": "Zucchini Noodles with Pesto",
+            "cook_time_minutes": 25,
+            "difficulty": 2,
+            "ingredients": [
+              "2 zucchinis",
+              "1/4 cup pesto",
+              "1/4 cup cherry tomatoes"
+            ],
+            "instructions": [
+              "Spiralize zucchinis into noodles.",
+              "Sauté with pesto and halved cherry tomatoes."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 8,
+              "carbs_g": 20,
+              "fat_g": 20
+            }
+          }
+        },
+        "day_7": {
+          "breakfast": {
+            "title": "Peanut Butter Banana Toast",
+            "cook_time_minutes": 10,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1 slice whole grain bread",
+              "1 tbsp peanut butter",
+              "1/2 banana"
+            ],
+            "instructions": [
+              "Toast the bread.",
+              "Spread peanut butter and top with banana slices."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 10,
+              "carbs_g": 40,
+              "fat_g": 12
+            }
+          },
+          "lunch": {
+            "title": "Spinach and Feta Quiche",
+            "cook_time_minutes": 30,
+            "difficulty": 2.5,
+            "ingredients": [
+              "1 pie crust",
+              "2 cups spinach",
+              "1/2 cup feta",
+              "3 eggs",
+              "1/2 cup milk"
+            ],
+            "instructions": [
+              "Preheat oven to 375°F.",
+              "Whisk eggs and milk, mix in spinach and feta, pour into crust, bake for 25 minutes."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 20,
+              "carbs_g": 30,
+              "fat_g": 25
+            }
+          },
+          "dinner": {
+            "title": "Vegetable Curry",
+            "cook_time_minutes": 30,
+            "difficulty": 2,
+            "ingredients": [
+              "1 can coconut milk",
+              "1 cup mixed vegetables",
+              "2 tbsp curry paste",
+              "1 cup cooked rice"
+            ],
+            "instructions": [
+              "Heat coconut milk and curry paste in a pan.",
+              "Add vegetables and simmer for 15 minutes, serve over rice."
+            ],
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 10,
+              "carbs_g": 60,
+              "fat_g": 20
+            }
+          }
+        }
+      },
+      "shopping_list": [
+        "eggs",
+        "bell peppers",
+        "spinach",
+        "salt",
+        "pepper",
+        "chickpeas",
+        "cucumber",
+        "cherry tomatoes",
+        "olive oil",
+        "lemon juice",
+        "mixed vegetables",
+        "soy sauce",
+        "sesame oil",
+        "rice",
+        "Greek yogurt",
+        "honey",
+        "mixed nuts",
+        "ciabatta roll",
+        "fresh mozzarella",
+        "tomato",
+        "basil leaves",
+        "balsamic glaze",
+        "quinoa",
+        "avocado",
+        "corn",
+        "lime",
+        "whole grain bread",
+        "carrot",
+        "celery",
+        "onion",
+        "vegetable broth",
+        "black beans",
+        "cumin",
+        "chia seeds",
+        "almond milk",
+        "maple syrup",
+        "berries",
+        "nori sheets",
+        "sushi rice",
+        "zucchini",
+        "pesto",
+        "falafel balls",
+        "whole wheat wrap",
+        "lettuce",
+        "tahini sauce",
+        "pie crust",
+        "feta",
+        "coconut milk",
+        "curry paste"
+      ],
+      "prep_tips": [
+        "Prep ingredients in advance to save time during cooking.",
+        "Use pre-cooked grains like quinoa or rice for quicker meal prep.",
+        "Keep a variety of spices and sauces on hand to enhance flavors."
+      ]
+    }
+  },
+  {
+    "scenario": "Italian + Vegan (Medium Conflict)",
+    "success": true,
+    "responseTime": 23601,
+    "analysis": {
+      "culturalDistribution": {
+        "totalMeals": 15,
+        "culturalMeals": 10,
+        "genericMeals": 5,
+        "culturalPercentage": 66.66666666666666,
+        "expectedPercentage": 50,
+        "meetsTarget": false,
+        "culturalMealDetails": [
+          {
+            "day": "day_1",
+            "type": "lunch",
+            "title": "Chickpea Salad",
+            "ingredients": [
+              "1 can chickpeas",
+              "1 cucumber",
+              "1 tomato",
+              "2 tablespoons olive oil",
+              "lemon juice",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Rinse and drain chickpeas.",
+              "Chop cucumber and tomato.",
+              "Mix all ingredients in a bowl."
+            ],
+            "cookTime": 15,
+            "difficulty": 1.5,
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 15,
+              "carbs_g": 45,
+              "fat_g": 12
+            },
+            "fullText": "chickpea salad 1 can chickpeas 1 cucumber 1 tomato 2 tablespoons olive oil lemon juice salt pepper rinse and drain chickpeas. chop cucumber and tomato. mix all ingredients in a bowl.",
+            "cultures": [
+              {
+                "culture": "Italian",
+                "indicators": [
+                  "olive oil"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_1",
+            "type": "dinner",
+            "title": "Stir-Fried Tofu and Vegetables",
+            "ingredients": [
+              "1 block firm tofu",
+              "2 cups mixed vegetables",
+              "2 tablespoons soy sauce",
+              "1 tablespoon sesame oil",
+              "1 teaspoon ginger"
+            ],
+            "instructions": [
+              "Press and cube tofu.",
+              "Heat oil in a pan, add tofu and cook until golden.",
+              "Add vegetables, soy sauce, and ginger; stir-fry until cooked."
+            ],
+            "cookTime": 25,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 25,
+              "carbs_g": 30,
+              "fat_g": 20
+            },
+            "fullText": "stir-fried tofu and vegetables 1 block firm tofu 2 cups mixed vegetables 2 tablespoons soy sauce 1 tablespoon sesame oil 1 teaspoon ginger press and cube tofu. heat oil in a pan, add tofu and cook until golden. add vegetables, soy sauce, and ginger; stir-fry until cooked.",
+            "cultures": [
+              {
+                "culture": "Chinese",
+                "indicators": [
+                  "stir-fry",
+                  "soy sauce",
+                  "sesame oil",
+                  "ginger",
+                  "tofu"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_2",
+            "type": "lunch",
+            "title": "Quinoa and Black Bean Bowl",
+            "ingredients": [
+              "1 cup cooked quinoa",
+              "1 can black beans",
+              "1 avocado",
+              "1 lime",
+              "cilantro"
+            ],
+            "instructions": [
+              "Mix quinoa and black beans in a bowl.",
+              "Top with diced avocado, lime juice, and cilantro."
+            ],
+            "cookTime": 30,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 15,
+              "carbs_g": 65,
+              "fat_g": 20
+            },
+            "fullText": "quinoa and black bean bowl 1 cup cooked quinoa 1 can black beans 1 avocado 1 lime cilantro mix quinoa and black beans in a bowl. top with diced avocado, lime juice, and cilantro.",
+            "cultures": [
+              {
+                "culture": "Mexican",
+                "indicators": [
+                  "cilantro",
+                  "lime"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_2",
+            "type": "dinner",
+            "title": "Mediterranean Stuffed Peppers",
+            "ingredients": [
+              "2 bell peppers",
+              "1 cup cooked rice",
+              "1 can chickpeas",
+              "1/2 cup diced tomatoes",
+              "1 teaspoon oregano"
+            ],
+            "instructions": [
+              "Preheat oven to 375°F.",
+              "Cut tops off peppers and remove seeds.",
+              "Mix rice, chickpeas, tomatoes, and oregano; stuff into peppers.",
+              "Bake for 25 minutes."
+            ],
+            "cookTime": 40,
+            "difficulty": 2.5,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 18,
+              "carbs_g": 60,
+              "fat_g": 10
+            },
+            "fullText": "mediterranean stuffed peppers 2 bell peppers 1 cup cooked rice 1 can chickpeas 1/2 cup diced tomatoes 1 teaspoon oregano preheat oven to 375°f. cut tops off peppers and remove seeds. mix rice, chickpeas, tomatoes, and oregano; stuff into peppers. bake for 25 minutes.",
+            "cultures": [
+              {
+                "culture": "Italian",
+                "indicators": [
+                  "oregano"
+                ]
+              },
+              {
+                "culture": "Greek",
+                "indicators": [
+                  "mediterranean"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_3",
+            "type": "lunch",
+            "title": "Lentil Soup",
+            "ingredients": [
+              "1 cup lentils",
+              "1 onion",
+              "2 carrots",
+              "2 celery stalks",
+              "4 cups vegetable broth"
+            ],
+            "instructions": [
+              "Chop onion, carrots, and celery.",
+              "Sauté vegetables in a pot, add lentils and broth; simmer until lentils are tender."
+            ],
+            "cookTime": 30,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 20,
+              "carbs_g": 60,
+              "fat_g": 5
+            },
+            "fullText": "lentil soup 1 cup lentils 1 onion 2 carrots 2 celery stalks 4 cups vegetable broth chop onion, carrots, and celery. sauté vegetables in a pot, add lentils and broth; simmer until lentils are tender.",
+            "cultures": [
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_3",
+            "type": "dinner",
+            "title": "Zucchini Noodles with Marinara",
+            "ingredients": [
+              "2 zucchinis",
+              "1 cup marinara sauce",
+              "1 tablespoon olive oil",
+              "basil"
+            ],
+            "instructions": [
+              "Spiralize zucchinis into noodles.",
+              "Sauté in olive oil for 5 minutes, add marinara sauce and heat through."
+            ],
+            "cookTime": 25,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 10,
+              "carbs_g": 40,
+              "fat_g": 10
+            },
+            "fullText": "zucchini noodles with marinara 2 zucchinis 1 cup marinara sauce 1 tablespoon olive oil basil spiralize zucchinis into noodles. sauté in olive oil for 5 minutes, add marinara sauce and heat through.",
+            "cultures": [
+              {
+                "culture": "Italian",
+                "indicators": [
+                  "marinara",
+                  "basil",
+                  "olive oil"
+                ]
+              },
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_4",
+            "type": "lunch",
+            "title": "Sweet Potato and Black Bean Tacos",
+            "ingredients": [
+              "2 sweet potatoes",
+              "1 can black beans",
+              "corn tortillas",
+              "avocado",
+              "lime"
+            ],
+            "instructions": [
+              "Roast diced sweet potatoes at 400°F for 20 minutes.",
+              "Warm tortillas, fill with sweet potatoes, black beans, and avocado; drizzle with lime."
+            ],
+            "cookTime": 30,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 15,
+              "carbs_g": 70,
+              "fat_g": 15
+            },
+            "fullText": "sweet potato and black bean tacos 2 sweet potatoes 1 can black beans corn tortillas avocado lime roast diced sweet potatoes at 400°f for 20 minutes. warm tortillas, fill with sweet potatoes, black beans, and avocado; drizzle with lime.",
+            "cultures": [
+              {
+                "culture": "Mexican",
+                "indicators": [
+                  "tacos",
+                  "lime"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_4",
+            "type": "dinner",
+            "title": "Vegan Curry",
+            "ingredients": [
+              "1 can coconut milk",
+              "1 cup mixed vegetables",
+              "2 tablespoons curry paste",
+              "1 cup chickpeas"
+            ],
+            "instructions": [
+              "Heat coconut milk and curry paste in a pot.",
+              "Add vegetables and chickpeas; simmer for 20 minutes."
+            ],
+            "cookTime": 40,
+            "difficulty": 2.5,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 15,
+              "carbs_g": 50,
+              "fat_g": 20
+            },
+            "fullText": "vegan curry 1 can coconut milk 1 cup mixed vegetables 2 tablespoons curry paste 1 cup chickpeas heat coconut milk and curry paste in a pot. add vegetables and chickpeas; simmer for 20 minutes.",
+            "cultures": [
+              {
+                "culture": "Thai",
+                "indicators": [
+                  "curry",
+                  "coconut milk"
+                ]
+              },
+              {
+                "culture": "Indian",
+                "indicators": [
+                  "curry"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_5",
+            "type": "lunch",
+            "title": "Vegan Sushi Rolls",
+            "ingredients": [
+              "1 cup sushi rice",
+              "nori sheets",
+              "1 cucumber",
+              "1 avocado",
+              "soy sauce"
+            ],
+            "instructions": [
+              "Cook sushi rice according to package instructions.",
+              "Lay nori on a mat, spread rice, and add cucumber and avocado; roll tightly."
+            ],
+            "cookTime": 30,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 10,
+              "carbs_g": 60,
+              "fat_g": 10
+            },
+            "fullText": "vegan sushi rolls 1 cup sushi rice nori sheets 1 cucumber 1 avocado soy sauce cook sushi rice according to package instructions. lay nori on a mat, spread rice, and add cucumber and avocado; roll tightly.",
+            "cultures": [
+              {
+                "culture": "Chinese",
+                "indicators": [
+                  "soy sauce"
+                ]
+              },
+              {
+                "culture": "Japanese",
+                "indicators": [
+                  "sushi"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_5",
+            "type": "dinner",
+            "title": "Cauliflower Tacos",
+            "ingredients": [
+              "1 head cauliflower",
+              "corn tortillas",
+              "1 avocado",
+              "lime",
+              "cilantro"
+            ],
+            "instructions": [
+              "Roast cauliflower florets at 400°F for 20 minutes.",
+              "Serve in tortillas with avocado, lime, and cilantro."
+            ],
+            "cookTime": 30,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 12,
+              "carbs_g": 50,
+              "fat_g": 18
+            },
+            "fullText": "cauliflower tacos 1 head cauliflower corn tortillas 1 avocado lime cilantro roast cauliflower florets at 400°f for 20 minutes. serve in tortillas with avocado, lime, and cilantro.",
+            "cultures": [
+              {
+                "culture": "Mexican",
+                "indicators": [
+                  "tacos",
+                  "cilantro",
+                  "lime"
+                ]
+              }
+            ]
+          }
+        ],
+        "genericMealTitles": [
+          "Vegan Smoothie Bowl",
+          "Overnight Oats",
+          "Avocado Toast",
+          "Chia Pudding",
+          "Fruit Salad with Nuts"
+        ]
+      },
+      "conflictAnalysis": {
+        "dietaryCompliance": false,
+        "conflictsFound": [
+          {
+            "restriction": "vegan",
+            "conflictItem": "milk",
+            "meals": [
+              "Vegan Smoothie Bowl",
+              "Overnight Oats",
+              "Chia Pudding",
+              "Vegan Curry"
+            ]
+          },
+          {
+            "restriction": "vegan",
+            "conflictItem": "honey",
+            "meals": [
+              "Chia Pudding",
+              "Fruit Salad with Nuts"
+            ]
+          }
+        ],
+        "conflictsAvoided": 10,
+        "potentialConflicts": 12,
+        "resolutionEffectiveness": 0.8333333333333334,
+        "substitutionsFound": [
+          {
+            "meal": "Vegan Smoothie Bowl",
+            "substitution": "almond milk"
+          },
+          {
+            "meal": "Chickpea Salad",
+            "substitution": "chickpeas"
+          },
+          {
+            "meal": "Stir-Fried Tofu and Vegetables",
+            "substitution": "tofu"
+          },
+          {
+            "meal": "Overnight Oats",
+            "substitution": "almond milk"
+          },
+          {
+            "meal": "Mediterranean Stuffed Peppers",
+            "substitution": "chickpeas"
+          },
+          {
+            "meal": "Lentil Soup",
+            "substitution": "lentils"
+          },
+          {
+            "meal": "Chia Pudding",
+            "substitution": "almond milk"
+          },
+          {
+            "meal": "Vegan Curry",
+            "substitution": "chickpeas"
+          },
+          {
+            "meal": "Vegan Curry",
+            "substitution": "coconut milk"
+          }
+        ],
+        "conflictResolutionScore": 6
+      },
+      "authenticityAssessment": {
+        "authenticityScore": 0.8333333333333333,
+        "rawScore": 15,
+        "maxPossibleScore": 180,
+        "culturalKeywords": [
+          "Italian: olive oil",
+          "Italian: tomato",
+          "Chinese: stir-fry",
+          "Chinese: soy sauce",
+          "Chinese: sesame oil",
+          "Chinese: ginger",
+          "Italian: oregano",
+          "Italian: basil"
+        ],
+        "authenticityDetails": [
+          {
+            "meal": "Stir-Fried Tofu and Vegetables",
+            "culture": "Chinese",
+            "score": 8,
+            "markers": {
+              "traditional": [
+                "stir-fry"
+              ],
+              "ingredients": [
+                "soy sauce",
+                "sesame oil",
+                "ginger"
+              ],
+              "techniques": [
+                "stir-fry"
+              ]
+            }
+          },
+          {
+            "meal": "Chickpea Salad",
+            "culture": "Italian",
+            "score": 2,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "olive oil",
+                "tomato"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Mediterranean Stuffed Peppers",
+            "culture": "Italian",
+            "score": 2,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "oregano",
+                "tomato"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Zucchini Noodles with Marinara",
+            "culture": "Italian",
+            "score": 2,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "basil",
+                "olive oil"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Vegan Sushi Rolls",
+            "culture": "Chinese",
+            "score": 1,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "soy sauce"
+              ],
+              "techniques": []
+            }
+          }
+        ],
+        "hasHighAuthenticity": false,
+        "hasMediumAuthenticity": false
+      },
+      "perplexityIntegration": {
+        "qualityScore": 0,
+        "rawScore": 0,
+        "indicators": [],
+        "avgIngredientsPerMeal": 4.7,
+        "avgInstructionsPerMeal": 2.2,
+        "culturalDiversity": 0,
+        "hasHighQuality": false,
+        "hasMediumQuality": false
+      },
+      "extractedMeals": [
+        {
+          "day": "day_1",
+          "type": "breakfast",
+          "title": "Vegan Smoothie Bowl",
+          "ingredients": [
+            "1 banana",
+            "1 cup spinach",
+            "1 cup almond milk",
+            "1 tablespoon chia seeds",
+            "1/4 cup granola"
+          ],
+          "instructions": [
+            "Blend banana, spinach, and almond milk until smooth.",
+            "Pour into a bowl and top with chia seeds and granola."
+          ],
+          "cookTime": 10,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 8,
+            "carbs_g": 50,
+            "fat_g": 10
+          },
+          "fullText": "vegan smoothie bowl 1 banana 1 cup spinach 1 cup almond milk 1 tablespoon chia seeds 1/4 cup granola blend banana, spinach, and almond milk until smooth. pour into a bowl and top with chia seeds and granola."
+        },
+        {
+          "day": "day_1",
+          "type": "lunch",
+          "title": "Chickpea Salad",
+          "ingredients": [
+            "1 can chickpeas",
+            "1 cucumber",
+            "1 tomato",
+            "2 tablespoons olive oil",
+            "lemon juice",
+            "salt",
+            "pepper"
+          ],
+          "instructions": [
+            "Rinse and drain chickpeas.",
+            "Chop cucumber and tomato.",
+            "Mix all ingredients in a bowl."
+          ],
+          "cookTime": 15,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 15,
+            "carbs_g": 45,
+            "fat_g": 12
+          },
+          "fullText": "chickpea salad 1 can chickpeas 1 cucumber 1 tomato 2 tablespoons olive oil lemon juice salt pepper rinse and drain chickpeas. chop cucumber and tomato. mix all ingredients in a bowl."
+        },
+        {
+          "day": "day_1",
+          "type": "dinner",
+          "title": "Stir-Fried Tofu and Vegetables",
+          "ingredients": [
+            "1 block firm tofu",
+            "2 cups mixed vegetables",
+            "2 tablespoons soy sauce",
+            "1 tablespoon sesame oil",
+            "1 teaspoon ginger"
+          ],
+          "instructions": [
+            "Press and cube tofu.",
+            "Heat oil in a pan, add tofu and cook until golden.",
+            "Add vegetables, soy sauce, and ginger; stir-fry until cooked."
+          ],
+          "cookTime": 25,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 25,
+            "carbs_g": 30,
+            "fat_g": 20
+          },
+          "fullText": "stir-fried tofu and vegetables 1 block firm tofu 2 cups mixed vegetables 2 tablespoons soy sauce 1 tablespoon sesame oil 1 teaspoon ginger press and cube tofu. heat oil in a pan, add tofu and cook until golden. add vegetables, soy sauce, and ginger; stir-fry until cooked."
+        },
+        {
+          "day": "day_2",
+          "type": "breakfast",
+          "title": "Overnight Oats",
+          "ingredients": [
+            "1/2 cup rolled oats",
+            "1 cup almond milk",
+            "1 tablespoon maple syrup",
+            "1/2 cup berries"
+          ],
+          "instructions": [
+            "Combine oats, almond milk, and maple syrup in a jar.",
+            "Refrigerate overnight and top with berries in the morning."
+          ],
+          "cookTime": 5,
+          "difficulty": 1,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 10,
+            "carbs_g": 60,
+            "fat_g": 8
+          },
+          "fullText": "overnight oats 1/2 cup rolled oats 1 cup almond milk 1 tablespoon maple syrup 1/2 cup berries combine oats, almond milk, and maple syrup in a jar. refrigerate overnight and top with berries in the morning."
+        },
+        {
+          "day": "day_2",
+          "type": "lunch",
+          "title": "Quinoa and Black Bean Bowl",
+          "ingredients": [
+            "1 cup cooked quinoa",
+            "1 can black beans",
+            "1 avocado",
+            "1 lime",
+            "cilantro"
+          ],
+          "instructions": [
+            "Mix quinoa and black beans in a bowl.",
+            "Top with diced avocado, lime juice, and cilantro."
+          ],
+          "cookTime": 30,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 450,
+            "protein_g": 15,
+            "carbs_g": 65,
+            "fat_g": 20
+          },
+          "fullText": "quinoa and black bean bowl 1 cup cooked quinoa 1 can black beans 1 avocado 1 lime cilantro mix quinoa and black beans in a bowl. top with diced avocado, lime juice, and cilantro."
+        },
+        {
+          "day": "day_2",
+          "type": "dinner",
+          "title": "Mediterranean Stuffed Peppers",
+          "ingredients": [
+            "2 bell peppers",
+            "1 cup cooked rice",
+            "1 can chickpeas",
+            "1/2 cup diced tomatoes",
+            "1 teaspoon oregano"
+          ],
+          "instructions": [
+            "Preheat oven to 375°F.",
+            "Cut tops off peppers and remove seeds.",
+            "Mix rice, chickpeas, tomatoes, and oregano; stuff into peppers.",
+            "Bake for 25 minutes."
+          ],
+          "cookTime": 40,
+          "difficulty": 2.5,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 18,
+            "carbs_g": 60,
+            "fat_g": 10
+          },
+          "fullText": "mediterranean stuffed peppers 2 bell peppers 1 cup cooked rice 1 can chickpeas 1/2 cup diced tomatoes 1 teaspoon oregano preheat oven to 375°f. cut tops off peppers and remove seeds. mix rice, chickpeas, tomatoes, and oregano; stuff into peppers. bake for 25 minutes."
+        },
+        {
+          "day": "day_3",
+          "type": "breakfast",
+          "title": "Avocado Toast",
+          "ingredients": [
+            "2 slices whole grain bread",
+            "1 avocado",
+            "salt",
+            "pepper",
+            "red pepper flakes"
+          ],
+          "instructions": [
+            "Toast the bread.",
+            "Mash avocado and spread on toast; season with salt, pepper, and red pepper flakes."
+          ],
+          "cookTime": 10,
+          "difficulty": 1,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 8,
+            "carbs_g": 40,
+            "fat_g": 15
+          },
+          "fullText": "avocado toast 2 slices whole grain bread 1 avocado salt pepper red pepper flakes toast the bread. mash avocado and spread on toast; season with salt, pepper, and red pepper flakes."
+        },
+        {
+          "day": "day_3",
+          "type": "lunch",
+          "title": "Lentil Soup",
+          "ingredients": [
+            "1 cup lentils",
+            "1 onion",
+            "2 carrots",
+            "2 celery stalks",
+            "4 cups vegetable broth"
+          ],
+          "instructions": [
+            "Chop onion, carrots, and celery.",
+            "Sauté vegetables in a pot, add lentils and broth; simmer until lentils are tender."
+          ],
+          "cookTime": 30,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 20,
+            "carbs_g": 60,
+            "fat_g": 5
+          },
+          "fullText": "lentil soup 1 cup lentils 1 onion 2 carrots 2 celery stalks 4 cups vegetable broth chop onion, carrots, and celery. sauté vegetables in a pot, add lentils and broth; simmer until lentils are tender."
+        },
+        {
+          "day": "day_3",
+          "type": "dinner",
+          "title": "Zucchini Noodles with Marinara",
+          "ingredients": [
+            "2 zucchinis",
+            "1 cup marinara sauce",
+            "1 tablespoon olive oil",
+            "basil"
+          ],
+          "instructions": [
+            "Spiralize zucchinis into noodles.",
+            "Sauté in olive oil for 5 minutes, add marinara sauce and heat through."
+          ],
+          "cookTime": 25,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 10,
+            "carbs_g": 40,
+            "fat_g": 10
+          },
+          "fullText": "zucchini noodles with marinara 2 zucchinis 1 cup marinara sauce 1 tablespoon olive oil basil spiralize zucchinis into noodles. sauté in olive oil for 5 minutes, add marinara sauce and heat through."
+        },
+        {
+          "day": "day_4",
+          "type": "breakfast",
+          "title": "Chia Pudding",
+          "ingredients": [
+            "1/4 cup chia seeds",
+            "1 cup almond milk",
+            "1 tablespoon honey",
+            "1/2 cup fruit"
+          ],
+          "instructions": [
+            "Mix chia seeds, almond milk, and honey in a bowl.",
+            "Refrigerate for at least 2 hours or overnight; top with fruit."
+          ],
+          "cookTime": 10,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 10,
+            "carbs_g": 40,
+            "fat_g": 15
+          },
+          "fullText": "chia pudding 1/4 cup chia seeds 1 cup almond milk 1 tablespoon honey 1/2 cup fruit mix chia seeds, almond milk, and honey in a bowl. refrigerate for at least 2 hours or overnight; top with fruit."
+        },
+        {
+          "day": "day_4",
+          "type": "lunch",
+          "title": "Sweet Potato and Black Bean Tacos",
+          "ingredients": [
+            "2 sweet potatoes",
+            "1 can black beans",
+            "corn tortillas",
+            "avocado",
+            "lime"
+          ],
+          "instructions": [
+            "Roast diced sweet potatoes at 400°F for 20 minutes.",
+            "Warm tortillas, fill with sweet potatoes, black beans, and avocado; drizzle with lime."
+          ],
+          "cookTime": 30,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 450,
+            "protein_g": 15,
+            "carbs_g": 70,
+            "fat_g": 15
+          },
+          "fullText": "sweet potato and black bean tacos 2 sweet potatoes 1 can black beans corn tortillas avocado lime roast diced sweet potatoes at 400°f for 20 minutes. warm tortillas, fill with sweet potatoes, black beans, and avocado; drizzle with lime."
+        },
+        {
+          "day": "day_4",
+          "type": "dinner",
+          "title": "Vegan Curry",
+          "ingredients": [
+            "1 can coconut milk",
+            "1 cup mixed vegetables",
+            "2 tablespoons curry paste",
+            "1 cup chickpeas"
+          ],
+          "instructions": [
+            "Heat coconut milk and curry paste in a pot.",
+            "Add vegetables and chickpeas; simmer for 20 minutes."
+          ],
+          "cookTime": 40,
+          "difficulty": 2.5,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 15,
+            "carbs_g": 50,
+            "fat_g": 20
+          },
+          "fullText": "vegan curry 1 can coconut milk 1 cup mixed vegetables 2 tablespoons curry paste 1 cup chickpeas heat coconut milk and curry paste in a pot. add vegetables and chickpeas; simmer for 20 minutes."
+        },
+        {
+          "day": "day_5",
+          "type": "breakfast",
+          "title": "Fruit Salad with Nuts",
+          "ingredients": [
+            "1 cup mixed fruit",
+            "1/4 cup nuts",
+            "1 tablespoon honey"
+          ],
+          "instructions": [
+            "Chop fruit and mix with nuts and honey."
+          ],
+          "cookTime": 10,
+          "difficulty": 1,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 8,
+            "carbs_g": 40,
+            "fat_g": 15
+          },
+          "fullText": "fruit salad with nuts 1 cup mixed fruit 1/4 cup nuts 1 tablespoon honey chop fruit and mix with nuts and honey."
+        },
+        {
+          "day": "day_5",
+          "type": "lunch",
+          "title": "Vegan Sushi Rolls",
+          "ingredients": [
+            "1 cup sushi rice",
+            "nori sheets",
+            "1 cucumber",
+            "1 avocado",
+            "soy sauce"
+          ],
+          "instructions": [
+            "Cook sushi rice according to package instructions.",
+            "Lay nori on a mat, spread rice, and add cucumber and avocado; roll tightly."
+          ],
+          "cookTime": 30,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 10,
+            "carbs_g": 60,
+            "fat_g": 10
+          },
+          "fullText": "vegan sushi rolls 1 cup sushi rice nori sheets 1 cucumber 1 avocado soy sauce cook sushi rice according to package instructions. lay nori on a mat, spread rice, and add cucumber and avocado; roll tightly."
+        },
+        {
+          "day": "day_5",
+          "type": "dinner",
+          "title": "Cauliflower Tacos",
+          "ingredients": [
+            "1 head cauliflower",
+            "corn tortillas",
+            "1 avocado",
+            "lime",
+            "cilantro"
+          ],
+          "instructions": [
+            "Roast cauliflower florets at 400°F for 20 minutes.",
+            "Serve in tortillas with avocado, lime, and cilantro."
+          ],
+          "cookTime": 30,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 12,
+            "carbs_g": 50,
+            "fat_g": 18
+          },
+          "fullText": "cauliflower tacos 1 head cauliflower corn tortillas 1 avocado lime cilantro roast cauliflower florets at 400°f for 20 minutes. serve in tortillas with avocado, lime, and cilantro."
+        }
+      ],
+      "overallScore": {
+        "overall": 6,
+        "breakdown": {
+          "cultural": 13.33333333333333,
+          "conflict": 6,
+          "authenticity": 0.8333333333333333,
+          "perplexity": 0
+        },
+        "weights": {
+          "cultural": 0.3,
+          "conflict": 0.3,
+          "authenticity": 0.25,
+          "perplexity": 0.15
+        }
+      }
+    },
+    "rawMealPlan": {
+      "meal_plan": {
+        "day_1": {
+          "breakfast": {
+            "title": "Vegan Smoothie Bowl",
+            "cook_time_minutes": 10,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1 banana",
+              "1 cup spinach",
+              "1 cup almond milk",
+              "1 tablespoon chia seeds",
+              "1/4 cup granola"
+            ],
+            "instructions": [
+              "Blend banana, spinach, and almond milk until smooth.",
+              "Pour into a bowl and top with chia seeds and granola."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 8,
+              "carbs_g": 50,
+              "fat_g": 10
+            }
+          },
+          "lunch": {
+            "title": "Chickpea Salad",
+            "cook_time_minutes": 15,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1 can chickpeas",
+              "1 cucumber",
+              "1 tomato",
+              "2 tablespoons olive oil",
+              "lemon juice",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Rinse and drain chickpeas.",
+              "Chop cucumber and tomato.",
+              "Mix all ingredients in a bowl."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 15,
+              "carbs_g": 45,
+              "fat_g": 12
+            }
+          },
+          "dinner": {
+            "title": "Stir-Fried Tofu and Vegetables",
+            "cook_time_minutes": 25,
+            "difficulty": 2,
+            "ingredients": [
+              "1 block firm tofu",
+              "2 cups mixed vegetables",
+              "2 tablespoons soy sauce",
+              "1 tablespoon sesame oil",
+              "1 teaspoon ginger"
+            ],
+            "instructions": [
+              "Press and cube tofu.",
+              "Heat oil in a pan, add tofu and cook until golden.",
+              "Add vegetables, soy sauce, and ginger; stir-fry until cooked."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 25,
+              "carbs_g": 30,
+              "fat_g": 20
+            }
+          }
+        },
+        "day_2": {
+          "breakfast": {
+            "title": "Overnight Oats",
+            "cook_time_minutes": 5,
+            "difficulty": 1,
+            "ingredients": [
+              "1/2 cup rolled oats",
+              "1 cup almond milk",
+              "1 tablespoon maple syrup",
+              "1/2 cup berries"
+            ],
+            "instructions": [
+              "Combine oats, almond milk, and maple syrup in a jar.",
+              "Refrigerate overnight and top with berries in the morning."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 10,
+              "carbs_g": 60,
+              "fat_g": 8
+            }
+          },
+          "lunch": {
+            "title": "Quinoa and Black Bean Bowl",
+            "cook_time_minutes": 30,
+            "difficulty": 2,
+            "ingredients": [
+              "1 cup cooked quinoa",
+              "1 can black beans",
+              "1 avocado",
+              "1 lime",
+              "cilantro"
+            ],
+            "instructions": [
+              "Mix quinoa and black beans in a bowl.",
+              "Top with diced avocado, lime juice, and cilantro."
+            ],
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 15,
+              "carbs_g": 65,
+              "fat_g": 20
+            }
+          },
+          "dinner": {
+            "title": "Mediterranean Stuffed Peppers",
+            "cook_time_minutes": 40,
+            "difficulty": 2.5,
+            "ingredients": [
+              "2 bell peppers",
+              "1 cup cooked rice",
+              "1 can chickpeas",
+              "1/2 cup diced tomatoes",
+              "1 teaspoon oregano"
+            ],
+            "instructions": [
+              "Preheat oven to 375°F.",
+              "Cut tops off peppers and remove seeds.",
+              "Mix rice, chickpeas, tomatoes, and oregano; stuff into peppers.",
+              "Bake for 25 minutes."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 18,
+              "carbs_g": 60,
+              "fat_g": 10
+            }
+          }
+        },
+        "day_3": {
+          "breakfast": {
+            "title": "Avocado Toast",
+            "cook_time_minutes": 10,
+            "difficulty": 1,
+            "ingredients": [
+              "2 slices whole grain bread",
+              "1 avocado",
+              "salt",
+              "pepper",
+              "red pepper flakes"
+            ],
+            "instructions": [
+              "Toast the bread.",
+              "Mash avocado and spread on toast; season with salt, pepper, and red pepper flakes."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 8,
+              "carbs_g": 40,
+              "fat_g": 15
+            }
+          },
+          "lunch": {
+            "title": "Lentil Soup",
+            "cook_time_minutes": 30,
+            "difficulty": 2,
+            "ingredients": [
+              "1 cup lentils",
+              "1 onion",
+              "2 carrots",
+              "2 celery stalks",
+              "4 cups vegetable broth"
+            ],
+            "instructions": [
+              "Chop onion, carrots, and celery.",
+              "Sauté vegetables in a pot, add lentils and broth; simmer until lentils are tender."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 20,
+              "carbs_g": 60,
+              "fat_g": 5
+            }
+          },
+          "dinner": {
+            "title": "Zucchini Noodles with Marinara",
+            "cook_time_minutes": 25,
+            "difficulty": 2,
+            "ingredients": [
+              "2 zucchinis",
+              "1 cup marinara sauce",
+              "1 tablespoon olive oil",
+              "basil"
+            ],
+            "instructions": [
+              "Spiralize zucchinis into noodles.",
+              "Sauté in olive oil for 5 minutes, add marinara sauce and heat through."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 10,
+              "carbs_g": 40,
+              "fat_g": 10
+            }
+          }
+        },
+        "day_4": {
+          "breakfast": {
+            "title": "Chia Pudding",
+            "cook_time_minutes": 10,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1/4 cup chia seeds",
+              "1 cup almond milk",
+              "1 tablespoon honey",
+              "1/2 cup fruit"
+            ],
+            "instructions": [
+              "Mix chia seeds, almond milk, and honey in a bowl.",
+              "Refrigerate for at least 2 hours or overnight; top with fruit."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 10,
+              "carbs_g": 40,
+              "fat_g": 15
+            }
+          },
+          "lunch": {
+            "title": "Sweet Potato and Black Bean Tacos",
+            "cook_time_minutes": 30,
+            "difficulty": 2,
+            "ingredients": [
+              "2 sweet potatoes",
+              "1 can black beans",
+              "corn tortillas",
+              "avocado",
+              "lime"
+            ],
+            "instructions": [
+              "Roast diced sweet potatoes at 400°F for 20 minutes.",
+              "Warm tortillas, fill with sweet potatoes, black beans, and avocado; drizzle with lime."
+            ],
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 15,
+              "carbs_g": 70,
+              "fat_g": 15
+            }
+          },
+          "dinner": {
+            "title": "Vegan Curry",
+            "cook_time_minutes": 40,
+            "difficulty": 2.5,
+            "ingredients": [
+              "1 can coconut milk",
+              "1 cup mixed vegetables",
+              "2 tablespoons curry paste",
+              "1 cup chickpeas"
+            ],
+            "instructions": [
+              "Heat coconut milk and curry paste in a pot.",
+              "Add vegetables and chickpeas; simmer for 20 minutes."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 15,
+              "carbs_g": 50,
+              "fat_g": 20
+            }
+          }
+        },
+        "day_5": {
+          "breakfast": {
+            "title": "Fruit Salad with Nuts",
+            "cook_time_minutes": 10,
+            "difficulty": 1,
+            "ingredients": [
+              "1 cup mixed fruit",
+              "1/4 cup nuts",
+              "1 tablespoon honey"
+            ],
+            "instructions": [
+              "Chop fruit and mix with nuts and honey."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 8,
+              "carbs_g": 40,
+              "fat_g": 15
+            }
+          },
+          "lunch": {
+            "title": "Vegan Sushi Rolls",
+            "cook_time_minutes": 30,
+            "difficulty": 2,
+            "ingredients": [
+              "1 cup sushi rice",
+              "nori sheets",
+              "1 cucumber",
+              "1 avocado",
+              "soy sauce"
+            ],
+            "instructions": [
+              "Cook sushi rice according to package instructions.",
+              "Lay nori on a mat, spread rice, and add cucumber and avocado; roll tightly."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 10,
+              "carbs_g": 60,
+              "fat_g": 10
+            }
+          },
+          "dinner": {
+            "title": "Cauliflower Tacos",
+            "cook_time_minutes": 30,
+            "difficulty": 2,
+            "ingredients": [
+              "1 head cauliflower",
+              "corn tortillas",
+              "1 avocado",
+              "lime",
+              "cilantro"
+            ],
+            "instructions": [
+              "Roast cauliflower florets at 400°F for 20 minutes.",
+              "Serve in tortillas with avocado, lime, and cilantro."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 12,
+              "carbs_g": 50,
+              "fat_g": 18
+            }
+          }
+        }
+      },
+      "shopping_list": [
+        "1 banana",
+        "1 cup spinach",
+        "1 cup almond milk",
+        "1 tablespoon chia seeds",
+        "1/4 cup granola",
+        "1 can chickpeas",
+        "1 cucumber",
+        "1 tomato",
+        "2 tablespoons olive oil",
+        "lemon juice",
+        "salt",
+        "pepper",
+        "1 block firm tofu",
+        "2 cups mixed vegetables",
+        "2 tablespoons soy sauce",
+        "1 tablespoon sesame oil",
+        "1 teaspoon ginger",
+        "1/2 cup rolled oats",
+        "1 tablespoon maple syrup",
+        "1/2 cup berries",
+        "1 cup cooked quinoa",
+        "1 avocado",
+        "1 lime",
+        "cilantro",
+        "2 bell peppers",
+        "1 cup cooked rice",
+        "1/2 cup diced tomatoes",
+        "1 teaspoon oregano",
+        "2 slices whole grain bread",
+        "red pepper flakes",
+        "1 cup lentils",
+        "1 onion",
+        "2 carrots",
+        "2 celery stalks",
+        "4 cups vegetable broth",
+        "2 zucchinis",
+        "1 cup marinara sauce",
+        "basil",
+        "1/4 cup chia seeds",
+        "1 tablespoon honey",
+        "2 sweet potatoes",
+        "corn tortillas",
+        "1 can coconut milk",
+        "1 cup mixed vegetables",
+        "2 tablespoons curry paste",
+        "1 cup chickpeas",
+        "1 cup mixed fruit",
+        "1/4 cup nuts",
+        "1 cup sushi rice",
+        "nori sheets",
+        "1 head cauliflower"
+      ],
+      "prep_tips": [
+        "Prep ingredients in advance to save time during cooking.",
+        "Use a rice cooker for perfect sushi rice.",
+        "Roast vegetables in bulk for easy meal prep."
+      ]
+    }
+  },
+  {
+    "scenario": "Multiple Cultures + Dietary Mix",
+    "success": true,
+    "responseTime": 14236,
+    "analysis": {
+      "culturalDistribution": {
+        "totalMeals": 9,
+        "culturalMeals": 8,
+        "genericMeals": 1,
+        "culturalPercentage": 88.88888888888889,
+        "expectedPercentage": 50,
+        "meetsTarget": false,
+        "culturalMealDetails": [
+          {
+            "day": "day_1",
+            "type": "breakfast",
+            "title": "Vegetable Omelette",
+            "ingredients": [
+              "2 eggs",
+              "1/4 cup bell peppers",
+              "1/4 cup spinach",
+              "1/4 cup onions",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Whisk the eggs in a bowl.",
+              "Sauté the vegetables in a pan for 3-4 minutes.",
+              "Pour the eggs over the vegetables and cook until set."
+            ],
+            "cookTime": 15,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 250,
+              "protein_g": 18,
+              "carbs_g": 10,
+              "fat_g": 15
+            },
+            "fullText": "vegetable omelette 2 eggs 1/4 cup bell peppers 1/4 cup spinach 1/4 cup onions salt pepper whisk the eggs in a bowl. sauté the vegetables in a pan for 3-4 minutes. pour the eggs over the vegetables and cook until set.",
+            "cultures": [
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_1",
+            "type": "lunch",
+            "title": "Quinoa Salad with Chickpeas",
+            "ingredients": [
+              "1 cup cooked quinoa",
+              "1/2 cup canned chickpeas",
+              "1/4 cup cherry tomatoes",
+              "1/4 cup cucumber",
+              "2 tbsp olive oil",
+              "lemon juice",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "In a bowl, combine quinoa, chickpeas, tomatoes, and cucumber.",
+              "Drizzle with olive oil and lemon juice, then season with salt and pepper."
+            ],
+            "cookTime": 20,
+            "difficulty": 2.5,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 15,
+              "carbs_g": 50,
+              "fat_g": 18
+            },
+            "fullText": "quinoa salad with chickpeas 1 cup cooked quinoa 1/2 cup canned chickpeas 1/4 cup cherry tomatoes 1/4 cup cucumber 2 tbsp olive oil lemon juice salt pepper in a bowl, combine quinoa, chickpeas, tomatoes, and cucumber. drizzle with olive oil and lemon juice, then season with salt and pepper.",
+            "cultures": [
+              {
+                "culture": "Italian",
+                "indicators": [
+                  "olive oil"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_1",
+            "type": "dinner",
+            "title": "Stir-Fried Tofu with Broccoli",
+            "ingredients": [
+              "1 block firm tofu",
+              "2 cups broccoli",
+              "2 tbsp soy sauce",
+              "1 tbsp sesame oil",
+              "1 clove garlic",
+              "1 tsp ginger"
+            ],
+            "instructions": [
+              "Press and cube the tofu.",
+              "Sauté garlic and ginger in sesame oil.",
+              "Add tofu and broccoli, stir-fry for 10-15 minutes, then add soy sauce."
+            ],
+            "cookTime": 25,
+            "difficulty": 3,
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 25,
+              "carbs_g": 30,
+              "fat_g": 25
+            },
+            "fullText": "stir-fried tofu with broccoli 1 block firm tofu 2 cups broccoli 2 tbsp soy sauce 1 tbsp sesame oil 1 clove garlic 1 tsp ginger press and cube the tofu. sauté garlic and ginger in sesame oil. add tofu and broccoli, stir-fry for 10-15 minutes, then add soy sauce.",
+            "cultures": [
+              {
+                "culture": "Chinese",
+                "indicators": [
+                  "stir-fry",
+                  "soy sauce",
+                  "sesame oil",
+                  "ginger",
+                  "tofu"
+                ]
+              },
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_2",
+            "type": "breakfast",
+            "title": "Greek Yogurt with Berries",
+            "ingredients": [
+              "1 cup Greek yogurt",
+              "1/2 cup mixed berries",
+              "1 tbsp honey",
+              "1 tbsp chia seeds"
+            ],
+            "instructions": [
+              "In a bowl, layer Greek yogurt, berries, and drizzle with honey.",
+              "Sprinkle chia seeds on top."
+            ],
+            "cookTime": 5,
+            "difficulty": 1,
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 20,
+              "carbs_g": 40,
+              "fat_g": 5
+            },
+            "fullText": "greek yogurt with berries 1 cup greek yogurt 1/2 cup mixed berries 1 tbsp honey 1 tbsp chia seeds in a bowl, layer greek yogurt, berries, and drizzle with honey. sprinkle chia seeds on top.",
+            "cultures": [
+              {
+                "culture": "Greek",
+                "indicators": [
+                  "greek"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_2",
+            "type": "lunch",
+            "title": "Mediterranean Chickpea Wrap",
+            "ingredients": [
+              "1 gluten-free wrap",
+              "1/2 cup canned chickpeas",
+              "1/4 cup diced cucumber",
+              "1/4 cup diced tomatoes",
+              "2 tbsp hummus"
+            ],
+            "instructions": [
+              "Spread hummus on the wrap.",
+              "Add chickpeas, cucumber, and tomatoes, then roll up."
+            ],
+            "cookTime": 15,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 15,
+              "carbs_g": 45,
+              "fat_g": 10
+            },
+            "fullText": "mediterranean chickpea wrap 1 gluten-free wrap 1/2 cup canned chickpeas 1/4 cup diced cucumber 1/4 cup diced tomatoes 2 tbsp hummus spread hummus on the wrap. add chickpeas, cucumber, and tomatoes, then roll up.",
+            "cultures": [
+              {
+                "culture": "Greek",
+                "indicators": [
+                  "mediterranean"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_2",
+            "type": "dinner",
+            "title": "Zucchini Noodles with Pesto",
+            "ingredients": [
+              "2 zucchinis",
+              "1/4 cup pesto",
+              "1/4 cup cherry tomatoes",
+              "1 tbsp olive oil",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Spiralize the zucchinis into noodles.",
+              "Sauté in olive oil for 5 minutes, then add pesto and tomatoes."
+            ],
+            "cookTime": 20,
+            "difficulty": 3,
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 10,
+              "carbs_g": 30,
+              "fat_g": 30
+            },
+            "fullText": "zucchini noodles with pesto 2 zucchinis 1/4 cup pesto 1/4 cup cherry tomatoes 1 tbsp olive oil salt pepper spiralize the zucchinis into noodles. sauté in olive oil for 5 minutes, then add pesto and tomatoes.",
+            "cultures": [
+              {
+                "culture": "Italian",
+                "indicators": [
+                  "olive oil"
+                ]
+              },
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_3",
+            "type": "lunch",
+            "title": "Spicy Black Bean Salad",
+            "ingredients": [
+              "1 can black beans",
+              "1/2 cup corn",
+              "1/4 cup diced red onion",
+              "1/4 cup cilantro",
+              "lime juice",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Rinse and drain black beans.",
+              "Mix all ingredients in a bowl and toss."
+            ],
+            "cookTime": 15,
+            "difficulty": 2,
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 15,
+              "carbs_g": 50,
+              "fat_g": 5
+            },
+            "fullText": "spicy black bean salad 1 can black beans 1/2 cup corn 1/4 cup diced red onion 1/4 cup cilantro lime juice salt pepper rinse and drain black beans. mix all ingredients in a bowl and toss.",
+            "cultures": [
+              {
+                "culture": "Mexican",
+                "indicators": [
+                  "cilantro",
+                  "lime"
+                ]
+              }
+            ]
+          },
+          {
+            "day": "day_3",
+            "type": "dinner",
+            "title": "Lentil Stir-Fry",
+            "ingredients": [
+              "1 cup cooked lentils",
+              "1 cup mixed vegetables",
+              "2 tbsp soy sauce",
+              "1 tbsp sesame oil",
+              "1 clove garlic"
+            ],
+            "instructions": [
+              "Sauté garlic in sesame oil.",
+              "Add mixed vegetables and lentils, stir-fry for 10-15 minutes, then add soy sauce."
+            ],
+            "cookTime": 25,
+            "difficulty": 3.5,
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 25,
+              "carbs_g": 60,
+              "fat_g": 15
+            },
+            "fullText": "lentil stir-fry 1 cup cooked lentils 1 cup mixed vegetables 2 tbsp soy sauce 1 tbsp sesame oil 1 clove garlic sauté garlic in sesame oil. add mixed vegetables and lentils, stir-fry for 10-15 minutes, then add soy sauce.",
+            "cultures": [
+              {
+                "culture": "Chinese",
+                "indicators": [
+                  "stir-fry",
+                  "soy sauce",
+                  "sesame oil"
+                ]
+              },
+              {
+                "culture": "French",
+                "indicators": [
+                  "sauté"
+                ]
+              }
+            ]
+          }
+        ],
+        "genericMealTitles": [
+          "Avocado Toast"
+        ]
+      },
+      "conflictAnalysis": {
+        "dietaryCompliance": false,
+        "conflictsFound": [
+          {
+            "restriction": "gluten-free",
+            "conflictItem": "bread",
+            "meals": [
+              "Avocado Toast"
+            ]
+          },
+          {
+            "restriction": "gluten-free",
+            "conflictItem": "soy sauce",
+            "meals": [
+              "Stir-Fried Tofu with Broccoli",
+              "Lentil Stir-Fry"
+            ]
+          }
+        ],
+        "conflictsAvoided": 14,
+        "potentialConflicts": 16,
+        "resolutionEffectiveness": 0.875,
+        "substitutionsFound": [
+          {
+            "meal": "Quinoa Salad with Chickpeas",
+            "substitution": "chickpeas"
+          },
+          {
+            "meal": "Stir-Fried Tofu with Broccoli",
+            "substitution": "tofu"
+          },
+          {
+            "meal": "Mediterranean Chickpea Wrap",
+            "substitution": "chickpeas"
+          },
+          {
+            "meal": "Mediterranean Chickpea Wrap",
+            "substitution": "gluten-free"
+          },
+          {
+            "meal": "Avocado Toast",
+            "substitution": "gluten-free"
+          },
+          {
+            "meal": "Lentil Stir-Fry",
+            "substitution": "lentils"
+          }
+        ],
+        "conflictResolutionScore": 6
+      },
+      "authenticityAssessment": {
+        "authenticityScore": 2.2222222222222223,
+        "rawScore": 24,
+        "maxPossibleScore": 108,
+        "culturalKeywords": [
+          "Italian: olive oil",
+          "Italian: tomato",
+          "Chinese: stir-fry",
+          "Chinese: soy sauce",
+          "Chinese: sesame oil",
+          "Chinese: ginger",
+          "Chinese: garlic",
+          "Italian: garlic"
+        ],
+        "authenticityDetails": [
+          {
+            "meal": "Stir-Fried Tofu with Broccoli",
+            "culture": "Chinese",
+            "score": 9,
+            "markers": {
+              "traditional": [
+                "stir-fry"
+              ],
+              "ingredients": [
+                "soy sauce",
+                "sesame oil",
+                "ginger",
+                "garlic"
+              ],
+              "techniques": [
+                "stir-fry"
+              ]
+            }
+          },
+          {
+            "meal": "Lentil Stir-Fry",
+            "culture": "Chinese",
+            "score": 8,
+            "markers": {
+              "traditional": [
+                "stir-fry"
+              ],
+              "ingredients": [
+                "soy sauce",
+                "sesame oil",
+                "garlic"
+              ],
+              "techniques": [
+                "stir-fry"
+              ]
+            }
+          },
+          {
+            "meal": "Quinoa Salad with Chickpeas",
+            "culture": "Italian",
+            "score": 2,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "olive oil",
+                "tomato"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Zucchini Noodles with Pesto",
+            "culture": "Italian",
+            "score": 2,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "olive oil",
+                "tomato"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Stir-Fried Tofu with Broccoli",
+            "culture": "Italian",
+            "score": 1,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "garlic"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Mediterranean Chickpea Wrap",
+            "culture": "Italian",
+            "score": 1,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "tomato"
+              ],
+              "techniques": []
+            }
+          },
+          {
+            "meal": "Lentil Stir-Fry",
+            "culture": "Italian",
+            "score": 1,
+            "markers": {
+              "traditional": [],
+              "ingredients": [
+                "garlic"
+              ],
+              "techniques": []
+            }
+          }
+        ],
+        "hasHighAuthenticity": false,
+        "hasMediumAuthenticity": false
+      },
+      "perplexityIntegration": {
+        "qualityScore": 0,
+        "rawScore": 0,
+        "indicators": [],
+        "avgIngredientsPerMeal": 5.8,
+        "avgInstructionsPerMeal": 2.2,
+        "culturalDiversity": 0,
+        "hasHighQuality": false,
+        "hasMediumQuality": false
+      },
+      "extractedMeals": [
+        {
+          "day": "day_1",
+          "type": "breakfast",
+          "title": "Vegetable Omelette",
+          "ingredients": [
+            "2 eggs",
+            "1/4 cup bell peppers",
+            "1/4 cup spinach",
+            "1/4 cup onions",
+            "salt",
+            "pepper"
+          ],
+          "instructions": [
+            "Whisk the eggs in a bowl.",
+            "Sauté the vegetables in a pan for 3-4 minutes.",
+            "Pour the eggs over the vegetables and cook until set."
+          ],
+          "cookTime": 15,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 250,
+            "protein_g": 18,
+            "carbs_g": 10,
+            "fat_g": 15
+          },
+          "fullText": "vegetable omelette 2 eggs 1/4 cup bell peppers 1/4 cup spinach 1/4 cup onions salt pepper whisk the eggs in a bowl. sauté the vegetables in a pan for 3-4 minutes. pour the eggs over the vegetables and cook until set."
+        },
+        {
+          "day": "day_1",
+          "type": "lunch",
+          "title": "Quinoa Salad with Chickpeas",
+          "ingredients": [
+            "1 cup cooked quinoa",
+            "1/2 cup canned chickpeas",
+            "1/4 cup cherry tomatoes",
+            "1/4 cup cucumber",
+            "2 tbsp olive oil",
+            "lemon juice",
+            "salt",
+            "pepper"
+          ],
+          "instructions": [
+            "In a bowl, combine quinoa, chickpeas, tomatoes, and cucumber.",
+            "Drizzle with olive oil and lemon juice, then season with salt and pepper."
+          ],
+          "cookTime": 20,
+          "difficulty": 2.5,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 15,
+            "carbs_g": 50,
+            "fat_g": 18
+          },
+          "fullText": "quinoa salad with chickpeas 1 cup cooked quinoa 1/2 cup canned chickpeas 1/4 cup cherry tomatoes 1/4 cup cucumber 2 tbsp olive oil lemon juice salt pepper in a bowl, combine quinoa, chickpeas, tomatoes, and cucumber. drizzle with olive oil and lemon juice, then season with salt and pepper."
+        },
+        {
+          "day": "day_1",
+          "type": "dinner",
+          "title": "Stir-Fried Tofu with Broccoli",
+          "ingredients": [
+            "1 block firm tofu",
+            "2 cups broccoli",
+            "2 tbsp soy sauce",
+            "1 tbsp sesame oil",
+            "1 clove garlic",
+            "1 tsp ginger"
+          ],
+          "instructions": [
+            "Press and cube the tofu.",
+            "Sauté garlic and ginger in sesame oil.",
+            "Add tofu and broccoli, stir-fry for 10-15 minutes, then add soy sauce."
+          ],
+          "cookTime": 25,
+          "difficulty": 3,
+          "nutrition": {
+            "calories": 450,
+            "protein_g": 25,
+            "carbs_g": 30,
+            "fat_g": 25
+          },
+          "fullText": "stir-fried tofu with broccoli 1 block firm tofu 2 cups broccoli 2 tbsp soy sauce 1 tbsp sesame oil 1 clove garlic 1 tsp ginger press and cube the tofu. sauté garlic and ginger in sesame oil. add tofu and broccoli, stir-fry for 10-15 minutes, then add soy sauce."
+        },
+        {
+          "day": "day_2",
+          "type": "breakfast",
+          "title": "Greek Yogurt with Berries",
+          "ingredients": [
+            "1 cup Greek yogurt",
+            "1/2 cup mixed berries",
+            "1 tbsp honey",
+            "1 tbsp chia seeds"
+          ],
+          "instructions": [
+            "In a bowl, layer Greek yogurt, berries, and drizzle with honey.",
+            "Sprinkle chia seeds on top."
+          ],
+          "cookTime": 5,
+          "difficulty": 1,
+          "nutrition": {
+            "calories": 300,
+            "protein_g": 20,
+            "carbs_g": 40,
+            "fat_g": 5
+          },
+          "fullText": "greek yogurt with berries 1 cup greek yogurt 1/2 cup mixed berries 1 tbsp honey 1 tbsp chia seeds in a bowl, layer greek yogurt, berries, and drizzle with honey. sprinkle chia seeds on top."
+        },
+        {
+          "day": "day_2",
+          "type": "lunch",
+          "title": "Mediterranean Chickpea Wrap",
+          "ingredients": [
+            "1 gluten-free wrap",
+            "1/2 cup canned chickpeas",
+            "1/4 cup diced cucumber",
+            "1/4 cup diced tomatoes",
+            "2 tbsp hummus"
+          ],
+          "instructions": [
+            "Spread hummus on the wrap.",
+            "Add chickpeas, cucumber, and tomatoes, then roll up."
+          ],
+          "cookTime": 15,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 15,
+            "carbs_g": 45,
+            "fat_g": 10
+          },
+          "fullText": "mediterranean chickpea wrap 1 gluten-free wrap 1/2 cup canned chickpeas 1/4 cup diced cucumber 1/4 cup diced tomatoes 2 tbsp hummus spread hummus on the wrap. add chickpeas, cucumber, and tomatoes, then roll up."
+        },
+        {
+          "day": "day_2",
+          "type": "dinner",
+          "title": "Zucchini Noodles with Pesto",
+          "ingredients": [
+            "2 zucchinis",
+            "1/4 cup pesto",
+            "1/4 cup cherry tomatoes",
+            "1 tbsp olive oil",
+            "salt",
+            "pepper"
+          ],
+          "instructions": [
+            "Spiralize the zucchinis into noodles.",
+            "Sauté in olive oil for 5 minutes, then add pesto and tomatoes."
+          ],
+          "cookTime": 20,
+          "difficulty": 3,
+          "nutrition": {
+            "calories": 400,
+            "protein_g": 10,
+            "carbs_g": 30,
+            "fat_g": 30
+          },
+          "fullText": "zucchini noodles with pesto 2 zucchinis 1/4 cup pesto 1/4 cup cherry tomatoes 1 tbsp olive oil salt pepper spiralize the zucchinis into noodles. sauté in olive oil for 5 minutes, then add pesto and tomatoes."
+        },
+        {
+          "day": "day_3",
+          "type": "breakfast",
+          "title": "Avocado Toast",
+          "ingredients": [
+            "1 slice gluten-free bread",
+            "1/2 avocado",
+            "salt",
+            "pepper",
+            "red pepper flakes"
+          ],
+          "instructions": [
+            "Toast the bread.",
+            "Mash the avocado and spread it on the toast, then season."
+          ],
+          "cookTime": 10,
+          "difficulty": 1.5,
+          "nutrition": {
+            "calories": 200,
+            "protein_g": 4,
+            "carbs_g": 20,
+            "fat_g": 12
+          },
+          "fullText": "avocado toast 1 slice gluten-free bread 1/2 avocado salt pepper red pepper flakes toast the bread. mash the avocado and spread it on the toast, then season."
+        },
+        {
+          "day": "day_3",
+          "type": "lunch",
+          "title": "Spicy Black Bean Salad",
+          "ingredients": [
+            "1 can black beans",
+            "1/2 cup corn",
+            "1/4 cup diced red onion",
+            "1/4 cup cilantro",
+            "lime juice",
+            "salt",
+            "pepper"
+          ],
+          "instructions": [
+            "Rinse and drain black beans.",
+            "Mix all ingredients in a bowl and toss."
+          ],
+          "cookTime": 15,
+          "difficulty": 2,
+          "nutrition": {
+            "calories": 350,
+            "protein_g": 15,
+            "carbs_g": 50,
+            "fat_g": 5
+          },
+          "fullText": "spicy black bean salad 1 can black beans 1/2 cup corn 1/4 cup diced red onion 1/4 cup cilantro lime juice salt pepper rinse and drain black beans. mix all ingredients in a bowl and toss."
+        },
+        {
+          "day": "day_3",
+          "type": "dinner",
+          "title": "Lentil Stir-Fry",
+          "ingredients": [
+            "1 cup cooked lentils",
+            "1 cup mixed vegetables",
+            "2 tbsp soy sauce",
+            "1 tbsp sesame oil",
+            "1 clove garlic"
+          ],
+          "instructions": [
+            "Sauté garlic in sesame oil.",
+            "Add mixed vegetables and lentils, stir-fry for 10-15 minutes, then add soy sauce."
+          ],
+          "cookTime": 25,
+          "difficulty": 3.5,
+          "nutrition": {
+            "calories": 450,
+            "protein_g": 25,
+            "carbs_g": 60,
+            "fat_g": 15
+          },
+          "fullText": "lentil stir-fry 1 cup cooked lentils 1 cup mixed vegetables 2 tbsp soy sauce 1 tbsp sesame oil 1 clove garlic sauté garlic in sesame oil. add mixed vegetables and lentils, stir-fry for 10-15 minutes, then add soy sauce."
+        }
+      ],
+      "overallScore": {
+        "overall": 7.7,
+        "breakdown": {
+          "cultural": 17.77777777777778,
+          "conflict": 6,
+          "authenticity": 2.2222222222222223,
+          "perplexity": 0
+        },
+        "weights": {
+          "cultural": 0.3,
+          "conflict": 0.3,
+          "authenticity": 0.25,
+          "perplexity": 0.15
+        }
+      }
+    },
+    "rawMealPlan": {
+      "meal_plan": {
+        "day_1": {
+          "breakfast": {
+            "title": "Vegetable Omelette",
+            "cook_time_minutes": 15,
+            "difficulty": 2,
+            "ingredients": [
+              "2 eggs",
+              "1/4 cup bell peppers",
+              "1/4 cup spinach",
+              "1/4 cup onions",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Whisk the eggs in a bowl.",
+              "Sauté the vegetables in a pan for 3-4 minutes.",
+              "Pour the eggs over the vegetables and cook until set."
+            ],
+            "nutrition": {
+              "calories": 250,
+              "protein_g": 18,
+              "carbs_g": 10,
+              "fat_g": 15
+            }
+          },
+          "lunch": {
+            "title": "Quinoa Salad with Chickpeas",
+            "cook_time_minutes": 20,
+            "difficulty": 2.5,
+            "ingredients": [
+              "1 cup cooked quinoa",
+              "1/2 cup canned chickpeas",
+              "1/4 cup cherry tomatoes",
+              "1/4 cup cucumber",
+              "2 tbsp olive oil",
+              "lemon juice",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "In a bowl, combine quinoa, chickpeas, tomatoes, and cucumber.",
+              "Drizzle with olive oil and lemon juice, then season with salt and pepper."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 15,
+              "carbs_g": 50,
+              "fat_g": 18
+            }
+          },
+          "dinner": {
+            "title": "Stir-Fried Tofu with Broccoli",
+            "cook_time_minutes": 25,
+            "difficulty": 3,
+            "ingredients": [
+              "1 block firm tofu",
+              "2 cups broccoli",
+              "2 tbsp soy sauce",
+              "1 tbsp sesame oil",
+              "1 clove garlic",
+              "1 tsp ginger"
+            ],
+            "instructions": [
+              "Press and cube the tofu.",
+              "Sauté garlic and ginger in sesame oil.",
+              "Add tofu and broccoli, stir-fry for 10-15 minutes, then add soy sauce."
+            ],
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 25,
+              "carbs_g": 30,
+              "fat_g": 25
+            }
+          }
+        },
+        "day_2": {
+          "breakfast": {
+            "title": "Greek Yogurt with Berries",
+            "cook_time_minutes": 5,
+            "difficulty": 1,
+            "ingredients": [
+              "1 cup Greek yogurt",
+              "1/2 cup mixed berries",
+              "1 tbsp honey",
+              "1 tbsp chia seeds"
+            ],
+            "instructions": [
+              "In a bowl, layer Greek yogurt, berries, and drizzle with honey.",
+              "Sprinkle chia seeds on top."
+            ],
+            "nutrition": {
+              "calories": 300,
+              "protein_g": 20,
+              "carbs_g": 40,
+              "fat_g": 5
+            }
+          },
+          "lunch": {
+            "title": "Mediterranean Chickpea Wrap",
+            "cook_time_minutes": 15,
+            "difficulty": 2,
+            "ingredients": [
+              "1 gluten-free wrap",
+              "1/2 cup canned chickpeas",
+              "1/4 cup diced cucumber",
+              "1/4 cup diced tomatoes",
+              "2 tbsp hummus"
+            ],
+            "instructions": [
+              "Spread hummus on the wrap.",
+              "Add chickpeas, cucumber, and tomatoes, then roll up."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 15,
+              "carbs_g": 45,
+              "fat_g": 10
+            }
+          },
+          "dinner": {
+            "title": "Zucchini Noodles with Pesto",
+            "cook_time_minutes": 20,
+            "difficulty": 3,
+            "ingredients": [
+              "2 zucchinis",
+              "1/4 cup pesto",
+              "1/4 cup cherry tomatoes",
+              "1 tbsp olive oil",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Spiralize the zucchinis into noodles.",
+              "Sauté in olive oil for 5 minutes, then add pesto and tomatoes."
+            ],
+            "nutrition": {
+              "calories": 400,
+              "protein_g": 10,
+              "carbs_g": 30,
+              "fat_g": 30
+            }
+          }
+        },
+        "day_3": {
+          "breakfast": {
+            "title": "Avocado Toast",
+            "cook_time_minutes": 10,
+            "difficulty": 1.5,
+            "ingredients": [
+              "1 slice gluten-free bread",
+              "1/2 avocado",
+              "salt",
+              "pepper",
+              "red pepper flakes"
+            ],
+            "instructions": [
+              "Toast the bread.",
+              "Mash the avocado and spread it on the toast, then season."
+            ],
+            "nutrition": {
+              "calories": 200,
+              "protein_g": 4,
+              "carbs_g": 20,
+              "fat_g": 12
+            }
+          },
+          "lunch": {
+            "title": "Spicy Black Bean Salad",
+            "cook_time_minutes": 15,
+            "difficulty": 2,
+            "ingredients": [
+              "1 can black beans",
+              "1/2 cup corn",
+              "1/4 cup diced red onion",
+              "1/4 cup cilantro",
+              "lime juice",
+              "salt",
+              "pepper"
+            ],
+            "instructions": [
+              "Rinse and drain black beans.",
+              "Mix all ingredients in a bowl and toss."
+            ],
+            "nutrition": {
+              "calories": 350,
+              "protein_g": 15,
+              "carbs_g": 50,
+              "fat_g": 5
+            }
+          },
+          "dinner": {
+            "title": "Lentil Stir-Fry",
+            "cook_time_minutes": 25,
+            "difficulty": 3.5,
+            "ingredients": [
+              "1 cup cooked lentils",
+              "1 cup mixed vegetables",
+              "2 tbsp soy sauce",
+              "1 tbsp sesame oil",
+              "1 clove garlic"
+            ],
+            "instructions": [
+              "Sauté garlic in sesame oil.",
+              "Add mixed vegetables and lentils, stir-fry for 10-15 minutes, then add soy sauce."
+            ],
+            "nutrition": {
+              "calories": 450,
+              "protein_g": 25,
+              "carbs_g": 60,
+              "fat_g": 15
+            }
+          }
+        }
+      },
+      "shopping_list": [
+        "2 eggs",
+        "bell peppers",
+        "spinach",
+        "onions",
+        "salt",
+        "pepper",
+        "1 cup cooked quinoa",
+        "canned chickpeas",
+        "cherry tomatoes",
+        "cucumber",
+        "olive oil",
+        "lemon juice",
+        "1 block firm tofu",
+        "broccoli",
+        "soy sauce",
+        "sesame oil",
+        "garlic",
+        "ginger",
+        "1 cup Greek yogurt",
+        "mixed berries",
+        "honey",
+        "chia seeds",
+        "1 gluten-free wrap",
+        "zucchinis",
+        "pesto",
+        "1 slice gluten-free bread",
+        "1/2 avocado",
+        "red pepper flakes",
+        "1 can black beans",
+        "corn",
+        "red onion",
+        "cilantro",
+        "lime juice",
+        "1 cup cooked lentils",
+        "mixed vegetables"
+      ],
+      "prep_tips": [
+        "Prepare quinoa and lentils in advance to save time.",
+        "Chop vegetables ahead of time for quicker meal assembly."
+      ]
+    }
+  }
+]

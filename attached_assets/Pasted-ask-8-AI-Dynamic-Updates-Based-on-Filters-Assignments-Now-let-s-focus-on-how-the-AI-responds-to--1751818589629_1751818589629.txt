@@ -1,0 +1,57 @@
+ask 8: AI Dynamic Updates Based on Filters & Assignments
+Now let's focus on how the AI responds to filter changes and family assignments. Based on your current architecture with manual trigger (which is smart for API costs), let me ask about the suggestion quality and responsiveness:
+AI Prompt Engineering with Family Data:
+Family Context Integration: How should family assignments affect AI prompts?
+Example: "Create a dinner for 2 adults and 1 child, with Dad absent Monday, Sarah is lactose intolerant"
+Structured prompts that include presence map + restrictions?
+Priority order: Safety (allergies) → Preferences → Portions?
+Filter Weight Distribution: When filters conflict, what takes priority?
+Safety first: Dietary restrictions override everything?
+Practical constraints: Cook time limits beat preference suggestions?
+Family harmony: Kid-friendly options when children are assigned?
+Suggestion Variety & Quality:
+Suggestion Generation Strategy: How many options should AI provide per meal slot?
+Single best suggestion per slot (faster, cleaner)?
+3-5 alternatives per slot (more choice, decision fatigue)?
+Generate on demand ("Not this meal" → new suggestion)?
+Ingredient Overlap Optimization: How does AI maximize cost savings?
+Cross-meal ingredient sharing ("Use tomatoes in both lunch and dinner")?
+Weekly ingredient themes ("Chicken-based week," "Mediterranean week")?
+Explicit cost optimization in prompts?
+Real-Time Feedback & Learning:
+User Rejection Handling: When users click "Not this meal":
+Immediate regeneration with adjusted parameters?
+Learn preferences ("User rejected 3 fish meals → reduce fish suggestions")?
+Explain reasoning ("Trying non-fish option...")?
+Assignment Change Responses: When family assignments change:
+Auto-regenerate affected meals to optimize for new group?
+Keep existing meals but adjust portions?
+Prompt user to choose between regenerate vs adjust?
+Smart Suggestions Based on Context:
+Time-Sensitive Suggestions: Should AI consider day-of-week patterns?
+Monday meals: Quick/easy after weekend?
+Friday meals: More elaborate/fun for weekend?
+Sunday: Meal prep focused for the week?
+Budget Intelligence: How should cost optimization work?
+Track spending across the week's suggestions?
+Suggest cheaper alternatives when over budget?
+Show cost breakdown per meal vs weekly total?
+Error Recovery & Edge Cases:
+No Valid Suggestions: What happens when filters are too restrictive?
+Gradual constraint relaxation ("No 15-min vegetarian meals found, trying 20 minutes")?
+Clear error messaging with specific suggestions to adjust?
+Fallback suggestions with explanation of why they don't fully match?
+Conflicting Family Restrictions: Multiple people with different restrictions:
+Find common ground meals that work for everyone?
+Suggest modifications ("Make base meal, add cheese separately for non-dairy-free members")?
+Recommend separate meals only when necessary?
+Performance & User Experience:
+Generation Speed vs Quality: For busy mothers on mobile:
+Fast suggestions (lower quality) vs slower, better suggestions?
+Progressive loading (show meals as they generate)?
+Background pre-generation based on likely filter combinations?
+Feedback Integration: How should the system learn from user behavior?
+Track accepted vs rejected suggestions per filter combination?
+Adjust AI prompts based on success patterns?
+Personal taste learning vs general improvements?
+Which aspect of the AI dynamic updates should we focus on first? The family context integration, the suggestion quality optimization, or the user feedback/learning system?

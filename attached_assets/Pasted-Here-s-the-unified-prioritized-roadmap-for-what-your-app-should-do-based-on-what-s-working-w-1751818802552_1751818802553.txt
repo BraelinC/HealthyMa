@@ -1,0 +1,135 @@
+Here’s the **unified, prioritized roadmap** for what your app should do — based on what’s working, what’s missing, and what will deliver **maximum impact** without over-engineering.
+
+---
+
+## 🔧 What Your App Already Does Well (Foundation is Strong)
+
+* ✅ **Family Profiles:** Smart integration of family member data into filters
+* ✅ **Manual Triggered Meal Generation:** Perfect for busy moms — no surprise refreshes
+* ✅ **Safety-First Filters:** Dietary restrictions and exclusions are prioritized correctly
+* ✅ **Ingredient Reuse:** Cost-aware basic optimization logic is in place
+* ✅ **UI Structure:** Planner, meal cards, and drag-and-drop work well in mobile-first layout
+
+---
+
+## 🔥 What Your App Should Do Next (Prioritized)
+
+---
+
+### **1. "Try a Different Meal" Button per Slot** (⚡ High Impact, Low Complexity)
+
+* **Problem Solved:** No way to say “I don’t like this” without regenerating everything.
+* **Fix:** Add 🔄 "Not this meal" button on each generated meal card
+* **User Experience:** One-tap meal re-roll keeps mom in control with no cognitive overload
+* **Priority:** 🚀 Do this first — huge UX gain, minimal cost
+
+```ts
+<Button 
+  variant="outline" 
+  size="sm" 
+  onClick={() => regenerateIndividualMeal(dayKey, mealType)}
+>
+  🔄 Try Different Meal
+</Button>
+```
+
+---
+
+### **2. Smart Family Assignment Updates** (🎯 Needed for Accuracy)
+
+* **Problem Solved:** Changes in who’s eating don’t reflect in portion sizes or meals
+* **Fix:** When family members are changed:
+
+  * Show dialog with 3 options:
+
+    * Regenerate meals
+    * Keep meals, adjust portions only
+    * Keep plan as-is
+* **Priority:** 🔁 Must-have for dynamic families — do this second
+
+```ts
+if (generatedPlan && familyMembersChanged) {
+  showDialog({
+    title: "Family Changed",
+    options: [
+      "Regenerate all meals for new family size",
+      "Keep meals, adjust portions only", 
+      "Keep current plan unchanged"
+    ]
+  });
+}
+```
+
+---
+
+### **3. Ingredient Optimization Prompt Enhancement** (💰 Critical for “Save Money” Goal)
+
+* **Problem Solved:** Ingredient reuse logic is too basic
+
+* **Fix:** Add explicit cost logic into AI prompt when `primaryGoal === 'Save Money'`:
+
+  * "Focus on ingredient overlap, bulk-buy options, budget proteins"
+
+* **Priority:** 💸 High ROI for budget-conscious families — do this next
+
+```ts
+if (primaryGoal === "Save Money") {
+  prompt += "Focus on ingredient overlap between meals, suggest bulk buying opportunities, prioritize cost-effective proteins and seasonal produce."
+}
+```
+
+---
+
+### **4. Progressive Meal Loading (Optional, but Nice)**
+
+* **Problem Solved:** Waiting for all meals to generate increases bounce risk
+* **Fix:** Show meals as they’re generated day by day
+* **Priority:** 🧠 Medium — only add if you see people dropping during loading
+
+---
+
+### **5. Basic Preference Persistence** (🔒 Important for Retention)
+
+* **Problem Solved:** Users re-enter filters every session
+
+* **Fix:** Persist:
+
+  * Dietary restrictions
+  * Meal goals
+  * Preferred ingredients
+
+* **Don’t use complex ML.** Just save last-used filters in localStorage or backend
+
+* **Priority:** 🧠 Essential for retention, but not urgent — do after core UX
+
+---
+
+## ❌ Features to Avoid (for Now)
+
+* ❌ Real-time regeneration on filter changes — violates your manual trigger UX
+* ❌ Multiple suggestions per slot — adds decision fatigue
+* ❌ Heavy ML learning systems — overkill for moms who just want dinner done
+
+---
+
+## ✅ Final Feature Rollout Order (Do This)
+
+1. 🔄 **"Try Different Meal" button per card**
+2. 👨‍👩‍👧 **Smart family assignment reactivity + portion adjustment**
+3. 💰 **Enhanced cost-optimization in AI prompt**
+4. 📥 **Progressive meal loading**
+5. 🔒 **Basic filter and preference persistence**
+
+---
+
+## 🧠 End Result (What Your App Will Do)
+
+* Generate **one simple, optimized plan** per week per family
+* Let users **reject or swap meals easily**
+* Adjust **portion sizes and plans** based on who’s eating and their needs
+* Keep ingredient overlap high for **cost savings**
+* React to family structure and preferences **without overwhelming moms**
+
+---
+
+If you're ready, I’ll help you **code and implement #1 (Try Different Meal button)** and wire it into your backend regeneration logic. Shall we start there?

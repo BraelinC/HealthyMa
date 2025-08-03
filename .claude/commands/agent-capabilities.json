@@ -1,0 +1,524 @@
+{
+  "agents": {
+    "/smart-context-builder": {
+      "category": "context",
+      "capabilities": {
+        "understanding": 10,
+        "planning": 3,
+        "implementation": 0,
+        "organization": 2,
+        "analysis": 8,
+        "documentation": 0,
+        "coordination": 0,
+        "research": 2
+      },
+      "goodFor": ["deep-understanding", "pattern-recognition", "initial-context"],
+      "inputs": ["focus-area", "file-patterns"],
+      "outputs": ["context-checkpoint", "mental-model"],
+      "timeEstimate": "2-5 minutes",
+      "parallelizable": true
+    },
+    "/context-agent": {
+      "category": "context",
+      "capabilities": {
+        "understanding": 8,
+        "planning": 5,
+        "implementation": 0,
+        "organization": 3,
+        "analysis": 7,
+        "documentation": 0,
+        "coordination": 0,
+        "research": 2
+      },
+      "goodFor": ["task-specific-context", "explore-plan-execute"],
+      "inputs": ["task-description"],
+      "outputs": ["context-summary", "implementation-plan"],
+      "timeEstimate": "1-3 minutes",
+      "parallelizable": true
+    },
+    "/analyze-nutrima": {
+      "category": "context",
+      "capabilities": {
+        "understanding": 9,
+        "planning": 2,
+        "implementation": 0,
+        "organization": 1,
+        "analysis": 9,
+        "documentation": 0,
+        "coordination": 0,
+        "research": 3
+      },
+      "goodFor": ["project-analysis", "pattern-finding", "architecture-understanding"],
+      "inputs": ["analysis-area"],
+      "outputs": ["nutrima-insights", "patterns-found"],
+      "timeEstimate": "1-2 minutes",
+      "parallelizable": true
+    },
+    "/understand-feature": {
+      "category": "context",
+      "capabilities": {
+        "understanding": 9,
+        "planning": 4,
+        "implementation": 0,
+        "organization": 2,
+        "analysis": 8,
+        "documentation": 0,
+        "coordination": 0,
+        "research": 3
+      },
+      "goodFor": ["feature-deep-dive", "dependency-mapping", "integration-points"],
+      "inputs": ["feature-name"],
+      "outputs": ["feature-analysis", "dependencies", "integration-map"],
+      "timeEstimate": "2-3 minutes",
+      "parallelizable": true
+    },
+    "/head": {
+      "category": "orchestration",
+      "capabilities": {
+        "understanding": 5,
+        "planning": 8,
+        "implementation": 0,
+        "organization": 7,
+        "analysis": 6,
+        "documentation": 0,
+        "coordination": 10,
+        "research": 0
+      },
+      "goodFor": ["workflow-orchestration", "agent-routing", "task-coordination"],
+      "inputs": ["any-request"],
+      "outputs": ["workflow-selection", "agent-pipeline"],
+      "timeEstimate": "30 seconds",
+      "parallelizable": false
+    },
+    "/smart-planner": {
+      "category": "planning",
+      "capabilities": {
+        "understanding": 4,
+        "planning": 10,
+        "implementation": 0,
+        "organization": 6,
+        "analysis": 7,
+        "documentation": 0,
+        "coordination": 2,
+        "research": 1
+      },
+      "goodFor": ["think-hardest", "minimal-scope", "execution-planning"],
+      "inputs": ["task-description"],
+      "outputs": ["execution-plan", "file-targets", "test-plan"],
+      "timeEstimate": "1-2 minutes",
+      "parallelizable": false
+    },
+    "/parallel-orchestrator": {
+      "category": "orchestration",
+      "capabilities": {
+        "understanding": 2,
+        "planning": 6,
+        "implementation": 0,
+        "organization": 5,
+        "analysis": 3,
+        "documentation": 0,
+        "coordination": 10,
+        "research": 0
+      },
+      "goodFor": ["parallel-execution", "multi-agent-coordination", "performance"],
+      "inputs": ["agent-list", "task-type"],
+      "outputs": ["parallel-batch-result", "merged-output"],
+      "timeEstimate": "varies",
+      "parallelizable": true
+    },
+    "/implementation-workflow": {
+      "category": "implementation",
+      "capabilities": {
+        "understanding": 3,
+        "planning": 4,
+        "implementation": 10,
+        "organization": 2,
+        "analysis": 2,
+        "documentation": 3,
+        "coordination": 0,
+        "research": 0
+      },
+      "goodFor": ["new-features", "enhancements", "code-writing"],
+      "inputs": ["feature-description", "context"],
+      "outputs": ["code-changes", "tests", "documentation"],
+      "timeEstimate": "10-30 minutes",
+      "parallelizable": false
+    },
+    "/bug-fix-workflow": {
+      "category": "implementation",
+      "capabilities": {
+        "understanding": 4,
+        "planning": 3,
+        "implementation": 9,
+        "organization": 2,
+        "analysis": 8,
+        "documentation": 3,
+        "coordination": 0,
+        "research": 2
+      },
+      "goodFor": ["debugging", "issue-fixing", "root-cause-analysis"],
+      "inputs": ["bug-description", "error-logs"],
+      "outputs": ["bug-fix", "tests", "documentation"],
+      "timeEstimate": "5-20 minutes",
+      "parallelizable": false
+    },
+    "/refactoring-workflow": {
+      "category": "implementation",
+      "capabilities": {
+        "understanding": 5,
+        "planning": 5,
+        "implementation": 8,
+        "organization": 3,
+        "analysis": 7,
+        "documentation": 3,
+        "coordination": 0,
+        "research": 0
+      },
+      "goodFor": ["code-improvement", "pattern-implementation", "optimization"],
+      "inputs": ["refactor-target", "goals"],
+      "outputs": ["refactored-code", "tests"],
+      "timeEstimate": "10-25 minutes",
+      "parallelizable": false
+    },
+    "/research-workflow": {
+      "category": "research",
+      "capabilities": {
+        "understanding": 3,
+        "planning": 4,
+        "implementation": 0,
+        "organization": 3,
+        "analysis": 8,
+        "documentation": 7,
+        "coordination": 0,
+        "research": 10
+      },
+      "goodFor": ["technical-research", "option-comparison", "decision-making"],
+      "inputs": ["research-question"],
+      "outputs": ["findings", "recommendations", "comparison-matrix"],
+      "timeEstimate": "5-15 minutes",
+      "parallelizable": true
+    },
+    "/update-context": {
+      "category": "documentation",
+      "capabilities": {
+        "understanding": 2,
+        "planning": 1,
+        "implementation": 0,
+        "organization": 3,
+        "analysis": 2,
+        "documentation": 10,
+        "coordination": 0,
+        "research": 0
+      },
+      "goodFor": ["documentation-updates", "context-sync", "knowledge-capture"],
+      "inputs": ["changes-made"],
+      "outputs": ["updated-docs", "changelog-entry"],
+      "timeEstimate": "2-5 minutes",
+      "parallelizable": true
+    },
+    "/tm/add-task": {
+      "category": "task-management",
+      "capabilities": {
+        "understanding": 2,
+        "planning": 6,
+        "implementation": 0,
+        "organization": 9,
+        "analysis": 2,
+        "documentation": 2,
+        "coordination": 0,
+        "research": 0
+      },
+      "goodFor": ["task-creation", "work-tracking", "ai-task-generation"],
+      "inputs": ["task-description", "dependencies"],
+      "outputs": ["task-id", "task-details"],
+      "timeEstimate": "30 seconds",
+      "parallelizable": false
+    },
+    "/tm/next": {
+      "category": "task-management",
+      "capabilities": {
+        "understanding": 1,
+        "planning": 4,
+        "implementation": 0,
+        "organization": 8,
+        "analysis": 3,
+        "documentation": 0,
+        "coordination": 2,
+        "research": 0
+      },
+      "goodFor": ["task-selection", "priority-management", "workflow-start"],
+      "inputs": [],
+      "outputs": ["next-task", "task-details"],
+      "timeEstimate": "5 seconds",
+      "parallelizable": false
+    },
+    "/tm/show": {
+      "category": "task-management",
+      "capabilities": {
+        "understanding": 3,
+        "planning": 2,
+        "implementation": 0,
+        "organization": 5,
+        "analysis": 2,
+        "documentation": 1,
+        "coordination": 0,
+        "research": 0
+      },
+      "goodFor": ["task-details", "requirement-understanding", "subtask-viewing"],
+      "inputs": ["task-id"],
+      "outputs": ["full-task-info", "subtasks"],
+      "timeEstimate": "5 seconds",
+      "parallelizable": true
+    },
+    "/tm/analyze-complexity": {
+      "category": "task-management",
+      "capabilities": {
+        "understanding": 2,
+        "planning": 7,
+        "implementation": 0,
+        "organization": 5,
+        "analysis": 9,
+        "documentation": 2,
+        "coordination": 0,
+        "research": 3
+      },
+      "goodFor": ["complexity-assessment", "effort-estimation", "expansion-recommendations"],
+      "inputs": ["task-ids"],
+      "outputs": ["complexity-scores", "recommendations"],
+      "timeEstimate": "1-3 minutes",
+      "parallelizable": true
+    },
+    "/tm/expand-task": {
+      "category": "task-management",
+      "capabilities": {
+        "understanding": 3,
+        "planning": 8,
+        "implementation": 0,
+        "organization": 7,
+        "analysis": 4,
+        "documentation": 1,
+        "coordination": 0,
+        "research": 1
+      },
+      "goodFor": ["task-breakdown", "subtask-generation", "detailed-planning"],
+      "inputs": ["task-id", "num-subtasks"],
+      "outputs": ["subtasks", "expanded-plan"],
+      "timeEstimate": "1-2 minutes",
+      "parallelizable": false
+    },
+    "/tm/set-status/to-done": {
+      "category": "task-management",
+      "capabilities": {
+        "understanding": 0,
+        "planning": 1,
+        "implementation": 0,
+        "organization": 7,
+        "analysis": 0,
+        "documentation": 1,
+        "coordination": 1,
+        "research": 0
+      },
+      "goodFor": ["task-completion", "progress-tracking", "workflow-closure"],
+      "inputs": ["task-id"],
+      "outputs": ["status-update"],
+      "timeEstimate": "5 seconds",
+      "parallelizable": false
+    },
+    "/tm/set-status/to-in-progress": {
+      "category": "task-management",
+      "capabilities": {
+        "understanding": 0,
+        "planning": 1,
+        "implementation": 0,
+        "organization": 7,
+        "analysis": 0,
+        "documentation": 1,
+        "coordination": 1,
+        "research": 0
+      },
+      "goodFor": ["task-start", "progress-tracking", "work-indication"],
+      "inputs": ["task-id"],
+      "outputs": ["status-update"],
+      "timeEstimate": "5 seconds",
+      "parallelizable": false
+    },
+    "/tm/parse-prd": {
+      "category": "task-management",
+      "capabilities": {
+        "understanding": 5,
+        "planning": 9,
+        "implementation": 0,
+        "organization": 8,
+        "analysis": 6,
+        "documentation": 3,
+        "coordination": 0,
+        "research": 2
+      },
+      "goodFor": ["requirement-parsing", "task-generation", "project-setup"],
+      "inputs": ["prd-file", "num-tasks"],
+      "outputs": ["task-list", "project-structure"],
+      "timeEstimate": "2-5 minutes",
+      "parallelizable": false
+    },
+    "/agent-status": {
+      "category": "monitoring",
+      "capabilities": {
+        "understanding": 1,
+        "planning": 0,
+        "implementation": 0,
+        "organization": 4,
+        "analysis": 5,
+        "documentation": 2,
+        "coordination": 8,
+        "research": 0
+      },
+      "goodFor": ["status-tracking", "parallel-monitoring", "conflict-detection"],
+      "inputs": ["status-type"],
+      "outputs": ["status-report", "conflict-info"],
+      "timeEstimate": "instant",
+      "parallelizable": true
+    },
+    "/agent-dependencies": {
+      "category": "orchestration",
+      "capabilities": {
+        "understanding": 2,
+        "planning": 7,
+        "implementation": 0,
+        "organization": 6,
+        "analysis": 8,
+        "documentation": 2,
+        "coordination": 9,
+        "research": 0
+      },
+      "goodFor": ["dependency-tracking", "parallel-planning", "conflict-prevention"],
+      "inputs": ["agent-names"],
+      "outputs": ["dependency-graph", "execution-order"],
+      "timeEstimate": "instant",
+      "parallelizable": true
+    },
+    "/file-lock-manager": {
+      "category": "system",
+      "capabilities": {
+        "understanding": 0,
+        "planning": 2,
+        "implementation": 0,
+        "organization": 5,
+        "analysis": 3,
+        "documentation": 0,
+        "coordination": 9,
+        "research": 0
+      },
+      "goodFor": ["conflict-prevention", "parallel-safety", "file-access-control"],
+      "inputs": ["file-operations"],
+      "outputs": ["lock-status", "queue-info"],
+      "timeEstimate": "instant",
+      "parallelizable": true
+    },
+    "/session-start": {
+      "category": "session",
+      "capabilities": {
+        "understanding": 3,
+        "planning": 4,
+        "implementation": 0,
+        "organization": 6,
+        "analysis": 2,
+        "documentation": 1,
+        "coordination": 3,
+        "research": 0
+      },
+      "goodFor": ["session-initialization", "context-restoration", "work-resumption"],
+      "inputs": [],
+      "outputs": ["session-setup", "current-status"],
+      "timeEstimate": "30 seconds",
+      "parallelizable": false
+    },
+    "/save-progress": {
+      "category": "session",
+      "capabilities": {
+        "understanding": 1,
+        "planning": 1,
+        "implementation": 0,
+        "organization": 5,
+        "analysis": 1,
+        "documentation": 7,
+        "coordination": 0,
+        "research": 0
+      },
+      "goodFor": ["progress-checkpoint", "state-saving", "context-preservation"],
+      "inputs": ["progress-description"],
+      "outputs": ["checkpoint-saved"],
+      "timeEstimate": "30 seconds",
+      "parallelizable": false
+    },
+    "/restore-session": {
+      "category": "session",
+      "capabilities": {
+        "understanding": 4,
+        "planning": 3,
+        "implementation": 0,
+        "organization": 5,
+        "analysis": 2,
+        "documentation": 1,
+        "coordination": 2,
+        "research": 0
+      },
+      "goodFor": ["context-restoration", "work-continuation", "session-recovery"],
+      "inputs": [],
+      "outputs": ["restored-context", "next-actions"],
+      "timeEstimate": "1 minute",
+      "parallelizable": false
+    }
+  },
+  "categories": {
+    "context": {
+      "description": "Build understanding of codebase and requirements",
+      "primaryCapabilities": ["understanding", "analysis"],
+      "parallelizable": true
+    },
+    "orchestration": {
+      "description": "Coordinate and manage other agents",
+      "primaryCapabilities": ["coordination", "planning"],
+      "parallelizable": false
+    },
+    "planning": {
+      "description": "Create execution plans and strategies",
+      "primaryCapabilities": ["planning", "analysis"],
+      "parallelizable": false
+    },
+    "implementation": {
+      "description": "Write and modify code",
+      "primaryCapabilities": ["implementation"],
+      "parallelizable": false
+    },
+    "research": {
+      "description": "Investigate options and gather information",
+      "primaryCapabilities": ["research", "analysis"],
+      "parallelizable": true
+    },
+    "documentation": {
+      "description": "Update and maintain documentation",
+      "primaryCapabilities": ["documentation"],
+      "parallelizable": true
+    },
+    "task-management": {
+      "description": "Manage tasks and project organization",
+      "primaryCapabilities": ["organization", "planning"],
+      "parallelizable": false
+    },
+    "monitoring": {
+      "description": "Track status and detect issues",
+      "primaryCapabilities": ["analysis", "coordination"],
+      "parallelizable": true
+    },
+    "session": {
+      "description": "Manage work sessions",
+      "primaryCapabilities": ["organization", "understanding"],
+      "parallelizable": false
+    },
+    "system": {
+      "description": "System-level utilities",
+      "primaryCapabilities": ["coordination"],
+      "parallelizable": true
+    }
+  }
+}

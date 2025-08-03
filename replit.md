@@ -1,0 +1,81 @@
+# Healthy Mama
+
+## Overview
+
+Healthy Mama is a full-stack web application designed to generate AI-powered recipes with integrated ingredient shopping via Instacart. Its core purpose is to provide users with personalized meal planning, comprehensive nutritional information, and a seamless shopping experience. Key capabilities include multi-AI recipe generation, YouTube video integration for cooking instructions, and detailed nutrition calculations based on USDA data. The vision is to empower users to eat healthier and simplify meal preparation, offering a unique solution in the growing health and wellness market.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## Recent Changes
+
+**August 1, 2025**: Successfully restored original JWT-based authentication system and hidden weight controls
+- Disabled Replit Auth and reverted to original JWT authentication
+- Fixed database user creation to generate proper string IDs for compatibility
+- Updated all API routes to use authenticateToken middleware instead of isAuthenticated
+- Fixed user access patterns in all route handlers (req.user?.id instead of req.user?.claims?.sub)
+- Restored original login/registration endpoints at /api/auth/login and /api/auth/register
+- Frontend authentication flow now works with JWT tokens stored in localStorage
+- Fixed TypeScript errors in frontend user object handling
+- Hidden weight slider controls in UI while preserving all weight-based functionality
+- Removed AI Status display card for cleaner interface
+- Removed Perplexity Cache viewer from profile page to streamline user experience
+- Removed Test Features and Food Icons navigation items while preserving backend functionality
+- Hidden Weight-Based Planning option from meal planner UI while preserving weight-based backend calculations
+- Replaced hamburger menu with simple profile button for cleaner header interface
+- Enhanced profile avatar with purple-to-emerald gradient styling and proper initials logic (first + last name letters)
+
+## System Architecture
+
+Healthy Mama is built as a monorepo, emphasizing a modern full-stack approach.
+
+### Frontend Architecture
+- **Technology**: React 18 with TypeScript.
+- **Build Tool**: Vite for fast development and optimized builds.
+- **Styling**: TailwindCSS with shadcn/ui for a modern, purple and emerald green themed UI.
+- **Routing**: Wouter for client-side navigation.
+- **State Management**: TanStack Query for efficient server state management and API caching.
+- **Forms**: React Hook Form with Zod for robust form validation.
+
+### Backend Architecture
+- **Technology**: Express.js with Node.js 20 and TypeScript.
+- **Database ORM**: Drizzle ORM configured for PostgreSQL.
+- **Database Hosting**: Neon Database (PostgreSQL-compatible) for cloud persistence.
+- **Authentication**: Replit Auth (OpenID Connect) with session-based authentication and PostgreSQL session storage.
+
+### Database Layer
+- **Type**: PostgreSQL.
+- **Schema**: Includes `users` (varchar primary keys for Replit Auth), `sessions` (for session storage), `recipes` (serial keys), `meal_plans`, `profiles`, `user_achievements`, and `meal_completions` tables, designed for efficient relationships and full-text recipe search.
+
+### Key Features & Design Patterns
+- **Authentication**: JWT-based authentication with email/password registration and login, automatic token refresh, Google OAuth integration, and secure Bearer token authorization.
+- **Recipe Generation Engine**: Integrates OpenAI GPT and Grok AI. Supports "Fast mode" (YouTube suggestions) and "Detailed mode" (full instruction extraction). Incorporates YouTube API for video search and Spoonacular API for recipe data validation. Features advanced, GPT-powered ingredient parsing.
+- **Nutrition Calculation**: Leverages USDA API for accurate nutrition data. Intelligent ingredient parsing for quantities and names, providing per-serving calorie, protein, carb, and fat breakdowns.
+- **Shopping Integration**: Uses Instacart Developer Platform API for one-click shopping, converting recipe ingredients into purchasable items with automatic formatting.
+- **Video Enhancement**: YouTube Data API v3 integration for finding and ranking cooking videos based on views/engagement. Supports transcript extraction and embedded video playback via React Player.
+- **Meal Plan Optimization**: Features smart ingredient optimization to maximize reuse and calculate bulk buying savings, and batch meal optimization for cost-effective API calls. Includes dynamic cooking time and difficulty calculations.
+- **Cultural Cuisine Integration**: Utilizes Perplexity API for authentic cultural cuisine data, integrated with user preferences.
+- **UI/UX Decisions**: Simplified profile interface, comprehensive 200+ emoji food icon system for visual representation, and intuitive meal plan completion tracking with individual meal checkboxes.
+
+## External Dependencies
+
+### APIs and Services
+- **OpenAI API**: Primary AI provider for recipe generation and ingredient parsing (GPT-4o-mini).
+- **Grok AI**: Alternative AI provider for recipe generation.
+- **YouTube Data API v3**: For video search, metadata retrieval, and transcript extraction.
+- **Spoonacular API**: For recipe data and cooking time validation.
+- **USDA FoodData Central API**: For accurate nutrition data lookup.
+- **Instacart Developer Platform**: For shopping list integration.
+- **Neon Database**: Cloud PostgreSQL hosting.
+- **Perplexity API**: For cultural cuisine data (sonar model).
+
+### Third-party Libraries
+- **Authentication**: `jsonwebtoken`, `bcryptjs`.
+- **Database**: `@neondatabase/serverless`, `drizzle-orm`.
+- **API Clients**: `axios`, `node-fetch`.
+- **Validation**: `zod`, `@hookform/resolvers`.
+- **UI Components**: `@radix-ui/react-*` (comprehensive component suite).
+- **Video Player**: `react-player`.
+- **UI Drag & Drop**: `react-beautiful-dnd`.
+```

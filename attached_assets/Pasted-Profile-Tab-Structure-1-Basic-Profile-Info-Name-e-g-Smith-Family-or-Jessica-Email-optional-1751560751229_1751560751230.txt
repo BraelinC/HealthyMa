@@ -1,0 +1,56 @@
+Profile Tab Structure
+1. Basic Profile Info
+Name (e.g., “Smith Family” or “Jessica”)
+Email (optional)
+Primary goal (e.g., Save Money, Eat Healthier, Gain Muscle, Family Wellness)
+Number of people in the family (for serving size calculations)
+2. Family Members (Optional, Expandable)
+List of family members (e.g., Mom, Dad, Child 1, Child 2)
+For each member (optional, not required):
+Name or nickname
+Age (or age group: child, teen, adult)
+Dietary preferences (vegetarian, allergies, dislikes, etc.)
+Individual goals (optional: e.g., “Dad wants to gain muscle,” “Child 1 is picky eater”)
+3. Customization Philosophy
+Only the main profile and family size are required.
+Adding details for each family member is optional—users can skip or fill in as much as they want.
+The more info they provide, the more personalized the plans.
+How to Implement (UI/UX Guidance)
+Step 1: Show a simple form for main profile and family size.
+Step 2: Ask if they want to add details for individual family members (with a “Skip” option).
+Step 3: For each member, show a small form (name, age, preferences, goals), but make all fields optional.
+Step 4: Save all info in the user’s profile for use in prompt generation and serving size calculations.
+Example Data Structure (JavaScript/JSON)
+json
+Copy Code
+{
+  "profileName": "Smith Family",
+  "primaryGoal": "Family Wellness",
+  "familySize": 4,
+  "members": [
+    {
+      "name": "Jessica",
+      "ageGroup": "Adult",
+      "preferences": ["vegetarian"],
+      "goals": ["lose weight"]
+    },
+    {
+      "name": "Mike",
+      "ageGroup": "Adult",
+      "preferences": [],
+      "goals": ["gain muscle"]
+    },
+    {
+      "name": "Ella",
+      "ageGroup": "Child",
+      "preferences": ["no nuts"],
+      "goals": []
+    }
+  ]
+}
+If the user skips member details, just store the main profile and family size.
+
+How This Helps Your App
+Serving Sizes: Use familySize to scale meal plans and shopping lists.
+Personalization: If member info is provided, you can tailor plans (e.g., “Make sure at least one meal per day is vegetarian for Jessica”).
+Flexibility: Users can keep it simple or go deep—no pressure.
