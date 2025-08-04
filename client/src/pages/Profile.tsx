@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe } from 'lucide-react';
+import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Profile, FamilyMember } from '@shared/schema';
 import CulturalCuisineDropdown from '@/components/CulturalCuisineDropdown';
@@ -1623,6 +1623,26 @@ export default function Profile() {
                 </Button>
               </div>
             )}
+
+            {/* Logout Button - Always visible at bottom */}
+            <div className="mt-12 pt-6 border-t border-gray-200">
+              <div className="flex justify-center">
+                <Button 
+                  onClick={() => {
+                    // Clear authentication
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    // Redirect to home page which will show login
+                    window.location.href = '/';
+                  }}
+                  variant="outline"
+                  className="flex items-center gap-2 text-gray-600 hover:text-red-600 hover:border-red-300 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 
