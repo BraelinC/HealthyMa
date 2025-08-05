@@ -1632,8 +1632,9 @@ export default function Profile() {
                     // Clear authentication
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
-                    // Redirect to home page which will show login
-                    window.location.href = '/';
+                    localStorage.removeItem('auth_token');
+                    // Redirect to home with login parameter to skip landing page and show login directly
+                    window.location.href = '/?login=true';
                   }}
                   variant="outline"
                   className="flex items-center gap-2 text-gray-600 hover:text-red-600 hover:border-red-300 transition-colors"

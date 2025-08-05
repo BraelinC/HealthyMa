@@ -136,10 +136,19 @@ function Router() {
     paymentType: 'founders' | 'trial' | null;
   }>({ show: false, paymentType: null });
 
-  // Check for URL parameters that might indicate a successful auth
+  // Check for URL parameters that might indicate a successful auth or login request
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const hasAuthParams = urlParams.has('token') || urlParams.has('success') || window.location.pathname === '/';
+    const hasLoginParam = urlParams.has('login');
+    
+    // If login parameter is present, show auth form directly
+    if (hasLoginParam) {
+      setShowAuth(true);
+      // Clean up URL by removing login parameter
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
     
     // If we have auth-related URL params, clean them up
     if (hasAuthParams && (urlParams.has('token') || urlParams.has('success'))) {
