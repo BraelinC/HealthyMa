@@ -394,7 +394,7 @@ const Search = () => {
           {/* Recipe Generator */}
           <div className="lg:col-span-2">
             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm rounded-xl">
-              <CardHeader className="border-b text-white rounded-t-xl" style={{ background: 'linear-gradient(to right, #2563eb, #1d4ed8)' }}>
+              <CardHeader className="border-b text-white rounded-t-xl" style={{ background: 'linear-gradient(to right, #14b8a6, #0d9488)' }}>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5" />
                   Recipe Generator
@@ -422,7 +422,7 @@ const Search = () => {
                       variant={mode === "fast" ? "default" : "outline"}
                       onClick={() => setMode("fast")}
                       size="sm"
-                      style={mode === "fast" ? { backgroundColor: '#2563eb', color: 'white' } : {}}
+                      style={mode === "fast" ? { backgroundColor: '#14b8a6', color: 'white' } : {}}
                       className={mode === "fast" ? "hover:opacity-90" : ""}
                     >
                       <Play className="h-3 w-3 mr-1" />
@@ -433,7 +433,7 @@ const Search = () => {
                       variant={mode === "detailed" ? "default" : "outline"}
                       onClick={() => setMode("detailed")}
                       size="sm"
-                      style={mode === "detailed" ? { backgroundColor: '#2563eb', color: 'white' } : {}}
+                      style={mode === "detailed" ? { backgroundColor: '#14b8a6', color: 'white' } : {}}
                       className={mode === "detailed" ? "hover:opacity-90" : ""}
                     >
                       <BookOpen className="h-3 w-3 mr-1" />
@@ -515,7 +515,7 @@ const Search = () => {
                     type="submit" 
                     size="lg"
                     disabled={generateRecipeMutation.isPending || isAutoLoading || !query.trim()}
-                    style={{ backgroundColor: '#2563eb', color: 'white' }} 
+                    style={{ backgroundColor: '#14b8a6', color: 'white' }} 
                     className="w-full hover:opacity-90"
                   >
                     {generateRecipeMutation.isPending || isAutoLoading ? (
@@ -560,7 +560,7 @@ const Search = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="font-semibold mb-3 text-blue-600">Ingredients</h4>
+                        <h4 className="font-semibold mb-3 text-teal-600">Ingredients</h4>
                         <ul className="space-y-1">
                           {Array.isArray(generatedRecipe.ingredients) && generatedRecipe.ingredients.map((ingredient, index) => (
                             <li key={index} className="text-sm text-gray-700 flex items-start">
@@ -574,20 +574,20 @@ const Search = () => {
                         <Button
                           variant="ghost"
                           onClick={() => setShowInstructions(!showInstructions)}
-                          className="w-full justify-between p-0 h-auto text-left font-semibold text-blue-600 hover:bg-transparent"
+                          className="w-full justify-between p-0 h-auto text-left font-semibold text-teal-600 hover:bg-transparent"
                         >
-                          <h4 className="font-semibold text-blue-600">Instructions</h4>
+                          <h4 className="font-semibold text-teal-600">Instructions</h4>
                           {showInstructions ? (
-                            <ChevronUp className="h-4 w-4 text-blue-600" />
+                            <ChevronUp className="h-4 w-4 text-teal-600" />
                           ) : (
-                            <ChevronDown className="h-4 w-4 text-blue-600" />
+                            <ChevronDown className="h-4 w-4 text-teal-600" />
                           )}
                         </Button>
                         {showInstructions && (
                           <ol className="space-y-2 mt-3">
                             {generatedRecipe.instructions.map((step, index) => (
                               <li key={index} className="text-sm text-gray-700 flex">
-                                <span className="font-medium text-blue-600 mr-2 flex-shrink-0">{index + 1}.</span>
+                                <span className="font-medium text-teal-600 mr-2 flex-shrink-0">{index + 1}.</span>
                                 <span>{step}</span>
                               </li>
                             ))}
@@ -600,7 +600,7 @@ const Search = () => {
                       <Button
                         onClick={createShoppingList}
                         size="sm"
-                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        className="bg-teal-500 hover:bg-teal-600 text-white"
                       >
                         <ShoppingCart className="h-4 w-4 mr-1" />
                         Create Shopping List
