@@ -88,6 +88,3 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
-
-[agent]
-integrations = ["javascript_sendgrid==1.0.0"]
