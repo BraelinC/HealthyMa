@@ -504,7 +504,7 @@ export default function Profile() {
   useEffect(() => {
     if (newMember.name && !newMember.avatar) {
       const avatar = generateAvatar(newMember.name, newMember.avatarStyle);
-      setNewMember(prev => ({ ...prev, avatar }));
+      setNewMember((prev: any) => ({ ...prev, avatar }));
     }
   }, [newMember.name, newMember.avatarStyle]);
 
