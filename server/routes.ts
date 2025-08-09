@@ -1687,10 +1687,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const openaiStream = await openai.chat.completions.create({
-        model: "gpt-5-mini",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         stream: true,
-        max_completion_tokens: 4096
+        temperature: 0.7,
+        max_tokens: 4096
       });
 
       // Parse meals in real-time from the stream
