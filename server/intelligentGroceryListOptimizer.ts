@@ -76,7 +76,6 @@ Return ONLY a JSON object with this structure:
       model: "gpt-5-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.3,
       max_completion_tokens: 2000
     });
 

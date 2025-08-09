@@ -150,7 +150,6 @@ Score ALL ${maxMeals} meals. Numbers only, NO text in meal objects.`;
           }
         ],
         max_completion_tokens: 2500,
-        temperature: 0.3, // Low temperature for consistent ranking
         response_format: { type: "json_object" } // Force JSON response for GPT-5 mini
       })
     });

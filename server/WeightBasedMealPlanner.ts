@@ -547,7 +547,6 @@ export class WeightBasedMealPlanner {
               content: prompt
             }
           ],
-          temperature: 0.8,
           max_completion_tokens: 1000
         })
       });
