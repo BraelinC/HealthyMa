@@ -536,7 +536,7 @@ export class WeightBasedMealPlanner {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-5-mini',
+          model: 'gpt-4o-mini',
           messages: [
             {
               role: 'system',
@@ -547,7 +547,8 @@ export class WeightBasedMealPlanner {
               content: prompt
             }
           ],
-          max_completion_tokens: 1000
+          temperature: 0.8,
+          max_tokens: 1000
         })
       });
 

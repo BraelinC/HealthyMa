@@ -425,13 +425,14 @@ Return JSON:
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: 'Generate meal recipes that efficiently reuse ingredients when possible. CRITICAL: Respect difficulty constraints and use 0.5 increments for precise difficulty ratings.' },
           { role: 'user', content: prompt }
         ],
         response_format: { type: "json_object" },
-        max_completion_tokens: 150
+        temperature: 0.7,
+        max_tokens: 150
       })
     });
 

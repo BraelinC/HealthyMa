@@ -1389,7 +1389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-5-mini',
+          model: 'gpt-4o-mini',
           messages: [
             {
               role: 'system',
@@ -1401,7 +1401,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           ],
           response_format: { type: "json_object" },
-          max_completion_tokens: 4000 // Increased to ensure all days fit
+          temperature: 0.2, // Lower for more consistent adherence to requirements
+          max_tokens: 4000 // Increased to ensure all days fit
         })
       });
 
@@ -2078,7 +2079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-5-mini",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: 'system',
@@ -2090,7 +2091,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         ],
         response_format: { type: "json_object" },
-        max_completion_tokens: 4000
+        temperature: 0.3,
+        max_tokens: 4000
       });
 
       let mealPlan;

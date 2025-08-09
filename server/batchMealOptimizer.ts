@@ -92,7 +92,7 @@ MAXIMIZE INGREDIENT REUSE for bulk buying opportunities!`;
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -104,7 +104,8 @@ MAXIMIZE INGREDIENT REUSE for bulk buying opportunities!`;
           }
         ],
         response_format: { type: "json_object" },
-        max_completion_tokens: 1200
+        temperature: 0.7,
+        max_tokens: 1200
       })
     });
 

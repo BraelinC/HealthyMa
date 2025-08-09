@@ -10,12 +10,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**August 9, 2025**: Upgraded from GPT-4o-mini to GPT-5 mini across all AI components
-- Updated all meal planning endpoints to use GPT-5 mini for enhanced reasoning and 45% fewer hallucinations
-- Upgraded recipe generation, weight-based meal planning, grocery optimization, and meal ranking systems
-- Expected cost increase from $0.10 to $0.23 per user/month for significantly improved meal quality and cultural authenticity
-- GPT-5 mini provides better instruction following, enhanced multimodal understanding, and improved ingredient substitutions
-
 **August 1, 2025**: Successfully restored original JWT-based authentication system and hidden weight controls
 - Disabled Replit Auth and reverted to original JWT authentication
 - Fixed database user creation to generate proper string IDs for compatibility
@@ -56,7 +50,7 @@ Healthy Mama is built as a monorepo, emphasizing a modern full-stack approach.
 
 ### Key Features & Design Patterns
 - **Authentication**: JWT-based authentication with email/password registration and login, automatic token refresh, Google OAuth integration, and secure Bearer token authorization.
-- **Recipe Generation Engine**: Integrates OpenAI GPT-5 mini and Grok AI. Supports "Fast mode" (YouTube suggestions) and "Detailed mode" (full instruction extraction). Incorporates YouTube API for video search and Spoonacular API for recipe data validation. Features advanced, GPT-5 mini-powered ingredient parsing.
+- **Recipe Generation Engine**: Integrates OpenAI GPT and Grok AI. Supports "Fast mode" (YouTube suggestions) and "Detailed mode" (full instruction extraction). Incorporates YouTube API for video search and Spoonacular API for recipe data validation. Features advanced, GPT-powered ingredient parsing.
 - **Nutrition Calculation**: Leverages USDA API for accurate nutrition data. Intelligent ingredient parsing for quantities and names, providing per-serving calorie, protein, carb, and fat breakdowns.
 - **Shopping Integration**: Uses Instacart Developer Platform API for one-click shopping, converting recipe ingredients into purchasable items with automatic formatting.
 - **Video Enhancement**: YouTube Data API v3 integration for finding and ranking cooking videos based on views/engagement. Supports transcript extraction and embedded video playback via React Player.

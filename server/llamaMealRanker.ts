@@ -22,10 +22,10 @@ export interface LlamaRankingResponse {
 export class LlamaMealRanker {
   private apiEndpoint: string;
   private apiKey: string;
-  private model: string = 'gpt-5-mini'; // OpenAI GPT-5 mini model
+  private model: string = 'gpt-4o-mini'; // OpenAI GPT-4o mini model
 
   constructor() {
-    // Use OpenAI for GPT-5 mini inference
+    // Use OpenAI for GPT-4o mini inference
     this.apiEndpoint = 'https://api.openai.com/v1/chat/completions';
     this.apiKey = process.env.OPENAI_API_KEY || '';
     
@@ -40,12 +40,12 @@ export class LlamaMealRanker {
   public async rankMeals(request: LlamaRankingRequest): Promise<LlamaRankingResponse> {
     const startTime = Date.now();
     
-    console.log(`🤖 Ranking ${request.meals.length} meals with GPT-5 mini`);
+    console.log(`🤖 Ranking ${request.meals.length} meals with GPT-4o mini`);
     console.log(`🔑 API Key available: ${this.apiKey ? 'YES' : 'NO'}`);
     console.log(`🔗 Using endpoint: ${this.apiEndpoint}`);
 
     if (!this.apiKey) {
-      throw new Error('OPENAI_API_KEY is required for GPT-5 mini ranking. Fallback system removed.');
+      throw new Error('OPENAI_API_KEY is required for GPT-4o mini ranking. Fallback system removed.');
     }
 
     const prompt = this.buildRankingPrompt(request);
@@ -128,7 +128,7 @@ Score ALL ${maxMeals} meals. Numbers only, NO text in meal objects.`;
   }
 
   /**
-   * Call OpenAI API for GPT-5 mini inference
+   * Call OpenAI API for GPT-4o mini inference
    */
   private async callLlamaAPI(prompt: string): Promise<any> {
     const response = await fetch(this.apiEndpoint, {
@@ -149,8 +149,9 @@ Score ALL ${maxMeals} meals. Numbers only, NO text in meal objects.`;
             content: prompt
           }
         ],
-        max_completion_tokens: 2500,
-        response_format: { type: "json_object" } // Force JSON response for GPT-5 mini
+        max_tokens: 2500,
+        temperature: 0.3, // Low temperature for consistent ranking
+        response_format: { type: "json_object" } // Force JSON response for GPT-4o mini
       })
     });
 

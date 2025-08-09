@@ -1,6 +1,6 @@
 /**
  * Intelligent Grocery List Optimizer
- * Uses GPT-5 mini to consolidate ingredients and convert to sensible purchase quantities
+ * Uses GPT-4o-mini to consolidate ingredients and convert to sensible purchase quantities
  */
 
 import OpenAI from "openai";
@@ -26,7 +26,7 @@ interface GroceryOptimizationResult {
 }
 
 /**
- * Consolidate ingredients from meal plan using GPT-5 mini
+ * Consolidate ingredients from meal plan using GPT-4o-mini
  */
 export async function consolidateIngredientsWithAI(
   ingredients: string[]
@@ -73,10 +73,11 @@ Return ONLY a JSON object with this structure:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      max_completion_tokens: 2000
+      temperature: 0.3,
+      max_tokens: 2000
     });
 
     const content = response.choices[0].message.content;
