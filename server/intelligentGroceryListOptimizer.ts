@@ -77,7 +77,7 @@ Return ONLY a JSON object with this structure:
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.3,
-      max_tokens: 2000
+      max_completion_tokens: 2000
     });
 
     const content = response.choices[0].message.content;

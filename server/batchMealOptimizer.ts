@@ -105,7 +105,7 @@ MAXIMIZE INGREDIENT REUSE for bulk buying opportunities!`;
         ],
         response_format: { type: "json_object" },
         temperature: 0.7,
-        max_tokens: 1200
+        max_completion_tokens: 1200
       })
     });
 

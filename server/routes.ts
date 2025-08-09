@@ -1402,7 +1402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ],
           response_format: { type: "json_object" },
           temperature: 0.2, // Lower for more consistent adherence to requirements
-          max_tokens: 4000 // Increased to ensure all days fit
+          max_completion_tokens: 4000 // Increased to ensure all days fit
         })
       });
 
@@ -1692,7 +1692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         messages: [{ role: "user", content: prompt }],
         stream: true,
         temperature: 0.7,
-        max_tokens: 4096
+        max_completion_tokens: 4096
       });
 
       // Parse meals in real-time from the stream
@@ -2092,7 +2092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ],
         response_format: { type: "json_object" },
         temperature: 0.3,
-        max_tokens: 4000
+        max_completion_tokens: 4000
       });
 
       let mealPlan;
