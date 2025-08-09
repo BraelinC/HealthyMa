@@ -1389,7 +1389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           messages: [
             {
               role: 'system',
@@ -1688,7 +1688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const openaiStream = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-5-mini",
         messages: [{ role: "user", content: prompt }],
         stream: true,
         temperature: 0.7,
@@ -2079,7 +2079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-5-mini",
         messages: [
           {
             role: 'system',

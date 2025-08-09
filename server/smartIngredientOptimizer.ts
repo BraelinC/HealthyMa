@@ -425,7 +425,7 @@ Return JSON:
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [
           { role: 'system', content: 'Generate meal recipes that efficiently reuse ingredients when possible. CRITICAL: Respect difficulty constraints and use 0.5 increments for precise difficulty ratings.' },
           { role: 'user', content: prompt }
