@@ -432,7 +432,7 @@ export async function handleLogMealDetection(req: Request, res: Response) {
     if (allDetections.length === 0) {
       console.error('❌ No detections from any LogMeal endpoint');
       console.log('💡 This could be due to:');
-      console.log('   - Rate limit reached (wait 24 hours or upgrade plan)');
+      console.log('   - Daily rate limit reached (200 requests per day - resets at midnight)');
       console.log('   - Image quality (try better lighting/clearer photo)');
       console.log('   - Food not recognized (try simpler/common foods)');
       console.log('   - API service issues (check LogMeal status)');
