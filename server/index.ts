@@ -12,8 +12,9 @@ import { passport } from "./googleAuth";
 
 const app = express();
 // Replit Auth enabled
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Increase payload size limit for image uploads (10MB)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // Configure session middleware (required for passport and fallback auth)
 app.use(session({
@@ -83,10 +84,10 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
+  // Use PORT env variable or default to 5000
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // In Replit, port 5000 is the only port that is not firewalled.
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
   
   server.on('error', (error: any) => {
     if (error.code === 'EADDRINUSE') {

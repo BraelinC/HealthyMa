@@ -10,7 +10,6 @@ import { extractFoodNameForNutrition, getServingSizeMultiplier } from "./nutriti
 import { parseIngredientsWithGPT } from "./gptIngredientParser";
 import { authenticateToken } from "./auth"; // Import JWT auth middleware
 import { rateLimiter } from "./rateLimiter";
-import { handleLogMealDetection } from "./logmealEndpoint";
 
 import Stripe from "stripe";
 import { insertProfileSchema, type InsertProfile } from "@shared/schema";
@@ -1395,7 +1394,296 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // LogMeal API endpoint for food detection
-  app.post("/api/detect-foods-logmeal", handleLogMealDetection);
+  app.post("/api/detect-foods-logmeal", async (req, res) => {
+    try {
+      console.log('🍔 === LOGMEAL API ENDPOINT CALLED ===');
+      const { image } = req.body;
+      
+      if (!image) {
+        console.error('❌ No image data provided');
+        return res.status(400).json({ error: "Image data is required" });
+      }
+      
+      console.log('📊 Received image data:', {
+        length: image.length,
+        isBase64: image.includes('base64'),
+        prefix: image.substring(0, 50)
+      });
+      
+      // LogMeal API configuration
+      const LOGMEAL_API_KEY = '79cbe9badc6d24d77ffbcd536692c6fd697de89d';
+      const LOGMEAL_API_URL = 'https://api.logmeal.es/v2';
+      
+      console.log('🔑 Using LogMeal API');
+      
+      // Remove data URL prefix and convert to buffer
+      const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
+      const imageBuffer = Buffer.from(base64Image, 'base64');
+      console.log('📦 Image buffer size:', imageBuffer.length);
+      
+      // Use axios for proper form-data handling
+      const axios = require('axios');
+      const FormData = require('form-data');
+      
+      // Create form data for LogMeal API
+      const formData = new FormData();
+      formData.append('image', imageBuffer, {
+        filename: 'image.jpg',
+        contentType: 'image/jpeg'
+      });
+      
+      console.log('📡 Calling LogMeal API for dish recognition...');
+      console.log('🔗 Endpoint: /recognition/dish');
+      console.log('📦 Form data buffer size:', imageBuffer.length);
+      console.log('🔑 API Key (first 10 chars):', LOGMEAL_API_KEY.substring(0, 10) + '...');
+      
+      // Call LogMeal API - dish recognition endpoint for better results
+      let logmealResponse;
+      let logmealData;
+      let endpoint = '/recognition/dish';
+      
+      try {
+        // Try dish recognition first (better for complex meals)
+        console.log('🚀 Attempting dish recognition endpoint...');
+        
+        try {
+          logmealResponse = await axios.post(
+            `${LOGMEAL_API_URL}${endpoint}`,
+            formData,
+            {
+              headers: {
+                'Authorization': `Bearer ${LOGMEAL_API_KEY}`,
+                ...formData.getHeaders()
+              },
+              maxContentLength: Infinity,
+              maxBodyLength: Infinity
+            }
+          );
+          
+          logmealData = logmealResponse.data;
+          console.log('✅ Dish recognition successful');
+          
+        } catch (dishError: any) {
+          console.log('⚠️ Dish endpoint failed:', dishError.response?.status || dishError.message);
+          console.log('⚠️ Trying type recognition endpoint...');
+          
+          // Create new form data for second request
+          const formData2 = new FormData();
+          formData2.append('image', imageBuffer, {
+            filename: 'image.jpg',
+            contentType: 'image/jpeg'
+          });
+          
+          // Try type recognition endpoint
+          endpoint = '/image/recognition/type';
+          
+          try {
+            logmealResponse = await axios.post(
+              `${LOGMEAL_API_URL}${endpoint}`,
+              formData2,
+              {
+                headers: {
+                  'Authorization': `Bearer ${LOGMEAL_API_KEY}`,
+                  ...formData2.getHeaders()
+                },
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity
+              }
+            );
+            
+            logmealData = logmealResponse.data;
+            console.log('✅ Type recognition successful');
+            
+          } catch (typeError: any) {
+            console.log('⚠️ Type endpoint also failed:', typeError.response?.status || typeError.message);
+            console.log('⚠️ Trying complete endpoint as last resort...');
+            
+            // Try the complete endpoint
+            const formData3 = new FormData();
+            formData3.append('image', imageBuffer, {
+              filename: 'image.jpg',
+              contentType: 'image/jpeg'
+            });
+            
+            endpoint = '/image/recognition/complete';
+            logmealResponse = await axios.post(
+              `${LOGMEAL_API_URL}${endpoint}`,
+              formData3,
+              {
+                headers: {
+                  'Authorization': `Bearer ${LOGMEAL_API_KEY}`,
+                  ...formData3.getHeaders()
+                },
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity
+              }
+            );
+            
+            logmealData = logmealResponse.data;
+            console.log('✅ Complete recognition successful');
+          }
+        }
+        
+      } catch (fetchError: any) {
+        console.error('❌ Network error calling LogMeal API:', fetchError.message);
+        
+        if (fetchError.response) {
+          console.error('❌ Response status:', fetchError.response.status);
+          console.error('❌ Response data:', JSON.stringify(fetchError.response.data, null, 2));
+        }
+        
+        return res.status(500).json({ 
+          error: 'Network error calling LogMeal API',
+          details: fetchError.message,
+          status: fetchError.response?.status,
+          data: fetchError.response?.data
+        });
+      }
+      
+      // With axios, the data is already parsed
+      console.log('📊 Response structure:', Object.keys(logmealData || {}));
+      console.log('📊 Full response:', JSON.stringify(logmealData, null, 2));
+      
+      // Process LogMeal response into our format
+      const detectedIngredients: any[] = [];
+      
+      // Map common measurement units
+      const getUnitForFood = (foodName: string) => {
+        const lowerName = foodName.toLowerCase();
+        if (lowerName.includes('rice') || lowerName.includes('pasta')) return 'cup';
+        if (lowerName.includes('chicken') || lowerName.includes('beef') || lowerName.includes('pork') || lowerName.includes('steak')) return 'oz';
+        if (lowerName.includes('milk') || lowerName.includes('juice') || lowerName.includes('soup')) return 'cup';
+        if (lowerName.includes('bread') || lowerName.includes('toast')) return 'slice';
+        if (lowerName.includes('egg')) return 'egg';
+        if (lowerName.includes('apple') || lowerName.includes('banana') || lowerName.includes('orange')) return 'piece';
+        return 'serving';
+      };
+      
+      const getMeasureType = (unit: string) => {
+        if (unit === 'cup' || unit === 'tbsp' || unit === 'tsp' || unit === 'ml') return 'volume';
+        if (unit === 'oz' || unit === 'g' || unit === 'lb') return 'weight';
+        return 'count';
+      };
+      
+      // Process dish recognition response
+      if (logmealData.recognition_results) {
+        console.log(`🍽️ Found recognition_results array with ${logmealData.recognition_results.length} items`);
+        console.log('🔍 Recognition results:', JSON.stringify(logmealData.recognition_results, null, 2));
+        
+        for (const result of logmealData.recognition_results) {
+          console.log('  🔍 Processing result:', result);
+          const foodName = result.name || result.food_name || result.class || 'Unknown';
+          const confidence = result.prob || result.probability || result.score || 0.5;
+          
+          console.log(`  📊 Food: ${foodName}, Confidence: ${confidence}`);
+          
+          // Skip low confidence or generic items
+          if (confidence < 0.2) {
+            console.log(`  ⚠️ Skipping low confidence: ${confidence}`);
+            continue;
+          }
+          if (foodName.toLowerCase().includes('unknown')) {
+            console.log(`  ⚠️ Skipping unknown item`);
+            continue;
+          }
+          
+          const unit = getUnitForFood(foodName);
+          
+          detectedIngredients.push({
+            id: `food-${Date.now()}-${Math.random()}`,
+            name: foodName,
+            confidence: confidence,
+            amount: 1,
+            unit: unit,
+            measureType: getMeasureType(unit),
+            source: 'dish'
+          });
+          
+          console.log(`  ✅ Added dish: ${foodName} (${(confidence * 100).toFixed(1)}%)`);
+        }
+      } else {
+        console.log('⚠️ No recognition_results in response');
+      }
+      
+      // Process food type response
+      if (logmealData.food_types && Array.isArray(logmealData.food_types)) {
+        console.log(`🏷️ Found ${logmealData.food_types.length} food types`);
+        
+        for (const foodType of logmealData.food_types) {
+          if (foodType.name === 'food' && foodType.probs > 0.8) {
+            console.log('  ℹ️ Confirmed as food item');
+          }
+        }
+      }
+      
+      // Process any ingredients if available
+      if (logmealData.ingredients) {
+        console.log(`🥘 Found ingredients:`, logmealData.ingredients);
+        
+        for (const ingredient of logmealData.ingredients) {
+          const ingredientName = ingredient.name || ingredient;
+          const unit = getUnitForFood(ingredientName);
+          
+          detectedIngredients.push({
+            id: `ingredient-${Date.now()}-${Math.random()}`,
+            name: ingredientName,
+            confidence: 0.8,
+            amount: ingredient.quantity || 1,
+            unit: unit,
+            measureType: getMeasureType(unit),
+            source: 'ingredient'
+          });
+        }
+      }
+      
+      // If we got foodItems array
+      if (logmealData.foodItems && Array.isArray(logmealData.foodItems)) {
+        console.log(`🍕 Found ${logmealData.foodItems.length} food items`);
+        
+        for (const item of logmealData.foodItems) {
+          const itemName = item.name || item.food_name || item.title;
+          if (!itemName) continue;
+          
+          const confidence = item.confidence || item.score || 0.7;
+          const unit = getUnitForFood(itemName);
+          
+          detectedIngredients.push({
+            id: `item-${Date.now()}-${Math.random()}`,
+            name: itemName,
+            confidence: confidence,
+            amount: item.quantity || 1,
+            unit: unit,
+            measureType: getMeasureType(unit),
+            source: 'foodItem'
+          });
+          
+          console.log(`  ✅ Food item: ${itemName} (${(confidence * 100).toFixed(1)}%)`);
+        }
+      }
+      
+      // Sort by confidence
+      detectedIngredients.sort((a, b) => b.confidence - a.confidence);
+      
+      // Limit to top 15 detections
+      const finalIngredients = detectedIngredients.slice(0, 15);
+      
+      console.log(`📊 Final detection: ${finalIngredients.length} food items`);
+      
+      res.json({
+        ingredients: finalIngredients,
+        raw: {
+          hasRecognitionResults: !!logmealData.recognition_results,
+          hasFoodTypes: !!logmealData.food_types,
+          hasIngredients: !!logmealData.ingredients,
+          hasFoodItems: !!logmealData.foodItems
+        }
+      });
+      
+    } catch (error) {
+      console.error("Error in LogMeal API detection:", error);
+      res.status(500).json({ error: "Failed to detect foods with LogMeal" });
+    }
+  });
 
   // Test Google Vision API connection
   app.get("/api/test-vision", async (req, res) => {

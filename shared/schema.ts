@@ -379,6 +379,97 @@ export const insertMealCompletionSchema = createInsertSchema(mealCompletions).pi
 export type MealCompletion = typeof mealCompletions.$inferSelect;
 export type InsertMealCompletion = z.infer<typeof insertMealCompletionSchema>;
 
+// Grocery List Cache table for storing pre-calculated shopping lists
+export const groceryListCache = pgTable("grocery_list_cache", {
+  id: serial("id").primaryKey(),
+  meal_plan_id: integer("meal_plan_id").notNull().references(() => mealPlans.id),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  consolidated_ingredients: json("consolidated_ingredients").notNull(), // Pre-calculated consolidated ingredients
+  shopping_url: text("shopping_url"), // Cached Instacart URL
+  savings: json("savings"), // Savings information
+  recommendations: json("recommendations"), // Shopping recommendations
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+  expires_at: timestamp("expires_at"), // Optional expiration for cache invalidation
+}, (table) => ({
+  mealPlanIdx: index("grocery_cache_meal_plan_idx").on(table.meal_plan_id),
+  userIdx: index("grocery_cache_user_idx").on(table.user_id),
+}));
+
+export const insertGroceryListCacheSchema = createInsertSchema(groceryListCache).pick({
+  meal_plan_id: true,
+  user_id: true,
+  consolidated_ingredients: true,
+  shopping_url: true,
+  savings: true,
+  recommendations: true,
+  expires_at: true,
+});
+
+export type GroceryListCache = typeof groceryListCache.$inferSelect;
+export type InsertGroceryListCache = z.infer<typeof insertGroceryListCacheSchema>;
+
+// Food logs table for calorie tracking
+export const foodLogs = pgTable("food_logs", {
+  id: serial("id").primaryKey(),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  image_url: text("image_url"), // Store photo reference
+  foods: json("foods").notNull(), // Array of detected/added foods
+  total_calories: integer("total_calories").notNull(),
+  total_protein: integer("total_protein"),
+  total_carbs: integer("total_carbs"),
+  total_fat: integer("total_fat"),
+  meal_type: text("meal_type"), // breakfast, lunch, dinner, snack
+  logged_at: timestamp("logged_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdx: index("food_logs_user_idx").on(table.user_id),
+  loggedAtIdx: index("food_logs_logged_at_idx").on(table.logged_at),
+}));
+
+export const insertFoodLogSchema = createInsertSchema(foodLogs).pick({
+  user_id: true,
+  image_url: true,
+  foods: true,
+  total_calories: true,
+  total_protein: true,
+  total_carbs: true,
+  total_fat: true,
+  meal_type: true,
+  logged_at: true,
+});
+
+export type FoodLog = typeof foodLogs.$inferSelect;
+export type InsertFoodLog = z.infer<typeof insertFoodLogSchema>;
+
+// Local food database for quick calorie lookups
+export const foodDatabase = pgTable("food_database", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  calories_per_100g: integer("calories_per_100g").notNull(),
+  protein_per_100g: integer("protein_per_100g"),
+  carbs_per_100g: integer("carbs_per_100g"),
+  fat_per_100g: integer("fat_per_100g"),
+  common_portion: integer("common_portion").default(100), // typical serving in grams
+  category: text("category"), // fruit, vegetable, meat, etc.
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  nameIdx: index("food_database_name_idx").on(table.name),
+}));
+
+export const insertFoodDatabaseSchema = createInsertSchema(foodDatabase).pick({
+  name: true,
+  calories_per_100g: true,
+  protein_per_100g: true,
+  carbs_per_100g: true,
+  fat_per_100g: true,
+  common_portion: true,
+  category: true,
+});
+
+export type FoodDatabaseItem = typeof foodDatabase.$inferSelect;
+export type InsertFoodDatabaseItem = z.infer<typeof insertFoodDatabaseSchema>;
+
 // Storage interfaces
 export interface IStorage {
   // User operations
@@ -431,6 +522,22 @@ export interface IStorage {
   toggleMealCompletion(userId: string, mealPlanId: number, dayKey: string, mealType: string): Promise<MealCompletion>;
   getMealCompletion(userId: string, mealPlanId: number, dayKey: string, mealType: string): Promise<MealCompletion | null>;
   completeMealPlan(userId: string, mealPlanId: number): Promise<MealPlan | null>;
+  
+  // Grocery list cache methods
+  getGroceryListCache(mealPlanId: number, userId: string): Promise<GroceryListCache | null>;
+  saveGroceryListCache(data: InsertGroceryListCache): Promise<GroceryListCache>;
+  deleteGroceryListCache(mealPlanId: number, userId: string): Promise<boolean>;
+  
+  // Food log methods for calorie tracking
+  createFoodLog(data: InsertFoodLog): Promise<FoodLog>;
+  getFoodLogs(userId: string, date?: Date): Promise<FoodLog[]>;
+  getFoodLogsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<FoodLog[]>;
+  deleteFoodLog(id: number, userId: string): Promise<boolean>;
+  
+  // Food database methods
+  searchFoodDatabase(query: string): Promise<FoodDatabaseItem[]>;
+  getFoodDatabaseItem(name: string): Promise<FoodDatabaseItem | null>;
+  createFoodDatabaseItem(data: InsertFoodDatabaseItem): Promise<FoodDatabaseItem>;
 }
 
 // Extend MemStorage in storage.ts to include recipe functionality

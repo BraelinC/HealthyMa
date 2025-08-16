@@ -2,6 +2,12 @@ var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -24,8 +30,14 @@ var schema_exports = {};
 __export(schema_exports, {
   culturalCuisineCache: () => culturalCuisineCache,
   familyMemberSchema: () => familyMemberSchema,
+  foodDatabase: () => foodDatabase,
+  foodLogs: () => foodLogs,
   goalWeightsSchema: () => goalWeightsSchema,
+  groceryListCache: () => groceryListCache,
   insertCulturalCuisineCacheSchema: () => insertCulturalCuisineCacheSchema,
+  insertFoodDatabaseSchema: () => insertFoodDatabaseSchema,
+  insertFoodLogSchema: () => insertFoodLogSchema,
+  insertGroceryListCacheSchema: () => insertGroceryListCacheSchema,
   insertMealCompletionSchema: () => insertMealCompletionSchema,
   insertProfileSchema: () => insertProfileSchema,
   insertRecipeSchema: () => insertRecipeSchema,
@@ -78,7 +90,7 @@ function mergeFamilyDietaryRestrictions(members) {
   console.log("\u{1F517} Final merged restrictions:", finalRestrictions);
   return finalRestrictions;
 }
-var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema;
+var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema, groceryListCache, insertGroceryListCacheSchema, foodLogs, insertFoodLogSchema, foodDatabase, insertFoodDatabaseSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -378,6 +390,89 @@ var init_schema = __esm({
       is_completed: true,
       completed_at: true
     });
+    groceryListCache = pgTable("grocery_list_cache", {
+      id: serial("id").primaryKey(),
+      meal_plan_id: integer("meal_plan_id").notNull().references(() => mealPlans.id),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      consolidated_ingredients: json("consolidated_ingredients").notNull(),
+      // Pre-calculated consolidated ingredients
+      shopping_url: text("shopping_url"),
+      // Cached Instacart URL
+      savings: json("savings"),
+      // Savings information
+      recommendations: json("recommendations"),
+      // Shopping recommendations
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow(),
+      expires_at: timestamp("expires_at")
+      // Optional expiration for cache invalidation
+    }, (table) => ({
+      mealPlanIdx: index("grocery_cache_meal_plan_idx").on(table.meal_plan_id),
+      userIdx: index("grocery_cache_user_idx").on(table.user_id)
+    }));
+    insertGroceryListCacheSchema = createInsertSchema(groceryListCache).pick({
+      meal_plan_id: true,
+      user_id: true,
+      consolidated_ingredients: true,
+      shopping_url: true,
+      savings: true,
+      recommendations: true,
+      expires_at: true
+    });
+    foodLogs = pgTable("food_logs", {
+      id: serial("id").primaryKey(),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      image_url: text("image_url"),
+      // Store photo reference
+      foods: json("foods").notNull(),
+      // Array of detected/added foods
+      total_calories: integer("total_calories").notNull(),
+      total_protein: integer("total_protein"),
+      total_carbs: integer("total_carbs"),
+      total_fat: integer("total_fat"),
+      meal_type: text("meal_type"),
+      // breakfast, lunch, dinner, snack
+      logged_at: timestamp("logged_at").defaultNow(),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      userIdx: index("food_logs_user_idx").on(table.user_id),
+      loggedAtIdx: index("food_logs_logged_at_idx").on(table.logged_at)
+    }));
+    insertFoodLogSchema = createInsertSchema(foodLogs).pick({
+      user_id: true,
+      image_url: true,
+      foods: true,
+      total_calories: true,
+      total_protein: true,
+      total_carbs: true,
+      total_fat: true,
+      meal_type: true,
+      logged_at: true
+    });
+    foodDatabase = pgTable("food_database", {
+      id: serial("id").primaryKey(),
+      name: text("name").notNull().unique(),
+      calories_per_100g: integer("calories_per_100g").notNull(),
+      protein_per_100g: integer("protein_per_100g"),
+      carbs_per_100g: integer("carbs_per_100g"),
+      fat_per_100g: integer("fat_per_100g"),
+      common_portion: integer("common_portion").default(100),
+      // typical serving in grams
+      category: text("category"),
+      // fruit, vegetable, meat, etc.
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      nameIdx: index("food_database_name_idx").on(table.name)
+    }));
+    insertFoodDatabaseSchema = createInsertSchema(foodDatabase).pick({
+      name: true,
+      calories_per_100g: true,
+      protein_per_100g: true,
+      carbs_per_100g: true,
+      fat_per_100g: true,
+      common_portion: true,
+      category: true
+    });
   }
 });
 
@@ -402,7 +497,7 @@ var init_db = __esm({
 });
 
 // server/dbStorage.ts
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, like, gte, lte } from "drizzle-orm";
 var DatabaseStorage;
 var init_dbStorage = __esm({
   "server/dbStorage.ts"() {
@@ -834,6 +929,141 @@ var init_dbStorage = __esm({
         } catch (error) {
           console.error("\u274C COMPLETE PLAN DEBUG: Database error completing meal plan:", error);
           return null;
+        }
+      }
+      // Grocery list cache methods
+      async getGroceryListCache(mealPlanId, userId) {
+        try {
+          const [cache] = await db.select().from(groceryListCache).where(and(
+            eq(groceryListCache.meal_plan_id, mealPlanId),
+            eq(groceryListCache.user_id, userId)
+          ));
+          if (cache && cache.expires_at && new Date(cache.expires_at) < /* @__PURE__ */ new Date()) {
+            await this.deleteGroceryListCache(mealPlanId, userId);
+            return null;
+          }
+          return cache || null;
+        } catch (error) {
+          console.error("Error getting grocery list cache:", error);
+          return null;
+        }
+      }
+      async saveGroceryListCache(data) {
+        try {
+          await this.deleteGroceryListCache(data.meal_plan_id, data.user_id);
+          const expiresAt = data.expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1e3);
+          const [cache] = await db.insert(groceryListCache).values({
+            ...data,
+            expires_at: expiresAt
+          }).returning();
+          console.log("\u2705 Saved grocery list cache for meal plan:", data.meal_plan_id);
+          return cache;
+        } catch (error) {
+          console.error("Error saving grocery list cache:", error);
+          throw error;
+        }
+      }
+      async deleteGroceryListCache(mealPlanId, userId) {
+        try {
+          await db.delete(groceryListCache).where(and(
+            eq(groceryListCache.meal_plan_id, mealPlanId),
+            eq(groceryListCache.user_id, userId)
+          ));
+          return true;
+        } catch (error) {
+          console.error("Error deleting grocery list cache:", error);
+          return false;
+        }
+      }
+      // Food log methods for calorie tracking
+      async createFoodLog(data) {
+        try {
+          const [log2] = await db.insert(foodLogs).values(data).returning();
+          console.log("\u2705 Created food log:", log2.id);
+          return log2;
+        } catch (error) {
+          console.error("Error creating food log:", error);
+          throw error;
+        }
+      }
+      async getFoodLogs(userId, date) {
+        try {
+          if (date) {
+            const startOfDay = new Date(date);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(date);
+            endOfDay.setHours(23, 59, 59, 999);
+            return await db.select().from(foodLogs).where(and(
+              eq(foodLogs.user_id, userId),
+              gte(foodLogs.logged_at, startOfDay),
+              lte(foodLogs.logged_at, endOfDay)
+            )).orderBy(desc(foodLogs.logged_at));
+          } else {
+            const today = /* @__PURE__ */ new Date();
+            today.setHours(0, 0, 0, 0);
+            return await db.select().from(foodLogs).where(and(
+              eq(foodLogs.user_id, userId),
+              gte(foodLogs.logged_at, today)
+            )).orderBy(desc(foodLogs.logged_at));
+          }
+        } catch (error) {
+          console.error("Error getting food logs:", error);
+          return [];
+        }
+      }
+      async getFoodLogsByDateRange(userId, startDate, endDate) {
+        try {
+          return await db.select().from(foodLogs).where(and(
+            eq(foodLogs.user_id, userId),
+            gte(foodLogs.logged_at, startDate),
+            lte(foodLogs.logged_at, endDate)
+          )).orderBy(desc(foodLogs.logged_at));
+        } catch (error) {
+          console.error("Error getting food logs by date range:", error);
+          return [];
+        }
+      }
+      async deleteFoodLog(id, userId) {
+        try {
+          await db.delete(foodLogs).where(and(
+            eq(foodLogs.id, id),
+            eq(foodLogs.user_id, userId)
+          ));
+          return true;
+        } catch (error) {
+          console.error("Error deleting food log:", error);
+          return false;
+        }
+      }
+      // Food database methods
+      async searchFoodDatabase(query) {
+        try {
+          return await db.select().from(foodDatabase).where(like(foodDatabase.name, `%${query}%`)).limit(20);
+        } catch (error) {
+          console.error("Error searching food database:", error);
+          return [];
+        }
+      }
+      async getFoodDatabaseItem(name) {
+        try {
+          const [item] = await db.select().from(foodDatabase).where(eq(foodDatabase.name, name.toLowerCase()));
+          return item || null;
+        } catch (error) {
+          console.error("Error getting food database item:", error);
+          return null;
+        }
+      }
+      async createFoodDatabaseItem(data) {
+        try {
+          const [item] = await db.insert(foodDatabase).values({
+            ...data,
+            name: data.name.toLowerCase()
+          }).returning();
+          console.log("\u2705 Added food to database:", item.name);
+          return item;
+        } catch (error) {
+          console.error("Error creating food database item:", error);
+          throw error;
         }
       }
     };
@@ -12624,7 +12854,60 @@ async function registerRoutes(app2) {
         console.log("\u274C No meal plan ID provided");
         return res.status(400).json({ message: "Meal plan ID is required" });
       }
-      console.log("\u{1F4CB} Fetching meal plan:", mealPlanId, "for user:", userId);
+      console.log("\u{1F4E6} Checking for cached grocery list:", mealPlanId);
+      const cachedGroceryList = await storage.getGroceryListCache(mealPlanId, userId);
+      if (cachedGroceryList) {
+        console.log("\u2705 Using cached grocery list from database");
+        console.log("   Cache created at:", cachedGroceryList.created_at);
+        console.log("   Has Instacart URL:", !!cachedGroceryList.shopping_url);
+        if (cachedGroceryList.shopping_url) {
+          return res.json({
+            shoppingUrl: cachedGroceryList.shopping_url,
+            consolidatedIngredients: cachedGroceryList.consolidated_ingredients,
+            savings: cachedGroceryList.savings,
+            recommendations: cachedGroceryList.recommendations,
+            fromCache: true
+          });
+        }
+        try {
+          const { createInstacartRecipePage: createInstacartRecipePage3 } = await Promise.resolve().then(() => (init_instacart(), instacart_exports));
+          const recipeData2 = {
+            title: `Meal Plan Shopping List`,
+            description: `Shopping list for your meal plan`,
+            ingredients: cachedGroceryList.consolidated_ingredients
+          };
+          const shoppableRecipe2 = await createInstacartRecipePage3(recipeData2);
+          const shoppingUrl2 = shoppableRecipe2?.products_link_url || shoppableRecipe2?.link_url || shoppableRecipe2?.url;
+          if (shoppingUrl2) {
+            await storage.saveGroceryListCache({
+              meal_plan_id: mealPlanId,
+              user_id: userId,
+              consolidated_ingredients: cachedGroceryList.consolidated_ingredients,
+              shopping_url: shoppingUrl2,
+              savings: cachedGroceryList.savings,
+              recommendations: cachedGroceryList.recommendations,
+              expires_at: cachedGroceryList.expires_at
+            });
+          }
+          return res.json({
+            shoppingUrl: shoppingUrl2,
+            consolidatedIngredients: cachedGroceryList.consolidated_ingredients,
+            savings: cachedGroceryList.savings,
+            recommendations: cachedGroceryList.recommendations,
+            fromCache: true,
+            ...shoppableRecipe2
+          });
+        } catch (instacartError) {
+          console.error("\u26A0\uFE0F Failed to generate Instacart URL, returning cached data:", instacartError);
+          return res.json({
+            consolidatedIngredients: cachedGroceryList.consolidated_ingredients,
+            savings: cachedGroceryList.savings,
+            recommendations: cachedGroceryList.recommendations,
+            fromCache: true
+          });
+        }
+      }
+      console.log("\u{1F4CB} No cache found, fetching meal plan:", mealPlanId, "for user:", userId);
       const mealPlan = await storage.getMealPlan(mealPlanId, userId);
       if (!mealPlan) {
         console.log("\u274C Meal plan not found");
@@ -12662,8 +12945,24 @@ async function registerRoutes(app2) {
       }
       const { createInstacartRecipePage: createInstacartRecipePage2 } = await Promise.resolve().then(() => (init_instacart(), instacart_exports));
       const shoppableRecipe = await createInstacartRecipePage2(recipeData);
+      const shoppingUrl = shoppableRecipe?.products_link_url || shoppableRecipe?.link_url || shoppableRecipe?.url;
+      try {
+        await storage.saveGroceryListCache({
+          meal_plan_id: mealPlanId,
+          user_id: userId,
+          consolidated_ingredients: consolidationResult.consolidatedIngredients,
+          shopping_url: shoppingUrl,
+          savings: consolidationResult.savings,
+          recommendations: consolidationResult.recommendations,
+          expires_at: null
+          // Will default to 7 days
+        });
+        console.log("\u2705 Grocery list cached for meal plan:", mealPlanId);
+      } catch (cacheError) {
+        console.error("\u26A0\uFE0F Failed to cache grocery list (non-critical):", cacheError);
+      }
       res.json({
-        shoppingUrl: shoppableRecipe?.products_link_url || shoppableRecipe?.link_url || shoppableRecipe?.url,
+        shoppingUrl,
         consolidatedIngredients: consolidationResult.consolidatedIngredients,
         savings: consolidationResult.savings,
         recommendations: consolidationResult.recommendations,
@@ -12741,6 +13040,24 @@ async function registerRoutes(app2) {
         isAutoSaved: is_auto_saved || false
       });
       console.log("\u2705 SAVE SUCCESS:", savedPlan?.id || "unknown ID");
+      try {
+        console.log("\u{1F6D2} Auto-generating grocery list for saved meal plan:", savedPlan.id);
+        const { consolidateIngredients } = await Promise.resolve().then(() => (init_intelligentGroceryListOptimizer(), intelligentGroceryListOptimizer_exports));
+        const consolidationResult = await consolidateIngredients(meal_plan);
+        await storage.saveGroceryListCache({
+          meal_plan_id: savedPlan.id,
+          user_id: userId,
+          consolidated_ingredients: consolidationResult.consolidatedIngredients,
+          shopping_url: null,
+          savings: consolidationResult.savings,
+          recommendations: consolidationResult.recommendations,
+          expires_at: null
+          // Will default to 7 days
+        });
+        console.log("\u2705 Grocery list cached for meal plan:", savedPlan.id);
+      } catch (cacheError) {
+        console.error("\u26A0\uFE0F Failed to cache grocery list (non-critical):", cacheError);
+      }
       const allUserPlans = await storage.getSavedMealPlans(userId);
       const isFirstMealPlan = allUserPlans.length === 1;
       res.json({
@@ -12865,6 +13182,650 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error fetching latest meal plan:", error);
       res.status(500).json({ message: "Failed to fetch latest meal plan" });
+    }
+  });
+  app2.post("/api/food-logs", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { foods, imageUrl, mealType } = req.body;
+      if (!foods || !Array.isArray(foods)) {
+        return res.status(400).json({ message: "Foods array is required" });
+      }
+      const totals = foods.filter((f) => f.included).reduce((acc, f) => ({
+        calories: acc.calories + (f.calories || 0),
+        protein: acc.protein + (f.protein || 0),
+        carbs: acc.carbs + (f.carbs || 0),
+        fat: acc.fat + (f.fat || 0)
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      const foodLog = await storage.createFoodLog({
+        user_id: userId,
+        image_url: imageUrl,
+        foods,
+        total_calories: totals.calories,
+        total_protein: totals.protein,
+        total_carbs: totals.carbs,
+        total_fat: totals.fat,
+        meal_type: mealType,
+        logged_at: /* @__PURE__ */ new Date()
+      });
+      res.json(foodLog);
+    } catch (error) {
+      console.error("Error creating food log:", error);
+      res.status(500).json({ message: "Failed to create food log" });
+    }
+  });
+  app2.get("/api/food-logs/today", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const logs = await storage.getFoodLogs(userId);
+      const totals = logs.reduce((acc, log2) => ({
+        totalCalories: acc.totalCalories + (log2.total_calories || 0),
+        totalProtein: acc.totalProtein + (log2.total_protein || 0),
+        totalCarbs: acc.totalCarbs + (log2.total_carbs || 0),
+        totalFat: acc.totalFat + (log2.total_fat || 0)
+      }), { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 });
+      res.json({
+        logs,
+        ...totals
+      });
+    } catch (error) {
+      console.error("Error fetching today's food logs:", error);
+      res.status(500).json({ message: "Failed to fetch food logs" });
+    }
+  });
+  app2.get("/api/food-logs/week", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const endDate = /* @__PURE__ */ new Date();
+      const startDate = /* @__PURE__ */ new Date();
+      startDate.setDate(startDate.getDate() - 7);
+      const logs = await storage.getFoodLogsByDateRange(userId, startDate, endDate);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching week's food logs:", error);
+      res.status(500).json({ message: "Failed to fetch food logs" });
+    }
+  });
+  app2.delete("/api/food-logs/:id", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const logId = parseInt(req.params.id);
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const success = await storage.deleteFoodLog(logId, userId);
+      if (success) {
+        res.json({ message: "Food log deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Food log not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting food log:", error);
+      res.status(500).json({ message: "Failed to delete food log" });
+    }
+  });
+  app2.post("/api/detect-foods-logmeal", async (req, res) => {
+    try {
+      console.log("\u{1F354} === LOGMEAL API ENDPOINT CALLED ===");
+      const { image } = req.body;
+      if (!image) {
+        console.error("\u274C No image data provided");
+        return res.status(400).json({ error: "Image data is required" });
+      }
+      console.log("\u{1F4CA} Received image data:", {
+        length: image.length,
+        isBase64: image.includes("base64"),
+        prefix: image.substring(0, 50)
+      });
+      const LOGMEAL_API_KEY = "79cbe9badc6d24d77ffbcd536692c6fd697de89d";
+      const LOGMEAL_API_URL = "https://api.logmeal.es/v2";
+      console.log("\u{1F511} Using LogMeal API");
+      const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
+      const imageBuffer = Buffer.from(base64Image, "base64");
+      console.log("\u{1F4E6} Image buffer size:", imageBuffer.length);
+      const FormData = __require("form-data");
+      const formData = new FormData();
+      formData.append("image", imageBuffer, {
+        filename: "image.jpg",
+        contentType: "image/jpeg"
+      });
+      console.log("\u{1F4E1} Calling LogMeal API for dish recognition...");
+      let logmealResponse;
+      try {
+        logmealResponse = await fetch5(`${LOGMEAL_API_URL}/recognition/dish`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${LOGMEAL_API_KEY}`,
+            ...formData.getHeaders()
+          },
+          body: formData
+        });
+        if (!logmealResponse.ok) {
+          console.log("\u26A0\uFE0F Dish endpoint failed, trying type endpoint...");
+          const formData2 = new FormData();
+          formData2.append("image", imageBuffer, {
+            filename: "image.jpg",
+            contentType: "image/jpeg"
+          });
+          logmealResponse = await fetch5(`${LOGMEAL_API_URL}/image/recognition/type`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${LOGMEAL_API_KEY}`,
+              ...formData2.getHeaders()
+            },
+            body: formData2
+          });
+        }
+      } catch (fetchError) {
+        console.error("\u274C Network error calling LogMeal API:", fetchError.message);
+        return res.status(500).json({
+          error: "Network error calling LogMeal API",
+          details: fetchError.message
+        });
+      }
+      if (!logmealResponse.ok) {
+        const errorText = await logmealResponse.text();
+        console.error("\u274C LogMeal API HTTP error:", logmealResponse.status);
+        console.error("\u274C Error response:", errorText);
+        return res.status(500).json({
+          error: "LogMeal API request failed",
+          status: logmealResponse.status,
+          details: errorText
+        });
+      }
+      const logmealData = await logmealResponse.json();
+      console.log("\u2705 LogMeal API response received");
+      console.log("\u{1F4CA} Response structure:", Object.keys(logmealData));
+      const detectedIngredients = [];
+      const getUnitForFood = (foodName) => {
+        const lowerName = foodName.toLowerCase();
+        if (lowerName.includes("rice") || lowerName.includes("pasta")) return "cup";
+        if (lowerName.includes("chicken") || lowerName.includes("beef") || lowerName.includes("pork") || lowerName.includes("steak")) return "oz";
+        if (lowerName.includes("milk") || lowerName.includes("juice") || lowerName.includes("soup")) return "cup";
+        if (lowerName.includes("bread") || lowerName.includes("toast")) return "slice";
+        if (lowerName.includes("egg")) return "egg";
+        if (lowerName.includes("apple") || lowerName.includes("banana") || lowerName.includes("orange")) return "piece";
+        return "serving";
+      };
+      const getMeasureType = (unit) => {
+        if (unit === "cup" || unit === "tbsp" || unit === "tsp" || unit === "ml") return "volume";
+        if (unit === "oz" || unit === "g" || unit === "lb") return "weight";
+        return "count";
+      };
+      if (logmealData.recognition_results) {
+        console.log(`\u{1F37D}\uFE0F Found ${logmealData.recognition_results.length} dishes`);
+        for (const result of logmealData.recognition_results) {
+          const foodName = result.name || result.food_name || "Unknown";
+          const confidence = result.prob || result.probability || 0.5;
+          if (confidence < 0.3) continue;
+          if (foodName.toLowerCase().includes("unknown")) continue;
+          const unit = getUnitForFood(foodName);
+          detectedIngredients.push({
+            id: `food-${Date.now()}-${Math.random()}`,
+            name: foodName,
+            confidence,
+            amount: 1,
+            unit,
+            measureType: getMeasureType(unit),
+            source: "dish"
+          });
+          console.log(`  \u2705 Dish: ${foodName} (${(confidence * 100).toFixed(1)}%)`);
+        }
+      }
+      if (logmealData.food_types && Array.isArray(logmealData.food_types)) {
+        console.log(`\u{1F3F7}\uFE0F Found ${logmealData.food_types.length} food types`);
+        for (const foodType of logmealData.food_types) {
+          if (foodType.name === "food" && foodType.probs > 0.8) {
+            console.log("  \u2139\uFE0F Confirmed as food item");
+          }
+        }
+      }
+      if (logmealData.ingredients) {
+        console.log(`\u{1F958} Found ingredients:`, logmealData.ingredients);
+        for (const ingredient of logmealData.ingredients) {
+          const ingredientName = ingredient.name || ingredient;
+          const unit = getUnitForFood(ingredientName);
+          detectedIngredients.push({
+            id: `ingredient-${Date.now()}-${Math.random()}`,
+            name: ingredientName,
+            confidence: 0.8,
+            amount: ingredient.quantity || 1,
+            unit,
+            measureType: getMeasureType(unit),
+            source: "ingredient"
+          });
+        }
+      }
+      if (logmealData.foodItems && Array.isArray(logmealData.foodItems)) {
+        console.log(`\u{1F355} Found ${logmealData.foodItems.length} food items`);
+        for (const item of logmealData.foodItems) {
+          const itemName = item.name || item.food_name || item.title;
+          if (!itemName) continue;
+          const confidence = item.confidence || item.score || 0.7;
+          const unit = getUnitForFood(itemName);
+          detectedIngredients.push({
+            id: `item-${Date.now()}-${Math.random()}`,
+            name: itemName,
+            confidence,
+            amount: item.quantity || 1,
+            unit,
+            measureType: getMeasureType(unit),
+            source: "foodItem"
+          });
+          console.log(`  \u2705 Food item: ${itemName} (${(confidence * 100).toFixed(1)}%)`);
+        }
+      }
+      detectedIngredients.sort((a, b) => b.confidence - a.confidence);
+      const finalIngredients = detectedIngredients.slice(0, 15);
+      console.log(`\u{1F4CA} Final detection: ${finalIngredients.length} food items`);
+      res.json({
+        ingredients: finalIngredients,
+        raw: {
+          hasRecognitionResults: !!logmealData.recognition_results,
+          hasFoodTypes: !!logmealData.food_types,
+          hasIngredients: !!logmealData.ingredients,
+          hasFoodItems: !!logmealData.foodItems
+        }
+      });
+    } catch (error) {
+      console.error("Error in LogMeal API detection:", error);
+      res.status(500).json({ error: "Failed to detect foods with LogMeal" });
+    }
+  });
+  app2.get("/api/test-vision", async (req, res) => {
+    try {
+      const VISION_API_KEY = "AIzaSyBZNfvaAwCwgZHi4a9MKs8CkaRaMAxUPm4";
+      const testUrl = `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`;
+      const testImage = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+      const testRequest = {
+        requests: [{
+          image: { content: testImage },
+          features: [{ type: "LABEL_DETECTION", maxResults: 1 }]
+        }]
+      };
+      console.log("\u{1F9EA} Testing Vision API with minimal request...");
+      const response = await fetch5(testUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(testRequest)
+      });
+      const responseText = await response.text();
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        responseData = { rawText: responseText };
+      }
+      res.json({
+        success: response.ok,
+        status: response.status,
+        apiKeyWorks: response.status !== 403 && response.status !== 401,
+        response: responseData,
+        message: response.ok ? "Vision API is working!" : "Vision API test failed"
+      });
+    } catch (error) {
+      console.error("Test error:", error);
+      res.json({
+        success: false,
+        error: error.message,
+        apiKeyWorks: false
+      });
+    }
+  });
+  app2.post("/api/detect-ingredients", async (req, res) => {
+    try {
+      console.log("\u{1F50D} === VISION API ENDPOINT CALLED ===");
+      const { image } = req.body;
+      if (!image) {
+        console.error("\u274C No image data provided");
+        return res.status(400).json({ error: "Image data is required" });
+      }
+      console.log("\u{1F4CA} Received image data:", {
+        length: image.length,
+        isBase64: image.includes("base64"),
+        prefix: image.substring(0, 50)
+      });
+      const VISION_API_KEY = "AIzaSyBZNfvaAwCwgZHi4a9MKs8CkaRaMAxUPm4";
+      const VISION_API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`;
+      console.log("\u{1F511} Using API key:", VISION_API_KEY.substring(0, 10) + "...");
+      const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
+      console.log("\u{1F4E6} Base64 image size after cleanup:", base64Image.length);
+      const visionRequest = {
+        requests: [{
+          image: {
+            content: base64Image
+          },
+          features: [
+            {
+              type: "OBJECT_LOCALIZATION",
+              maxResults: 20
+            },
+            {
+              type: "LABEL_DETECTION",
+              maxResults: 20
+            },
+            {
+              type: "TEXT_DETECTION",
+              maxResults: 10
+            }
+          ]
+        }]
+      };
+      console.log("\u{1F4E1} Calling Google Vision API...");
+      console.log("\u{1F517} Vision API URL:", VISION_API_URL);
+      let visionResponse;
+      try {
+        visionResponse = await fetch5(VISION_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(visionRequest)
+        });
+      } catch (fetchError) {
+        console.error("\u274C Network error calling Vision API:", fetchError.message);
+        console.error("Full error:", fetchError);
+        return res.status(500).json({
+          error: "Network error calling Vision API",
+          details: fetchError.message
+        });
+      }
+      if (!visionResponse.ok) {
+        const errorText = await visionResponse.text();
+        console.error("\u274C Vision API HTTP error:", visionResponse.status);
+        console.error("\u274C Error response:", errorText);
+        let errorDetails;
+        try {
+          errorDetails = JSON.parse(errorText);
+          console.error("\u274C Error details:", errorDetails);
+        } catch {
+          errorDetails = { message: errorText };
+        }
+        return res.status(500).json({
+          error: "Vision API request failed",
+          status: visionResponse.status,
+          details: errorDetails
+        });
+      }
+      const visionData = await visionResponse.json();
+      console.log("\u2705 Vision API response received");
+      const response = visionData.responses?.[0];
+      if (!response) {
+        return res.json({ ingredients: [] });
+      }
+      const detectedIngredients = [];
+      const addedItems = /* @__PURE__ */ new Set();
+      const foodLabelMap = {
+        "apple": "apple",
+        "banana": "banana",
+        "orange": "orange",
+        "tomato": "tomato",
+        "lettuce": "lettuce",
+        "chicken": "chicken_breast",
+        "beef": "ground_beef",
+        "bread": "bread",
+        "egg": "eggs",
+        "milk": "milk",
+        "cheese": "cheese",
+        "rice": "white_rice",
+        "pasta": "pasta",
+        "potato": "potato",
+        "carrot": "carrot",
+        "onion": "onion",
+        "broccoli": "broccoli",
+        "pepper": "bell_pepper",
+        "fish": "salmon",
+        "shrimp": "shrimp",
+        "pork": "pork_chop",
+        "vegetable": "vegetables",
+        "fruit": "fruit",
+        "meat": "ground_beef",
+        "food": "food_item",
+        "produce": "vegetables",
+        "citrus": "orange",
+        "berry": "strawberry",
+        "nut": "almonds",
+        "grain": "quinoa",
+        "dairy": "milk",
+        "seafood": "shrimp"
+      };
+      if (response.localizedObjectAnnotations) {
+        console.log(`\u{1F4E6} Found ${response.localizedObjectAnnotations.length} objects`);
+        for (const obj of response.localizedObjectAnnotations) {
+          const name = obj.name?.toLowerCase() || "";
+          const confidence = obj.score || 0;
+          const ingredientKey = foodLabelMap[name] || (name.includes("food") ? name : null);
+          if (ingredientKey && confidence > 0.3 && !addedItems.has(ingredientKey)) {
+            addedItems.add(ingredientKey);
+            const vertices = obj.boundingPoly?.normalizedVertices || [];
+            let bbox = null;
+            if (vertices.length >= 2) {
+              bbox = [
+                vertices[0].x || 0,
+                vertices[0].y || 0,
+                (vertices[2]?.x || vertices[1]?.x || 1) - (vertices[0].x || 0),
+                (vertices[2]?.y || vertices[1]?.y || 1) - (vertices[0].y || 0)
+              ];
+            }
+            detectedIngredients.push({
+              id: `ingredient-${Date.now()}-${Math.random()}`,
+              name: ingredientKey.replace(/_/g, " "),
+              confidence,
+              bbox,
+              source: "object"
+            });
+            console.log(`  \u2705 Object: ${name} \u2192 ${ingredientKey} (${(confidence * 100).toFixed(1)}%)`);
+          }
+        }
+      }
+      if (response.labelAnnotations && detectedIngredients.length < 5) {
+        console.log(`\u{1F3F7}\uFE0F Found ${response.labelAnnotations.length} labels`);
+        for (const label of response.labelAnnotations) {
+          const description = label.description?.toLowerCase() || "";
+          const confidence = label.score || 0;
+          const ingredientKey = foodLabelMap[description];
+          if (ingredientKey && confidence > 0.5 && !addedItems.has(ingredientKey)) {
+            addedItems.add(ingredientKey);
+            detectedIngredients.push({
+              id: `ingredient-${Date.now()}-${Math.random()}`,
+              name: ingredientKey.replace(/_/g, " "),
+              confidence,
+              source: "label"
+            });
+            console.log(`  \u2705 Label: ${description} \u2192 ${ingredientKey} (${(confidence * 100).toFixed(1)}%)`);
+          }
+        }
+      }
+      if (response.textAnnotations && response.textAnnotations.length > 0) {
+        const fullText = response.textAnnotations[0].description?.toLowerCase() || "";
+        console.log(`\u{1F4DD} Detected text: "${fullText.substring(0, 100)}..."`);
+        const foodKeywords = ["organic", "fresh", "natural", "whole", "premium"];
+        const hasFoodText = foodKeywords.some((keyword) => fullText.includes(keyword));
+        if (hasFoodText) {
+          console.log("  \u2139\uFE0F Food-related text detected");
+        }
+      }
+      detectedIngredients.sort((a, b) => b.confidence - a.confidence);
+      const finalIngredients = detectedIngredients.slice(0, 10);
+      console.log(`\u{1F4CA} Final detection: ${finalIngredients.length} ingredients`);
+      res.json({
+        ingredients: finalIngredients,
+        raw: {
+          objects: response.localizedObjectAnnotations?.length || 0,
+          labels: response.labelAnnotations?.length || 0,
+          hasText: !!response.textAnnotations
+        }
+      });
+    } catch (error) {
+      console.error("Error in Vision API detection:", error);
+      res.status(500).json({ error: "Failed to detect ingredients" });
+    }
+  });
+  app2.post("/api/parse-missing-foods", authenticateToken2, async (req, res) => {
+    try {
+      const { text: text2 } = req.body;
+      if (!text2 || typeof text2 !== "string") {
+        return res.status(400).json({ message: "Text input is required" });
+      }
+      const { OpenAI: OpenAI3 } = await import("openai");
+      const openai2 = new OpenAI3({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      const completion = await openai2.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        // Cheaper model for simple text parsing
+        messages: [
+          {
+            role: "system",
+            content: `You are a food parser. Parse the user's text and return a JSON array of foods with calories.
+            
+            Return format:
+            [
+              {
+                "name": "food name",
+                "amount": number (grams or ml),
+                "unit": "g" or "ml" or "piece",
+                "calories": number (for that amount),
+                "protein": number (optional, grams),
+                "carbs": number (optional, grams),
+                "fat": number (optional, grams)
+              }
+            ]
+            
+            Common portion sizes:
+            - Oil/butter: 10ml (88 calories)
+            - Sauce: 30ml (varies)
+            - Salt/pepper: 1g (0 calories)
+            - Sugar: 5g (20 calories)
+            
+            Be realistic with portions. Return only valid JSON array.`
+          },
+          {
+            role: "user",
+            content: text2
+          }
+        ],
+        max_tokens: 300,
+        temperature: 0.1
+      });
+      const content = completion.choices[0].message.content || "[]";
+      let foods;
+      try {
+        foods = JSON.parse(content);
+      } catch (e) {
+        console.error("Failed to parse GPT response:", content);
+        foods = [];
+      }
+      const enhancedFoods = foods.map((food, index2) => ({
+        id: `manual_${Date.now()}_${index2}`,
+        ...food,
+        included: true,
+        isManual: true
+      }));
+      res.json(enhancedFoods);
+    } catch (error) {
+      console.error("Error parsing missing foods:", error);
+      res.status(500).json({ message: "Failed to parse foods" });
+    }
+  });
+  app2.get("/api/foods/search", authenticateToken2, async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== "string") {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+      const foods = await storage.searchFoodDatabase(q);
+      res.json(foods);
+    } catch (error) {
+      console.error("Error searching food database:", error);
+      res.status(500).json({ message: "Failed to search foods" });
+    }
+  });
+  app2.get("/api/foods/nutrition", authenticateToken2, async (req, res) => {
+    try {
+      const { name, amount = 100 } = req.query;
+      if (!name || typeof name !== "string") {
+        return res.status(400).json({ message: "Food name is required" });
+      }
+      const localFood = await storage.getFoodDatabaseItem(name);
+      if (localFood) {
+        const multiplier = Number(amount) / 100;
+        return res.json({
+          name: localFood.name,
+          amount: Number(amount),
+          unit: "g",
+          calories: Math.round((localFood.calories_per_100g || 0) * multiplier),
+          protein: Math.round((localFood.protein_per_100g || 0) * multiplier),
+          carbs: Math.round((localFood.carbs_per_100g || 0) * multiplier),
+          fat: Math.round((localFood.fat_per_100g || 0) * multiplier)
+        });
+      }
+      if (process.env.USDA_API_KEY) {
+        try {
+          const searchResponse = await fetch5(
+            `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`
+          );
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            if (searchData.foods && searchData.foods.length > 0) {
+              const food = searchData.foods[0];
+              const nutrients = food.foodNutrients || [];
+              let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+              for (const nutrient of nutrients) {
+                const name2 = (nutrient.nutrientName || "").toLowerCase();
+                const value = nutrient.value || 0;
+                if (name2.includes("energy")) nutrition.calories = value;
+                if (name2.includes("protein")) nutrition.protein = value;
+                if (name2.includes("carbohydrate")) nutrition.carbs = value;
+                if (name2.includes("fat") && name2.includes("total")) nutrition.fat = value;
+              }
+              await storage.createFoodDatabaseItem({
+                name: name.toLowerCase(),
+                calories_per_100g: nutrition.calories,
+                protein_per_100g: nutrition.protein,
+                carbs_per_100g: nutrition.carbs,
+                fat_per_100g: nutrition.fat,
+                common_portion: 100,
+                category: null
+              }).catch((e) => console.log("Could not cache food item"));
+              const multiplier = Number(amount) / 100;
+              return res.json({
+                name,
+                amount: Number(amount),
+                unit: "g",
+                calories: Math.round(nutrition.calories * multiplier),
+                protein: Math.round(nutrition.protein * multiplier),
+                carbs: Math.round(nutrition.carbs * multiplier),
+                fat: Math.round(nutrition.fat * multiplier)
+              });
+            }
+          }
+        } catch (usdaError) {
+          console.error("USDA API error:", usdaError);
+        }
+      }
+      res.json({
+        name,
+        amount: Number(amount),
+        unit: "g",
+        calories: 100,
+        // Default estimate
+        protein: 0,
+        carbs: 0,
+        fat: 0
+      });
+    } catch (error) {
+      console.error("Error getting nutrition info:", error);
+      res.status(500).json({ message: "Failed to get nutrition info" });
     }
   });
   app2.post("/api/meal-plan/generate", authenticateToken2, async (req, res) => {
@@ -14568,8 +15529,8 @@ function serveStatic(app2) {
 init_googleAuth();
 dotenv.config();
 var app = express2();
-app.use(express2.json());
-app.use(express2.urlencoded({ extended: false }));
+app.use(express2.json({ limit: "10mb" }));
+app.use(express2.urlencoded({ extended: false, limit: "10mb" }));
 app.use(session({
   secret: process.env.SESSION_SECRET || "healthy-mama-session-secret-2025",
   resave: false,
@@ -14626,7 +15587,7 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
-  const port = 5e3;
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5e3;
   server.on("error", (error) => {
     if (error.code === "EADDRINUSE") {
       log(`Port ${port} is already in use. Exiting...`);

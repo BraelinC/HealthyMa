@@ -123,8 +123,31 @@ export default function Home() {
   const [findButtonLoading, setFindButtonLoading] = useState<string | null>(null); // STEP 4.1: Loading state for Find button
   const [completions, setCompletions] = useState<MealCompletion[]>([]);
   const [showGroceryPanel, setShowGroceryPanel] = useState(false);
+  const [groceryListData, setGroceryListData] = useState<any>(null);
+  const [isLoadingGroceries, setIsLoadingGroceries] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Prefetch grocery list for better UX
+  const prefetchGroceryList = useCallback(async (mealPlanId: number) => {
+    if (!mealPlanId || isLoadingGroceries) return;
+    
+    setIsLoadingGroceries(true);
+    try {
+      const response = await safeApiRequest('/api/create-shopping-list', {
+        method: 'POST',
+        body: JSON.stringify({ mealPlanId }),
+      });
+      
+      setGroceryListData(response);
+      console.log('✅ Grocery list prefetched for meal plan:', mealPlanId);
+    } catch (error) {
+      console.error('Failed to prefetch grocery list:', error);
+      // Don't show error toast - will retry when panel opens
+    } finally {
+      setIsLoadingGroceries(false);
+    }
+  }, [isLoadingGroceries]);
 
   // Fetch the most recent meal plan
   const { data: mealPlans, isLoading } = useQuery({
@@ -160,10 +183,15 @@ export default function Home() {
         // Initialize day order
         const days = Object.keys(normalizedPlan.mealPlan).sort();
         setDayOrder(days);
+        
+        // Clear old grocery data and prefetch new
+        setGroceryListData(null);
+        prefetchGroceryList(normalizedPlan.id);
       } else {
         // All plans are completed
         setCurrentPlan(null);
         setDayOrder([]);
+        setGroceryListData(null);
       }
     }
   }, [mealPlans, mealCompletions]);
@@ -824,11 +852,22 @@ export default function Home() {
               <Button
                 variant="outline"
                 onClick={() => setShowGroceryPanel(true)}
+                disabled={isLoadingGroceries}
                 className="border-green-600 text-green-600 hover:bg-green-50 shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium rounded-lg text-sm sm:text-base flex-1 sm:flex-none"
               >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Grocery List</span>
-                <span className="sm:hidden">Groceries</span>
+                {isLoadingGroceries ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <span className="hidden sm:inline">Loading...</span>
+                    <span className="sm:hidden">Loading</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Grocery List</span>
+                    <span className="sm:hidden">Groceries</span>
+                  </>
+                )}
               </Button>
 
               <Button
@@ -1483,6 +1522,8 @@ export default function Home() {
         isOpen={showGroceryPanel}
         onClose={() => setShowGroceryPanel(false)}
         mealPlan={currentPlan}
+        prefetchedData={groceryListData}
+        onDataRefreshed={(data) => setGroceryListData(data)}
       />
       </div>
     </div>

@@ -187,3 +187,41 @@ button[role="gridcell"]:hover:not([aria-selected="true"]):not([disabled]) {
     font-size: 14px;
   }
 }
+
+/* YOLOv8 Detection Loading Animations */
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  50% {
+    transform: translateY(100px);
+  }
+  100% {
+    transform: translateY(200%);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(50px);
+    opacity: 0;
+  }
+}
+
+.animate-scan {
+  animation: scan 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float linear infinite;
+}

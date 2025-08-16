@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { users, recipes, mealPlans, profiles, userAchievements, mealCompletions, type User, type UpsertUser, type Recipe, type InsertRecipe, type MealPlan, type Profile, type InsertProfile, type UserAchievement, type InsertUserAchievement, type MealCompletion, type InsertMealCompletion, type IStorage } from "@shared/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { users, recipes, mealPlans, profiles, userAchievements, mealCompletions, groceryListCache, foodLogs, foodDatabase, type User, type UpsertUser, type Recipe, type InsertRecipe, type MealPlan, type Profile, type InsertProfile, type UserAchievement, type InsertUserAchievement, type MealCompletion, type InsertMealCompletion, type GroceryListCache, type InsertGroceryListCache, type FoodLog, type InsertFoodLog, type FoodDatabaseItem, type InsertFoodDatabaseItem, type IStorage } from "@shared/schema";
+import { eq, desc, and, sql, like, gte, lte } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   // User operations
@@ -650,6 +650,190 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('❌ COMPLETE PLAN DEBUG: Database error completing meal plan:', error);
       return null;
+    }
+  }
+  
+  // Grocery list cache methods
+  async getGroceryListCache(mealPlanId: number, userId: string): Promise<GroceryListCache | null> {
+    try {
+      const [cache] = await db.select()
+        .from(groceryListCache)
+        .where(and(
+          eq(groceryListCache.meal_plan_id, mealPlanId),
+          eq(groceryListCache.user_id, userId)
+        ));
+      
+      // Check if cache is expired
+      if (cache && cache.expires_at && new Date(cache.expires_at) < new Date()) {
+        // Cache is expired, delete it
+        await this.deleteGroceryListCache(mealPlanId, userId);
+        return null;
+      }
+      
+      return cache || null;
+    } catch (error) {
+      console.error('Error getting grocery list cache:', error);
+      return null;
+    }
+  }
+  
+  async saveGroceryListCache(data: InsertGroceryListCache): Promise<GroceryListCache> {
+    try {
+      // Delete any existing cache for this meal plan
+      await this.deleteGroceryListCache(data.meal_plan_id, data.user_id);
+      
+      // Set expiration to 7 days from now if not specified
+      const expiresAt = data.expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      
+      const [cache] = await db.insert(groceryListCache)
+        .values({
+          ...data,
+          expires_at: expiresAt
+        })
+        .returning();
+      
+      console.log('✅ Saved grocery list cache for meal plan:', data.meal_plan_id);
+      return cache;
+    } catch (error) {
+      console.error('Error saving grocery list cache:', error);
+      throw error;
+    }
+  }
+  
+  async deleteGroceryListCache(mealPlanId: number, userId: string): Promise<boolean> {
+    try {
+      await db.delete(groceryListCache)
+        .where(and(
+          eq(groceryListCache.meal_plan_id, mealPlanId),
+          eq(groceryListCache.user_id, userId)
+        ));
+      return true;
+    } catch (error) {
+      console.error('Error deleting grocery list cache:', error);
+      return false;
+    }
+  }
+  
+  // Food log methods for calorie tracking
+  async createFoodLog(data: InsertFoodLog): Promise<FoodLog> {
+    try {
+      const [log] = await db.insert(foodLogs)
+        .values(data)
+        .returning();
+      
+      console.log('✅ Created food log:', log.id);
+      return log;
+    } catch (error) {
+      console.error('Error creating food log:', error);
+      throw error;
+    }
+  }
+  
+  async getFoodLogs(userId: string, date?: Date): Promise<FoodLog[]> {
+    try {
+      if (date) {
+        // Get logs for specific date
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        return await db.select()
+          .from(foodLogs)
+          .where(and(
+            eq(foodLogs.user_id, userId),
+            gte(foodLogs.logged_at, startOfDay),
+            lte(foodLogs.logged_at, endOfDay)
+          ))
+          .orderBy(desc(foodLogs.logged_at));
+      } else {
+        // Get today's logs
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        return await db.select()
+          .from(foodLogs)
+          .where(and(
+            eq(foodLogs.user_id, userId),
+            gte(foodLogs.logged_at, today)
+          ))
+          .orderBy(desc(foodLogs.logged_at));
+      }
+    } catch (error) {
+      console.error('Error getting food logs:', error);
+      return [];
+    }
+  }
+  
+  async getFoodLogsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<FoodLog[]> {
+    try {
+      return await db.select()
+        .from(foodLogs)
+        .where(and(
+          eq(foodLogs.user_id, userId),
+          gte(foodLogs.logged_at, startDate),
+          lte(foodLogs.logged_at, endDate)
+        ))
+        .orderBy(desc(foodLogs.logged_at));
+    } catch (error) {
+      console.error('Error getting food logs by date range:', error);
+      return [];
+    }
+  }
+  
+  async deleteFoodLog(id: number, userId: string): Promise<boolean> {
+    try {
+      await db.delete(foodLogs)
+        .where(and(
+          eq(foodLogs.id, id),
+          eq(foodLogs.user_id, userId)
+        ));
+      return true;
+    } catch (error) {
+      console.error('Error deleting food log:', error);
+      return false;
+    }
+  }
+  
+  // Food database methods
+  async searchFoodDatabase(query: string): Promise<FoodDatabaseItem[]> {
+    try {
+      return await db.select()
+        .from(foodDatabase)
+        .where(like(foodDatabase.name, `%${query}%`))
+        .limit(20);
+    } catch (error) {
+      console.error('Error searching food database:', error);
+      return [];
+    }
+  }
+  
+  async getFoodDatabaseItem(name: string): Promise<FoodDatabaseItem | null> {
+    try {
+      const [item] = await db.select()
+        .from(foodDatabase)
+        .where(eq(foodDatabase.name, name.toLowerCase()));
+      return item || null;
+    } catch (error) {
+      console.error('Error getting food database item:', error);
+      return null;
+    }
+  }
+  
+  async createFoodDatabaseItem(data: InsertFoodDatabaseItem): Promise<FoodDatabaseItem> {
+    try {
+      const [item] = await db.insert(foodDatabase)
+        .values({
+          ...data,
+          name: data.name.toLowerCase()
+        })
+        .returning();
+      
+      console.log('✅ Added food to database:', item.name);
+      return item;
+    } catch (error) {
+      console.error('Error creating food database item:', error);
+      throw error;
     }
   }
 }

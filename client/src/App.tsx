@@ -14,13 +14,14 @@ import Profile from "@/pages/Profile";
 
 import { TestingPage } from "@/pages/TestingPage";
 import IconShowcase from "@/pages/IconShowcase";
-import { HandPlatter, BookOpen, ChefHat, LogOut, User, CalendarDays, Settings } from "lucide-react";
+import { HandPlatter, BookOpen, ChefHat, LogOut, User, CalendarDays, Settings, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthForm } from "@/components/AuthForm";
 import { LandingPage } from "@/components/LandingPage";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Checkout from "@/pages/Checkout";
+import Tracker from "@/pages/Tracker";
 
 // ========== LANDING PAGE TOGGLE ==========
 // Set this to false to skip the landing page and go directly to login
@@ -110,6 +111,7 @@ function AppTabBar() {
     { icon: <HandPlatter className="w-5 h-5" />, label: "Search", path: "/search" },
     { icon: <ChefHat className="w-5 h-5" />, label: "Home", path: "/" },
     { icon: <CalendarDays className="w-5 h-5" />, label: "Planner", path: "/meal-planner" },
+    { icon: <Camera className="w-5 h-5" />, label: "Tracker", path: "/tracker" },
   ];
   
   return (
@@ -228,6 +230,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/search" component={Search} />
           <Route path="/meal-planner" component={MealPlanner} />
+          <Route path="/tracker" component={Tracker} />
           <Route path="/profile" component={Profile} />
 
           <Route path="/testing" component={TestingPage} />

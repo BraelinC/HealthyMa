@@ -40,6 +40,8 @@ interface GroceryListPanelProps {
   isOpen: boolean;
   onClose: () => void;
   mealPlan: MealPlan | null;
+  prefetchedData?: any;
+  onDataRefreshed?: (data: any) => void;
 }
 
 // Food category icons mapping
@@ -109,7 +111,7 @@ function categorizeIngredient(ingredient: string): string {
   return 'pantry';
 }
 
-export function GroceryListPanel({ isOpen, onClose, mealPlan }: GroceryListPanelProps) {
+export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, onDataRefreshed }: GroceryListPanelProps) {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [categorizedIngredients, setCategorizedIngredients] = useState<{ [key: string]: Ingredient[] }>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -162,57 +164,80 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan }: GroceryListPanel
     },
   });
 
-  // Fetch consolidated ingredients when panel opens
+  // Update data when prefetchedData changes
+  useEffect(() => {
+    if (prefetchedData && prefetchedData.consolidatedIngredients) {
+      console.log('Updating with prefetched grocery data');
+      processGroceryData(prefetchedData);
+      setIsLoading(false);
+    }
+  }, [prefetchedData]);
+  
+  // Fetch data if not prefetched when panel opens
   useEffect(() => {
     if (!mealPlan || !isOpen) return;
     
-    const fetchConsolidatedList = async () => {
-      setIsLoading(true);
-      try {
-        // Get the consolidated ingredients from the API
-        const response = await safeApiRequest('/api/create-shopping-list', {
-          method: 'POST',
-          body: JSON.stringify({ mealPlanId: mealPlan.id }),
-        });
-        
-        if (response.consolidatedIngredients) {
-          const consolidatedIngredients: Ingredient[] = response.consolidatedIngredients.map((ing: any) => ({
-            name: ing.name,
-            displayText: ing.displayText || ing.name,
-            quantity: ing.quantity,
-            unit: ing.unit,
-            category: ing.category || categorizeIngredient(ing.name),
-            notes: ing.notes
-          }));
+    // Only fetch if we don't have data already
+    if (!ingredients.length && !prefetchedData) {
+      const fetchConsolidatedList = async () => {
+        setIsLoading(true);
+        try {
+          console.log('Fetching grocery list from API');
+          // Get the consolidated ingredients from the API
+          const response = await safeApiRequest('/api/create-shopping-list', {
+            method: 'POST',
+            body: JSON.stringify({ mealPlanId: mealPlan.id }),
+          });
           
-          // Group by category
-          const grouped = consolidatedIngredients.reduce((acc, ingredient) => {
-            const category = ingredient.category || 'other';
-            if (!acc[category]) {
-              acc[category] = [];
-            }
-            acc[category].push(ingredient);
-            return acc;
-          }, {} as { [key: string]: Ingredient[] });
+          processGroceryData(response);
           
-          setIngredients(consolidatedIngredients);
-          setCategorizedIngredients(grouped);
-          setSavings(response.savings);
-          setRecommendations(response.recommendations || []);
-          
-          // Store the response for later use
-          if (response.shoppingUrl) {
-            (window as any).__instacartUrl = response.shoppingUrl;
+          // Update the parent component with fresh data
+          if (onDataRefreshed) {
+            onDataRefreshed(response);
           }
+        } catch (error) {
+          console.error("Error fetching consolidated list:", error);
         }
-      } catch (error) {
-        console.error("Error fetching consolidated list:", error);
+        setIsLoading(false);
+      };
+      
+      fetchConsolidatedList();
+    }
+  }, [mealPlan?.id, isOpen, ingredients.length]); // Check if we already have ingredients
+  
+  // Helper function to process grocery data
+  const processGroceryData = (response: any) => {
+    if (response.consolidatedIngredients) {
+      const consolidatedIngredients: Ingredient[] = response.consolidatedIngredients.map((ing: any) => ({
+        name: ing.name,
+        displayText: ing.displayText || ing.name,
+        quantity: ing.quantity,
+        unit: ing.unit,
+        category: ing.category || categorizeIngredient(ing.name),
+        notes: ing.notes
+      }));
+      
+      // Group by category
+      const grouped = consolidatedIngredients.reduce((acc, ingredient) => {
+        const category = ingredient.category || 'other';
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(ingredient);
+        return acc;
+      }, {} as { [key: string]: Ingredient[] });
+      
+      setIngredients(consolidatedIngredients);
+      setCategorizedIngredients(grouped);
+      setSavings(response.savings);
+      setRecommendations(response.recommendations || []);
+      
+      // Store the response for later use
+      if (response.shoppingUrl) {
+        (window as any).__instacartUrl = response.shoppingUrl;
       }
-      setIsLoading(false);
-    };
-    
-    fetchConsolidatedList();
-  }, [mealPlan, isOpen]);
+    }
+  };
 
   return (
     <>
