@@ -14,7 +14,7 @@ async function testLogMealEndpoint() {
   
   const options = {
     hostname: 'localhost',
-    port: 5001,
+    port: 5000,
     path: '/api/detect-foods-logmeal',
     method: 'POST',
     headers: {

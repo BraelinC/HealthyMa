@@ -95,9 +95,19 @@ export default function TrackerPage() {
     } catch (error) {
       console.error('❌ Error detecting foods:', error);
       
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      let userMessage = "Unable to detect foods. You can add them manually.";
+      
+      // Provide specific guidance based on error type
+      if (errorMessage.includes('rate limit') || errorMessage.includes('quota') || errorMessage.includes('limit')) {
+        userMessage = "Daily detection limit reached. You can add ingredients manually or try again tomorrow.";
+      } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+        userMessage = "Network error. Check your connection and try again.";
+      }
+      
       toast({
         title: "Detection Error",
-        description: "Unable to detect foods. You can add them manually.",
+        description: userMessage,
         variant: "destructive"
       });
       

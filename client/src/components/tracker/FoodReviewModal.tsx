@@ -220,9 +220,14 @@ export default function FoodReviewModal({ data, onClose, onSave }: FoodReviewMod
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div>
-              <h2 className="text-lg font-semibold">Review Detected Ingredients</h2>
+              <h2 className="text-lg font-semibold">
+                {ingredients.length === 0 ? 'Add Ingredients Manually' : 'Review Detected Ingredients'}
+              </h2>
               <p className="text-sm text-muted-foreground">
-                {ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''} detected
+                {ingredients.length === 0 
+                  ? 'Use the form below to add ingredients'
+                  : `${ingredients.length} ingredient${ingredients.length !== 1 ? 's' : ''} detected`
+                }
               </p>
             </div>
             <Button
@@ -269,14 +274,37 @@ export default function FoodReviewModal({ data, onClose, onSave }: FoodReviewMod
             <div className="flex-1 flex flex-col">
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {Object.entries(groupedIngredients).map(([category, items]) => 
-                    items.length > 0 && (
-                      <div key={category}>
-                        <h3 className="text-sm font-medium text-muted-foreground capitalize mb-2">
-                          {category}
-                        </h3>
-                        <div className="space-y-2">
-                          {items.map(ing => (
+                  {/* Show message when no ingredients detected */}
+                  {ingredients.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full py-8 text-center">
+                      <div className="rounded-full bg-orange-100 p-3 mb-4">
+                        <Plus className="h-6 w-6 text-orange-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2">No ingredients detected</h3>
+                      <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                        The AI couldn't identify specific ingredients in your photo. 
+                        You can manually add the ingredients below.
+                      </p>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>💡 Tips for better detection:</p>
+                        <ul className="text-left space-y-1 ml-4">
+                          <li>• Take photos with good lighting</li>
+                          <li>• Center the food in the frame</li>
+                          <li>• Capture individual ingredients separately</li>
+                          <li>• Try different angles or closer shots</li>
+                          <li>• If daily limit reached, try again tomorrow</li>
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    Object.entries(groupedIngredients).map(([category, items]) => 
+                      items.length > 0 && (
+                        <div key={category}>
+                          <h3 className="text-sm font-medium text-muted-foreground capitalize mb-2">
+                            {category}
+                          </h3>
+                          <div className="space-y-2">
+                            {items.map(ing => (
                             <div 
                               key={ing.id} 
                               className={cn(
@@ -346,9 +374,10 @@ export default function FoodReviewModal({ data, onClose, onSave }: FoodReviewMod
                                 </Button>
                               </div>
                             </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )
                     )
                   )}
                 </div>
@@ -358,7 +387,11 @@ export default function FoodReviewModal({ data, onClose, onSave }: FoodReviewMod
               <div className="pt-3 border-t mt-3">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Add missing ingredients (e.g., '2 tbsp olive oil, 1 cup rice')"
+                    placeholder={
+                      ingredients.length === 0 
+                        ? "Add ingredients manually (e.g., '2 eggs, 1 apple, 1 cup milk')"
+                        : "Add missing ingredients (e.g., '2 tbsp olive oil, 1 cup rice')"
+                    }
                     value={missingInput}
                     onChange={(e) => setMissingInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddMissing()}

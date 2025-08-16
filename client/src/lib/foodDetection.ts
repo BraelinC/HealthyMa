@@ -14,14 +14,15 @@ export interface DetectedFood {
   source?: 'dish' | 'ingredient' | 'foodItem';
 }
 
-// Main detection function - uses LogMeal API
+// Main detection function - uses LogMeal API only
 export async function detectFoods(imageDataUrl: string): Promise<DetectedFood[]> {
   const startTime = Date.now();
   
   try {
-    console.log('🍔 Using LogMeal Food AI for advanced detection...');
+    console.log('🍔 Starting LogMeal Food AI detection...');
+    console.log('📊 Image size:', imageDataUrl.length, 'characters');
     
-    // Use LogMeal API for detection (better for complex meals)
+    // Use LogMeal API for detection
     const detections = await detectIngredientsWithLogMeal(imageDataUrl);
     
     const elapsed = Date.now() - startTime;
@@ -36,15 +37,19 @@ export async function detectFoods(imageDataUrl: string): Promise<DetectedFood[]>
       console.log('Detected foods:', detections.map(d => 
         `${d.name} (${d.amount}${d.unit}) - ${(d.confidence * 100).toFixed(0)}%`
       ).join(', '));
+      
+      return detections;
     } else {
-      console.log('No foods detected in image');
+      console.log('⚠️ No foods detected by LogMeal API');
+      console.log('💡 Try taking a clearer photo with better lighting or add ingredients manually');
+      return [];
     }
     
-    return detections;
   } catch (error) {
     console.error('❌ LogMeal detection failed:', error);
+    console.log('💡 You can add ingredients manually in the next screen');
     
-    // Return empty array on error
+    // Return empty array on error - user can add manually
     return [];
   }
 }

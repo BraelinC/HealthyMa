@@ -28,6 +28,10 @@ interface LogMealAPIResponse {
     hasFoodTypes: boolean;
     hasIngredients: boolean;
     hasFoodItems: boolean;
+    totalDetections?: number;
+    uniqueDetections?: number;
+    endpointsUsed?: string[];
+    sourceBreakdown?: Record<string, number>;
   };
 }
 
@@ -126,6 +130,13 @@ export async function detectIngredientsWithLogMeal(imageDataUrl: string): Promis
         continue;
       }
       
+      // Skip generic terms that don't provide useful information
+      const genericTerms = ['ingredients', 'food', 'meal', 'dish'];
+      if (genericTerms.includes(item.name.toLowerCase())) {
+        console.log(`⚠️ Skipping generic classification: ${item.name}`);
+        continue;
+      }
+      
       // Map to our ingredient database if possible
       let finalName = item.name;
       let ingredientInfo = null;
@@ -167,7 +178,22 @@ export async function detectIngredientsWithLogMeal(imageDataUrl: string): Promis
         `${i.name} (${i.amount}${i.unit}) - ${(i.confidence * 100).toFixed(1)}%`
       ));
     } else {
-      console.log('⚠️ No foods detected by LogMeal API');
+      console.log('⚠️ No specific foods detected by LogMeal API');
+      
+      // Check if raw data indicates rate limiting
+      if (data.raw && data.raw.endpointsUsed && data.raw.endpointsUsed.length > 0) {
+        console.log('⚠️ The LogMeal API may be rate limited or experiencing issues');
+        console.log('💡 This is a known limitation of the free tier API');
+      } else {
+        console.log('💡 Tips for better detection:');
+        console.log('   • Ensure good lighting and clear image');
+        console.log('   • Center the food in the frame');
+        console.log('   • Capture individual ingredients separately if possible');
+        console.log('   • Try different angles or closer shots');
+      }
+      
+      // Return empty array but don't throw error - let user add manually
+      console.log('ℹ️ You can manually add ingredients using the form below');
     }
     
     return detectedIngredients;
