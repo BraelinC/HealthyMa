@@ -1394,8 +1394,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // LogMeal API endpoint for food detection
+  // LogMeal API endpoints for food detection and status
   app.post("/api/detect-foods-logmeal", handleLogMealDetection);
+  
+  // Get LogMeal API usage status
+  app.get("/api/logmeal-status", async (req, res) => {
+    try {
+      const { dailyCallCount, MAX_DAILY_CALLS, lastResetDate } = await import('./logmealEndpoint');
+      res.json({
+        callsUsed: dailyCallCount || 0,
+        maxCalls: MAX_DAILY_CALLS || 180,
+        remaining: (MAX_DAILY_CALLS || 180) - (dailyCallCount || 0),
+        lastResetDate: lastResetDate || new Date().toDateString(),
+        status: (dailyCallCount || 0) >= (MAX_DAILY_CALLS || 180) ? 'limited' : 'available'
+      });
+    } catch (error) {
+      res.json({
+        callsUsed: 0,
+        maxCalls: 180,
+        remaining: 180,
+        lastResetDate: new Date().toDateString(),
+        status: 'available'
+      });
+    }
+  });
 
   // Test Google Vision API connection
   app.get("/api/test-vision", async (req, res) => {

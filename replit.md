@@ -10,6 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 16, 2025**: Fixed LogMeal API rate limiting and excessive API usage issues
+- Added intelligent caching system to prevent duplicate API calls for same images (5-minute cache)
+- Implemented daily API call limit tracking (180 calls/day with 20 buffer from 200 limit)
+- Added proper rate limit error handling with informative user messages
+- Removed Vision API fallback as requested, now uses only LogMeal API
+- Created API status endpoint `/api/logmeal-status` to monitor usage
+- Fixed TypeScript errors in food detection system
+- Improved error messages to guide users when daily quota is reached
+- Added smart detection tips in UI for better photo results
+
 **August 1, 2025**: Successfully restored original JWT-based authentication system and hidden weight controls
 - Disabled Replit Auth and reverted to original JWT authentication
 - Fixed database user creation to generate proper string IDs for compatibility

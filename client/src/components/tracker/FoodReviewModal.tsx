@@ -292,7 +292,7 @@ export default function FoodReviewModal({ data, onClose, onSave }: FoodReviewMod
                           <li>• Center the food in the frame</li>
                           <li>• Capture individual ingredients separately</li>
                           <li>• Try different angles or closer shots</li>
-                          <li>• If daily limit reached, try again tomorrow</li>
+                          <li>• If daily limit reached (200/day), try again tomorrow</li>
                         </ul>
                       </div>
                     </div>

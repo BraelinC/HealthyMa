@@ -99,8 +99,8 @@ export default function TrackerPage() {
       let userMessage = "Unable to detect foods. You can add them manually.";
       
       // Provide specific guidance based on error type
-      if (errorMessage.includes('rate limit') || errorMessage.includes('quota') || errorMessage.includes('limit')) {
-        userMessage = "Daily detection limit reached. You can add ingredients manually or try again tomorrow.";
+      if (errorMessage.includes('rate limit') || errorMessage.includes('quota') || errorMessage.includes('limit') || errorMessage.includes('429')) {
+        userMessage = "Daily API limit reached (200 calls/day). You can add ingredients manually or try again tomorrow.";
       } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
         userMessage = "Network error. Check your connection and try again.";
       }
@@ -184,7 +184,10 @@ export default function TrackerPage() {
         <div className="px-4 py-6">
           <h1 className="text-2xl font-bold">Food Tracker</h1>
           <p className="text-gray-600">Track your daily nutrition</p>
-          <p className="text-xs text-gray-500 mt-1">Powered by {modelInfo.name} • {modelInfo.foodClasses} food types</p>
+          <div className="text-xs text-gray-500 mt-1 space-y-1">
+            <p>Powered by {modelInfo.name} • 1300+ food types</p>
+            <p className="text-green-600">API calls preserved with smart caching</p>
+          </div>
         </div>
       </div>
 

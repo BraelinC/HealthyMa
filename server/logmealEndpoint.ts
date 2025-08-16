@@ -1,12 +1,52 @@
-// Enhanced LogMeal API endpoint with comprehensive debugging
+// Enhanced LogMeal API endpoint with rate limiting and caching
 import { Request, Response } from 'express';
 import axios from 'axios';
 import FormData from 'form-data';
+import crypto from 'crypto';
+
+// Simple in-memory cache to prevent duplicate API calls
+const detectionCache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const MAX_DAILY_CALLS = 180; // Conservative limit (20 requests buffer from 200 limit)
+let dailyCallCount = 0;
+let lastResetDate = new Date().toDateString();
+
+// Export for status endpoint
+export { dailyCallCount, MAX_DAILY_CALLS, lastResetDate };
 
 export async function handleLogMealDetection(req: Request, res: Response) {
   try {
     console.log('🍔 === LOGMEAL API ENDPOINT CALLED ===');
     const { image } = req.body;
+    
+    // Reset daily counter if it's a new day
+    const today = new Date().toDateString();
+    if (today !== lastResetDate) {
+      dailyCallCount = 0;
+      lastResetDate = today;
+      console.log('🔄 Daily API call counter reset');
+    }
+    
+    // Check daily rate limit
+    if (dailyCallCount >= MAX_DAILY_CALLS) {
+      console.log(`⚠️ Daily API call limit reached: ${dailyCallCount}/${MAX_DAILY_CALLS}`);
+      return res.status(429).json({ 
+        error: "Daily API call limit reached. Please try again tomorrow.",
+        callsUsed: dailyCallCount,
+        maxCalls: MAX_DAILY_CALLS
+      });
+    }
+    
+    // Create cache key from image hash
+    const imageHash = crypto.createHash('md5').update(image).digest('hex');
+    const cacheKey = `logmeal_${imageHash}`;
+    
+    // Check cache first
+    const cached = detectionCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+      console.log('💾 Returning cached detection result');
+      return res.json(cached.data);
+    }
     
     if (!image) {
       console.error('❌ No image data provided');
@@ -356,27 +396,9 @@ export async function handleLogMealDetection(req: Request, res: Response) {
         console.log(`✅ Success with ${endpoint.name}`);
         console.log('📊 Response keys:', Object.keys(endpointData));
         
-        // Log raw response structure for debugging
-        console.log(`\n🔍 RAW ${endpoint.name} Response:`);
-        const responseStr = JSON.stringify(endpointData, null, 2);
-        console.log(responseStr.substring(0, 3000)); // Increased to 3000 chars for more detail
-        
-        // Log specific fields we're looking for
-        console.log(`\n📋 Field Analysis for ${endpoint.name}:`);
-        console.log(`  - Has recognition_results: ${!!endpointData.recognition_results}`);
-        console.log(`  - Has segmentation_results: ${!!endpointData.segmentation_results}`);
-        console.log(`  - Has food_types: ${!!endpointData.food_types}`);
-        console.log(`  - Has foodItem: ${!!endpointData.foodItem}`);
-        console.log(`  - Has ingredients: ${!!endpointData.ingredients}`);
-        console.log(`  - Has imageId: ${!!endpointData.imageId}`);
-        
-        // If we have nested structures, log them
-        if (endpointData.segmentation_results && Array.isArray(endpointData.segmentation_results)) {
-          console.log(`  - Segmentation results count: ${endpointData.segmentation_results.length}`);
-          if (endpointData.segmentation_results[0]) {
-            console.log(`  - First segment structure:`, Object.keys(endpointData.segmentation_results[0]));
-          }
-        }
+        // Increment API call counter
+        dailyCallCount++;
+        console.log(`📊 API calls today: ${dailyCallCount}/${MAX_DAILY_CALLS}`);
         
         // Process this endpoint's data and add to allDetections
         const endpointDetections = processLogMealResponse(endpointData, endpoint.name, getUnitForFood, getMeasureType);
@@ -482,6 +504,14 @@ export async function handleLogMealDetection(req: Request, res: Response) {
     };
     
     console.log('📤 Sending response with', detectedIngredients.length, 'ingredients');
+    
+    // Cache successful results
+    detectionCache.set(cacheKey, {
+      data: response,
+      timestamp: Date.now()
+    });
+    console.log(`💾 Cached result for future requests`);
+    
     res.json(response);
     
   } catch (error: any) {
