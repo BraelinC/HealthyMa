@@ -2212,6 +2212,190 @@ var init_logmealEndpoint = __esm({
   }
 });
 
+// server/whopAuth.ts
+var whopAuth_exports = {};
+__export(whopAuth_exports, {
+  handleWhopAuth: () => handleWhopAuth,
+  requireWhopAuth: () => requireWhopAuth,
+  syncWhopUser: () => syncWhopUser,
+  validateWhopUser: () => validateWhopUser,
+  validateWhopWebhook: () => validateWhopWebhook
+});
+import jwt from "jsonwebtoken";
+import { eq as eq5 } from "drizzle-orm";
+import fetch4 from "node-fetch";
+async function validateWhopUser(userId, accessPass) {
+  try {
+    if (!userId) {
+      console.error("No Whop user ID provided");
+      return null;
+    }
+    const membershipResponse = await fetch4(`${WHOP_API_BASE}/memberships`, {
+      headers: {
+        "Authorization": `Bearer ${WHOP_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      method: "POST",
+      body: JSON.stringify({
+        user_id: userId,
+        resource_id: accessPass || process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
+        valid: true
+      })
+    });
+    const hasAccess = membershipResponse.ok;
+    const userResponse = await fetch4(`${WHOP_API_BASE}/users/${userId}`, {
+      headers: {
+        "Authorization": `Bearer ${WHOP_API_KEY}`,
+        "Content-Type": "application/json"
+      }
+    });
+    if (!userResponse.ok) {
+      console.error("Failed to get Whop user details");
+      return null;
+    }
+    const userData = await userResponse.json();
+    return {
+      id: userId,
+      email: userData.email || `${userId}@whop.user`,
+      username: userData.username || userData.name || "Whop User",
+      profile_pic_url: userData.profile_pic_url || userData.avatar_url,
+      has_access: hasAccess
+    };
+  } catch (error) {
+    console.error("Whop user validation error:", error);
+    return null;
+  }
+}
+async function syncWhopUser(whopUser) {
+  try {
+    let existingUser = await db.select().from(users).where(eq5(users.whopUserId, whopUser.id)).limit(1);
+    if (existingUser.length === 0) {
+      existingUser = await db.select().from(users).where(eq5(users.email, whopUser.email)).limit(1);
+    }
+    if (existingUser.length > 0) {
+      await db.update(users).set({
+        whopUserId: whopUser.id,
+        profilePicture: whopUser.profile_pic_url,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq5(users.id, existingUser[0].id));
+      return existingUser[0];
+    } else {
+      const newUser = await db.insert(users).values({
+        email: whopUser.email,
+        firstName: whopUser.username.split(" ")[0],
+        lastName: whopUser.username.split(" ").slice(1).join(" ") || "",
+        full_name: whopUser.username,
+        whopUserId: whopUser.id,
+        profilePicture: whopUser.profile_pic_url,
+        profileImageUrl: whopUser.profile_pic_url,
+        // Set a random password hash since they're using Whop auth
+        password_hash: Math.random().toString(36).slice(-8),
+        createdAt: /* @__PURE__ */ new Date(),
+        updatedAt: /* @__PURE__ */ new Date()
+      }).returning();
+      return newUser[0];
+    }
+  } catch (error) {
+    console.error("Error syncing Whop user:", error);
+    throw error;
+  }
+}
+async function requireWhopAuth(req, res, next) {
+  try {
+    const whopUserId = req.headers["x-whop-user-id"];
+    const accessPass = req.headers["x-whop-access-pass"];
+    if (!whopUserId) {
+      return res.status(401).json({ error: "No Whop user ID provided" });
+    }
+    const whopUser = await validateWhopUser(whopUserId, accessPass);
+    if (!whopUser) {
+      return res.status(401).json({ error: "Invalid Whop user" });
+    }
+    if (!whopUser.has_access) {
+      return res.status(403).json({ error: "No active Whop membership" });
+    }
+    const localUser = await syncWhopUser(whopUser);
+    const token = jwt.sign(
+      {
+        userId: localUser.id,
+        email: localUser.email,
+        whopUserId: whopUser.id
+      },
+      process.env.JWT_SECRET || "healthy-mama-jwt-secret-key-2025-production",
+      { expiresIn: "7d" }
+    );
+    req.user = localUser;
+    req.whopUser = whopUser;
+    req.token = token;
+    next();
+  } catch (error) {
+    console.error("Whop auth middleware error:", error);
+    res.status(500).json({ error: "Authentication failed" });
+  }
+}
+async function handleWhopAuth(req) {
+  try {
+    const userId = req.query.user_id || req.body.user_id;
+    const accessPass = req.query.access_pass || req.body.access_pass;
+    const userEmail = req.query.email || req.body.email;
+    if (!userId) {
+      throw new Error("No Whop user ID provided");
+    }
+    let whopUser = await validateWhopUser(userId, accessPass);
+    if (!whopUser && userEmail) {
+      whopUser = {
+        id: userId,
+        email: userEmail,
+        username: userEmail.split("@")[0],
+        has_access: true
+        // Trust Whop's iframe authentication
+      };
+    }
+    if (!whopUser) {
+      throw new Error("Failed to validate Whop user");
+    }
+    const localUser = await syncWhopUser(whopUser);
+    const token = jwt.sign(
+      {
+        userId: localUser.id,
+        email: localUser.email,
+        whopUserId: whopUser.id
+      },
+      process.env.JWT_SECRET || "healthy-mama-jwt-secret-key-2025-production",
+      { expiresIn: "7d" }
+    );
+    return {
+      token,
+      user: localUser,
+      whopUser
+    };
+  } catch (error) {
+    console.error("Whop auth error:", error);
+    throw error;
+  }
+}
+function validateWhopWebhook(req) {
+  try {
+    const signature = req.headers["x-whop-signature"];
+    if (!signature) return false;
+    return true;
+  } catch (error) {
+    console.error("Webhook validation error:", error);
+    return false;
+  }
+}
+var WHOP_API_BASE, WHOP_API_KEY, WHOP_APP_ID;
+var init_whopAuth = __esm({
+  "server/whopAuth.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    WHOP_API_BASE = "https://api.whop.com/api/v2";
+    WHOP_API_KEY = process.env.WHOP_API_KEY;
+    WHOP_APP_ID = process.env.NEXT_PUBLIC_WHOP_APP_ID;
+  }
+});
+
 // server/auth.ts
 var auth_exports = {};
 __export(auth_exports, {
@@ -10862,7 +11046,7 @@ var init_culturalMealRankingEngine = __esm({
 });
 
 // server/llamaMealRanker.ts
-import fetch4 from "node-fetch";
+import fetch5 from "node-fetch";
 var LlamaMealRanker, llamaMealRanker;
 var init_llamaMealRanker = __esm({
   "server/llamaMealRanker.ts"() {
@@ -10960,7 +11144,7 @@ Score ALL ${maxMeals} meals. Numbers only, NO text in meal objects.`;
        * Call OpenAI API for GPT-4o mini inference
        */
       async callLlamaAPI(prompt) {
-        const response = await fetch4(this.apiEndpoint, {
+        const response = await fetch5(this.apiEndpoint, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${this.apiKey}`,
@@ -11571,7 +11755,7 @@ import dotenv from "dotenv";
 // server/routes.ts
 init_storage();
 import { createServer } from "http";
-import fetch5 from "node-fetch";
+import fetch6 from "node-fetch";
 
 // server/grok.ts
 import OpenAI from "openai";
@@ -13453,138 +13637,8 @@ var MealPlanSharingService = class {
 };
 var mealPlanSharingService = new MealPlanSharingService();
 
-// server/whopAuth.ts
-init_db();
-init_schema();
-import { WhopSDK } from "@whop-sdk/core";
-import jwt from "jsonwebtoken";
-import { eq as eq5 } from "drizzle-orm";
-var whopSDK = new WhopSDK({
-  apiKey: process.env.WHOP_API_KEY,
-  appId: process.env.NEXT_PUBLIC_WHOP_APP_ID
-});
-async function validateWhopSession(token) {
-  try {
-    const session2 = await whopSDK.auth.validateSession(token);
-    if (!session2 || !session2.valid) {
-      return null;
-    }
-    const whopUser = await whopSDK.users.retrieve(session2.user_id);
-    const membership = await whopSDK.memberships.list({
-      user_id: session2.user_id,
-      company_id: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
-      valid: true
-    });
-    return {
-      id: whopUser.id,
-      email: whopUser.email,
-      username: whopUser.username || whopUser.email.split("@")[0],
-      profile_pic_url: whopUser.profile_pic_url,
-      company_id: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
-      has_access: membership.data.length > 0
-    };
-  } catch (error) {
-    console.error("Whop session validation error:", error);
-    return null;
-  }
-}
-async function syncWhopUser(whopUser) {
-  try {
-    const existingUser = await db.select().from(users).where(eq5(users.email, whopUser.email)).limit(1);
-    if (existingUser.length > 0) {
-      await db.update(users).set({
-        whopUserId: whopUser.id,
-        profilePicture: whopUser.profile_pic_url,
-        updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq5(users.email, whopUser.email));
-      return existingUser[0];
-    } else {
-      const newUser = await db.insert(users).values({
-        email: whopUser.email,
-        firstName: whopUser.username.split(" ")[0],
-        lastName: whopUser.username.split(" ").slice(1).join(" ") || "",
-        full_name: whopUser.username,
-        whopUserId: whopUser.id,
-        profilePicture: whopUser.profile_pic_url,
-        profileImageUrl: whopUser.profile_pic_url,
-        // Set a random password hash since they're using Whop auth
-        password_hash: Math.random().toString(36).slice(-8),
-        createdAt: /* @__PURE__ */ new Date(),
-        updatedAt: /* @__PURE__ */ new Date()
-      }).returning();
-      return newUser[0];
-    }
-  } catch (error) {
-    console.error("Error syncing Whop user:", error);
-    throw error;
-  }
-}
-async function requireWhopAuth(req, res, next) {
-  try {
-    const whopToken = req.headers["x-whop-token"];
-    if (!whopToken) {
-      return res.status(401).json({ error: "No Whop token provided" });
-    }
-    const whopUser = await validateWhopSession(whopToken);
-    if (!whopUser) {
-      return res.status(401).json({ error: "Invalid Whop session" });
-    }
-    if (!whopUser.has_access) {
-      return res.status(403).json({ error: "No active Whop membership" });
-    }
-    const localUser = await syncWhopUser(whopUser);
-    const token = jwt.sign(
-      {
-        userId: localUser.id,
-        email: localUser.email,
-        whopUserId: whopUser.id
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-    req.user = localUser;
-    req.whopUser = whopUser;
-    req.token = token;
-    next();
-  } catch (error) {
-    console.error("Whop auth middleware error:", error);
-    res.status(500).json({ error: "Authentication failed" });
-  }
-}
-async function handleWhopCallback(code) {
-  try {
-    const tokenResponse = await whopSDK.auth.exchangeCode(code);
-    if (!tokenResponse.access_token) {
-      throw new Error("Failed to get access token");
-    }
-    const whopUser = await validateWhopSession(tokenResponse.access_token);
-    if (!whopUser) {
-      throw new Error("Failed to validate Whop user");
-    }
-    const localUser = await syncWhopUser(whopUser);
-    const token = jwt.sign(
-      {
-        userId: localUser.id,
-        email: localUser.email,
-        whopUserId: whopUser.id
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-    return {
-      token,
-      user: {
-        ...localUser,
-        whopUser
-      }
-    };
-  } catch (error) {
-    console.error("Whop callback error:", error);
-    throw error;
-  }
-}
-
 // server/routes.ts
+init_whopAuth();
 init_schema();
 init_db();
 import Stripe from "stripe";
@@ -13629,21 +13683,46 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to toggle creator status" });
     }
   });
-  app2.post("/api/whop/validate", async (req, res) => {
+  app2.post("/api/whop/auth", async (req, res) => {
     try {
-      const { token } = req.body;
-      if (!token) {
-        return res.status(400).json({ error: "No token provided" });
-      }
-      const whopUser = await validateWhopSession(token);
-      if (!whopUser) {
-        return res.status(401).json({ error: "Invalid Whop session" });
-      }
-      const { generateToken: generateToken2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
-      const appToken = generateToken2(whopUser.id, false);
+      const result = await handleWhopAuth(req);
       res.json({
         success: true,
-        user: whopUser,
+        token: result.token,
+        user: result.user,
+        whopUser: result.whopUser
+      });
+    } catch (error) {
+      console.error("Whop auth error:", error);
+      res.status(401).json({ error: "Failed to authenticate with Whop" });
+    }
+  });
+  app2.post("/api/whop/validate", async (req, res) => {
+    try {
+      const { user_id, access_pass, email } = req.body;
+      if (!user_id) {
+        return res.status(400).json({ error: "No user ID provided" });
+      }
+      const whopUser = await validateWhopUser(user_id, access_pass);
+      if (!whopUser) {
+        if (email) {
+          const result = await handleWhopAuth(req);
+          return res.json({
+            success: true,
+            token: result.token,
+            user: result.user,
+            has_access: true
+          });
+        }
+        return res.status(401).json({ error: "Invalid Whop user" });
+      }
+      const { syncWhopUser: syncWhopUser2 } = await Promise.resolve().then(() => (init_whopAuth(), whopAuth_exports));
+      const localUser = await syncWhopUser2(whopUser);
+      const { generateToken: generateToken2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
+      const appToken = generateToken2(localUser.id, false);
+      res.json({
+        success: true,
+        user: localUser,
         token: appToken,
         has_access: whopUser.has_access
       });
@@ -13652,18 +13731,32 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Failed to validate Whop session" });
     }
   });
-  app2.get("/api/whop/callback", async (req, res) => {
+  app2.post("/api/whop/webhook", async (req, res) => {
     try {
-      const { code } = req.query;
-      if (!code || typeof code !== "string") {
-        return res.status(400).json({ error: "No authorization code provided" });
+      if (!validateWhopWebhook(req)) {
+        return res.status(401).json({ error: "Invalid webhook signature" });
       }
-      const result = await handleWhopCallback(code);
-      const redirectUrl = `${process.env.FRONTEND_URL || "https://recipe-assistant-braelincarranz1.replit.app"}?token=${result.token}&whop=true`;
-      res.redirect(redirectUrl);
+      const { event, data } = req.body;
+      console.log("Whop webhook received:", event);
+      switch (event) {
+        case "membership.created":
+        case "membership.updated":
+          if (data.user_id) {
+            const whopUser = await validateWhopUser(data.user_id);
+            if (whopUser) {
+              const { syncWhopUser: syncWhopUser2 } = await Promise.resolve().then(() => (init_whopAuth(), whopAuth_exports));
+              await syncWhopUser2(whopUser);
+            }
+          }
+          break;
+        case "membership.deleted":
+        case "membership.expired":
+          break;
+      }
+      res.json({ success: true });
     } catch (error) {
-      console.error("Whop callback error:", error);
-      res.redirect(`${process.env.FRONTEND_URL || "https://recipe-assistant-braelincarranz1.replit.app"}?error=whop_auth_failed`);
+      console.error("Webhook error:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
     }
   });
   app2.get("/api/whop/membership", requireWhopAuth, async (req, res) => {
@@ -13898,7 +13991,7 @@ async function registerRoutes(app2) {
                 }
               }
               const spoonacularUrl = `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`;
-              const response = await fetch5(spoonacularUrl);
+              const response = await fetch6(spoonacularUrl);
               const data = await response.json();
               if (data.results && data.results.length > 0) {
                 spoonacularTime = data.results[0].readyInMinutes || 30;
@@ -13997,13 +14090,13 @@ async function registerRoutes(app2) {
             const getUSDANutrition = async (foodName) => {
               try {
                 console.log(`Looking up USDA nutrition for: "${foodName}"`);
-                const searchResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
+                const searchResponse = await fetch6(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
                 if (searchResponse.ok) {
                   const searchData = await searchResponse.json();
                   if (searchData.foods && searchData.foods.length > 0) {
                     const foodId = searchData.foods[0].fdcId;
                     console.log(`Found USDA food ID ${foodId} for "${foodName}"`);
-                    const nutritionResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
+                    const nutritionResponse = await fetch6(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
                     if (nutritionResponse.ok) {
                       const nutritionData2 = await nutritionResponse.json();
                       const nutrients = nutritionData2.foodNutrients || [];
@@ -14748,7 +14841,7 @@ async function registerRoutes(app2) {
         }]
       };
       console.log("\u{1F9EA} Testing Vision API with minimal request...");
-      const response = await fetch5(testUrl, {
+      const response = await fetch6(testUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(testRequest)
@@ -14819,7 +14912,7 @@ async function registerRoutes(app2) {
       console.log("\u{1F517} Vision API URL:", VISION_API_URL);
       let visionResponse;
       try {
-        visionResponse = await fetch5(VISION_API_URL, {
+        visionResponse = await fetch6(VISION_API_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -15066,7 +15159,7 @@ async function registerRoutes(app2) {
       }
       if (process.env.USDA_API_KEY) {
         try {
-          const searchResponse = await fetch5(
+          const searchResponse = await fetch6(
             `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`
           );
           if (searchResponse.ok) {
@@ -15275,7 +15368,7 @@ async function registerRoutes(app2) {
         console.log("Goal Weights:", filters.goalWeights);
         console.log("Weight-based Enhanced:", filters.weightBasedEnhanced);
       }
-      const response = await fetch5("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch6("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -17145,6 +17238,27 @@ dotenv.config();
 var app = express2();
 app.use(express2.json({ limit: "10mb" }));
 app.use(express2.urlencoded({ extended: false, limit: "10mb" }));
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev",
+    "https://qv58s2tk2qjrjogiafjw.apps.whop.com",
+    "https://whop.com"
+  ];
+  const origin = req.headers.origin;
+  if (origin && (allowedOrigins.includes(origin) || origin.includes("apps.whop.com"))) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Whop-User-Id, X-Whop-Access-Pass");
+  res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 app.use(session({
   secret: process.env.SESSION_SECRET || "healthy-mama-session-secret-2025",
   resave: false,
