@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { buildApiUrl } from "../config/api";
 
 // Centralized API request function with robust error handling and auto token refresh
 export async function apiRequest(
@@ -15,10 +16,13 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  console.log('API Request:', { url, method: options.method || 'GET', hasBody: !!options.body });
+  // Build full URL if it's a relative path
+  const fullUrl = url.startsWith('http') ? url : buildApiUrl(url);
+  
+  console.log('API Request:', { url: fullUrl, method: options.method || 'GET', hasBody: !!options.body });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch(fullUrl, {
       credentials: "include",
       ...options,
       headers,
@@ -35,7 +39,7 @@ export async function apiRequest(
     }
 
     console.log('API Response:', { 
-      url, 
+      url: fullUrl, 
       status: res.status, 
       ok: res.ok,
       contentType: res.headers.get('content-type'),
@@ -47,7 +51,7 @@ export async function apiRequest(
     if (!contentType || !contentType.includes('application/json')) {
       const text = await res.text();
       console.error('Non-JSON Response:', text);
-      throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON. Check endpoint: ${url}`);
+      throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON. Check endpoint: ${fullUrl}`);
     }
 
     const text = await res.text();

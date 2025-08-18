@@ -93,6 +93,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
+  // CORS test endpoint (no auth required)
+  app.get("/api/test-cors", (_req, res) => {
+    res.json({ 
+      status: "CORS is working correctly!", 
+      timestamp: new Date().toISOString(),
+      message: "If you can see this from Whop, CORS is configured properly"
+    });
+  });
+
   // Standard email/password auth routes
   const { registerUser, loginUser, getCurrentUser, authenticateToken } = await import("./auth");
   
