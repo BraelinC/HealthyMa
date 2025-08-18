@@ -24,6 +24,7 @@ import Checkout from "@/pages/Checkout";
 import Tracker from "@/pages/Tracker";
 import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
+import WhopApp from "@/pages/WhopApp";
 
 // ========== LANDING PAGE TOGGLE ==========
 // Set this to false to skip the landing page and go directly to login
@@ -237,6 +238,7 @@ function Router() {
           <Route path="/community/:id" component={CommunityDetail} />
           <Route path="/tracker" component={Tracker} />
           <Route path="/profile" component={Profile} />
+          <Route path="/whop" component={WhopApp} />
 
           <Route path="/testing" component={TestingPage} />
           <Route path="/icons" component={IconShowcase} />

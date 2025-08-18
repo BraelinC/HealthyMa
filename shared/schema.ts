@@ -27,6 +27,8 @@ export const users = pgTable("users", {
   password_hash: varchar("password_hash", { length: 255 }),
   full_name: varchar("full_name", { length: 255 }),
   google_id: varchar("google_id"),
+  whopUserId: varchar("whop_user_id"), // Whop user ID for integration
+  profilePicture: varchar("profile_picture"), // Profile picture URL from Whop
   is_creator: boolean("is_creator").default(false), // Dynamic creator status
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
