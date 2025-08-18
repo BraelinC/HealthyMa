@@ -16,36 +16,6 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Configure CORS for Whop integration
-app.use((req, res, next) => {
-  const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev',
-    'https://qv58s2tk2qjrjogiafjw.apps.whop.com',
-    'https://whop.com'
-  ];
-  
-  const origin = req.headers.origin;
-  
-  // Allow requests from Whop domains and local development
-  if (origin && (allowedOrigins.includes(origin) || origin.includes('apps.whop.com'))) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Whop-User-Id, X-Whop-Access-Pass');
-  res.setHeader('Access-Control-Expose-Headers', 'X-New-Token');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
-
 // Configure session middleware (required for passport and fallback auth)
 app.use(session({
   secret: process.env.SESSION_SECRET || "healthy-mama-session-secret-2025",

@@ -14,7 +14,6 @@ import { handleLogMealDetection } from "./logmealEndpoint";
 import { communityService } from "./communityService";
 import { creatorService } from "./creatorService";
 import { mealPlanSharingService } from "./mealPlanSharingService";
-import { requireWhopAuth, handleWhopAuth, validateWhopUser, validateWhopWebhook } from "./whopAuth";
 
 import Stripe from "stripe";
 import { insertProfileSchema, type InsertProfile, users } from "@shared/schema";
@@ -136,128 +135,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error toggling creator status:", error);
       res.status(500).json({ message: "Failed to toggle creator status" });
-    }
-  });
-
-  // Whop authentication routes
-  
-  // Main Whop authentication endpoint (for iframe)
-  app.post("/api/whop/auth", async (req, res) => {
-    try {
-      const result = await handleWhopAuth(req);
-      
-      res.json({
-        success: true,
-        token: result.token,
-        user: result.user,
-        whopUser: result.whopUser,
-      });
-    } catch (error) {
-      console.error("Whop auth error:", error);
-      res.status(401).json({ error: "Failed to authenticate with Whop" });
-    }
-  });
-
-  // Validate Whop user
-  app.post("/api/whop/validate", async (req, res) => {
-    try {
-      const { user_id, access_pass, email } = req.body;
-      
-      if (!user_id) {
-        return res.status(400).json({ error: "No user ID provided" });
-      }
-
-      const whopUser = await validateWhopUser(user_id, access_pass);
-      
-      if (!whopUser) {
-        // Create basic user if we have email
-        if (email) {
-          const result = await handleWhopAuth(req);
-          return res.json({
-            success: true,
-            token: result.token,
-            user: result.user,
-            has_access: true,
-          });
-        }
-        return res.status(401).json({ error: "Invalid Whop user" });
-      }
-
-      // Sync and create token
-      const { syncWhopUser } = await import("./whopAuth");
-      const localUser = await syncWhopUser(whopUser);
-      
-      const { generateToken } = await import("./auth");
-      const appToken = generateToken(localUser.id, false);
-
-      res.json({
-        success: true,
-        user: localUser,
-        token: appToken,
-        has_access: whopUser.has_access,
-      });
-    } catch (error) {
-      console.error("Whop validation error:", error);
-      res.status(500).json({ error: "Failed to validate Whop session" });
-    }
-  });
-
-  // Whop webhook endpoint
-  app.post("/api/whop/webhook", async (req, res) => {
-    try {
-      // Validate webhook signature
-      if (!validateWhopWebhook(req)) {
-        return res.status(401).json({ error: "Invalid webhook signature" });
-      }
-
-      const { event, data } = req.body;
-      
-      console.log("Whop webhook received:", event);
-
-      // Handle different webhook events
-      switch (event) {
-        case 'membership.created':
-        case 'membership.updated':
-          // Update user access
-          if (data.user_id) {
-            const whopUser = await validateWhopUser(data.user_id);
-            if (whopUser) {
-              const { syncWhopUser } = await import("./whopAuth");
-              await syncWhopUser(whopUser);
-            }
-          }
-          break;
-        
-        case 'membership.deleted':
-        case 'membership.expired':
-          // Revoke user access
-          // You might want to update user status in database
-          break;
-      }
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Webhook error:", error);
-      res.status(500).json({ error: "Webhook processing failed" });
-    }
-  });
-
-  // Whop membership check
-  app.get("/api/whop/membership", requireWhopAuth, async (req: any, res) => {
-    try {
-      res.json({
-        has_access: req.whopUser.has_access,
-        user: req.whopUser,
-        features: {
-          unlimited_meal_plans: req.whopUser.has_access,
-          premium_recipes: req.whopUser.has_access,
-          instacart_integration: req.whopUser.has_access,
-          family_profiles: req.whopUser.has_access,
-        },
-      });
-    } catch (error) {
-      console.error("Membership check error:", error);
-      res.status(500).json({ error: "Failed to check membership" });
     }
   });
 

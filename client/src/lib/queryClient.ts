@@ -1,19 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-// Get the correct API URL based on environment
-const getApiBaseUrl = () => {
-  // Check if we're in Whop iframe
-  const isWhopIframe = window.location.hostname.includes('apps.whop.com');
-  
-  if (isWhopIframe) {
-    // Use the Replit backend URL when in Whop iframe
-    return 'https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev';
-  }
-  
-  // Default to relative URLs for local development
-  return '';
-};
-
 // Centralized API request function with robust error handling and auto token refresh
 export async function apiRequest(
   url: string,
@@ -29,14 +15,10 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Prepend base URL if needed
-  const baseUrl = getApiBaseUrl();
-  const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
-
-  console.log('API Request:', { url: fullUrl, method: options.method || 'GET', hasBody: !!options.body });
+  console.log('API Request:', { url, method: options.method || 'GET', hasBody: !!options.body });
 
   try {
-    const res = await fetch(fullUrl, {
+    const res = await fetch(url, {
       credentials: "include",
       ...options,
       headers,

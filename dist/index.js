@@ -2,6 +2,12 @@ var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -9,11 +15,11 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc5) => {
+var __copyProps = (to, from, except, desc2) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc5 = __getOwnPropDesc(from, key)) || desc5.enumerable });
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc2 = __getOwnPropDesc(from, key)) || desc2.enumerable });
   }
   return to;
 };
@@ -22,12 +28,6 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // shared/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
-  communities: () => communities,
-  communityChallenges: () => communityChallenges,
-  communityDiscussions: () => communityDiscussions,
-  communityMembers: () => communityMembers,
-  creatorFollowers: () => creatorFollowers,
-  creatorProfiles: () => creatorProfiles,
   culturalCuisineCache: () => culturalCuisineCache,
   familyMemberSchema: () => familyMemberSchema,
   foodDatabase: () => foodDatabase,
@@ -44,15 +44,12 @@ __export(schema_exports, {
   insertUserAchievementSchema: () => insertUserAchievementSchema,
   insertUserSavedCulturalMealsSchema: () => insertUserSavedCulturalMealsSchema,
   mealCompletions: () => mealCompletions,
-  mealPlanRemixes: () => mealPlanRemixes,
   mealPlanRequestSchema: () => mealPlanRequestSchema,
-  mealPlanReviews: () => mealPlanReviews,
   mealPlans: () => mealPlans,
   mergeFamilyDietaryRestrictions: () => mergeFamilyDietaryRestrictions,
   profiles: () => profiles,
   recipes: () => recipes,
   sessions: () => sessions,
-  sharedMealPlans: () => sharedMealPlans,
   simplifiedUserProfileSchema: () => simplifiedUserProfileSchema,
   userAchievements: () => userAchievements,
   userSavedCulturalMeals: () => userSavedCulturalMeals,
@@ -93,7 +90,7 @@ function mergeFamilyDietaryRestrictions(members) {
   console.log("\u{1F517} Final merged restrictions:", finalRestrictions);
   return finalRestrictions;
 }
-var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema, groceryListCache, insertGroceryListCacheSchema, foodLogs, insertFoodLogSchema, foodDatabase, insertFoodDatabaseSchema, communities, communityMembers, sharedMealPlans, mealPlanReviews, mealPlanRemixes, communityDiscussions, creatorProfiles, creatorFollowers, communityChallenges;
+var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema, groceryListCache, insertGroceryListCacheSchema, foodLogs, insertFoodLogSchema, foodDatabase, insertFoodDatabaseSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -116,12 +113,6 @@ var init_schema = __esm({
       password_hash: varchar("password_hash", { length: 255 }),
       full_name: varchar("full_name", { length: 255 }),
       google_id: varchar("google_id"),
-      whopUserId: varchar("whop_user_id"),
-      // Whop user ID for integration
-      profilePicture: varchar("profile_picture"),
-      // Profile picture URL from Whop
-      is_creator: boolean("is_creator").default(false),
-      // Dynamic creator status
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -482,153 +473,6 @@ var init_schema = __esm({
       common_portion: true,
       category: true
     });
-    communities = pgTable("communities", {
-      id: serial("id").primaryKey(),
-      name: varchar("name", { length: 255 }).notNull(),
-      description: text("description").notNull(),
-      creator_id: varchar("creator_id").notNull().references(() => users.id),
-      cover_image: text("cover_image"),
-      category: text("category").notNull(),
-      // "budget", "family", "cultural", "health", etc.
-      member_count: integer("member_count").default(0),
-      is_public: boolean("is_public").default(true),
-      settings: json("settings").default({}),
-      created_at: timestamp("created_at").defaultNow(),
-      updated_at: timestamp("updated_at").defaultNow()
-    }, (table) => ({
-      creatorIdx: index("communities_creator_idx").on(table.creator_id),
-      categoryIdx: index("communities_category_idx").on(table.category)
-    }));
-    communityMembers = pgTable("community_members", {
-      id: serial("id").primaryKey(),
-      community_id: integer("community_id").notNull().references(() => communities.id),
-      user_id: varchar("user_id").notNull().references(() => users.id),
-      role: text("role").notNull().default("member"),
-      // "creator", "moderator", "member"
-      points: integer("points").default(0),
-      level: integer("level").default(1),
-      joined_at: timestamp("joined_at").defaultNow()
-    }, (table) => ({
-      communityUserIdx: index("community_user_idx").on(table.community_id, table.user_id),
-      userIdx: index("community_members_user_idx").on(table.user_id)
-    }));
-    sharedMealPlans = pgTable("shared_meal_plans", {
-      id: serial("id").primaryKey(),
-      community_id: integer("community_id").notNull().references(() => communities.id),
-      meal_plan_id: integer("meal_plan_id").notNull().references(() => mealPlans.id),
-      sharer_id: varchar("sharer_id").notNull().references(() => users.id),
-      title: varchar("title", { length: 255 }).notNull(),
-      description: text("description"),
-      tags: json("tags").default([]),
-      // ["budget-friendly", "quick", "family", etc.]
-      preview_images: json("preview_images").default([]),
-      // Array of image URLs
-      metrics: json("metrics").default({}),
-      // {cost_per_serving, prep_time, difficulty, nutrition_score}
-      likes: integer("likes").default(0),
-      tries: integer("tries").default(0),
-      success_rate: integer("success_rate"),
-      // percentage 0-100
-      is_featured: boolean("is_featured").default(false),
-      created_at: timestamp("created_at").defaultNow()
-    }, (table) => ({
-      communityIdx: index("shared_plans_community_idx").on(table.community_id),
-      sharerIdx: index("shared_plans_sharer_idx").on(table.sharer_id),
-      featuredIdx: index("shared_plans_featured_idx").on(table.is_featured)
-    }));
-    mealPlanReviews = pgTable("meal_plan_reviews", {
-      id: serial("id").primaryKey(),
-      shared_plan_id: integer("shared_plan_id").notNull().references(() => sharedMealPlans.id),
-      reviewer_id: varchar("reviewer_id").notNull().references(() => users.id),
-      rating: integer("rating").notNull(),
-      // 1-5 stars
-      comment: text("comment"),
-      images: json("images").default([]),
-      // Array of result photo URLs
-      tried_it: boolean("tried_it").default(false),
-      modifications: text("modifications"),
-      // What they changed
-      helpful_count: integer("helpful_count").default(0),
-      created_at: timestamp("created_at").defaultNow()
-    }, (table) => ({
-      planIdx: index("reviews_plan_idx").on(table.shared_plan_id),
-      reviewerIdx: index("reviews_reviewer_idx").on(table.reviewer_id)
-    }));
-    mealPlanRemixes = pgTable("meal_plan_remixes", {
-      id: serial("id").primaryKey(),
-      original_plan_id: integer("original_plan_id").notNull().references(() => sharedMealPlans.id),
-      remixer_id: varchar("remixer_id").notNull().references(() => users.id),
-      remixed_plan_id: integer("remixed_plan_id").notNull().references(() => mealPlans.id),
-      community_id: integer("community_id").references(() => communities.id),
-      changes_made: json("changes_made").notNull(),
-      // Description of modifications
-      created_at: timestamp("created_at").defaultNow()
-    }, (table) => ({
-      originalIdx: index("remixes_original_idx").on(table.original_plan_id),
-      remixerIdx: index("remixes_remixer_idx").on(table.remixer_id)
-    }));
-    communityDiscussions = pgTable("community_discussions", {
-      id: serial("id").primaryKey(),
-      community_id: integer("community_id").notNull().references(() => communities.id),
-      meal_plan_id: integer("meal_plan_id").references(() => sharedMealPlans.id),
-      author_id: varchar("author_id").notNull().references(() => users.id),
-      parent_id: integer("parent_id"),
-      // For threaded discussions
-      content: text("content").notNull(),
-      likes: integer("likes").default(0),
-      is_pinned: boolean("is_pinned").default(false),
-      created_at: timestamp("created_at").defaultNow()
-    }, (table) => ({
-      communityIdx: index("discussions_community_idx").on(table.community_id),
-      planIdx: index("discussions_plan_idx").on(table.meal_plan_id),
-      authorIdx: index("discussions_author_idx").on(table.author_id)
-    }));
-    creatorProfiles = pgTable("creator_profiles", {
-      id: serial("id").primaryKey(),
-      user_id: varchar("user_id").notNull().references(() => users.id).unique(),
-      bio: text("bio"),
-      specialties: json("specialties").default([]),
-      // ["budget meals", "family cooking", etc.]
-      certifications: json("certifications").default([]),
-      // Professional credentials
-      follower_count: integer("follower_count").default(0),
-      total_plans_shared: integer("total_plans_shared").default(0),
-      average_rating: integer("average_rating"),
-      // Out of 5
-      verified_nutritionist: boolean("verified_nutritionist").default(false),
-      social_links: json("social_links").default({}),
-      created_at: timestamp("created_at").defaultNow(),
-      updated_at: timestamp("updated_at").defaultNow()
-    }, (table) => ({
-      userIdx: index("creator_profiles_user_idx").on(table.user_id)
-    }));
-    creatorFollowers = pgTable("creator_followers", {
-      id: serial("id").primaryKey(),
-      creator_id: varchar("creator_id").notNull().references(() => users.id),
-      follower_id: varchar("follower_id").notNull().references(() => users.id),
-      followed_at: timestamp("followed_at").defaultNow()
-    }, (table) => ({
-      creatorFollowerIdx: index("creator_follower_idx").on(table.creator_id, table.follower_id),
-      followerIdx: index("followers_follower_idx").on(table.follower_id)
-    }));
-    communityChallenges = pgTable("community_challenges", {
-      id: serial("id").primaryKey(),
-      community_id: integer("community_id").notNull().references(() => communities.id),
-      title: varchar("title", { length: 255 }).notNull(),
-      description: text("description").notNull(),
-      requirements: json("requirements").notNull(),
-      // Challenge criteria
-      start_date: timestamp("start_date").notNull(),
-      end_date: timestamp("end_date").notNull(),
-      prize_description: text("prize_description"),
-      submissions: json("submissions").default([]),
-      // Array of submission IDs
-      winner_id: varchar("winner_id").references(() => users.id),
-      created_at: timestamp("created_at").defaultNow()
-    }, (table) => ({
-      communityIdx: index("challenges_community_idx").on(table.community_id),
-      dateIdx: index("challenges_date_idx").on(table.start_date, table.end_date)
-    }));
   }
 });
 
@@ -1777,625 +1621,6 @@ var init_instacart = __esm({
   }
 });
 
-// server/logmealEndpoint.ts
-var logmealEndpoint_exports = {};
-__export(logmealEndpoint_exports, {
-  MAX_DAILY_CALLS: () => MAX_DAILY_CALLS,
-  dailyCallCount: () => dailyCallCount,
-  handleLogMealDetection: () => handleLogMealDetection,
-  lastResetDate: () => lastResetDate
-});
-import axios from "axios";
-import FormData from "form-data";
-import crypto from "crypto";
-async function handleLogMealDetection(req, res) {
-  try {
-    console.log("\u{1F354} === LOGMEAL API ENDPOINT CALLED ===");
-    const { image } = req.body;
-    const today = (/* @__PURE__ */ new Date()).toDateString();
-    if (today !== lastResetDate) {
-      dailyCallCount = 0;
-      lastResetDate = today;
-      console.log("\u{1F504} Daily API call counter reset");
-    }
-    if (dailyCallCount >= MAX_DAILY_CALLS) {
-      console.log(`\u26A0\uFE0F Daily API call limit reached: ${dailyCallCount}/${MAX_DAILY_CALLS}`);
-      return res.status(429).json({
-        error: "Daily API call limit reached. Please try again tomorrow.",
-        callsUsed: dailyCallCount,
-        maxCalls: MAX_DAILY_CALLS
-      });
-    }
-    const imageHash = crypto.createHash("md5").update(image).digest("hex");
-    const cacheKey = `logmeal_${imageHash}`;
-    const cached = detectionCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log("\u{1F4BE} Returning cached detection result");
-      return res.json(cached.data);
-    }
-    if (!image) {
-      console.error("\u274C No image data provided");
-      return res.status(400).json({ error: "Image data is required" });
-    }
-    console.log("\u{1F4CA} Received image data:", {
-      length: image.length,
-      isBase64: image.includes("base64"),
-      prefix: image.substring(0, 50)
-    });
-    const LOGMEAL_API_KEY = "79cbe9badc6d24d77ffbcd536692c6fd697de89d";
-    const LOGMEAL_API_URL = "https://api.logmeal.es/v2";
-    console.log("\u{1F511} Using LogMeal API");
-    console.log(`   API Key: ${LOGMEAL_API_KEY.substring(0, 10)}...${LOGMEAL_API_KEY.slice(-4)}`);
-    console.log(`   Base URL: ${LOGMEAL_API_URL}`);
-    const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
-    const imageBuffer = Buffer.from(base64Image, "base64");
-    console.log("\u{1F4E6} Image buffer size:", imageBuffer.length);
-    const getUnitForFood = (foodName) => {
-      const lowerName = foodName.toLowerCase();
-      if (lowerName.includes("rice") || lowerName.includes("pasta") || lowerName.includes("grain")) return "cup";
-      if (lowerName.includes("chicken") || lowerName.includes("beef") || lowerName.includes("pork") || lowerName.includes("steak") || lowerName.includes("meat") || lowerName.includes("fish")) return "oz";
-      if (lowerName.includes("milk") || lowerName.includes("juice") || lowerName.includes("soup") || lowerName.includes("stew") || lowerName.includes("sauce")) return "cup";
-      if (lowerName.includes("bread") || lowerName.includes("toast") || lowerName.includes("slice")) return "slice";
-      if (lowerName.includes("egg")) return "egg";
-      if (lowerName.includes("apple") || lowerName.includes("banana") || lowerName.includes("orange") || lowerName.includes("fruit")) return "piece";
-      if (lowerName.includes("vegetable") || lowerName.includes("carrot") || lowerName.includes("broccoli")) return "cup";
-      return "serving";
-    };
-    const getMeasureType = (unit) => {
-      if (unit === "cup" || unit === "tbsp" || unit === "tsp" || unit === "ml") return "volume";
-      if (unit === "oz" || unit === "g" || unit === "lb") return "weight";
-      return "count";
-    };
-    const processLogMealResponse = (data, endpointName, getUnitForFood2, getMeasureType2) => {
-      const detections = [];
-      const timestamp2 = Date.now();
-      console.log(`\u{1F50D} Processing ${endpointName} response...`);
-      if (data.food_types && Array.isArray(data.food_types)) {
-        console.log(`\u{1F4CD} Found ${data.food_types.length} food types`);
-        for (const foodType of data.food_types) {
-          const name = foodType.name;
-          const prob = foodType.probs || foodType.prob || 0.5;
-          const genericTerms2 = ["food", "non-food", "drink", "ingredients", "meal", "dish", "cuisine", "ingredient", "meals", "dishes", "foods"];
-          const isGeneric = genericTerms2.some((term) => name?.toLowerCase().trim() === term);
-          if (name && !isGeneric && prob >= 0.15) {
-            const unit = getUnitForFood2(name);
-            detections.push({
-              id: `type-${timestamp2}-${Math.random()}`,
-              name,
-              confidence: prob,
-              amount: 1,
-              unit,
-              measureType: getMeasureType2(unit),
-              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-type`
-            });
-            console.log(`  \u2705 Added food type: ${name} (${(prob * 100).toFixed(1)}%)`);
-          } else if (name && isGeneric) {
-            console.log(`  \u26A0\uFE0F Skipped generic term: ${name} (${(prob * 100).toFixed(1)}%)`);
-          }
-        }
-      }
-      if (data.recognition_results && Array.isArray(data.recognition_results)) {
-        console.log(`\u{1F4CD} Found ${data.recognition_results.length} recognition results`);
-        for (const result of data.recognition_results) {
-          if (result.recognition_results && Array.isArray(result.recognition_results)) {
-            console.log(`  \u{1F4E6} Processing nested recognition results`);
-            for (const nestedResult of result.recognition_results) {
-              const name2 = nestedResult.name || nestedResult.food_name || nestedResult.class;
-              const prob2 = nestedResult.prob || nestedResult.probability || 0.5;
-              if (name2 && prob2 >= 0.15 && !["food", "non-food", "drink", "ingredients", "unknown"].includes(name2.toLowerCase())) {
-                const unit = getUnitForFood2(name2);
-                detections.push({
-                  id: `nested-${timestamp2}-${Math.random()}`,
-                  name: name2,
-                  confidence: prob2,
-                  amount: 1,
-                  unit,
-                  measureType: getMeasureType2(unit),
-                  source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-segmented`
-                });
-                console.log(`    \u2705 Added segmented food: ${name2} (${(prob2 * 100).toFixed(1)}%)`);
-              }
-            }
-          }
-          const name = result.name || result.food_name || result.class;
-          const prob = result.prob || result.probability || result.score || 0.5;
-          const genericTerms2 = ["food", "non-food", "drink", "ingredients", "meal", "dish", "cuisine", "unknown"];
-          const isGeneric = genericTerms2.some((term) => name?.toLowerCase().includes(term));
-          if (name && prob >= 0.15 && !isGeneric) {
-            const unit = getUnitForFood2(name);
-            detections.push({
-              id: `dish-${timestamp2}-${Math.random()}`,
-              name,
-              confidence: prob,
-              amount: 1,
-              unit,
-              measureType: getMeasureType2(unit),
-              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-dish`
-            });
-            console.log(`  \u2705 Added dish: ${name} (${(prob * 100).toFixed(1)}%)`);
-            if (result.subclasses && Array.isArray(result.subclasses)) {
-              for (const subclass of result.subclasses) {
-                const subName = subclass.name;
-                const subProb = subclass.prob || 0.5;
-                if (subName && subProb >= 0.2 && subName !== name && !genericTerms2.some((t) => subName?.toLowerCase().includes(t))) {
-                  const subUnit = getUnitForFood2(subName);
-                  detections.push({
-                    id: `subclass-${timestamp2}-${Math.random()}`,
-                    name: subName,
-                    confidence: subProb,
-                    amount: 1,
-                    unit: subUnit,
-                    measureType: getMeasureType2(subUnit),
-                    source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-subclass`
-                  });
-                  console.log(`    \u2705 Added subclass: ${subName} (${(subProb * 100).toFixed(1)}%)`);
-                }
-              }
-            }
-          } else if (name && isGeneric) {
-            console.log(`  \u26A0\uFE0F Skipped generic result: ${name} (${(prob * 100).toFixed(1)}%)`);
-          }
-        }
-      }
-      if (data.foodFamily && Array.isArray(data.foodFamily)) {
-        console.log(`\u{1F4CD} Found ${data.foodFamily.length} food families`);
-        for (const family of data.foodFamily) {
-          if (family.foods && Array.isArray(family.foods)) {
-            for (const food of family.foods) {
-              const name = food.name || food.food_name;
-              const prob = food.prob || food.confidence || 0.5;
-              if (name && prob >= 0.15) {
-                const unit = getUnitForFood2(name);
-                detections.push({
-                  id: `family-${timestamp2}-${Math.random()}`,
-                  name,
-                  confidence: prob,
-                  amount: food.quantity || 1,
-                  unit,
-                  measureType: getMeasureType2(unit),
-                  source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-family`
-                });
-                console.log(`  \u2705 Added from food family: ${name} (${(prob * 100).toFixed(1)}%)`);
-              }
-            }
-          }
-        }
-      }
-      if (data.segmentation_results && Array.isArray(data.segmentation_results)) {
-        console.log(`\u{1F4CD} Found ${data.segmentation_results.length} segmentation results`);
-        for (const segment of data.segmentation_results) {
-          if (segment.recognition_results && Array.isArray(segment.recognition_results)) {
-            console.log(`  \u{1F50D} Segment has ${segment.recognition_results.length} recognition results`);
-            for (const recResult of segment.recognition_results) {
-              const name2 = recResult.name || recResult.food_name || recResult.class;
-              const prob2 = recResult.prob || recResult.probability || 0.5;
-              if (name2 && prob2 >= 0.15 && !["food", "non-food", "drink", "ingredients", "unknown"].includes(name2.toLowerCase())) {
-                const unit = getUnitForFood2(name2);
-                detections.push({
-                  id: `seg-rec-${timestamp2}-${Math.random()}`,
-                  name: name2,
-                  confidence: prob2,
-                  amount: 1,
-                  unit,
-                  measureType: getMeasureType2(unit),
-                  source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-segmentation`
-                });
-                console.log(`    \u2705 Added from segmentation: ${name2} (${(prob2 * 100).toFixed(1)}%)`);
-              }
-            }
-          }
-          const name = segment.name || segment.food_name || segment.class;
-          const prob = segment.prob || segment.confidence || 0.6;
-          if (name && prob >= 0.15 && !["food", "non-food", "drink", "ingredients", "unknown"].includes(name.toLowerCase())) {
-            const unit = getUnitForFood2(name);
-            detections.push({
-              id: `seg-${timestamp2}-${Math.random()}`,
-              name,
-              confidence: prob,
-              amount: 1,
-              unit,
-              measureType: getMeasureType2(unit),
-              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-segmentation`
-            });
-            console.log(`  \u2705 Added segmentation: ${name} (${(prob * 100).toFixed(1)}%)`);
-          }
-        }
-      }
-      if (data.foodItem && Array.isArray(data.foodItem)) {
-        console.log(`\u{1F4CD} Found ${data.foodItem.length} food items`);
-        for (const item of data.foodItem) {
-          const name = item.name || item.food_name;
-          const prob = item.prob || item.probability || 0.5;
-          if (name && prob >= 0.15) {
-            const unit = getUnitForFood2(name);
-            detections.push({
-              id: `item-${timestamp2}-${Math.random()}`,
-              name,
-              confidence: prob,
-              amount: item.quantity || 1,
-              unit,
-              measureType: getMeasureType2(unit),
-              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-fooditem`
-            });
-            console.log(`  \u2705 Added food item: ${name} (${(prob * 100).toFixed(1)}%)`);
-          }
-        }
-      }
-      if (data.ingredients && Array.isArray(data.ingredients)) {
-        console.log(`\u{1F4CD} Found ${data.ingredients.length} ingredients`);
-        for (const ingredient of data.ingredients) {
-          const name = typeof ingredient === "string" ? ingredient : ingredient.name || ingredient.ingredient;
-          if (name && typeof name === "string" && name !== "ingredients") {
-            const unit = getUnitForFood2(name);
-            detections.push({
-              id: `ing-${timestamp2}-${Math.random()}`,
-              name,
-              confidence: ingredient.confidence || 0.8,
-              amount: ingredient.quantity || ingredient.amount || 1,
-              unit,
-              measureType: getMeasureType2(unit),
-              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-ingredient`
-            });
-            console.log(`  \u2705 Added ingredient: ${name}`);
-          }
-        }
-      }
-      return detections;
-    };
-    const deduplicateDetections = (detections) => {
-      const uniqueDetections = /* @__PURE__ */ new Map();
-      console.log(`\u{1F504} Deduplicating ${detections.length} total detections...`);
-      for (const detection of detections) {
-        const key = detection.name.toLowerCase().trim();
-        if (!uniqueDetections.has(key) || detection.confidence > uniqueDetections.get(key).confidence) {
-          uniqueDetections.set(key, detection);
-        }
-      }
-      const result = Array.from(uniqueDetections.values());
-      console.log(`\u2728 After deduplication: ${result.length} unique foods`);
-      result.sort((a, b) => b.confidence - a.confidence);
-      return result;
-    };
-    let allDetections = [];
-    const endpoints = [
-      {
-        path: "/image/recognition/type",
-        // Primary food type detection endpoint (confirmed working)
-        name: "Food Type Recognition",
-        priority: 1
-      }
-    ];
-    for (const endpoint of endpoints) {
-      console.log(`
-\u{1F680} Trying ${endpoint.name}: ${endpoint.path}`);
-      if (endpoint.priority > 1) {
-        console.log("   \u23F3 Waiting 1 second to avoid rate limits...");
-        await new Promise((resolve) => setTimeout(resolve, 1e3));
-      }
-      const formData = new FormData();
-      formData.append("image", imageBuffer, {
-        filename: "image.jpg",
-        contentType: "image/jpeg"
-      });
-      try {
-        const response2 = await axios.post(
-          `${LOGMEAL_API_URL}${endpoint.path}`,
-          formData,
-          {
-            headers: {
-              "Authorization": `Bearer ${LOGMEAL_API_KEY}`,
-              ...formData.getHeaders()
-            },
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-            timeout: 3e4
-            // 30 second timeout
-          }
-        );
-        const endpointData = response2.data;
-        console.log(`\u2705 Success with ${endpoint.name}`);
-        console.log("\u{1F4CA} Response keys:", Object.keys(endpointData));
-        dailyCallCount++;
-        console.log(`\u{1F4CA} API calls today: ${dailyCallCount}/${MAX_DAILY_CALLS}`);
-        const endpointDetections = processLogMealResponse(endpointData, endpoint.name, getUnitForFood, getMeasureType);
-        if (endpointDetections.length > 0) {
-          console.log(`\u{1F4E6} Added ${endpointDetections.length} detections from ${endpoint.name}:`);
-          endpointDetections.forEach((d) => {
-            console.log(`    - ${d.name} (${(d.confidence * 100).toFixed(1)}%)`);
-          });
-          allDetections.push(...endpointDetections);
-        } else {
-          console.log(`\u26A0\uFE0F No valid detections from ${endpoint.name}`);
-        }
-      } catch (error) {
-        console.log(`\u274C Failed with ${endpoint.name}:`, error.response?.status || error.message);
-        if (error.response) {
-          console.log(`   Status: ${error.response.status}`);
-          console.log(`   Status Text: ${error.response.statusText}`);
-          if (error.response.status === 429) {
-            console.log(`   \u26A0\uFE0F RATE LIMIT: Too many requests to LogMeal API`);
-            console.log(`   \u{1F4A1} The LogMeal API has rate limits. Try again later or use manual entry.`);
-            if (!allDetections.find((d) => d.name === "RATE_LIMIT_ERROR")) {
-              allDetections.push({
-                id: "rate-limit-error",
-                name: "RATE_LIMIT_ERROR",
-                confidence: 0,
-                amount: 0,
-                unit: "",
-                measureType: "",
-                source: "error"
-              });
-            }
-          } else if (error.response.status === 401 || error.response.status === 403) {
-            console.log(`   \u26A0\uFE0F AUTH ERROR: API key may not have access to this endpoint`);
-          } else if (error.response.status === 400) {
-            console.log(`   \u26A0\uFE0F BAD REQUEST: Endpoint or parameters may be incorrect`);
-          } else if (error.response.status === 114 || error.response.data?.code === 114) {
-            console.log(`   \u26A0\uFE0F RATE LIMIT: LogMeal API quota exceeded for 24 hours`);
-            console.log(`   \u{1F4A1} You've reached your daily limit. Try again tomorrow or upgrade your plan.`);
-          }
-          console.log(`   Error data:`, error.response.data ? JSON.stringify(error.response.data).substring(0, 200) : "No error data");
-        } else {
-          console.log(`   Network/Other Error:`, error.message);
-        }
-        continue;
-      }
-    }
-    if (allDetections.length === 0) {
-      console.error("\u274C No detections from any LogMeal endpoint");
-      console.log("\u{1F4A1} This could be due to:");
-      console.log("   - Daily rate limit reached (200 requests per day - resets at midnight)");
-      console.log("   - Image quality (try better lighting/clearer photo)");
-      console.log("   - Food not recognized (try simpler/common foods)");
-      console.log("   - API service issues (check LogMeal status)");
-    }
-    let detectedIngredients = deduplicateDetections(allDetections);
-    const genericTerms = ["food", "non-food", "drink", "ingredients", "meal", "dish", "cuisine", "unknown", "rate_limit_error"];
-    detectedIngredients = detectedIngredients.filter((item) => {
-      const isGeneric = genericTerms.some((term) => item.name.toLowerCase() === term);
-      if (isGeneric) {
-        if (item.name.toLowerCase() === "rate_limit_error") {
-          console.log(`\u26A0\uFE0F LogMeal API is rate limited. Users can add ingredients manually.`);
-        } else {
-          console.log(`\u{1F6AB} Filtered out generic term from final results: ${item.name}`);
-        }
-        return false;
-      }
-      return true;
-    });
-    console.log(`
-\u2705 Final results: ${detectedIngredients.length} unique ingredients detected`);
-    if (detectedIngredients.length === 0) {
-      console.log("\u26A0\uFE0F No ingredients detected after processing all endpoints");
-    } else {
-      console.log("\u{1F37D}\uFE0F Detected foods:");
-      detectedIngredients.forEach((item, index2) => {
-        console.log(`  ${index2 + 1}. ${item.name} - ${item.amount}${item.unit} (${(item.confidence * 100).toFixed(1)}% confidence, source: ${item.source})`);
-      });
-    }
-    const response = {
-      ingredients: detectedIngredients,
-      raw: {
-        totalDetections: allDetections.length,
-        uniqueDetections: detectedIngredients.length,
-        endpointsUsed: endpoints.map((e) => e.name),
-        sourceBreakdown: detectedIngredients.reduce((acc, item) => {
-          acc[item.source] = (acc[item.source] || 0) + 1;
-          return acc;
-        }, {})
-      }
-    };
-    console.log("\u{1F4E4} Sending response with", detectedIngredients.length, "ingredients");
-    detectionCache.set(cacheKey, {
-      data: response,
-      timestamp: Date.now()
-    });
-    console.log(`\u{1F4BE} Cached result for future requests`);
-    res.json(response);
-  } catch (error) {
-    console.error("\u274C Error in LogMeal endpoint:", error);
-    res.status(500).json({
-      error: "Internal server error",
-      details: error.message
-    });
-  }
-}
-var detectionCache, CACHE_DURATION, MAX_DAILY_CALLS, dailyCallCount, lastResetDate;
-var init_logmealEndpoint = __esm({
-  "server/logmealEndpoint.ts"() {
-    "use strict";
-    detectionCache = /* @__PURE__ */ new Map();
-    CACHE_DURATION = 5 * 60 * 1e3;
-    MAX_DAILY_CALLS = 180;
-    dailyCallCount = 0;
-    lastResetDate = (/* @__PURE__ */ new Date()).toDateString();
-  }
-});
-
-// server/whopAuth.ts
-var whopAuth_exports = {};
-__export(whopAuth_exports, {
-  handleWhopAuth: () => handleWhopAuth,
-  requireWhopAuth: () => requireWhopAuth,
-  syncWhopUser: () => syncWhopUser,
-  validateWhopUser: () => validateWhopUser,
-  validateWhopWebhook: () => validateWhopWebhook
-});
-import jwt from "jsonwebtoken";
-import { eq as eq5 } from "drizzle-orm";
-import fetch4 from "node-fetch";
-async function validateWhopUser(userId, accessPass) {
-  try {
-    if (!userId) {
-      console.error("No Whop user ID provided");
-      return null;
-    }
-    const membershipResponse = await fetch4(`${WHOP_API_BASE}/memberships`, {
-      headers: {
-        "Authorization": `Bearer ${WHOP_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      method: "POST",
-      body: JSON.stringify({
-        user_id: userId,
-        resource_id: accessPass || process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
-        valid: true
-      })
-    });
-    const hasAccess = membershipResponse.ok;
-    const userResponse = await fetch4(`${WHOP_API_BASE}/users/${userId}`, {
-      headers: {
-        "Authorization": `Bearer ${WHOP_API_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
-    if (!userResponse.ok) {
-      console.error("Failed to get Whop user details");
-      return null;
-    }
-    const userData = await userResponse.json();
-    return {
-      id: userId,
-      email: userData.email || `${userId}@whop.user`,
-      username: userData.username || userData.name || "Whop User",
-      profile_pic_url: userData.profile_pic_url || userData.avatar_url,
-      has_access: hasAccess
-    };
-  } catch (error) {
-    console.error("Whop user validation error:", error);
-    return null;
-  }
-}
-async function syncWhopUser(whopUser) {
-  try {
-    let existingUser = await db.select().from(users).where(eq5(users.whopUserId, whopUser.id)).limit(1);
-    if (existingUser.length === 0) {
-      existingUser = await db.select().from(users).where(eq5(users.email, whopUser.email)).limit(1);
-    }
-    if (existingUser.length > 0) {
-      await db.update(users).set({
-        whopUserId: whopUser.id,
-        profilePicture: whopUser.profile_pic_url,
-        updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq5(users.id, existingUser[0].id));
-      return existingUser[0];
-    } else {
-      const newUser = await db.insert(users).values({
-        email: whopUser.email,
-        firstName: whopUser.username.split(" ")[0],
-        lastName: whopUser.username.split(" ").slice(1).join(" ") || "",
-        full_name: whopUser.username,
-        whopUserId: whopUser.id,
-        profilePicture: whopUser.profile_pic_url,
-        profileImageUrl: whopUser.profile_pic_url,
-        // Set a random password hash since they're using Whop auth
-        password_hash: Math.random().toString(36).slice(-8),
-        createdAt: /* @__PURE__ */ new Date(),
-        updatedAt: /* @__PURE__ */ new Date()
-      }).returning();
-      return newUser[0];
-    }
-  } catch (error) {
-    console.error("Error syncing Whop user:", error);
-    throw error;
-  }
-}
-async function requireWhopAuth(req, res, next) {
-  try {
-    const whopUserId = req.headers["x-whop-user-id"];
-    const accessPass = req.headers["x-whop-access-pass"];
-    if (!whopUserId) {
-      return res.status(401).json({ error: "No Whop user ID provided" });
-    }
-    const whopUser = await validateWhopUser(whopUserId, accessPass);
-    if (!whopUser) {
-      return res.status(401).json({ error: "Invalid Whop user" });
-    }
-    if (!whopUser.has_access) {
-      return res.status(403).json({ error: "No active Whop membership" });
-    }
-    const localUser = await syncWhopUser(whopUser);
-    const token = jwt.sign(
-      {
-        userId: localUser.id,
-        email: localUser.email,
-        whopUserId: whopUser.id
-      },
-      process.env.JWT_SECRET || "healthy-mama-jwt-secret-key-2025-production",
-      { expiresIn: "7d" }
-    );
-    req.user = localUser;
-    req.whopUser = whopUser;
-    req.token = token;
-    next();
-  } catch (error) {
-    console.error("Whop auth middleware error:", error);
-    res.status(500).json({ error: "Authentication failed" });
-  }
-}
-async function handleWhopAuth(req) {
-  try {
-    const userId = req.query.user_id || req.body.user_id;
-    const accessPass = req.query.access_pass || req.body.access_pass;
-    const userEmail = req.query.email || req.body.email;
-    if (!userId) {
-      throw new Error("No Whop user ID provided");
-    }
-    let whopUser = await validateWhopUser(userId, accessPass);
-    if (!whopUser && userEmail) {
-      whopUser = {
-        id: userId,
-        email: userEmail,
-        username: userEmail.split("@")[0],
-        has_access: true
-        // Trust Whop's iframe authentication
-      };
-    }
-    if (!whopUser) {
-      throw new Error("Failed to validate Whop user");
-    }
-    const localUser = await syncWhopUser(whopUser);
-    const token = jwt.sign(
-      {
-        userId: localUser.id,
-        email: localUser.email,
-        whopUserId: whopUser.id
-      },
-      process.env.JWT_SECRET || "healthy-mama-jwt-secret-key-2025-production",
-      { expiresIn: "7d" }
-    );
-    return {
-      token,
-      user: localUser,
-      whopUser
-    };
-  } catch (error) {
-    console.error("Whop auth error:", error);
-    throw error;
-  }
-}
-function validateWhopWebhook(req) {
-  try {
-    const signature = req.headers["x-whop-signature"];
-    if (!signature) return false;
-    return true;
-  } catch (error) {
-    console.error("Webhook validation error:", error);
-    return false;
-  }
-}
-var WHOP_API_BASE, WHOP_API_KEY, WHOP_APP_ID;
-var init_whopAuth = __esm({
-  "server/whopAuth.ts"() {
-    "use strict";
-    init_db();
-    init_schema();
-    WHOP_API_BASE = "https://api.whop.com/api/v2";
-    WHOP_API_KEY = process.env.WHOP_API_KEY;
-    WHOP_APP_ID = process.env.NEXT_PUBLIC_WHOP_APP_ID;
-  }
-});
-
 // server/auth.ts
 var auth_exports = {};
 __export(auth_exports, {
@@ -2410,7 +1635,7 @@ __export(auth_exports, {
   verifyToken: () => verifyToken
 });
 import bcrypt from "bcryptjs";
-import jwt2 from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { z as z2 } from "zod";
 async function hashPassword(password) {
   return await bcrypt.hash(password, 12);
@@ -2418,12 +1643,12 @@ async function hashPassword(password) {
 async function verifyPassword(password, hashedPassword) {
   return await bcrypt.compare(password, hashedPassword);
 }
-function generateToken(userId, isCreator = false) {
-  return jwt2.sign({ userId, isCreator }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+function generateToken(userId) {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 function verifyToken(token) {
   try {
-    const decoded = jwt2.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     return decoded;
   } catch (error) {
     if (error.name !== "JsonWebTokenError" || error.message !== "invalid signature") {
@@ -2431,7 +1656,7 @@ function verifyToken(token) {
     }
     for (const oldSecret of OLD_JWT_SECRETS) {
       try {
-        const decoded = jwt2.verify(token, oldSecret);
+        const decoded = jwt.verify(token, oldSecret);
         return { ...decoded, needsRefresh: true };
       } catch {
       }
@@ -2456,7 +1681,7 @@ async function authenticateToken(req, res, next) {
     }
     req.user = user;
     if (decoded.needsRefresh) {
-      const newToken = generateToken(decoded.userId, user.is_creator || false);
+      const newToken = generateToken(decoded.userId);
       res.setHeader("X-New-Token", newToken);
       res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
       console.log(`\u{1F504} Auto-refreshed token for user ${decoded.userId}`);
@@ -2477,7 +1702,7 @@ async function authenticateFlexible(req, res, next) {
         if (user) {
           req.user = user;
           if (decoded.needsRefresh) {
-            const newToken = generateToken(decoded.userId, user.is_creator || false);
+            const newToken = generateToken(decoded.userId);
             res.setHeader("X-New-Token", newToken);
             res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
             console.log(`\u{1F504} Auto-refreshed token for user ${decoded.userId}`);
@@ -2494,7 +1719,7 @@ async function authenticateFlexible(req, res, next) {
       const user = await storage.getUser(req.session.userId);
       if (user) {
         req.user = user;
-        const newToken = generateToken(user.id.toString(), user.is_creator || false);
+        const newToken = generateToken(user.id.toString());
         res.setHeader("X-New-Token", newToken);
         res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
         console.log(`\u{1F510} Generated new token for session user ${user.id}`);
@@ -2520,7 +1745,7 @@ async function registerUser(req, res) {
       password_hash: hashedPassword,
       full_name: validatedData.full_name
     });
-    const token = generateToken(user.id.toString(), user.is_creator || false);
+    const token = generateToken(user.id.toString());
     const { password_hash, ...userWithoutPassword } = user;
     res.status(201).json({
       user: userWithoutPassword,
@@ -2548,7 +1773,7 @@ async function loginUser(req, res) {
     if (!user.password_hash || !await verifyPassword(validatedData.password, user.password_hash)) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-    const token = generateToken(user.id.toString(), user.is_creator || false);
+    const token = generateToken(user.id.toString());
     if (req.session) {
       req.session.userId = user.id;
       req.session.save((err) => {
@@ -4570,7 +3795,7 @@ __export(cultureCacheManager_exports, {
   refreshUserCulturalData: () => refreshUserCulturalData,
   startCacheMaintenanceScheduler: () => startCacheMaintenanceScheduler
 });
-import { eq as eq6 } from "drizzle-orm";
+import { eq as eq2 } from "drizzle-orm";
 async function getGlobalCacheStats() {
   try {
     const result = await db.select({
@@ -4604,7 +3829,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
   try {
     if (!options.forceRefresh) {
       console.log(`\u{1F50D} Looking for cached data for: "${normalizedCuisine}"`);
-      const cachedEntries = await db.select().from(culturalCuisineCache).where(eq6(culturalCuisineCache.cuisine_name, normalizedCuisine)).limit(1);
+      const cachedEntries = await db.select().from(culturalCuisineCache).where(eq2(culturalCuisineCache.cuisine_name, normalizedCuisine)).limit(1);
       console.log(`\u{1F50D} Database query returned ${cachedEntries.length} results`);
       const cachedEntry = cachedEntries[0];
       if (cachedEntry) {
@@ -4614,7 +3839,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
           await db.update(culturalCuisineCache).set({
             access_count: cachedEntry.access_count + 1,
             last_accessed: /* @__PURE__ */ new Date()
-          }).where(eq6(culturalCuisineCache.id, cachedEntry.id));
+          }).where(eq2(culturalCuisineCache.id, cachedEntry.id));
           cache_metrics.hits++;
           const cachedResult = {
             meals: cachedEntry.meals_data,
@@ -4643,7 +3868,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
           return cachedResult;
         } else {
           console.log(`\u23F0 Global cache expired for ${normalizedCuisine}, age: ${ageHours.toFixed(1)}h`);
-          await db.delete(culturalCuisineCache).where(eq6(culturalCuisineCache.id, cachedEntry.id));
+          await db.delete(culturalCuisineCache).where(eq2(culturalCuisineCache.id, cachedEntry.id));
         }
       }
     }
@@ -5930,9 +5155,9 @@ var init_recipeComplexityCalculator = __esm({
        */
       extractEquipmentFromInstructions(instructionText) {
         const equipment = [];
-        Object.keys(EQUIPMENT_COMPLEXITY).forEach((eq9) => {
-          if (instructionText.includes(eq9.replace("_", " "))) {
-            equipment.push(eq9);
+        Object.keys(EQUIPMENT_COMPLEXITY).forEach((eq4) => {
+          if (instructionText.includes(eq4.replace("_", " "))) {
+            equipment.push(eq4);
           }
         });
         if (instructionText.includes("oven") || instructionText.includes("bake")) equipment.push("oven");
@@ -10676,7 +9901,7 @@ var save_cultural_meals_exports = {};
 __export(save_cultural_meals_exports, {
   saveCulturalMeals: () => saveCulturalMeals
 });
-import { eq as eq7, and as and5 } from "drizzle-orm";
+import { eq as eq3, and as and2 } from "drizzle-orm";
 async function saveCulturalMeals(req, res) {
   try {
     const userId = 9;
@@ -10688,9 +9913,9 @@ async function saveCulturalMeals(req, res) {
       });
     }
     const existingSave = await db.select().from(userSavedCulturalMeals).where(
-      and5(
-        eq7(userSavedCulturalMeals.user_id, userId),
-        eq7(userSavedCulturalMeals.cuisine_name, cuisine_name.toLowerCase())
+      and2(
+        eq3(userSavedCulturalMeals.user_id, userId),
+        eq3(userSavedCulturalMeals.cuisine_name, cuisine_name.toLowerCase())
       )
     ).limit(1);
     if (existingSave.length > 0) {
@@ -10700,7 +9925,7 @@ async function saveCulturalMeals(req, res) {
         custom_name: custom_name || `${cuisine_name} Meal Collection`,
         notes,
         updated_at: /* @__PURE__ */ new Date()
-      }).where(eq7(userSavedCulturalMeals.id, existingSave[0].id)).returning();
+      }).where(eq3(userSavedCulturalMeals.id, existingSave[0].id)).returning();
       console.log(`\u2705 Updated saved meals for user ${userId}, cuisine: ${cuisine_name}`);
       return res.json({
         success: true,
@@ -11046,7 +10271,7 @@ var init_culturalMealRankingEngine = __esm({
 });
 
 // server/llamaMealRanker.ts
-import fetch5 from "node-fetch";
+import fetch4 from "node-fetch";
 var LlamaMealRanker, llamaMealRanker;
 var init_llamaMealRanker = __esm({
   "server/llamaMealRanker.ts"() {
@@ -11144,7 +10369,7 @@ Score ALL ${maxMeals} meals. Numbers only, NO text in meal objects.`;
        * Call OpenAI API for GPT-4o mini inference
        */
       async callLlamaAPI(prompt) {
-        const response = await fetch5(this.apiEndpoint, {
+        const response = await fetch4(this.apiEndpoint, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${this.apiKey}`,
@@ -11755,7 +10980,7 @@ import dotenv from "dotenv";
 // server/routes.ts
 init_storage();
 import { createServer } from "http";
-import fetch6 from "node-fetch";
+import fetch5 from "node-fetch";
 
 // server/grok.ts
 import OpenAI from "openai";
@@ -13002,647 +12227,8 @@ var rateLimiter = new RateLimiter();
 setInterval(() => rateLimiter.cleanup(), 60 * 60 * 1e3);
 
 // server/routes.ts
-init_logmealEndpoint();
-
-// server/communityService.ts
-init_db();
 init_schema();
-import { eq as eq2, and as and2, desc as desc2, sql as sql3, gte as gte2 } from "drizzle-orm";
-var CommunityService = class {
-  // Create a new community
-  async createCommunity(userId, data) {
-    const [community] = await db.insert(communities).values({
-      ...data,
-      creator_id: userId,
-      member_count: 1
-    }).returning();
-    await db.insert(communityMembers).values({
-      community_id: community.id,
-      user_id: userId,
-      role: "creator",
-      points: 0,
-      level: 1
-    });
-    return community;
-  }
-  // Get all communities with optional filtering
-  async getCommunities(category, userId) {
-    let query = db.select().from(communities);
-    if (category) {
-      query = query.where(eq2(communities.category, category));
-    }
-    const allCommunities = await query.orderBy(desc2(communities.member_count));
-    if (userId) {
-      const userMemberships = await db.select().from(communityMembers).where(eq2(communityMembers.user_id, userId));
-      const membershipMap = new Set(userMemberships.map((m) => m.community_id));
-      return allCommunities.map((community) => ({
-        ...community,
-        isMember: membershipMap.has(community.id)
-      }));
-    }
-    return allCommunities;
-  }
-  // Get community details with member info
-  async getCommunityDetails(communityId, userId) {
-    const [community] = await db.select().from(communities).where(eq2(communities.id, communityId));
-    if (!community) {
-      throw new Error("Community not found");
-    }
-    let memberInfo = null;
-    if (userId) {
-      const [member] = await db.select().from(communityMembers).where(and2(
-        eq2(communityMembers.community_id, communityId),
-        eq2(communityMembers.user_id, userId)
-      ));
-      memberInfo = member;
-    }
-    const topContributors = await db.select().from(communityMembers).where(eq2(communityMembers.community_id, communityId)).orderBy(desc2(communityMembers.points)).limit(10);
-    return {
-      ...community,
-      memberInfo,
-      topContributors
-    };
-  }
-  // Join a community
-  async joinCommunity(userId, communityId) {
-    const existing = await db.select().from(communityMembers).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-    if (existing.length > 0) {
-      throw new Error("Already a member of this community");
-    }
-    const [member] = await db.insert(communityMembers).values({
-      community_id: communityId,
-      user_id: userId,
-      role: "member",
-      points: 0,
-      level: 1
-    }).returning();
-    await db.update(communities).set({
-      member_count: sql3`${communities.member_count} + 1`,
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq2(communities.id, communityId));
-    return member;
-  }
-  // Leave a community
-  async leaveCommunity(userId, communityId) {
-    const [member] = await db.select().from(communityMembers).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-    if (!member) {
-      throw new Error("Not a member of this community");
-    }
-    if (member.role === "creator") {
-      throw new Error("Creator cannot leave their own community");
-    }
-    await db.delete(communityMembers).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-    await db.update(communities).set({
-      member_count: sql3`${communities.member_count} - 1`,
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq2(communities.id, communityId));
-  }
-  // Share a meal plan to community
-  async shareMealPlan(userId, communityId, mealPlanId, data) {
-    const member = await this.verifyMembership(userId, communityId);
-    const [sharedPlan] = await db.insert(sharedMealPlans).values({
-      ...data,
-      community_id: communityId,
-      meal_plan_id: mealPlanId,
-      sharer_id: userId
-    }).returning();
-    await this.awardPoints(userId, communityId, 25, "shared_meal_plan");
-    return sharedPlan;
-  }
-  // Get shared meal plans for a community
-  async getCommunityMealPlans(communityId, filter) {
-    let query = db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.community_id, communityId));
-    if (filter?.featured) {
-      query = query.where(eq2(sharedMealPlans.is_featured, true));
-    }
-    const plans = await query.orderBy(desc2(sharedMealPlans.created_at));
-    if (filter?.tags && filter.tags.length > 0) {
-      return plans.filter((plan) => {
-        const planTags = plan.tags;
-        return filter.tags.some((tag) => planTags.includes(tag));
-      });
-    }
-    return plans;
-  }
-  // Add a review to a shared meal plan
-  async reviewMealPlan(userId, sharedPlanId, review) {
-    const existing = await db.select().from(mealPlanReviews).where(and2(
-      eq2(mealPlanReviews.shared_plan_id, sharedPlanId),
-      eq2(mealPlanReviews.reviewer_id, userId)
-    ));
-    if (existing.length > 0) {
-      throw new Error("You have already reviewed this meal plan");
-    }
-    const [newReview] = await db.insert(mealPlanReviews).values({
-      ...review,
-      shared_plan_id: sharedPlanId,
-      reviewer_id: userId
-    }).returning();
-    if (review.tried_it) {
-      await this.updatePlanSuccessRate(sharedPlanId);
-    }
-    const [sharedPlan] = await db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.id, sharedPlanId));
-    if (sharedPlan) {
-      await this.awardPoints(userId, sharedPlan.community_id, 10, "reviewed_meal_plan");
-    }
-    return newReview;
-  }
-  // Mark a meal plan as tried
-  async markPlanAsTried(userId, sharedPlanId) {
-    await db.update(sharedMealPlans).set({
-      tries: sql3`${sharedMealPlans.tries} + 1`
-    }).where(eq2(sharedMealPlans.id, sharedPlanId));
-    const [sharedPlan] = await db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.id, sharedPlanId));
-    if (sharedPlan) {
-      await this.awardPoints(userId, sharedPlan.community_id, 15, "tried_meal_plan");
-    }
-  }
-  // Get trending meal plans across all communities
-  async getTrendingMealPlans(limit = 10) {
-    const sevenDaysAgo = /* @__PURE__ */ new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const trending = await db.select().from(sharedMealPlans).where(gte2(sharedMealPlans.created_at, sevenDaysAgo)).orderBy(
-      desc2(sql3`${sharedMealPlans.likes} + ${sharedMealPlans.tries} * 2`)
-    ).limit(limit);
-    return trending;
-  }
-  // Private helper methods
-  async verifyMembership(userId, communityId) {
-    const [member] = await db.select().from(communityMembers).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-    if (!member) {
-      throw new Error("You must be a member to perform this action");
-    }
-    return member;
-  }
-  async awardPoints(userId, communityId, points, reason) {
-    await db.update(communityMembers).set({
-      points: sql3`${communityMembers.points} + ${points}`,
-      level: sql3`CASE 
-          WHEN ${communityMembers.points} + ${points} >= 500 THEN 5
-          WHEN ${communityMembers.points} + ${points} >= 300 THEN 4
-          WHEN ${communityMembers.points} + ${points} >= 150 THEN 3
-          WHEN ${communityMembers.points} + ${points} >= 50 THEN 2
-          ELSE 1
-        END`
-    }).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-  }
-  async updatePlanSuccessRate(sharedPlanId) {
-    const reviews = await db.select().from(mealPlanReviews).where(and2(
-      eq2(mealPlanReviews.shared_plan_id, sharedPlanId),
-      eq2(mealPlanReviews.tried_it, true)
-    ));
-    if (reviews.length > 0) {
-      const positiveReviews = reviews.filter((r) => r.rating >= 4).length;
-      const successRate = Math.round(positiveReviews / reviews.length * 100);
-      await db.update(sharedMealPlans).set({ success_rate: successRate }).where(eq2(sharedMealPlans.id, sharedPlanId));
-    }
-  }
-};
-var communityService = new CommunityService();
-
-// server/creatorService.ts
-init_db();
-init_schema();
-import { eq as eq3, and as and3, desc as desc3, sql as sql4, inArray } from "drizzle-orm";
-var CreatorService = class {
-  // Create or update creator profile
-  async upsertCreatorProfile(userId, data) {
-    const existing = await db.select().from(creatorProfiles).where(eq3(creatorProfiles.user_id, userId));
-    if (existing.length > 0) {
-      const [updated] = await db.update(creatorProfiles).set({
-        ...data,
-        updated_at: /* @__PURE__ */ new Date()
-      }).where(eq3(creatorProfiles.user_id, userId)).returning();
-      return updated;
-    } else {
-      const [created] = await db.insert(creatorProfiles).values({
-        ...data,
-        user_id: userId
-      }).returning();
-      return created;
-    }
-  }
-  // Get creator profile with stats
-  async getCreatorProfile(creatorId, viewerId) {
-    const [profile] = await db.select().from(creatorProfiles).where(eq3(creatorProfiles.user_id, creatorId));
-    if (!profile) {
-      return null;
-    }
-    const [user] = await db.select().from(users).where(eq3(users.id, creatorId));
-    let isFollowing = false;
-    if (viewerId) {
-      const follow = await db.select().from(creatorFollowers).where(and3(
-        eq3(creatorFollowers.creator_id, creatorId),
-        eq3(creatorFollowers.follower_id, viewerId)
-      ));
-      isFollowing = follow.length > 0;
-    }
-    const recentPlans = await db.select().from(sharedMealPlans).where(eq3(sharedMealPlans.sharer_id, creatorId)).orderBy(desc3(sharedMealPlans.created_at)).limit(6);
-    const reviews = await db.select().from(mealPlanReviews).innerJoin(
-      sharedMealPlans,
-      eq3(mealPlanReviews.shared_plan_id, sharedMealPlans.id)
-    ).where(eq3(sharedMealPlans.sharer_id, creatorId));
-    let averageRating = 0;
-    if (reviews.length > 0) {
-      const totalRating = reviews.reduce((sum, r) => sum + r.meal_plan_reviews.rating, 0);
-      averageRating = Math.round(totalRating / reviews.length * 10) / 10;
-    }
-    return {
-      ...profile,
-      user: {
-        id: user.id,
-        name: user.full_name || user.firstName || "Creator",
-        email: user.email,
-        profileImageUrl: user.profileImageUrl
-      },
-      isFollowing,
-      recentPlans,
-      averageRating,
-      totalReviews: reviews.length
-    };
-  }
-  // Follow a creator
-  async followCreator(followerId, creatorId) {
-    const existing = await db.select().from(creatorFollowers).where(and3(
-      eq3(creatorFollowers.creator_id, creatorId),
-      eq3(creatorFollowers.follower_id, followerId)
-    ));
-    if (existing.length > 0) {
-      throw new Error("Already following this creator");
-    }
-    const [follower] = await db.insert(creatorFollowers).values({
-      creator_id: creatorId,
-      follower_id: followerId
-    }).returning();
-    await db.update(creatorProfiles).set({
-      follower_count: sql4`${creatorProfiles.follower_count} + 1`,
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq3(creatorProfiles.user_id, creatorId));
-    return follower;
-  }
-  // Unfollow a creator
-  async unfollowCreator(followerId, creatorId) {
-    const result = await db.delete(creatorFollowers).where(and3(
-      eq3(creatorFollowers.creator_id, creatorId),
-      eq3(creatorFollowers.follower_id, followerId)
-    ));
-    if (result.rowCount === 0) {
-      throw new Error("Not following this creator");
-    }
-    await db.update(creatorProfiles).set({
-      follower_count: sql4`${creatorProfiles.follower_count} - 1`,
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq3(creatorProfiles.user_id, creatorId));
-  }
-  // Get creators followed by a user
-  async getFollowedCreators(userId) {
-    const follows = await db.select().from(creatorFollowers).innerJoin(
-      creatorProfiles,
-      eq3(creatorFollowers.creator_id, creatorProfiles.user_id)
-    ).innerJoin(
-      users,
-      eq3(creatorProfiles.user_id, users.id)
-    ).where(eq3(creatorFollowers.follower_id, userId)).orderBy(desc3(creatorFollowers.followed_at));
-    return follows.map((f) => ({
-      profile: f.creator_profiles,
-      user: {
-        id: f.users.id,
-        name: f.users.full_name || f.users.firstName || "Creator",
-        email: f.users.email,
-        profileImageUrl: f.users.profileImageUrl
-      },
-      followedAt: f.creator_followers.followed_at
-    }));
-  }
-  // Get meal plans from followed creators
-  async getFollowedCreatorsMealPlans(userId, limit = 20) {
-    const follows = await db.select().from(creatorFollowers).where(eq3(creatorFollowers.follower_id, userId));
-    if (follows.length === 0) {
-      return [];
-    }
-    const creatorIds = follows.map((f) => f.creator_id);
-    const plans = await db.select().from(sharedMealPlans).innerJoin(users, eq3(sharedMealPlans.sharer_id, users.id)).where(inArray(sharedMealPlans.sharer_id, creatorIds)).orderBy(desc3(sharedMealPlans.created_at)).limit(limit);
-    return plans.map((p) => ({
-      ...p.shared_meal_plans,
-      creator: {
-        id: p.users.id,
-        name: p.users.full_name || p.users.firstName || "Creator",
-        profileImageUrl: p.users.profileImageUrl
-      }
-    }));
-  }
-  // Get top creators by various metrics
-  async getTopCreators(metric = "followers", limit = 10) {
-    let query = db.select().from(creatorProfiles).innerJoin(users, eq3(creatorProfiles.user_id, users.id));
-    switch (metric) {
-      case "followers":
-        query = query.orderBy(desc3(creatorProfiles.follower_count));
-        break;
-      case "plans":
-        query = query.orderBy(desc3(creatorProfiles.total_plans_shared));
-        break;
-      case "rating":
-        query = query.orderBy(desc3(creatorProfiles.average_rating));
-        break;
-    }
-    const creators = await query.limit(limit);
-    return creators.map((c) => ({
-      profile: c.creator_profiles,
-      user: {
-        id: c.users.id,
-        name: c.users.full_name || c.users.firstName || "Creator",
-        email: c.users.email,
-        profileImageUrl: c.users.profileImageUrl
-      }
-    }));
-  }
-  // Update creator stats after sharing a meal plan
-  async updateCreatorStats(creatorId) {
-    const plans = await db.select().from(sharedMealPlans).where(eq3(sharedMealPlans.sharer_id, creatorId));
-    const reviews = await db.select().from(mealPlanReviews).innerJoin(
-      sharedMealPlans,
-      eq3(mealPlanReviews.shared_plan_id, sharedMealPlans.id)
-    ).where(eq3(sharedMealPlans.sharer_id, creatorId));
-    let averageRating = null;
-    if (reviews.length > 0) {
-      const totalRating = reviews.reduce((sum, r) => sum + r.meal_plan_reviews.rating, 0);
-      averageRating = Math.round(totalRating / reviews.length);
-    }
-    await db.update(creatorProfiles).set({
-      total_plans_shared: plans.length,
-      average_rating: averageRating,
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq3(creatorProfiles.user_id, creatorId));
-  }
-  // Search creators by specialty
-  async searchCreators(query, specialties) {
-    const allCreators = await db.select().from(creatorProfiles).innerJoin(users, eq3(creatorProfiles.user_id, users.id));
-    let filtered = allCreators;
-    if (query) {
-      filtered = allCreators.filter((c) => {
-        const name = c.users.full_name || c.users.firstName || "";
-        const bio = c.creator_profiles.bio || "";
-        return name.toLowerCase().includes(query.toLowerCase()) || bio.toLowerCase().includes(query.toLowerCase());
-      });
-    }
-    if (specialties && specialties.length > 0) {
-      filtered = filtered.filter((c) => {
-        const creatorSpecialties = c.creator_profiles.specialties;
-        return specialties.some((s) => creatorSpecialties.includes(s));
-      });
-    }
-    return filtered.map((c) => ({
-      profile: c.creator_profiles,
-      user: {
-        id: c.users.id,
-        name: c.users.full_name || c.users.firstName || "Creator",
-        email: c.users.email,
-        profileImageUrl: c.users.profileImageUrl
-      }
-    }));
-  }
-};
-var creatorService = new CreatorService();
-
-// server/mealPlanSharingService.ts
-init_db();
-init_schema();
-import { eq as eq4, and as and4, desc as desc4, sql as sql5, gte as gte3 } from "drizzle-orm";
-var MealPlanSharingService = class {
-  // Prepare a meal plan for sharing (remove personal data, calculate metrics)
-  async prepareMealPlanForSharing(mealPlanId, userId) {
-    const [plan] = await db.select().from(mealPlans).where(and4(
-      eq4(mealPlans.id, mealPlanId),
-      eq4(mealPlans.userId, userId)
-    ));
-    if (!plan) {
-      throw new Error("Meal plan not found or you don't have permission");
-    }
-    const mealPlanData = plan.mealPlan;
-    let totalCost = 0;
-    let totalPrepTime = 0;
-    let totalDifficulty = 0;
-    let totalCalories = 0;
-    let recipeCount = 0;
-    const previewImages = [];
-    const tags = /* @__PURE__ */ new Set();
-    for (const dayKey in mealPlanData) {
-      const day = mealPlanData[dayKey];
-      if (day && typeof day === "object") {
-        for (const mealType in day) {
-          const meal = day[mealType];
-          if (meal && typeof meal === "object") {
-            recipeCount++;
-            if (meal.estimatedCost) totalCost += parseFloat(meal.estimatedCost);
-            if (meal.cookingTime) totalPrepTime += parseInt(meal.cookingTime);
-            if (meal.difficulty) totalDifficulty += meal.difficulty;
-            if (meal.nutritionInfo?.calories) totalCalories += meal.nutritionInfo.calories;
-            if (meal.imageUrl && previewImages.length < 3) {
-              previewImages.push(meal.imageUrl);
-            }
-            if (meal.cuisine) tags.add(meal.cuisine.toLowerCase());
-            if (meal.dietType) tags.add(meal.dietType.toLowerCase());
-            if (totalPrepTime <= 30) tags.add("quick");
-            if (totalCost / recipeCount < 5) tags.add("budget-friendly");
-          }
-        }
-      }
-    }
-    const avgServings = 4;
-    const metrics = {
-      cost_per_serving: recipeCount > 0 ? Math.round(totalCost / recipeCount / avgServings * 100) / 100 : 0,
-      total_prep_time: totalPrepTime,
-      average_difficulty: recipeCount > 0 ? Math.round(totalDifficulty / recipeCount) : 1,
-      nutrition_score: this.calculateNutritionScore(totalCalories / recipeCount),
-      total_calories: Math.round(totalCalories),
-      total_recipes: recipeCount
-    };
-    if (metrics.cost_per_serving < 3) tags.add("ultra-budget");
-    if (metrics.average_difficulty <= 2) tags.add("beginner-friendly");
-    if (metrics.nutrition_score >= 80) tags.add("nutritious");
-    const sanitizedMealPlan = this.sanitizeMealPlan(mealPlanData);
-    return {
-      mealPlan: sanitizedMealPlan,
-      metrics,
-      preview_images: previewImages,
-      tags: Array.from(tags)
-    };
-  }
-  // Share a meal plan to a community
-  async shareMealPlan(userId, communityId, mealPlanId, title, description) {
-    const prepared = await this.prepareMealPlanForSharing(mealPlanId, userId);
-    const [shared] = await db.insert(sharedMealPlans).values({
-      community_id: communityId,
-      meal_plan_id: mealPlanId,
-      sharer_id: userId,
-      title,
-      description,
-      tags: prepared.tags,
-      preview_images: prepared.preview_images,
-      metrics: prepared.metrics,
-      likes: 0,
-      tries: 0,
-      success_rate: null,
-      is_featured: false
-    }).returning();
-    return shared;
-  }
-  // Remix a shared meal plan
-  async remixMealPlan(userId, originalPlanId, remixedMealPlanId, changes, communityId) {
-    const [original] = await db.select().from(sharedMealPlans).where(eq4(sharedMealPlans.id, originalPlanId));
-    if (!original) {
-      throw new Error("Original shared plan not found");
-    }
-    const [remix] = await db.insert(mealPlanRemixes).values({
-      original_plan_id: originalPlanId,
-      remixer_id: userId,
-      remixed_plan_id: remixedMealPlanId,
-      community_id: communityId,
-      changes_made: changes
-    }).returning();
-    return remix;
-  }
-  // Get personalized meal plan recommendations
-  async getRecommendedMealPlans(userId, limit = 10) {
-    const [profile] = await db.select().from(profiles).where(eq4(profiles.user_id, userId));
-    if (!profile) {
-      return this.getTrendingMealPlans(limit);
-    }
-    const allPlans = await db.select().from(sharedMealPlans).orderBy(desc4(sharedMealPlans.created_at)).limit(limit * 3);
-    const scoredPlans = allPlans.map((plan) => {
-      let score = 0;
-      const cultural = profile.cultural_background || [];
-      const planTags = plan.tags || [];
-      const culturalMatch = cultural.some((c) => planTags.includes(c.toLowerCase()));
-      if (culturalMatch) score += 30;
-      const goals = profile.goals || [];
-      if (goals.includes("Save Money") && planTags.includes("budget-friendly")) score += 20;
-      if (goals.includes("Eat Healthier") && planTags.includes("nutritious")) score += 20;
-      if (goals.includes("Save Time") && planTags.includes("quick")) score += 20;
-      if (plan.success_rate && plan.success_rate > 80) score += 15;
-      score += Math.min(plan.tries || 0, 20);
-      return { ...plan, score };
-    });
-    scoredPlans.sort((a, b) => b.score - a.score);
-    return scoredPlans.slice(0, limit);
-  }
-  // Get trending meal plans
-  async getTrendingMealPlans(limit = 10) {
-    const threeDaysAgo = /* @__PURE__ */ new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    const trending = await db.select().from(sharedMealPlans).where(gte3(sharedMealPlans.created_at, threeDaysAgo)).orderBy(
-      desc4(sql5`${sharedMealPlans.likes} * 2 + ${sharedMealPlans.tries} * 3`)
-    ).limit(limit);
-    return trending;
-  }
-  // Like a meal plan
-  async likeMealPlan(sharedPlanId) {
-    await db.update(sharedMealPlans).set({
-      likes: sql5`${sharedMealPlans.likes} + 1`
-    }).where(eq4(sharedMealPlans.id, sharedPlanId));
-  }
-  // Get meal plan with creator info
-  async getMealPlanWithCreator(sharedPlanId) {
-    const [plan] = await db.select().from(sharedMealPlans).innerJoin(users, eq4(sharedMealPlans.sharer_id, users.id)).where(eq4(sharedMealPlans.id, sharedPlanId));
-    if (!plan) return null;
-    return {
-      ...plan.shared_meal_plans,
-      creator: {
-        id: plan.users.id,
-        name: plan.users.full_name || plan.users.firstName || "Creator",
-        email: plan.users.email,
-        profileImageUrl: plan.users.profileImageUrl
-      }
-    };
-  }
-  // Search meal plans
-  async searchMealPlans(query, filters) {
-    let plans = await db.select().from(sharedMealPlans).orderBy(desc4(sharedMealPlans.created_at));
-    if (query) {
-      plans = plans.filter(
-        (p) => p.title.toLowerCase().includes(query.toLowerCase()) || p.description && p.description.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-    if (filters) {
-      if (filters.tags && filters.tags.length > 0) {
-        plans = plans.filter((p) => {
-          const planTags = p.tags;
-          return filters.tags.some((tag) => planTags.includes(tag));
-        });
-      }
-      if (filters.maxCost) {
-        plans = plans.filter((p) => {
-          const metrics = p.metrics;
-          return metrics?.cost_per_serving <= filters.maxCost;
-        });
-      }
-      if (filters.maxTime) {
-        plans = plans.filter((p) => {
-          const metrics = p.metrics;
-          return metrics?.total_prep_time <= filters.maxTime;
-        });
-      }
-      if (filters.minRating) {
-        plans = plans.filter(
-          (p) => p.success_rate && p.success_rate >= filters.minRating * 20
-        );
-      }
-    }
-    return plans;
-  }
-  // Get meal plans by creator
-  async getCreatorMealPlans(creatorId, limit = 20) {
-    const plans = await db.select().from(sharedMealPlans).where(eq4(sharedMealPlans.sharer_id, creatorId)).orderBy(desc4(sharedMealPlans.created_at)).limit(limit);
-    return plans;
-  }
-  // Private helper methods
-  calculateNutritionScore(avgCalories) {
-    if (avgCalories >= 400 && avgCalories <= 700) return 100;
-    if (avgCalories >= 350 && avgCalories <= 800) return 80;
-    if (avgCalories >= 300 && avgCalories <= 900) return 60;
-    return 40;
-  }
-  sanitizeMealPlan(mealPlan) {
-    const sanitized = { ...mealPlan };
-    for (const dayKey in sanitized) {
-      const day = sanitized[dayKey];
-      if (day && typeof day === "object") {
-        for (const mealType in day) {
-          const meal = day[mealType];
-          if (meal && typeof meal === "object") {
-            delete meal.personalNotes;
-            delete meal.userRating;
-            delete meal.customModifications;
-          }
-        }
-      }
-    }
-    return sanitized;
-  }
-};
-var mealPlanSharingService = new MealPlanSharingService();
-
-// server/routes.ts
-init_whopAuth();
-init_schema();
-init_db();
 import Stripe from "stripe";
-import { eq as eq8 } from "drizzle-orm";
 var YOUTUBE_API_KEY2 = process.env.YOUTUBE_API_KEY;
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
@@ -13655,127 +12241,6 @@ async function registerRoutes(app2) {
   app2.post("/api/auth/register", registerUser2);
   app2.post("/api/auth/login", loginUser2);
   app2.get("/api/auth/user", authenticateToken2, getCurrentUser2);
-  app2.post("/api/user/toggle-creator", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      const newCreatorStatus = !(user.is_creator || false);
-      await db.update(users).set({
-        is_creator: newCreatorStatus,
-        updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq8(users.id, userId));
-      const { generateToken: generateToken2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
-      const newToken = generateToken2(userId, newCreatorStatus);
-      console.log(`\u{1F504} Toggled creator status for user ${userId}: ${newCreatorStatus}`);
-      res.json({
-        message: `Creator mode ${newCreatorStatus ? "enabled" : "disabled"}`,
-        is_creator: newCreatorStatus,
-        token: newToken
-      });
-    } catch (error) {
-      console.error("Error toggling creator status:", error);
-      res.status(500).json({ message: "Failed to toggle creator status" });
-    }
-  });
-  app2.post("/api/whop/auth", async (req, res) => {
-    try {
-      const result = await handleWhopAuth(req);
-      res.json({
-        success: true,
-        token: result.token,
-        user: result.user,
-        whopUser: result.whopUser
-      });
-    } catch (error) {
-      console.error("Whop auth error:", error);
-      res.status(401).json({ error: "Failed to authenticate with Whop" });
-    }
-  });
-  app2.post("/api/whop/validate", async (req, res) => {
-    try {
-      const { user_id, access_pass, email } = req.body;
-      if (!user_id) {
-        return res.status(400).json({ error: "No user ID provided" });
-      }
-      const whopUser = await validateWhopUser(user_id, access_pass);
-      if (!whopUser) {
-        if (email) {
-          const result = await handleWhopAuth(req);
-          return res.json({
-            success: true,
-            token: result.token,
-            user: result.user,
-            has_access: true
-          });
-        }
-        return res.status(401).json({ error: "Invalid Whop user" });
-      }
-      const { syncWhopUser: syncWhopUser2 } = await Promise.resolve().then(() => (init_whopAuth(), whopAuth_exports));
-      const localUser = await syncWhopUser2(whopUser);
-      const { generateToken: generateToken2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
-      const appToken = generateToken2(localUser.id, false);
-      res.json({
-        success: true,
-        user: localUser,
-        token: appToken,
-        has_access: whopUser.has_access
-      });
-    } catch (error) {
-      console.error("Whop validation error:", error);
-      res.status(500).json({ error: "Failed to validate Whop session" });
-    }
-  });
-  app2.post("/api/whop/webhook", async (req, res) => {
-    try {
-      if (!validateWhopWebhook(req)) {
-        return res.status(401).json({ error: "Invalid webhook signature" });
-      }
-      const { event, data } = req.body;
-      console.log("Whop webhook received:", event);
-      switch (event) {
-        case "membership.created":
-        case "membership.updated":
-          if (data.user_id) {
-            const whopUser = await validateWhopUser(data.user_id);
-            if (whopUser) {
-              const { syncWhopUser: syncWhopUser2 } = await Promise.resolve().then(() => (init_whopAuth(), whopAuth_exports));
-              await syncWhopUser2(whopUser);
-            }
-          }
-          break;
-        case "membership.deleted":
-        case "membership.expired":
-          break;
-      }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Webhook error:", error);
-      res.status(500).json({ error: "Webhook processing failed" });
-    }
-  });
-  app2.get("/api/whop/membership", requireWhopAuth, async (req, res) => {
-    try {
-      res.json({
-        has_access: req.whopUser.has_access,
-        user: req.whopUser,
-        features: {
-          unlimited_meal_plans: req.whopUser.has_access,
-          premium_recipes: req.whopUser.has_access,
-          instacart_integration: req.whopUser.has_access,
-          family_profiles: req.whopUser.has_access
-        }
-      });
-    } catch (error) {
-      console.error("Membership check error:", error);
-      res.status(500).json({ error: "Failed to check membership" });
-    }
-  });
   const { passport: passport2, isGoogleOAuthConfigured: isGoogleOAuthConfigured2, handleGoogleCallback: handleGoogleCallback2 } = await Promise.resolve().then(() => (init_googleAuth(), googleAuth_exports));
   if (isGoogleOAuthConfigured2) {
     app2.get("/api/auth/google", (req, res, next) => {
@@ -13991,7 +12456,7 @@ async function registerRoutes(app2) {
                 }
               }
               const spoonacularUrl = `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`;
-              const response = await fetch6(spoonacularUrl);
+              const response = await fetch5(spoonacularUrl);
               const data = await response.json();
               if (data.results && data.results.length > 0) {
                 spoonacularTime = data.results[0].readyInMinutes || 30;
@@ -14090,13 +12555,13 @@ async function registerRoutes(app2) {
             const getUSDANutrition = async (foodName) => {
               try {
                 console.log(`Looking up USDA nutrition for: "${foodName}"`);
-                const searchResponse = await fetch6(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
+                const searchResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
                 if (searchResponse.ok) {
                   const searchData = await searchResponse.json();
                   if (searchData.foods && searchData.foods.length > 0) {
                     const foodId = searchData.foods[0].fdcId;
                     console.log(`Found USDA food ID ${foodId} for "${foodName}"`);
-                    const nutritionResponse = await fetch6(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
+                    const nutritionResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
                     if (nutritionResponse.ok) {
                       const nutritionData2 = await nutritionResponse.json();
                       const nutrients = nutritionData2.foodNutrients || [];
@@ -14808,25 +13273,172 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to delete food log" });
     }
   });
-  app2.post("/api/detect-foods-logmeal", handleLogMealDetection);
-  app2.get("/api/logmeal-status", async (req, res) => {
+  app2.post("/api/detect-foods-logmeal", async (req, res) => {
     try {
-      const { dailyCallCount: dailyCallCount2, MAX_DAILY_CALLS: MAX_DAILY_CALLS2, lastResetDate: lastResetDate2 } = await Promise.resolve().then(() => (init_logmealEndpoint(), logmealEndpoint_exports));
+      console.log("\u{1F354} === LOGMEAL API ENDPOINT CALLED ===");
+      const { image } = req.body;
+      if (!image) {
+        console.error("\u274C No image data provided");
+        return res.status(400).json({ error: "Image data is required" });
+      }
+      console.log("\u{1F4CA} Received image data:", {
+        length: image.length,
+        isBase64: image.includes("base64"),
+        prefix: image.substring(0, 50)
+      });
+      const LOGMEAL_API_KEY = "79cbe9badc6d24d77ffbcd536692c6fd697de89d";
+      const LOGMEAL_API_URL = "https://api.logmeal.es/v2";
+      console.log("\u{1F511} Using LogMeal API");
+      const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
+      const imageBuffer = Buffer.from(base64Image, "base64");
+      console.log("\u{1F4E6} Image buffer size:", imageBuffer.length);
+      const FormData = __require("form-data");
+      const formData = new FormData();
+      formData.append("image", imageBuffer, {
+        filename: "image.jpg",
+        contentType: "image/jpeg"
+      });
+      console.log("\u{1F4E1} Calling LogMeal API for dish recognition...");
+      let logmealResponse;
+      try {
+        logmealResponse = await fetch5(`${LOGMEAL_API_URL}/recognition/dish`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${LOGMEAL_API_KEY}`,
+            ...formData.getHeaders()
+          },
+          body: formData
+        });
+        if (!logmealResponse.ok) {
+          console.log("\u26A0\uFE0F Dish endpoint failed, trying type endpoint...");
+          const formData2 = new FormData();
+          formData2.append("image", imageBuffer, {
+            filename: "image.jpg",
+            contentType: "image/jpeg"
+          });
+          logmealResponse = await fetch5(`${LOGMEAL_API_URL}/image/recognition/type`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${LOGMEAL_API_KEY}`,
+              ...formData2.getHeaders()
+            },
+            body: formData2
+          });
+        }
+      } catch (fetchError) {
+        console.error("\u274C Network error calling LogMeal API:", fetchError.message);
+        return res.status(500).json({
+          error: "Network error calling LogMeal API",
+          details: fetchError.message
+        });
+      }
+      if (!logmealResponse.ok) {
+        const errorText = await logmealResponse.text();
+        console.error("\u274C LogMeal API HTTP error:", logmealResponse.status);
+        console.error("\u274C Error response:", errorText);
+        return res.status(500).json({
+          error: "LogMeal API request failed",
+          status: logmealResponse.status,
+          details: errorText
+        });
+      }
+      const logmealData = await logmealResponse.json();
+      console.log("\u2705 LogMeal API response received");
+      console.log("\u{1F4CA} Response structure:", Object.keys(logmealData));
+      const detectedIngredients = [];
+      const getUnitForFood = (foodName) => {
+        const lowerName = foodName.toLowerCase();
+        if (lowerName.includes("rice") || lowerName.includes("pasta")) return "cup";
+        if (lowerName.includes("chicken") || lowerName.includes("beef") || lowerName.includes("pork") || lowerName.includes("steak")) return "oz";
+        if (lowerName.includes("milk") || lowerName.includes("juice") || lowerName.includes("soup")) return "cup";
+        if (lowerName.includes("bread") || lowerName.includes("toast")) return "slice";
+        if (lowerName.includes("egg")) return "egg";
+        if (lowerName.includes("apple") || lowerName.includes("banana") || lowerName.includes("orange")) return "piece";
+        return "serving";
+      };
+      const getMeasureType = (unit) => {
+        if (unit === "cup" || unit === "tbsp" || unit === "tsp" || unit === "ml") return "volume";
+        if (unit === "oz" || unit === "g" || unit === "lb") return "weight";
+        return "count";
+      };
+      if (logmealData.recognition_results) {
+        console.log(`\u{1F37D}\uFE0F Found ${logmealData.recognition_results.length} dishes`);
+        for (const result of logmealData.recognition_results) {
+          const foodName = result.name || result.food_name || "Unknown";
+          const confidence = result.prob || result.probability || 0.5;
+          if (confidence < 0.3) continue;
+          if (foodName.toLowerCase().includes("unknown")) continue;
+          const unit = getUnitForFood(foodName);
+          detectedIngredients.push({
+            id: `food-${Date.now()}-${Math.random()}`,
+            name: foodName,
+            confidence,
+            amount: 1,
+            unit,
+            measureType: getMeasureType(unit),
+            source: "dish"
+          });
+          console.log(`  \u2705 Dish: ${foodName} (${(confidence * 100).toFixed(1)}%)`);
+        }
+      }
+      if (logmealData.food_types && Array.isArray(logmealData.food_types)) {
+        console.log(`\u{1F3F7}\uFE0F Found ${logmealData.food_types.length} food types`);
+        for (const foodType of logmealData.food_types) {
+          if (foodType.name === "food" && foodType.probs > 0.8) {
+            console.log("  \u2139\uFE0F Confirmed as food item");
+          }
+        }
+      }
+      if (logmealData.ingredients) {
+        console.log(`\u{1F958} Found ingredients:`, logmealData.ingredients);
+        for (const ingredient of logmealData.ingredients) {
+          const ingredientName = ingredient.name || ingredient;
+          const unit = getUnitForFood(ingredientName);
+          detectedIngredients.push({
+            id: `ingredient-${Date.now()}-${Math.random()}`,
+            name: ingredientName,
+            confidence: 0.8,
+            amount: ingredient.quantity || 1,
+            unit,
+            measureType: getMeasureType(unit),
+            source: "ingredient"
+          });
+        }
+      }
+      if (logmealData.foodItems && Array.isArray(logmealData.foodItems)) {
+        console.log(`\u{1F355} Found ${logmealData.foodItems.length} food items`);
+        for (const item of logmealData.foodItems) {
+          const itemName = item.name || item.food_name || item.title;
+          if (!itemName) continue;
+          const confidence = item.confidence || item.score || 0.7;
+          const unit = getUnitForFood(itemName);
+          detectedIngredients.push({
+            id: `item-${Date.now()}-${Math.random()}`,
+            name: itemName,
+            confidence,
+            amount: item.quantity || 1,
+            unit,
+            measureType: getMeasureType(unit),
+            source: "foodItem"
+          });
+          console.log(`  \u2705 Food item: ${itemName} (${(confidence * 100).toFixed(1)}%)`);
+        }
+      }
+      detectedIngredients.sort((a, b) => b.confidence - a.confidence);
+      const finalIngredients = detectedIngredients.slice(0, 15);
+      console.log(`\u{1F4CA} Final detection: ${finalIngredients.length} food items`);
       res.json({
-        callsUsed: dailyCallCount2 || 0,
-        maxCalls: MAX_DAILY_CALLS2 || 180,
-        remaining: (MAX_DAILY_CALLS2 || 180) - (dailyCallCount2 || 0),
-        lastResetDate: lastResetDate2 || (/* @__PURE__ */ new Date()).toDateString(),
-        status: (dailyCallCount2 || 0) >= (MAX_DAILY_CALLS2 || 180) ? "limited" : "available"
+        ingredients: finalIngredients,
+        raw: {
+          hasRecognitionResults: !!logmealData.recognition_results,
+          hasFoodTypes: !!logmealData.food_types,
+          hasIngredients: !!logmealData.ingredients,
+          hasFoodItems: !!logmealData.foodItems
+        }
       });
     } catch (error) {
-      res.json({
-        callsUsed: 0,
-        maxCalls: 180,
-        remaining: 180,
-        lastResetDate: (/* @__PURE__ */ new Date()).toDateString(),
-        status: "available"
-      });
+      console.error("Error in LogMeal API detection:", error);
+      res.status(500).json({ error: "Failed to detect foods with LogMeal" });
     }
   });
   app2.get("/api/test-vision", async (req, res) => {
@@ -14841,7 +13453,7 @@ async function registerRoutes(app2) {
         }]
       };
       console.log("\u{1F9EA} Testing Vision API with minimal request...");
-      const response = await fetch6(testUrl, {
+      const response = await fetch5(testUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(testRequest)
@@ -14912,7 +13524,7 @@ async function registerRoutes(app2) {
       console.log("\u{1F517} Vision API URL:", VISION_API_URL);
       let visionResponse;
       try {
-        visionResponse = await fetch6(VISION_API_URL, {
+        visionResponse = await fetch5(VISION_API_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -15159,7 +13771,7 @@ async function registerRoutes(app2) {
       }
       if (process.env.USDA_API_KEY) {
         try {
-          const searchResponse = await fetch6(
+          const searchResponse = await fetch5(
             `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`
           );
           if (searchResponse.ok) {
@@ -15368,7 +13980,7 @@ async function registerRoutes(app2) {
         console.log("Goal Weights:", filters.goalWeights);
         console.log("Weight-based Enhanced:", filters.weightBasedEnhanced);
       }
-      const response = await fetch6("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch5("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -16510,7 +15122,7 @@ async function registerRoutes(app2) {
     try {
       const userId = 9;
       const { userSavedCulturalMeals: userSavedCulturalMeals2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq9 } = await import("drizzle-orm");
+      const { eq: eq4 } = await import("drizzle-orm");
       const savedMeals = [];
       res.json({
         success: true,
@@ -16804,325 +15416,6 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.get("/api/communities", async (req, res) => {
-    try {
-      const category = req.query.category;
-      const userId = req.user?.id;
-      const communities2 = await communityService.getCommunities(category, userId);
-      res.json(communities2);
-    } catch (error) {
-      console.error("Error fetching communities:", error);
-      res.status(500).json({ message: "Failed to fetch communities" });
-    }
-  });
-  app2.get("/api/communities/:id", async (req, res) => {
-    try {
-      const communityId = Number(req.params.id);
-      const userId = req.user?.id;
-      const community = await communityService.getCommunityDetails(communityId, userId);
-      res.json(community);
-    } catch (error) {
-      console.error("Error fetching community details:", error);
-      res.status(500).json({ message: "Failed to fetch community details" });
-    }
-  });
-  app2.post("/api/communities", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const { name, description, category, cover_image } = req.body;
-      if (!name || !description || !category) {
-        return res.status(400).json({ message: "Name, description, and category are required" });
-      }
-      const community = await communityService.createCommunity(userId, {
-        name,
-        description,
-        category,
-        cover_image
-      });
-      res.json(community);
-    } catch (error) {
-      console.error("Error creating community:", error);
-      res.status(500).json({ message: "Failed to create community" });
-    }
-  });
-  app2.post("/api/communities/:id/join", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const communityId = Number(req.params.id);
-      const member = await communityService.joinCommunity(userId, communityId);
-      res.json(member);
-    } catch (error) {
-      console.error("Error joining community:", error);
-      if (error.message === "Already a member of this community") {
-        return res.status(400).json({ message: error.message });
-      }
-      res.status(500).json({ message: "Failed to join community" });
-    }
-  });
-  app2.post("/api/communities/:id/leave", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const communityId = Number(req.params.id);
-      await communityService.leaveCommunity(userId, communityId);
-      res.json({ message: "Successfully left community" });
-    } catch (error) {
-      console.error("Error leaving community:", error);
-      if (error.message === "Creator cannot leave their own community") {
-        return res.status(400).json({ message: error.message });
-      }
-      res.status(500).json({ message: "Failed to leave community" });
-    }
-  });
-  app2.post("/api/communities/:id/share-meal-plan", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const communityId = Number(req.params.id);
-      const { meal_plan_id, title, description } = req.body;
-      if (!meal_plan_id || !title) {
-        return res.status(400).json({ message: "meal_plan_id and title are required" });
-      }
-      const sharedPlan = await mealPlanSharingService.shareMealPlan(
-        userId,
-        communityId,
-        meal_plan_id,
-        title,
-        description
-      );
-      res.json(sharedPlan);
-    } catch (error) {
-      console.error("Error sharing meal plan:", error);
-      res.status(500).json({ message: "Failed to share meal plan" });
-    }
-  });
-  app2.get("/api/communities/:id/meal-plans", async (req, res) => {
-    try {
-      const communityId = Number(req.params.id);
-      const { featured, tags } = req.query;
-      const filter = {};
-      if (featured === "true") filter.featured = true;
-      if (tags) filter.tags = tags.split(",");
-      const plans = await communityService.getCommunityMealPlans(communityId, filter);
-      res.json(plans);
-    } catch (error) {
-      console.error("Error fetching community meal plans:", error);
-      res.status(500).json({ message: "Failed to fetch community meal plans" });
-    }
-  });
-  app2.get("/api/trending-meal-plans", async (req, res) => {
-    try {
-      const limit = parseInt(req.query.limit) || 10;
-      const trending = await mealPlanSharingService.getTrendingMealPlans(limit);
-      res.json(trending);
-    } catch (error) {
-      console.error("Error fetching trending meal plans:", error);
-      res.status(500).json({ message: "Failed to fetch trending meal plans" });
-    }
-  });
-  app2.get("/api/recommended-meal-plans", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const limit = parseInt(req.query.limit) || 10;
-      const recommendations = await mealPlanSharingService.getRecommendedMealPlans(userId, limit);
-      res.json(recommendations);
-    } catch (error) {
-      console.error("Error fetching recommended meal plans:", error);
-      res.status(500).json({ message: "Failed to fetch recommended meal plans" });
-    }
-  });
-  app2.post("/api/meal-plans/:id/review", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const sharedPlanId = Number(req.params.id);
-      const { rating, comment, tried_it, modifications, images } = req.body;
-      if (!rating || rating < 1 || rating > 5) {
-        return res.status(400).json({ message: "Rating must be between 1 and 5" });
-      }
-      const review = await communityService.reviewMealPlan(userId, sharedPlanId, {
-        rating,
-        comment,
-        tried_it,
-        modifications,
-        images
-      });
-      res.json(review);
-    } catch (error) {
-      console.error("Error reviewing meal plan:", error);
-      if (error.message === "You have already reviewed this meal plan") {
-        return res.status(400).json({ message: error.message });
-      }
-      res.status(500).json({ message: "Failed to review meal plan" });
-    }
-  });
-  app2.post("/api/meal-plans/:id/try", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const sharedPlanId = Number(req.params.id);
-      await communityService.markPlanAsTried(userId, sharedPlanId);
-      res.json({ message: "Marked as tried successfully" });
-    } catch (error) {
-      console.error("Error marking meal plan as tried:", error);
-      res.status(500).json({ message: "Failed to mark meal plan as tried" });
-    }
-  });
-  app2.post("/api/meal-plans/:id/like", authenticateToken2, async (req, res) => {
-    try {
-      const sharedPlanId = Number(req.params.id);
-      await mealPlanSharingService.likeMealPlan(sharedPlanId);
-      res.json({ message: "Liked successfully" });
-    } catch (error) {
-      console.error("Error liking meal plan:", error);
-      res.status(500).json({ message: "Failed to like meal plan" });
-    }
-  });
-  app2.get("/api/search-meal-plans", async (req, res) => {
-    try {
-      const { q, tags, maxCost, maxTime, minRating } = req.query;
-      const filters = {};
-      if (tags) filters.tags = tags.split(",");
-      if (maxCost) filters.maxCost = parseFloat(maxCost);
-      if (maxTime) filters.maxTime = parseInt(maxTime);
-      if (minRating) filters.minRating = parseInt(minRating);
-      const results = await mealPlanSharingService.searchMealPlans(q || "", filters);
-      res.json(results);
-    } catch (error) {
-      console.error("Error searching meal plans:", error);
-      res.status(500).json({ message: "Failed to search meal plans" });
-    }
-  });
-  app2.get("/api/creators/:id", async (req, res) => {
-    try {
-      const creatorId = req.params.id;
-      const viewerId = req.user?.id;
-      const profile = await creatorService.getCreatorProfile(creatorId, viewerId);
-      if (!profile) {
-        return res.status(404).json({ message: "Creator profile not found" });
-      }
-      res.json(profile);
-    } catch (error) {
-      console.error("Error fetching creator profile:", error);
-      res.status(500).json({ message: "Failed to fetch creator profile" });
-    }
-  });
-  app2.put("/api/creators/profile", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const { bio, specialties, certifications, social_links } = req.body;
-      const profile = await creatorService.upsertCreatorProfile(userId, {
-        bio,
-        specialties,
-        certifications,
-        social_links
-      });
-      res.json(profile);
-    } catch (error) {
-      console.error("Error updating creator profile:", error);
-      res.status(500).json({ message: "Failed to update creator profile" });
-    }
-  });
-  app2.post("/api/creators/:id/follow", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const creatorId = req.params.id;
-      const follow = await creatorService.followCreator(userId, creatorId);
-      res.json(follow);
-    } catch (error) {
-      console.error("Error following creator:", error);
-      if (error.message === "Already following this creator") {
-        return res.status(400).json({ message: error.message });
-      }
-      res.status(500).json({ message: "Failed to follow creator" });
-    }
-  });
-  app2.post("/api/creators/:id/unfollow", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const creatorId = req.params.id;
-      await creatorService.unfollowCreator(userId, creatorId);
-      res.json({ message: "Unfollowed successfully" });
-    } catch (error) {
-      console.error("Error unfollowing creator:", error);
-      res.status(500).json({ message: "Failed to unfollow creator" });
-    }
-  });
-  app2.get("/api/creators/following", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const creators = await creatorService.getFollowedCreators(userId);
-      res.json(creators);
-    } catch (error) {
-      console.error("Error fetching followed creators:", error);
-      res.status(500).json({ message: "Failed to fetch followed creators" });
-    }
-  });
-  app2.get("/api/creators/following/meal-plans", authenticateToken2, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-      const limit = parseInt(req.query.limit) || 20;
-      const plans = await creatorService.getFollowedCreatorsMealPlans(userId, limit);
-      res.json(plans);
-    } catch (error) {
-      console.error("Error fetching followed creators meal plans:", error);
-      res.status(500).json({ message: "Failed to fetch followed creators meal plans" });
-    }
-  });
-  app2.get("/api/creators/top", async (req, res) => {
-    try {
-      const metric = req.query.metric || "followers";
-      const limit = parseInt(req.query.limit) || 10;
-      const creators = await creatorService.getTopCreators(metric, limit);
-      res.json(creators);
-    } catch (error) {
-      console.error("Error fetching top creators:", error);
-      res.status(500).json({ message: "Failed to fetch top creators" });
-    }
-  });
-  app2.get("/api/creators/:id/meal-plans", async (req, res) => {
-    try {
-      const creatorId = req.params.id;
-      const limit = parseInt(req.query.limit) || 20;
-      const plans = await mealPlanSharingService.getCreatorMealPlans(creatorId, limit);
-      res.json(plans);
-    } catch (error) {
-      console.error("Error fetching creator meal plans:", error);
-      res.status(500).json({ message: "Failed to fetch creator meal plans" });
-    }
-  });
   const httpServer = createServer(app2);
   return httpServer;
 }
@@ -17238,27 +15531,6 @@ dotenv.config();
 var app = express2();
 app.use(express2.json({ limit: "10mb" }));
 app.use(express2.urlencoded({ extended: false, limit: "10mb" }));
-app.use((req, res, next) => {
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev",
-    "https://qv58s2tk2qjrjogiafjw.apps.whop.com",
-    "https://whop.com"
-  ];
-  const origin = req.headers.origin;
-  if (origin && (allowedOrigins.includes(origin) || origin.includes("apps.whop.com"))) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Whop-User-Id, X-Whop-Access-Pass");
-  res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  next();
-});
 app.use(session({
   secret: process.env.SESSION_SECRET || "healthy-mama-session-secret-2025",
   resave: false,
