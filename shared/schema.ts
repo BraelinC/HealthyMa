@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   password_hash: varchar("password_hash", { length: 255 }),
   full_name: varchar("full_name", { length: 255 }),
   google_id: varchar("google_id"),
+  is_creator: boolean("is_creator").default(false), // Dynamic creator status
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -469,6 +470,187 @@ export const insertFoodDatabaseSchema = createInsertSchema(foodDatabase).pick({
 
 export type FoodDatabaseItem = typeof foodDatabase.$inferSelect;
 export type InsertFoodDatabaseItem = z.infer<typeof insertFoodDatabaseSchema>;
+
+// ============================================
+// COMMUNITY TABLES FOR MEAL PLAN SHARING
+// ============================================
+
+// Communities table
+export const communities = pgTable("communities", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  creator_id: varchar("creator_id").notNull().references(() => users.id),
+  cover_image: text("cover_image"),
+  category: text("category").notNull(), // "budget", "family", "cultural", "health", etc.
+  member_count: integer("member_count").default(0),
+  is_public: boolean("is_public").default(true),
+  settings: json("settings").default({}),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  creatorIdx: index("communities_creator_idx").on(table.creator_id),
+  categoryIdx: index("communities_category_idx").on(table.category),
+}));
+
+// Community members table
+export const communityMembers = pgTable("community_members", {
+  id: serial("id").primaryKey(),
+  community_id: integer("community_id").notNull().references(() => communities.id),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  role: text("role").notNull().default("member"), // "creator", "moderator", "member"
+  points: integer("points").default(0),
+  level: integer("level").default(1),
+  joined_at: timestamp("joined_at").defaultNow(),
+}, (table) => ({
+  communityUserIdx: index("community_user_idx").on(table.community_id, table.user_id),
+  userIdx: index("community_members_user_idx").on(table.user_id),
+}));
+
+// Shared meal plans table
+export const sharedMealPlans = pgTable("shared_meal_plans", {
+  id: serial("id").primaryKey(),
+  community_id: integer("community_id").notNull().references(() => communities.id),
+  meal_plan_id: integer("meal_plan_id").notNull().references(() => mealPlans.id),
+  sharer_id: varchar("sharer_id").notNull().references(() => users.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  tags: json("tags").default([]), // ["budget-friendly", "quick", "family", etc.]
+  preview_images: json("preview_images").default([]), // Array of image URLs
+  metrics: json("metrics").default({}), // {cost_per_serving, prep_time, difficulty, nutrition_score}
+  likes: integer("likes").default(0),
+  tries: integer("tries").default(0),
+  success_rate: integer("success_rate"), // percentage 0-100
+  is_featured: boolean("is_featured").default(false),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  communityIdx: index("shared_plans_community_idx").on(table.community_id),
+  sharerIdx: index("shared_plans_sharer_idx").on(table.sharer_id),
+  featuredIdx: index("shared_plans_featured_idx").on(table.is_featured),
+}));
+
+// Meal plan reviews table
+export const mealPlanReviews = pgTable("meal_plan_reviews", {
+  id: serial("id").primaryKey(),
+  shared_plan_id: integer("shared_plan_id").notNull().references(() => sharedMealPlans.id),
+  reviewer_id: varchar("reviewer_id").notNull().references(() => users.id),
+  rating: integer("rating").notNull(), // 1-5 stars
+  comment: text("comment"),
+  images: json("images").default([]), // Array of result photo URLs
+  tried_it: boolean("tried_it").default(false),
+  modifications: text("modifications"), // What they changed
+  helpful_count: integer("helpful_count").default(0),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  planIdx: index("reviews_plan_idx").on(table.shared_plan_id),
+  reviewerIdx: index("reviews_reviewer_idx").on(table.reviewer_id),
+}));
+
+// Meal plan remixes table
+export const mealPlanRemixes = pgTable("meal_plan_remixes", {
+  id: serial("id").primaryKey(),
+  original_plan_id: integer("original_plan_id").notNull().references(() => sharedMealPlans.id),
+  remixer_id: varchar("remixer_id").notNull().references(() => users.id),
+  remixed_plan_id: integer("remixed_plan_id").notNull().references(() => mealPlans.id),
+  community_id: integer("community_id").references(() => communities.id),
+  changes_made: json("changes_made").notNull(), // Description of modifications
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  originalIdx: index("remixes_original_idx").on(table.original_plan_id),
+  remixerIdx: index("remixes_remixer_idx").on(table.remixer_id),
+}));
+
+// Community discussions table
+export const communityDiscussions = pgTable("community_discussions", {
+  id: serial("id").primaryKey(),
+  community_id: integer("community_id").notNull().references(() => communities.id),
+  meal_plan_id: integer("meal_plan_id").references(() => sharedMealPlans.id),
+  author_id: varchar("author_id").notNull().references(() => users.id),
+  parent_id: integer("parent_id"), // For threaded discussions
+  content: text("content").notNull(),
+  likes: integer("likes").default(0),
+  is_pinned: boolean("is_pinned").default(false),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  communityIdx: index("discussions_community_idx").on(table.community_id),
+  planIdx: index("discussions_plan_idx").on(table.meal_plan_id),
+  authorIdx: index("discussions_author_idx").on(table.author_id),
+}));
+
+// Creator profiles table
+export const creatorProfiles = pgTable("creator_profiles", {
+  id: serial("id").primaryKey(),
+  user_id: varchar("user_id").notNull().references(() => users.id).unique(),
+  bio: text("bio"),
+  specialties: json("specialties").default([]), // ["budget meals", "family cooking", etc.]
+  certifications: json("certifications").default([]), // Professional credentials
+  follower_count: integer("follower_count").default(0),
+  total_plans_shared: integer("total_plans_shared").default(0),
+  average_rating: integer("average_rating"), // Out of 5
+  verified_nutritionist: boolean("verified_nutritionist").default(false),
+  social_links: json("social_links").default({}),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userIdx: index("creator_profiles_user_idx").on(table.user_id),
+}));
+
+// Creator followers table
+export const creatorFollowers = pgTable("creator_followers", {
+  id: serial("id").primaryKey(),
+  creator_id: varchar("creator_id").notNull().references(() => users.id),
+  follower_id: varchar("follower_id").notNull().references(() => users.id),
+  followed_at: timestamp("followed_at").defaultNow(),
+}, (table) => ({
+  creatorFollowerIdx: index("creator_follower_idx").on(table.creator_id, table.follower_id),
+  followerIdx: index("followers_follower_idx").on(table.follower_id),
+}));
+
+// Community challenges table
+export const communityChallenges = pgTable("community_challenges", {
+  id: serial("id").primaryKey(),
+  community_id: integer("community_id").notNull().references(() => communities.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  requirements: json("requirements").notNull(), // Challenge criteria
+  start_date: timestamp("start_date").notNull(),
+  end_date: timestamp("end_date").notNull(),
+  prize_description: text("prize_description"),
+  submissions: json("submissions").default([]), // Array of submission IDs
+  winner_id: varchar("winner_id").references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  communityIdx: index("challenges_community_idx").on(table.community_id),
+  dateIdx: index("challenges_date_idx").on(table.start_date, table.end_date),
+}));
+
+// Type exports for community tables
+export type Community = typeof communities.$inferSelect;
+export type InsertCommunity = typeof communities.$inferInsert;
+
+export type CommunityMember = typeof communityMembers.$inferSelect;
+export type InsertCommunityMember = typeof communityMembers.$inferInsert;
+
+export type SharedMealPlan = typeof sharedMealPlans.$inferSelect;
+export type InsertSharedMealPlan = typeof sharedMealPlans.$inferInsert;
+
+export type MealPlanReview = typeof mealPlanReviews.$inferSelect;
+export type InsertMealPlanReview = typeof mealPlanReviews.$inferInsert;
+
+export type MealPlanRemix = typeof mealPlanRemixes.$inferSelect;
+export type InsertMealPlanRemix = typeof mealPlanRemixes.$inferInsert;
+
+export type CommunityDiscussion = typeof communityDiscussions.$inferSelect;
+export type InsertCommunityDiscussion = typeof communityDiscussions.$inferInsert;
+
+export type CreatorProfile = typeof creatorProfiles.$inferSelect;
+export type InsertCreatorProfile = typeof creatorProfiles.$inferInsert;
+
+export type CreatorFollower = typeof creatorFollowers.$inferSelect;
+export type InsertCreatorFollower = typeof creatorFollowers.$inferInsert;
+
+export type CommunityChallenge = typeof communityChallenges.$inferSelect;
+export type InsertCommunityChallenge = typeof communityChallenges.$inferInsert;
 
 // Storage interfaces
 export interface IStorage {

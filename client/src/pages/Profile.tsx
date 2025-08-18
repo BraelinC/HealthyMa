@@ -3,14 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe, LogOut } from 'lucide-react';
+import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe, LogOut, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Profile, FamilyMember } from '@shared/schema';
 import CulturalCuisineDropdown from '@/components/CulturalCuisineDropdown';
@@ -1239,6 +1239,101 @@ export default function Profile() {
             {/* Achievements Section - Show for both individual and family profiles when not editing */}
             {!isEditing && (profile || profileType === 'individual') && (
               <AchievementsContainer />
+            )}
+
+            {/* Creator Mode Toggle - Development/Testing */}
+            {!isEditing && (
+              <Card className="bg-gradient-to-br from-purple-50 to-emerald-50 border-purple-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Crown className="h-5 w-5 text-purple-600" />
+                    Creator Mode {user?.is_creator && <Badge className="ml-2 bg-purple-600">Active</Badge>}
+                  </CardTitle>
+                  <CardDescription>
+                    Enable creator mode to share meal plans and create communities
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="creator-toggle">Creator Features</Label>
+                        <p className="text-sm text-gray-500">
+                          {user?.is_creator 
+                            ? "You can create communities and share meal plans" 
+                            : "Enable to unlock publishing features"}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/user/toggle-creator', {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                                'Content-Type': 'application/json',
+                              },
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error('Failed to toggle creator status');
+                            }
+                            
+                            const data = await response.json();
+                            
+                            // Update token if provided
+                            if (data.token) {
+                              localStorage.setItem('auth_token', data.token);
+                            }
+                            
+                            // Refresh user data
+                            queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+                            
+                            toast({
+                              title: data.is_creator ? "Creator Mode Enabled!" : "Creator Mode Disabled",
+                              description: data.message,
+                            });
+                          } catch (error) {
+                            console.error('Error toggling creator status:', error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to toggle creator status",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        variant={user?.is_creator ? "outline" : "default"}
+                      >
+                        {user?.is_creator ? "Disable Creator Mode" : "Enable Creator Mode"}
+                      </Button>
+                    </div>
+                    
+                    {user?.is_creator && (
+                      <div className="pt-3 border-t">
+                        <p className="text-sm font-medium mb-2">Creator Abilities:</p>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          <li className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            Create and manage communities
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            Share meal plans with communities
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            Build a following
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            View analytics and engagement
+                          </li>
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
 

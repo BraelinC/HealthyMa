@@ -48,9 +48,9 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return await bcrypt.compare(password, hashedPassword);
 }
 
-// Generate JWT token
-export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+// Generate JWT token with creator status
+export function generateToken(userId: string, isCreator: boolean = false): string {
+  return jwt.sign({ userId, isCreator }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 // Verify JWT token with support for old secrets
@@ -104,7 +104,7 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
     
     // If token needs refresh, add new token to response header
     if (decoded.needsRefresh) {
-      const newToken = generateToken(decoded.userId);
+      const newToken = generateToken(decoded.userId, user.is_creator || false);
       res.setHeader('X-New-Token', newToken);
       res.setHeader('Access-Control-Expose-Headers', 'X-New-Token');
       console.log(`🔄 Auto-refreshed token for user ${decoded.userId}`);
@@ -132,7 +132,7 @@ export async function authenticateFlexible(req: AuthRequest, res: Response, next
           
           // If token needs refresh, add new token to response header
           if (decoded.needsRefresh) {
-            const newToken = generateToken(decoded.userId);
+            const newToken = generateToken(decoded.userId, user.is_creator || false);
             res.setHeader('X-New-Token', newToken);
             res.setHeader('Access-Control-Expose-Headers', 'X-New-Token');
             console.log(`🔄 Auto-refreshed token for user ${decoded.userId}`);
@@ -154,7 +154,7 @@ export async function authenticateFlexible(req: AuthRequest, res: Response, next
         req.user = user;
         
         // Generate a new JWT token for the session user
-        const newToken = generateToken(user.id.toString());
+        const newToken = generateToken(user.id.toString(), user.is_creator || false);
         res.setHeader('X-New-Token', newToken);
         res.setHeader('Access-Control-Expose-Headers', 'X-New-Token');
         console.log(`🔐 Generated new token for session user ${user.id}`);
@@ -192,10 +192,10 @@ export async function registerUser(req: Request, res: Response) {
       full_name: validatedData.full_name,
     });
 
-    // Generate token
-    const token = generateToken(user.id.toString());
+    // Generate token with creator status
+    const token = generateToken(user.id.toString(), user.is_creator || false);
 
-    // Return user data (without password) and token
+    // Return user data (without password) and token (including is_creator)
     const { password_hash, ...userWithoutPassword } = user;
     res.status(201).json({
       user: userWithoutPassword,
@@ -232,8 +232,8 @@ export async function loginUser(req: Request, res: Response) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Generate token
-    const token = generateToken(user.id.toString());
+    // Generate token with creator status
+    const token = generateToken(user.id.toString(), user.is_creator || false);
 
     // Also store user ID in session as fallback
     if (req.session) {
@@ -244,7 +244,7 @@ export async function loginUser(req: Request, res: Response) {
       });
     }
 
-    // Return user data (without password) and token
+    // Return user data (without password) and token (including is_creator)
     const { password_hash, ...userWithoutPassword } = user;
     res.json({
       user: userWithoutPassword,

@@ -11,9 +11,14 @@ import { parseIngredientsWithGPT } from "./gptIngredientParser";
 import { authenticateToken } from "./auth"; // Import JWT auth middleware
 import { rateLimiter } from "./rateLimiter";
 import { handleLogMealDetection } from "./logmealEndpoint";
+import { communityService } from "./communityService";
+import { creatorService } from "./creatorService";
+import { mealPlanSharingService } from "./mealPlanSharingService";
 
 import Stripe from "stripe";
-import { insertProfileSchema, type InsertProfile } from "@shared/schema";
+import { insertProfileSchema, type InsertProfile, users } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 // YouTube API utilities
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -94,6 +99,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", registerUser);
   app.post("/api/auth/login", loginUser);
   app.get("/api/auth/user", authenticateToken, getCurrentUser);
+
+  // Toggle creator status endpoint (for testing)
+  app.post("/api/user/toggle-creator", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Get current user to check creator status
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Toggle is_creator status
+      const newCreatorStatus = !(user.is_creator || false);
+      await db.update(users).set({ 
+        is_creator: newCreatorStatus,
+        updatedAt: new Date() 
+      }).where(eq(users.id, userId));
+
+      // Generate new token with updated creator status
+      const { generateToken } = await import("./auth");
+      const newToken = generateToken(userId, newCreatorStatus);
+
+      console.log(`🔄 Toggled creator status for user ${userId}: ${newCreatorStatus}`);
+
+      res.json({ 
+        message: `Creator mode ${newCreatorStatus ? 'enabled' : 'disabled'}`,
+        is_creator: newCreatorStatus,
+        token: newToken
+      });
+    } catch (error) {
+      console.error("Error toggling creator status:", error);
+      res.status(500).json({ message: "Failed to toggle creator status" });
+    }
+  });
 
   // Google OAuth routes
   const { passport, isGoogleOAuthConfigured, handleGoogleCallback } = await import("./googleAuth");
@@ -3964,6 +4007,409 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: 'Internal server error during intelligent meal selection',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
+    }
+  });
+
+  // ============================================
+  // COMMUNITY & MEAL PLAN SHARING ROUTES
+  // ============================================
+
+  // Get all communities
+  app.get("/api/communities", async (req: any, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const userId = req.user?.id;
+      
+      const communities = await communityService.getCommunities(category, userId);
+      res.json(communities);
+    } catch (error) {
+      console.error("Error fetching communities:", error);
+      res.status(500).json({ message: "Failed to fetch communities" });
+    }
+  });
+
+  // Get community details
+  app.get("/api/communities/:id", async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      const community = await communityService.getCommunityDetails(communityId, userId);
+      res.json(community);
+    } catch (error) {
+      console.error("Error fetching community details:", error);
+      res.status(500).json({ message: "Failed to fetch community details" });
+    }
+  });
+
+  // Create a new community
+  app.post("/api/communities", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { name, description, category, cover_image } = req.body;
+
+      if (!name || !description || !category) {
+        return res.status(400).json({ message: "Name, description, and category are required" });
+      }
+
+      const community = await communityService.createCommunity(userId, {
+        name,
+        description,
+        category,
+        cover_image,
+      });
+
+      res.json(community);
+    } catch (error) {
+      console.error("Error creating community:", error);
+      res.status(500).json({ message: "Failed to create community" });
+    }
+  });
+
+  // Join a community
+  app.post("/api/communities/:id/join", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const communityId = Number(req.params.id);
+      const member = await communityService.joinCommunity(userId, communityId);
+      res.json(member);
+    } catch (error: any) {
+      console.error("Error joining community:", error);
+      if (error.message === "Already a member of this community") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to join community" });
+    }
+  });
+
+  // Leave a community
+  app.post("/api/communities/:id/leave", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const communityId = Number(req.params.id);
+      await communityService.leaveCommunity(userId, communityId);
+      res.json({ message: "Successfully left community" });
+    } catch (error: any) {
+      console.error("Error leaving community:", error);
+      if (error.message === "Creator cannot leave their own community") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to leave community" });
+    }
+  });
+
+  // Share a meal plan to community
+  app.post("/api/communities/:id/share-meal-plan", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const communityId = Number(req.params.id);
+      const { meal_plan_id, title, description } = req.body;
+
+      if (!meal_plan_id || !title) {
+        return res.status(400).json({ message: "meal_plan_id and title are required" });
+      }
+
+      const sharedPlan = await mealPlanSharingService.shareMealPlan(
+        userId,
+        communityId,
+        meal_plan_id,
+        title,
+        description
+      );
+
+      res.json(sharedPlan);
+    } catch (error) {
+      console.error("Error sharing meal plan:", error);
+      res.status(500).json({ message: "Failed to share meal plan" });
+    }
+  });
+
+  // Get community meal plans
+  app.get("/api/communities/:id/meal-plans", async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const { featured, tags } = req.query;
+
+      const filter: any = {};
+      if (featured === 'true') filter.featured = true;
+      if (tags) filter.tags = tags.split(',');
+
+      const plans = await communityService.getCommunityMealPlans(communityId, filter);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching community meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch community meal plans" });
+    }
+  });
+
+  // Get trending meal plans
+  app.get("/api/trending-meal-plans", async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const trending = await mealPlanSharingService.getTrendingMealPlans(limit);
+      res.json(trending);
+    } catch (error) {
+      console.error("Error fetching trending meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch trending meal plans" });
+    }
+  });
+
+  // Get recommended meal plans
+  app.get("/api/recommended-meal-plans", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 10;
+      const recommendations = await mealPlanSharingService.getRecommendedMealPlans(userId, limit);
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error fetching recommended meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch recommended meal plans" });
+    }
+  });
+
+  // Review a shared meal plan
+  app.post("/api/meal-plans/:id/review", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const sharedPlanId = Number(req.params.id);
+      const { rating, comment, tried_it, modifications, images } = req.body;
+
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      }
+
+      const review = await communityService.reviewMealPlan(userId, sharedPlanId, {
+        rating,
+        comment,
+        tried_it,
+        modifications,
+        images,
+      });
+
+      res.json(review);
+    } catch (error: any) {
+      console.error("Error reviewing meal plan:", error);
+      if (error.message === "You have already reviewed this meal plan") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to review meal plan" });
+    }
+  });
+
+  // Mark meal plan as tried
+  app.post("/api/meal-plans/:id/try", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const sharedPlanId = Number(req.params.id);
+      await communityService.markPlanAsTried(userId, sharedPlanId);
+      res.json({ message: "Marked as tried successfully" });
+    } catch (error) {
+      console.error("Error marking meal plan as tried:", error);
+      res.status(500).json({ message: "Failed to mark meal plan as tried" });
+    }
+  });
+
+  // Like a meal plan
+  app.post("/api/meal-plans/:id/like", authenticateToken, async (req: any, res) => {
+    try {
+      const sharedPlanId = Number(req.params.id);
+      await mealPlanSharingService.likeMealPlan(sharedPlanId);
+      res.json({ message: "Liked successfully" });
+    } catch (error) {
+      console.error("Error liking meal plan:", error);
+      res.status(500).json({ message: "Failed to like meal plan" });
+    }
+  });
+
+  // Search meal plans
+  app.get("/api/search-meal-plans", async (req: any, res) => {
+    try {
+      const { q, tags, maxCost, maxTime, minRating } = req.query;
+
+      const filters: any = {};
+      if (tags) filters.tags = tags.split(',');
+      if (maxCost) filters.maxCost = parseFloat(maxCost);
+      if (maxTime) filters.maxTime = parseInt(maxTime);
+      if (minRating) filters.minRating = parseInt(minRating);
+
+      const results = await mealPlanSharingService.searchMealPlans(q || '', filters);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching meal plans:", error);
+      res.status(500).json({ message: "Failed to search meal plans" });
+    }
+  });
+
+  // ============================================
+  // CREATOR ROUTES
+  // ============================================
+
+  // Get or create creator profile
+  app.get("/api/creators/:id", async (req: any, res) => {
+    try {
+      const creatorId = req.params.id;
+      const viewerId = req.user?.id;
+      
+      const profile = await creatorService.getCreatorProfile(creatorId, viewerId);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Creator profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching creator profile:", error);
+      res.status(500).json({ message: "Failed to fetch creator profile" });
+    }
+  });
+
+  // Update creator profile
+  app.put("/api/creators/profile", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { bio, specialties, certifications, social_links } = req.body;
+
+      const profile = await creatorService.upsertCreatorProfile(userId, {
+        bio,
+        specialties,
+        certifications,
+        social_links,
+      });
+
+      res.json(profile);
+    } catch (error) {
+      console.error("Error updating creator profile:", error);
+      res.status(500).json({ message: "Failed to update creator profile" });
+    }
+  });
+
+  // Follow a creator
+  app.post("/api/creators/:id/follow", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const creatorId = req.params.id;
+      const follow = await creatorService.followCreator(userId, creatorId);
+      res.json(follow);
+    } catch (error: any) {
+      console.error("Error following creator:", error);
+      if (error.message === "Already following this creator") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to follow creator" });
+    }
+  });
+
+  // Unfollow a creator
+  app.post("/api/creators/:id/unfollow", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const creatorId = req.params.id;
+      await creatorService.unfollowCreator(userId, creatorId);
+      res.json({ message: "Unfollowed successfully" });
+    } catch (error: any) {
+      console.error("Error unfollowing creator:", error);
+      res.status(500).json({ message: "Failed to unfollow creator" });
+    }
+  });
+
+  // Get followed creators
+  app.get("/api/creators/following", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const creators = await creatorService.getFollowedCreators(userId);
+      res.json(creators);
+    } catch (error) {
+      console.error("Error fetching followed creators:", error);
+      res.status(500).json({ message: "Failed to fetch followed creators" });
+    }
+  });
+
+  // Get meal plans from followed creators
+  app.get("/api/creators/following/meal-plans", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 20;
+      const plans = await creatorService.getFollowedCreatorsMealPlans(userId, limit);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching followed creators meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch followed creators meal plans" });
+    }
+  });
+
+  // Get top creators
+  app.get("/api/creators/top", async (req: any, res) => {
+    try {
+      const metric = (req.query.metric as 'followers' | 'plans' | 'rating') || 'followers';
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const creators = await creatorService.getTopCreators(metric, limit);
+      res.json(creators);
+    } catch (error) {
+      console.error("Error fetching top creators:", error);
+      res.status(500).json({ message: "Failed to fetch top creators" });
+    }
+  });
+
+  // Get creator's meal plans
+  app.get("/api/creators/:id/meal-plans", async (req: any, res) => {
+    try {
+      const creatorId = req.params.id;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const plans = await mealPlanSharingService.getCreatorMealPlans(creatorId, limit);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching creator meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch creator meal plans" });
     }
   });
 
