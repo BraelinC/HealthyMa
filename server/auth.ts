@@ -235,9 +235,9 @@ export async function loginUser(req: Request, res: Response) {
     // Generate token with creator status
     const token = generateToken(user.id.toString(), user.is_creator || false);
 
-    // Also store user ID in session as fallback
+    // Also store user ID in session as fallback  
     if (req.session) {
-      req.session.userId = user.id;
+      (req.session as any).userId = user.id;
       req.session.save((err) => {
         if (err) console.error('Session save error:', err);
         else console.log(`✅ Session created for user ${user.id}`);

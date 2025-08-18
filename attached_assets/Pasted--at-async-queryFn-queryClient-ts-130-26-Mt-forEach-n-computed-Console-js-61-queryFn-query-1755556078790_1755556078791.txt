@@ -1,0 +1,68 @@
+    at async queryFn (queryClient.ts:130:26)
+Mt.forEach.n.<computed> @ Console.js:61
+queryFn @ queryClient.ts:134
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=61457a6e:840
+run @ @tanstack_react-query.js?v=61457a6e:494
+start @ @tanstack_react-query.js?v=61457a6e:536
+fetch @ @tanstack_react-query.js?v=61457a6e:926
+executeFetch_fn @ @tanstack_react-query.js?v=61457a6e:2211
+onSubscribe @ @tanstack_react-query.js?v=61457a6e:1898
+subscribe @ @tanstack_react-query.js?v=61457a6e:24
+(anonymous) @ @tanstack_react-query.js?v=61457a6e:3022
+subscribeToStore @ chunk-276SZO74.js?v=61457a6e:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=61457a6e:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=61457a6e:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=61457a6e:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=61457a6e:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=61457a6e:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=61457a6e:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=61457a6e:19447
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=61457a6e:18868
+flushSyncCallbacks @ chunk-276SZO74.js?v=61457a6e:9119
+commitRootImpl @ chunk-276SZO74.js?v=61457a6e:19432
+commitRoot @ chunk-276SZO74.js?v=61457a6e:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=61457a6e:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=61457a6e:18718
+workLoop @ chunk-276SZO74.js?v=61457a6e:197
+flushWork @ chunk-276SZO74.js?v=61457a6e:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=61457a6e:384
+[Violation] Potential permissions policy violation: payment is not allowed in this document.
+[Violation] Potential permissions policy violation: payment is not allowed in this document.
+39243-f76a882109f93b7d.js?dpl=dpl_CnMEJEMZHtfkaPc3tKYpvRmJqoNS:8 [WS:LOG] Exponential backoff: 100ms
+39243-f76a882109f93b7d.js?dpl=dpl_CnMEJEMZHtfkaPc3tKYpvRmJqoNS:8 [WS:LOG] WebSocket connection established
+39243-f76a882109f93b7d.js?dpl=dpl_CnMEJEMZHtfkaPc3tKYpvRmJqoNS:8 [WS:LOG] Successful webSocket connection confirmed after 49ms
+Console.js:61 API Request: {url: 'https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/auth/login', method: 'POST', hasBody: true}
+injected.js:253  POST https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/auth/login 500 (Internal Server Error)
+window.fetch @ Network.js:219
+apply @ injected.js:253
+apiRequest @ queryClient.ts:25
+mutationFn @ AuthForm.tsx:73
+fn @ @tanstack_react-query.js?v=61457a6e:1189
+run @ @tanstack_react-query.js?v=61457a6e:494
+start @ @tanstack_react-query.js?v=61457a6e:536
+execute @ @tanstack_react-query.js?v=61457a6e:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=61457a6e:2630
+(anonymous) @ @tanstack_react-query.js?v=61457a6e:3295
+handleLoginSubmit @ AuthForm.tsx:129
+callCallback2 @ chunk-276SZO74.js?v=61457a6e:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=61457a6e:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=61457a6e:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=61457a6e:3736
+executeDispatch @ chunk-276SZO74.js?v=61457a6e:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=61457a6e:7034
+processDispatchQueue @ chunk-276SZO74.js?v=61457a6e:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=61457a6e:7051
+(anonymous) @ chunk-276SZO74.js?v=61457a6e:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=61457a6e:18913
+batchedUpdates @ chunk-276SZO74.js?v=61457a6e:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=61457a6e:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=61457a6e:5478
+dispatchEvent @ chunk-276SZO74.js?v=61457a6e:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=61457a6e:5449
+Console.js:61 API Response: {url: 'https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/auth/login', status: 500, ok: false, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+Console.js:61 API Response Text: {"message":"Login failed"}
+Console.js:61 API Request Error: Error: Login failed
+    at apiRequest (queryClient.ts:77:13)
+    at async Object.mutationFn (AuthForm.tsx:73:14)
