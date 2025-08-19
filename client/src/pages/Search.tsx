@@ -96,7 +96,8 @@ const transformSavedRecipe = (savedRecipe: any): GeneratedRecipe => {
       video_id: savedRecipe.video_id,
       video_title: savedRecipe.video_title,
       video_channel: savedRecipe.video_channel,
-      nutrition_info: savedRecipe.nutrition_info, // Add this missing field!
+      nutrition_info: savedRecipe.nutrition_info, // Keep this for RecipeDisplay component  
+      nutrition: savedRecipe.nutrition_info, // Add this for Search component nutrition display
       total_nutrition: savedRecipe.total_nutrition
     };
   } catch (error) {
@@ -134,7 +135,8 @@ const transformGeneratedRecipe = (genRecipe: any): GeneratedRecipe => {
       video_id: genRecipe.video_id,
       video_title: genRecipe.video_title,
       video_channel: genRecipe.video_channel,
-      nutrition_info: genRecipe.nutrition_info, // Add this missing field!
+      nutrition_info: genRecipe.nutrition_info, // Keep this for RecipeDisplay component
+      nutrition: genRecipe.nutrition_info, // Add this for Search component nutrition display
       total_nutrition: genRecipe.total_nutrition
     };
   } catch (error) {
@@ -611,6 +613,27 @@ const Search = () => {
                       </TabsContent>
 
                       <TabsContent value="nutrition" className="p-4 pt-3">
+                        {/* DEBUG: Show exactly what nutrition data we have */}
+                        <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs font-mono">
+                          <div><strong>🔍 NUTRITION DEBUG:</strong></div>
+                          <div>Recipe ID: {generatedRecipe.id}</div>
+                          <div>Has nutrition: {!!generatedRecipe.nutrition ? '✅ YES' : '❌ NO'}</div>
+                          <div>Has nutrition_info: {!!generatedRecipe.nutrition_info ? '✅ YES' : '❌ NO'}</div>
+                          {generatedRecipe.nutrition && (
+                            <div>
+                              <div>Calories: {generatedRecipe.nutrition.calories}</div>
+                              <div>Protein: {generatedRecipe.nutrition.protein_g}g</div>
+                              <div>Carbs: {generatedRecipe.nutrition.carbs_g}g</div>
+                              <div>Fat: {generatedRecipe.nutrition.fat_g}g</div>
+                            </div>
+                          )}
+                          {generatedRecipe.nutrition_info && (
+                            <div>
+                              <div>Nutrition_info Calories: {generatedRecipe.nutrition_info.calories}</div>
+                              <div>Nutrition_info Protein: {generatedRecipe.nutrition_info.protein_g}g</div>
+                            </div>
+                          )}
+                        </div>
                         {generatedRecipe.nutrition ? (
                           <div>
                             <h4 className="font-semibold mb-4 text-purple-700">Nutrition Information</h4>
@@ -687,13 +710,18 @@ const Search = () => {
                           timeMinutes={recipe.time_minutes || 0}
                           tags={[recipe.cuisine, recipe.diet].filter(Boolean)}
                           onClick={() => {
-                            console.log('Clicking generated recipe:', recipe);
+                            console.log('🔍 CLICKING GENERATED RECIPE:', recipe);
+                            console.log('Raw recipe data:', JSON.stringify(recipe, null, 2));
                             const transformedRecipe = transformGeneratedRecipe(recipe);
-                            console.log('Transformed recipe nutrition check:', {
+                            console.log('🔄 TRANSFORMED RECIPE:', transformedRecipe);
+                            console.log('Nutrition fields check:', {
                               id: transformedRecipe.id,
-                              hasNutrition: !!transformedRecipe.nutrition_info,
-                              calories: transformedRecipe.nutrition_info?.calories,
-                              protein: transformedRecipe.nutrition_info?.protein_g
+                              hasNutrition: !!transformedRecipe.nutrition,
+                              hasNutritionInfo: !!transformedRecipe.nutrition_info,
+                              nutritionCalories: transformedRecipe.nutrition?.calories,
+                              nutritionInfoCalories: transformedRecipe.nutrition_info?.calories,
+                              protein: transformedRecipe.nutrition?.protein_g,
+                              proteinInfo: transformedRecipe.nutrition_info?.protein_g
                             });
                             setGeneratedRecipe(transformedRecipe);
                           }}
