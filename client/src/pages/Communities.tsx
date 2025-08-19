@@ -81,6 +81,10 @@ export default function Communities() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
+  const [forceCreatorMode, setForceCreatorMode] = useState(false);
+
+  // Override creator status for testing
+  const isCreator = user?.is_creator || forceCreatorMode;
 
   // Fetch communities
   const { data: communities = [], isLoading: loadingCommunities } = useQuery({
@@ -156,12 +160,27 @@ export default function Communities() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-emerald-600 bg-clip-text text-transparent mb-2">
-            Communities
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Join communities to discover and share amazing meal plans with creators and food enthusiasts
-          </p>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                Communities
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Join communities to discover and share amazing meal plans with creators and food enthusiasts
+              </p>
+            </div>
+            {/* Creator Mode Toggle for Testing */}
+            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-2">
+              <span className="text-sm text-gray-600">Creator Mode</span>
+              <Button
+                variant={forceCreatorMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setForceCreatorMode(!forceCreatorMode)}
+              >
+                {forceCreatorMode ? "ON" : "OFF"}
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -276,7 +295,7 @@ export default function Communities() {
             )}
 
             {/* Create Community Button - Only for Creators */}
-            {isAuthenticated && user?.is_creator && (
+            {isAuthenticated && isCreator && (
               <div className="mt-8 text-center">
                 <Card className="inline-block p-6">
                   <div className="flex flex-col items-center space-y-3">
@@ -294,7 +313,7 @@ export default function Communities() {
             )}
 
             {/* Become a Creator CTA - For non-creators */}
-            {isAuthenticated && !user?.is_creator && (
+            {isAuthenticated && !isCreator && (
               <div className="mt-8 text-center">
                 <Card className="inline-block p-6 border-dashed border-2 border-purple-300 bg-purple-50/50">
                   <div className="flex flex-col items-center space-y-3">
