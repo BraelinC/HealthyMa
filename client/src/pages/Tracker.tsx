@@ -230,15 +230,15 @@ export default function TrackerPage() {
             </Card>
           </div>
 
-          {/* Add Food Button - Primary CTA */}
+          {/* Add Food Button - Manual Entry Only */}
           <div className="px-4">
             <Button
               onClick={() => setShowCamera(true)}
               className="w-full bg-primary text-white py-4 flex items-center justify-center gap-2"
               size="lg"
             >
-              <Camera className="w-5 h-5" />
-              Add Food with Camera
+              <Plus className="w-5 h-5" />
+              Add Food Manually
             </Button>
           </div>
 
@@ -276,6 +276,22 @@ export default function TrackerPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Manual entry modal */}
+      {showCamera && (
+        <FoodReviewModal
+          data={{
+            image: '',
+            detections: []
+          }}
+          onClose={() => setShowCamera(false)}
+          onSave={() => {
+            setShowCamera(false);
+            queryClient.invalidateQueries({ queryKey: ['/api/food-logs/today'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/food-logs/week'] });
+          }}
+        />
       )}
     </div>
   );
