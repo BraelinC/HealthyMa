@@ -2,9 +2,18 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
 
 // Load environment variables from .env file BEFORE any other imports that use them
-dotenv.config();
+// Look for .env in parent directory (project root)
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
+// Log to verify env loaded
+console.log('🔑 Environment loaded:', {
+  GROQ_API_KEY: !!process.env.GROQ_API_KEY,
+  YOUTUBE_API_KEY: !!process.env.YOUTUBE_API_KEY,
+  OPENAI_API_KEY: !!process.env.OPENAI_API_KEY
+});
 
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";

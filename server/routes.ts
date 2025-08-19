@@ -14,6 +14,7 @@ import { handleLogMealDetection } from "./logmealEndpoint";
 import { communityService } from "./communityService";
 import { creatorService } from "./creatorService";
 import { mealPlanSharingService } from "./mealPlanSharingService";
+import { groqValidator } from "./groqValidator";
 
 import Stripe from "stripe";
 import { insertProfileSchema, type InsertProfile, users } from "@shared/schema";
@@ -489,6 +490,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (youtubeRecipe) {
             console.log("Successfully extracted recipe data from YouTube");
             console.log(`Recipe has ${youtubeRecipe.ingredients.length} ingredients and ${youtubeRecipe.instructions.length} instructions`);
+            
+            // Check for empty instructions immediately
+            if (Array.isArray(youtubeRecipe.instructions) && youtubeRecipe.instructions.length === 0) {
+              console.log('⚠️ [YOUTUBE EXTRACTION] Empty instructions array detected, will be fixed during validation');
+              // Don't fix here, let validation handle it
+            } else if (!youtubeRecipe.instructions) {
+              console.log('⚠️ [YOUTUBE EXTRACTION] No instructions field detected');
+              youtubeRecipe.instructions = [];
+            }
 
             // Add any additional user preferences and ensure image URL is set
             youtubeRecipe.cuisine = cuisine || youtubeRecipe.cuisine;
@@ -638,6 +648,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.warn('Dish name mapping error:', mappingError);
           // Continue with original title
         }
+
+        // INSTRUCTION VALIDATION: Validate instructions with GPT-OSS-20B
+        console.log('🔍 [RECIPE GENERATION] Starting instruction validation for recipe:', recipeToSave.title);
+        console.log('📝 [RECIPE GENERATION] Original instructions type:', typeof recipeToSave.instructions);
+        console.log('📝 [RECIPE GENERATION] Original instructions:', 
+          Array.isArray(recipeToSave.instructions) 
+            ? `Array with ${recipeToSave.instructions.length} items: ${JSON.stringify(recipeToSave.instructions.slice(0, 2))}...`
+            : typeof recipeToSave.instructions === 'string'
+            ? recipeToSave.instructions.substring(0, 200) + '...' 
+            : recipeToSave.instructions
+        );
+        
+        const isInstructionsValid = await groqValidator.validateInstructions(recipeToSave.instructions);
+        
+        if (!isInstructionsValid) {
+          console.log('❌ [RECIPE GENERATION] Instructions FAILED validation');
+          
+          // Try to generate proper instructions using GPT-OSS-120B
+          if (recipeToSave.transcript || recipeToSave.description) {
+            console.log('🤖 [RECIPE GENERATION] Attempting to generate instructions with GPT-OSS-120B');
+            try {
+              const { groqInstructionGenerator } = await import('./groqInstructionGenerator');
+              const generatedInstructions = await groqInstructionGenerator.generateInstructionsFromTranscript(
+                recipeToSave.transcript || recipeToSave.description || '',
+                recipeToSave.title,
+                recipeToSave.ingredients?.map((ing: any) => 
+                  typeof ing === 'string' ? ing : ing.name || ing.display_text
+                )
+              );
+              
+              if (generatedInstructions.length > 0) {
+                console.log(`✅ [RECIPE GENERATION] Generated ${generatedInstructions.length} instructions with GPT-OSS-120B`);
+                recipeToSave.instructions = generatedInstructions;
+              } else {
+                console.log('⚠️ [RECIPE GENERATION] Could not generate instructions, using fallback message');
+                recipeToSave.instructions = ["No instructions available"];
+              }
+            } catch (genError) {
+              console.error('Error generating instructions:', genError);
+              recipeToSave.instructions = ["No instructions available"];
+            }
+          } else {
+            console.log('⚠️ [RECIPE GENERATION] No transcript/description available for generation');
+            recipeToSave.instructions = ["No instructions available"];
+          }
+        } else {
+          console.log('✅ [RECIPE GENERATION] Instructions PASSED validation');
+          // If valid but empty array (shouldn't happen), fix it
+          if (Array.isArray(recipeToSave.instructions) && recipeToSave.instructions.length === 0) {
+            console.log('⚠️ [RECIPE GENERATION] Valid but empty array detected, replacing with message');
+            recipeToSave.instructions = ["No instructions available"];
+          }
+        }
+        
+        console.log('📝 [RECIPE GENERATION] Final instructions:', recipeToSave.instructions);
 
         // DIETARY VALIDATION: Check recipe compliance before saving
         let finalRecipe = { ...recipeToSave, title: familiarTitle, user_id: userId };

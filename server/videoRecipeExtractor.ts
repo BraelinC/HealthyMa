@@ -1075,7 +1075,8 @@ export async function getRecipeFromYouTube(query: string, filters?: {
   excludeIngredients?: string;
 }): Promise<any | null> {
   try {
-    console.log(`Starting generalized recipe workflow for: "${query}"`);
+    console.log(`🎬 [YOUTUBE] Starting generalized recipe workflow for: "${query}"`);
+    console.log(`🔍 [YOUTUBE] Filters:`, filters);
     
     // Step 1: Query Spoonacular API to enforce cooking time and get authentic recipe data
     let spoonacularRecipe: SpoonacularRecipe | null = null;
@@ -1101,16 +1102,47 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       return null;
     }
     
-    console.log(`Found video: ${videoInfo.title} by ${videoInfo.channelTitle}`);
+    console.log(`✅ [YOUTUBE] Found video: ${videoInfo.title} by ${videoInfo.channelTitle}`);
+    console.log(`🔗 [YOUTUBE] Video URL: https://www.youtube.com/watch?v=${videoInfo.id}`);
     
-    // Step 2: Get video comments (might contain recipe details)
+    // Step 2: Get transcript using Whisper if needed
+    let transcript = '';
+    try {
+      // Import Whisper transcriber
+      const { whisperTranscriber } = await import('./whisperTranscriber');
+      
+      console.log('🎙️ [YOUTUBE] Checking for transcript...');
+      const videoUrl = `https://www.youtube.com/watch?v=${videoInfo.id}`;
+      
+      // Try to get transcript (will use Whisper V3 Turbo if no native transcript exists)
+      transcript = await whisperTranscriber.getTranscriptWithFallback(
+        videoUrl,
+        videoInfo.description // Use description as potential existing transcript
+      );
+      
+      if (transcript && transcript.length > 50) {
+        console.log(`✅ [YOUTUBE] Got transcript (${transcript.length} chars)`);
+        console.log(`📝 [YOUTUBE] Transcript preview: ${transcript.substring(0, 150)}...`);
+      } else {
+        console.log('⚠️ [YOUTUBE] No transcript available');
+      }
+    } catch (error) {
+      console.error('❌ [YOUTUBE] Error getting transcript:', error);
+      transcript = '';
+    }
+    
+    // Step 3: Get video comments (might contain recipe details)
+    console.log('💬 [YOUTUBE] Fetching video comments...');
     videoInfo.comments = await getVideoComments(videoInfo.id);
     
-    // Step 3: Extract ingredients from description and comments
+    // Step 4: Extract ingredients from description, transcript, and comments
     let ingredients: string[] = [];
     
-    // First try description for ingredients using LLaVA-Chef
-    const descriptionIngredients = await extractIngredientsWithLLaVA(videoInfo.description);
+    console.log('🥗 [YOUTUBE] Extracting ingredients...');
+    
+    // First try description and transcript for ingredients using LLaVA-Chef
+    const textForIngredients = transcript || videoInfo.description;
+    const descriptionIngredients = await extractIngredientsWithLLaVA(textForIngredients);
     if (descriptionIngredients.length > 0) {
       console.log(`Found ${descriptionIngredients.length} ingredients in video description`);
       // Clean up ingredients to fix duplicate measurements (but preserve mixed fractions like "1 1/2")
@@ -1167,12 +1199,17 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       console.log(`After deduplication: ${ingredients.length} ingredients`);
     }
     
-    // Step 4: Extract instructions using LLaVA-Chef with parallel processing
+    // Step 5: Extract instructions using LLaVA-Chef with parallel processing
     let instructions: string[] = [];
+    
+    console.log('📝 [YOUTUBE] Extracting instructions...');
     
     try {
       // Use LLaVA-Chef to extract instructions (with transcript if available)
-      const aiInstructions = await extractInstructionsWithLLaVA('', videoInfo.description);
+      const textForInstructions = transcript || videoInfo.description;
+      console.log(`🔍 [YOUTUBE] Using ${transcript ? 'transcript' : 'description'} for instruction extraction`);
+      
+      const aiInstructions = await extractInstructionsWithLLaVA(textForInstructions, videoInfo.description);
       if (aiInstructions.length > 0) {
         console.log(`LLaVA-Chef extracted ${aiInstructions.length} instruction steps`);
         instructions = aiInstructions;
@@ -1185,9 +1222,9 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       instructions = fallbackInstructionExtraction(videoInfo.description);
     }
     
-    // Step 5: If we couldn't extract ingredients, use Grok to generate them from video title
+    // Step 6: If we couldn't extract ingredients, use Grok to generate them from video title
     if (ingredients.length === 0) {
-      console.log("No ingredients found in video description, generating from video title using Grok");
+      console.log("⚠️ [YOUTUBE] No ingredients found, generating from video title using Grok...");
       try {
         const grokIngredients = await generateIngredientsFromTitle(videoInfo.title);
         if (grokIngredients.length > 0) {
@@ -1203,10 +1240,52 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       }
     }
     
-    // Step 6: If no instructions found, leave empty for caller to handle
+    // Step 7: If no instructions found, try to generate them with GPT-OSS-120B
     if (instructions.length === 0) {
-      console.log("Failed to extract instructions from video");
-      instructions = [];
+      console.log("⚠️ [YOUTUBE] No instructions extracted, attempting GPT-OSS-120B generation...");
+      console.log(`📊 [YOUTUBE] Available text sources:`);
+      console.log(`  - Transcript: ${transcript ? `${transcript.length} chars` : 'NOT AVAILABLE'}`);
+      console.log(`  - Description: ${videoInfo.description ? `${videoInfo.description.length} chars` : 'NOT AVAILABLE'}`);
+      
+      // Try to generate instructions using GPT-OSS-120B
+      try {
+        const { groqInstructionGenerator } = await import('./groqInstructionGenerator');
+        
+        // Use transcript if available, otherwise use description
+        const textToUse = transcript || videoInfo.description || '';
+        
+        if (textToUse.length > 50) {
+          console.log(`🤖 [YOUTUBE] Using ${transcript ? 'TRANSCRIPT' : 'DESCRIPTION'} for GPT-OSS-120B generation`);
+          console.log(`📝 [YOUTUBE] Text preview: "${textToUse.substring(0, 200)}..."`);
+          
+          instructions = await groqInstructionGenerator.generateInstructionsFromTranscript(
+            textToUse,
+            videoInfo.title,
+            ingredients
+          );
+          
+          if (instructions.length > 0) {
+            console.log(`✅ [YOUTUBE] GPT-OSS-120B successfully generated ${instructions.length} instructions`);
+            instructions.forEach((inst, idx) => {
+              console.log(`  ${idx + 1}. ${inst.substring(0, 80)}...`);
+            });
+          } else {
+            console.log(`❌ [YOUTUBE] GPT-OSS-120B failed to generate instructions`);
+          }
+        } else {
+          console.log(`❌ [YOUTUBE] Insufficient text for instruction generation (only ${textToUse.length} chars)`);
+        }
+      } catch (genError) {
+        console.error('❌ [YOUTUBE] Error generating instructions with GPT-OSS-120B:', genError);
+      }
+      
+      // If still no instructions, leave empty for validation to handle
+      if (instructions.length === 0) {
+        console.log("⚠️ [YOUTUBE] No instructions generated, will be handled by validation pipeline");
+        instructions = [];
+      }
+    } else {
+      console.log(`✅ [YOUTUBE] Successfully extracted ${instructions.length} instructions`);
     }
     
     // Return the complete recipe data with proper video fields
@@ -1226,7 +1305,8 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       video_title: videoInfo.title,
       video_channel: videoInfo.channelTitle,
       source_url: `https://www.youtube.com/watch?v=${videoInfo.id}`,
-      source_name: videoInfo.channelTitle
+      source_name: videoInfo.channelTitle,
+      transcript: transcript || ''  // Store transcript for later use if needed
     };
     
     // Format ingredients with consistent measurement formatting
