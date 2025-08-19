@@ -638,15 +638,19 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
           {/* Debug: Show nutrition_info data */}
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded text-xs">
-              <strong>🎉 Recipe ID {recipe.id} - NEW RECIPES HAVE NUTRITION DATA!</strong>
+              <strong>🎉 Recipe ID {recipe.id} - NUTRITION DEBUG</strong>
               <br />
               nutrition_info exists: {recipe.nutrition_info ? 'YES' : 'NO'}
               <br />
-              has calories: {recipe.nutrition_info?.calories ? 'YES' : 'NO'} 
+              has calories: {recipe.nutrition_info?.calories ? 'YES' : 'NO'} ({recipe.nutrition_info?.calories})
               <br />
-              has protein: {recipe.nutrition_info?.protein_g ? 'YES' : 'NO'}
+              has protein: {recipe.nutrition_info?.protein_g ? 'YES' : 'NO'} ({recipe.nutrition_info?.protein_g}g)
               <br />
-              {recipe.id >= 405 ? '✅ NEW RECIPE - Should have nutrition data!' : '⚠️ OLD RECIPE - May not have nutrition data'}
+              nutrition_info type: {typeof recipe.nutrition_info}
+              <br />
+              nutrition_info keys: {recipe.nutrition_info ? Object.keys(recipe.nutrition_info).join(', ') : 'N/A'}
+              <br />
+              Raw nutrition_info: {JSON.stringify(recipe.nutrition_info)}
             </div>
           )}
           
