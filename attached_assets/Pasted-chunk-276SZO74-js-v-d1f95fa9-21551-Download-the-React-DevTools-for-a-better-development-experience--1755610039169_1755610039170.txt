@@ -1,0 +1,149 @@
+chunk-276SZO74.js?v=d1f95fa9:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:128 Query function called for: /api/auth/user
+queryClient.ts:22 API Request: {url: '/api/auth/user', method: 'GET', hasBody: false}
+queryClient.ts:34 🔄 Received refreshed token from server, updating localStorage
+queryClient.ts:41 API Response: {url: '/api/auth/user', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: true}
+queryClient.ts:58 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-19T00:50:07.578Z"}}
+queryClient.ts:80 API Parsed Response: {user: {…}}
+queryClient.ts:131 Query result: {user: {…}}
+queryClient.ts:128 Query function called for: /api/profile
+queryClient.ts:22 API Request: {url: '/api/profile', method: 'GET', hasBody: false}
+queryClient.ts:128 Query function called for: /api/recipes/saved
+queryClient.ts:22 API Request: {url: '/api/recipes/saved', method: 'GET', hasBody: false}
+queryClient.ts:128 Query function called for: /api/recipes/generated
+queryClient.ts:22 API Request: {url: '/api/recipes/generated', method: 'GET', hasBody: false}
+queryClient.ts:41 API Response: {url: '/api/profile', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"id":33,"user_id":"user_1755468147872_11","profile_name":"My Profile","primary_goal":"Save Money","family_size":1,"members":[],"profile_type":"individual","preferences":[],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":[],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-18T15:43:04.693Z","updated_at":"2025-08-19T00:50:04.899Z"}
+queryClient.ts:80 API Parsed Response: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+queryClient.ts:131 Query result: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+queryClient.ts:41 API Response: {url: '/api/recipes/saved', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: []
+queryClient.ts:80 API Parsed Response: []
+queryClient.ts:131 Query result: []
+queryClient.ts:41 API Response: {url: '/api/recipes/generated', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: [{"id":404,"title":"EASY CHINESE SOY SAUCE CHICKEN RECIPE #recipe #cooking #chinesefood #chickenrecipe #soysauce","description":"","image_url":"https://i.ytimg.com/vi/_pADG4jy-Uk/hqdefault.jpg","time_minutes":30,"cuisine":null,"diet":null,"ingredients":[{"name":"chicken thighs or drumsticks","display_text":"2 lbs chicken thighs or drumsticks","measurements":[{"quantity":2,"unit":"lb"}]},{"name":"soy sauce","display_text":"1 cup soy sauce","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"dark soy sauce","display_text":"1/2 cup dark soy sauce","measurements":[{"quantity":0.5,"unit":"cup"}]},{"name":"Shaoxing wine","display_text":"1/2 cup Shaoxing wine","measurements":[{"quantity":0.5,"unit":"cup"}]},{"name":"brown sugar","display_text":"1/2 cup brown sugar","measurements":[{"quantity":0.5,"unit":"cup"}]},{"name":"water","display_text":"4 cups water","measurements":[{"quantity":4,"unit":"cup"}]},{"name":"inch piece of ginger, sliced","display_text":"1 inch piece of ginger, sliced","measurements":[{"quantity":1,"unit":"pieces"}]},{"name":"garlic, smashed","display_text":"4 cloves garlic, smashed","measurements":[{"quantity":4,"unit":"cloves"}]},{"name":"star anise","display_text":"2 star anise","measurements":[{"quantity":2,"unit":"pieces"}]},{"name":"cinnamon stick","display_text":"1 cinnamon stick","measurements":[{"quantity":1,"unit":"pieces"}]},{"name":"green onions, cut into -inch pieces","display_text":"2 green onions, cut into 2-inch pieces","measurements":[{"quantity":2,"unit":"g"}]},{"name":"vegetable oil","display_text":"1 tablespoon vegetable oil","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"sesame oil","display_text":"1 teaspoon sesame oil","measurements":[{"quantity":1,"unit":"tsp"}]},{"name":"cornstarch mixed with /  water for thickening","display_text":"2 tablespoons cornstarch mixed with 1/4 cup water for thickening","measurements":[{"quantity":2,"unit":"tbsp"},{"quantity":0.25,"unit":"cup"}]}],"instructions":["No instructions available"],"nutrition_info":null,"video_id":"_pADG4jy-Uk","video_title":"EASY CHINESE SOY SAUCE CHICKEN RECIPE #recipe #cooking #chinesefood #chickenrecipe #soysauce","video_channel":"foodiechina888","is_saved":false,"created_at":"2025-08-19T13:21:40.714Z","user_id":"user_1755468147872_11"},{"id":403,"title":"Creamy Spaghetti Verde Poblano Recipe #shorts","description":"Watch this video: \"Creamy Spaghetti Verde Poblano Recipe #shorts\" by Love Kari Cooking","image_url":"https://i.ytimg.com/vi/YJUvxp8wNhY/hqdefault.jpg","time_minutes":45,"cuisine":"Any Cuisine","diet":"None","ingredients":["Watch the video for ingredients"],"instructions":["Step 1: Bring a large pot of salted water to a rolling boil, add 12 oz (340 g) spaghetti, and cook al dente according to package directions, about 9‑10 minutes; drain, reserving ½ cup pasta water.","Step 2: While the pasta cooks, preheat a dry skillet over medium‑high heat. Roast 2 poblano peppers, skin side down, turning occasionally until the skins are blistered and blackened, about 5‑6 minutes; transfer to a bowl, cover with plastic wrap for 5 minutes, then peel, seed, and roughly chop.","Step 3: In the same skillet, add 2 Tbsp olive oil and sauté 1 minced garlic clove over medium heat until fragrant, about 30 seconds.","Step 4: Add the chopped roasted poblano, 1 cup heavy cream, ½ cup grated Parmesan cheese, ¼ cup chopped fresh cilantro, and the juice of 1 lime to the skillet; stir to combine.","Step 5: Reduce heat to low and simmer the sauce, stirring occasionally, until it thickens slightly, about 3‑4 minutes; season with ½ tsp salt and ¼ tsp freshly ground black pepper (adjust to taste).","Step 6: Transfer the cooked spaghetti to the skillet with the sauce, tossing to coat evenly; if the sauce is too thick, add reserved pasta water a tablespoon at a time until desired creaminess is reached.","Step 7: Serve immediately, garnished"],"nutrition_info":null,"video_id":"YJUvxp8wNhY","video_title":"Creamy Spaghetti Verde Poblano Recipe #shorts","video_channel":"Love Kari Cooking","is_saved":false,"created_at":"2025-08-19T13:20:57.266Z","user_id":"user_1755468147872_11"},{"id":402,"title":"How to Make Perfect Stir Fry | Allrecipes","description":"For quick, easy, and budget-friendly meals, you can't beat stir-frying. Once you know the basics behind putting together a great stir-fry, you can easily introduce new ingredients, make a variety of sauces, or try traditional stir-fry recipes. Learn the four components of a sit try and the surprisingly simple techniques that go into making restaurant-worthy stir-fry dishes.\n\n00:00 Introduction\n00:10 4 Components of a Stir Fry\n00:28 Protein\n01:08 Vegetables\n01:51 Aromatics\n03:02 Sauce\n04:14 Stir Fry\n07:10 Final Result\n08:04 Alternative Recipe\n\nGet the recipes here: \nSuper Easy Stir Fry: https://www.allrecipes.com/article/super-easy-stir-fry/\n\nChef and mom of three, Nicole McLaughlin, will share all the cooking basics — plus some things you may have missed — as she
+queryClient.ts:80 API Parsed Response: (19) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+queryClient.ts:131 Query result: (19) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+queryClient.ts:22 API Request: {url: '/api/recipes/generate', method: 'POST', hasBody: true}
+queryClient.ts:41 API Response: {url: '/api/recipes/generate', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"id":405,"title":"Beef Stir Fry","description":"Master Chef John Zhang shows you tips on making tender beef stir fry with simple step by step instructions.\n\nSubscribe for more awesome Chinese recipes:\nhttps://www.youtube.com/c/TasteShow?sub_confirmation=1\n\n-------------------------------------------------------------------------------------------------\n\nCraving more Chinese beef? Check out our Beef Recipes playlists: https://www.youtube.com/playlist?list=PL00a0G6_TRLVv1MKghgLF8KbWODtAhNfn\n\nSkip takeouts and make these restaurant quality beef recipes at home. You’ll be amazed. \n\nSubscribe for more awesome Chinese recipes:\nhttps://www.youtube.com/c/TasteShow?sub_confirmation=1\n\nAre you a foodie craving Chinese food? Look no further.\n\nHere we have the best Chinese recipes, prepared by award-winning chefs to showcase authentic, traditional Chinese cooking.\n\nWhether you want to know how to make Chinese dishes at home, or learn how to master cooking with a wok, we've got you covered.","image_url":"https://i.ytimg.com/vi/cyS8ycmGs1U/hqdefault.jpg","time_minutes":30,"cuisine":null,"diet":null,"ingredients":[{"name":"flank steak, thinly sliced","display_text":"2 lbs flank steak, thinly sliced","measurements":[{"quantity":2,"unit":"lb"}]},{"name":"soy sauce","display_text":"3 tablespoons soy sauce","measurements":[{"quantity":3,"unit":"tbsp"}]},{"name":"oyster sauce","display_text":"2 tablespoons oyster sauce","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"cornstarch","display_text":"1 tablespoon cornstarch","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"sesame oil","display_text":"2 teaspoons sesame oil","measurements":[{"quantity":2,"unit":"tsp"}]},{"name":"vegetable oil","display_text":"2 tablespoons vegetable oil","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"onion, sliced","display_text":"1 large onion, sliced","measurements":[{"quantity":1,"unit":"l"}]},{"name":"bell peppers, sliced","display_text":"2 bell peppers, sliced","measurements":[{"quantity":2,"unit":"pieces"}]},{"name":"broccoli florets","display_text":"1 cup broccoli florets","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"snap peas","display_text":"1 cup snap peas","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"garlic, minced","display_text":"3 cloves garlic, minced","measurements":[{"quantity":3,"unit":"cloves"}]},{"name":"ginger, minced","display_text":"1 tablespoon ginger, minced","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"beef broth","display_text":"1/2 cup beef broth","measurements":[{"quantity":0.5,"unit":"cup"}]},{"name":"sugar","display_text":"2 teaspoons sugar","measurements":[{"quantity":2,"unit":"tsp"}]},{"name":"black pepper","display_text":"1 teaspoon black pepper","measurements":[{"quantity":1,"unit":"tsp"}]},{"name":"green onions, chopped","display_text":"2 green onions, chopped","measurements":[{"quantity":2,"unit":"g"}]},{"name":"sesame seeds","display_text":"1 tablespoon sesame seeds","measurements":[{"quantity":1,"unit":"tbsp"}]}],"instructions":["Master Chef John Zhang shows you tips on making tender beef stir fry with simple step by step instructions.","-------------------------------------------------------------------------------------------------","Craving more Chinese beef? Check out our Beef Recipes playlists: https://www.youtube.com/playlist?list=PL00a0G6_TRLVv1MKghgLF8KbWODtAhNfn","Skip takeouts and make these restaurant quality beef recipes at home. You’ll be amazed.","Here we have the best Chinese recipes, prepared by award-winning chefs to showcase authentic, traditional Chinese cooking.","Whether you want to know how to make Chinese dishes at home, or learn how to master cooking with a wok, we've got you covered."],"nutrition_info":{"calories":561,"protein_g":67,"carbs_g":1.4,"fat_g":32.1,"fiber_g":0.1,"sugar_g":0.1,"sodium_mg":1662,"cholesterol_mg":207,"saturated_fat_g":11.4,"trans_fat_g":0,"servings":4,"total_calories":2243,"total_protein_g":268.1,"total_carbs_g":5.5,"total_fat_g":128.3,"total_fiber_g":0.5,"total_sugar_g":0.2,"total_sodium_mg":6647,"ingredient_nutrition":[{"ingredient":"flank steak","amount":"2 lbs","calories":2204,"protein":264,"carbs":0,"fat":127.9},{"ingredient":"soy sauce","amount":"3 tablespoons","calories":24,"protein":3.7,"carbs":2.2,"fat":0.3},{"ingredient":"oyster sauce","amount":"2 tablespoons","calories":15,"protein":0.4,"carbs":3.3,"fat":0.1}]},"video_id":"cyS8ycmGs1U","video_title":"How to Cook Perfect Beef Stir Fry Every Time","video_channel":"Taste Show","is_saved":false,"created_at":"2025-08-19T13:27:03.563Z","user_id":"user_1755468147872_11"}
+queryClient.ts:80 API Parsed Response: {id: 405, title: 'Beef Stir Fry', description: "Master Chef John Zhang shows you tips on making te…master cooking with a wok, we've got you covered.", image_url: 'https://i.ytimg.com/vi/cyS8ycmGs1U/hqdefault.jpg', time_minutes: 30, …}
+www.youtube.com/generate_204?1tL9qg:1  GET https://www.youtube.com/generate_204?1tL9qg net::ERR_BLOCKED_BY_CLIENT
+Image
+eval @ VM430:1
+hy @ cyS8ycmGs1U:1
+eval @ cyS8ycmGs1U:1
+Wy @ cyS8ycmGs1U:1
+By @ cyS8ycmGs1U:1
+$g @ cyS8ycmGs1U:1
+su @ cyS8ycmGs1U:1
+g @ cyS8ycmGs1U:1
+XK.Oeh_ @ cyS8ycmGs1U:1
+O0 @ cyS8ycmGs1U:1
+kF @ cyS8ycmGs1U:1
+J0 @ base.js:1248
+y4T @ base.js:2730
+(anonymous) @ base.js:2729
+x @ base.js:2099
+(anonymous) @ base.js:1672
+setTimeout
+apply @ VM294:1361
+g.MV @ base.js:1696
+(anonymous) @ base.js:2100
+p.zb @ www-embed-player.js:983
+g.nx @ base.js:2104
+(anonymous) @ base.js:2109
+setTimeout
+apply @ VM294:1361
+KQT.C.onload @ base.js:2110
+script
+Nr @ base.js:383
+g.bV @ base.js:382
+KQT @ base.js:2110
+brD @ base.js:2109
+g.lT @ base.js:2108
+tPR @ base.js:2729
+g.D.initialize @ base.js:9107
+hrT @ base.js:3851
+g.pm @ base.js:3859
+sH @ base.js:7238
+Jl1 @ base.js:7237
+g.p1 @ base.js:7208
+g.p1.create @ base.js:13370
+a.G @ www-embed-player.js:2263
+dE @ www-embed-player.js:2264
+p.loadNewVideoConfig @ www-embed-player.js:2258
+(anonymous) @ www-embed-player.js:2256
+setTimeout
+apply @ VM294:1361
+aE @ www-embed-player.js:2256
+uE @ www-embed-player.js:2296
+(anonymous) @ www-embed-player.js:2308
+(anonymous) @ cyS8ycmGs1U?autoplay=0&mute=0&controls=1&origin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&widgetid=1&forigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&aoriginsup=1&gporigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&vf=3:10
+base.js:1111  POST https://play.google.com/log?hasfast=true&auth=SAPISIDHASH+a303cac2b26955a63f3f3ec024a738814502d284+SAPISID3PHASH+a303cac2b26955a63f3f3ec024a738814502d284&authuser=0&format=json net::ERR_BLOCKED_BY_CLIENT
+(anonymous) @ base.js:1111
+D5R @ base.js:1112
+ptT @ base.js:1111
+g.D.flush @ base.js:8326
+T4.flush @ base.js:8336
+flush @ base.js:1225
+g.D.dO @ base.js:8378
+(anonymous) @ base.js:1234
+(anonymous) @ base.js:1229
+setTimeout
+apply @ VM294:1361
+y5s @ base.js:1229
+BE.Vd @ base.js:8432
+(anonymous) @ base.js:1245
+Promise.then
+E @ base.js:1245
+Wy @ cyS8ycmGs1U:1
+By @ cyS8ycmGs1U:1
+$g @ cyS8ycmGs1U:1
+su @ cyS8ycmGs1U:1
+g @ cyS8ycmGs1U:1
+XK.Oeh_ @ cyS8ycmGs1U:1
+O0 @ cyS8ycmGs1U:1
+kF @ cyS8ycmGs1U:1
+J0 @ base.js:1248
+y4T @ base.js:2730
+(anonymous) @ base.js:2729
+x @ base.js:2099
+(anonymous) @ base.js:1672
+setTimeout
+apply @ VM294:1361
+g.MV @ base.js:1696
+(anonymous) @ base.js:2100
+p.zb @ www-embed-player.js:983
+g.nx @ base.js:2104
+(anonymous) @ base.js:2109
+setTimeout
+apply @ VM294:1361
+KQT.C.onload @ base.js:2110
+script
+Nr @ base.js:383
+g.bV @ base.js:382
+KQT @ base.js:2110
+brD @ base.js:2109
+g.lT @ base.js:2108
+tPR @ base.js:2729
+g.D.initialize @ base.js:9107
+hrT @ base.js:3851
+g.pm @ base.js:3859
+sH @ base.js:7238
+Jl1 @ base.js:7237
+g.p1 @ base.js:7208
+g.p1.create @ base.js:13370
+a.G @ www-embed-player.js:2263
+dE @ www-embed-player.js:2264
+p.loadNewVideoConfig @ www-embed-player.js:2258
+(anonymous) @ www-embed-player.js:2256
+setTimeout
+apply @ VM294:1361
+aE @ www-embed-player.js:2256
+uE @ www-embed-player.js:2296
+(anonymous) @ www-embed-player.js:2308
+(anonymous) @ cyS8ycmGs1U?autoplay=0&mute=0&controls=1&origin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&widgetid=1&forigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&aoriginsup=1&gporigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&vf=3:10

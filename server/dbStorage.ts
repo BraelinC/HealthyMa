@@ -141,10 +141,30 @@ export class DatabaseStorage implements IStorage {
 
   // Recipe methods
   async createRecipe(recipe: InsertRecipe): Promise<Recipe> {
+    console.log('🔥 [DB DEBUG] About to insert recipe with nutrition_info:', {
+      title: recipe.title,
+      has_nutrition_info: !!recipe.nutrition_info,
+      nutrition_preview: recipe.nutrition_info ? {
+        calories: (recipe.nutrition_info as any).calories,
+        protein_g: (recipe.nutrition_info as any).protein_g
+      } : null
+    });
+    
     const [createdRecipe] = await db
       .insert(recipes)
       .values(recipe)
       .returning();
+    
+    console.log('🔥 [DB DEBUG] Recipe inserted, returned data:', {
+      id: createdRecipe.id,
+      title: createdRecipe.title,
+      has_nutrition_info: !!createdRecipe.nutrition_info,
+      nutrition_preview: createdRecipe.nutrition_info ? {
+        calories: (createdRecipe.nutrition_info as any).calories,
+        protein_g: (createdRecipe.nutrition_info as any).protein_g
+      } : null
+    });
+    
     return createdRecipe;
   }
 
