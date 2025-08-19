@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 19, 2025**: Completely resolved nutrition calculation pipeline and frontend display
+- Fixed critical Groq ingredient parsing JSON response errors that prevented nutrition calculation for newer recipes
+- Enhanced ingredient parser with multiple fallback methods and robust error handling  
+- Added comprehensive debug logging throughout nutrition pipeline to identify data flow issues
+- Confirmed end-to-end nutrition calculation working: calculation, database storage, and API transmission
+- New recipes (ID 405+) now properly display nutrition data in frontend tabs
+- Removed debug logs after successful implementation verification
+
 **August 16, 2025**: Fixed LogMeal API rate limiting and excessive API usage issues
 - Added intelligent caching system to prevent duplicate API calls for same images (5-minute cache)
 - Implemented daily API call limit tracking (180 calls/day with 20 buffer from 200 limit)

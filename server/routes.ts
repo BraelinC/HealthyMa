@@ -565,13 +565,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
 
             if (nutritionResult) {
-              console.log('🔥 [NUTRITION DEBUG] About to save nutrition data:', {
-                calories: nutritionResult.perServing.calories,
-                protein_g: nutritionResult.perServing.protein,
-                carbs_g: nutritionResult.perServing.carbs,
-                fat_g: nutritionResult.perServing.fat
-              });
-              
               // Add nutrition info to recipe
               recipe.nutrition_info = {
                 // Per serving nutrition
@@ -744,26 +737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        console.log('🔥 [ROUTES DEBUG] Recipe object before database save:', {
-          title: finalRecipe.title,
-          has_nutrition_info: !!finalRecipe.nutrition_info,
-          nutrition_preview: finalRecipe.nutrition_info ? {
-            calories: (finalRecipe.nutrition_info as any).calories,
-            protein_g: (finalRecipe.nutrition_info as any).protein_g
-          } : null
-        });
-        
         const savedRecipe = await storage.createRecipe(finalRecipe);
-        
-        console.log('🔥 [ROUTES DEBUG] Recipe object after database save:', {
-          id: savedRecipe.id,
-          title: savedRecipe.title,
-          has_nutrition_info: !!savedRecipe.nutrition_info,
-          nutrition_preview: savedRecipe.nutrition_info ? {
-            calories: (savedRecipe.nutrition_info as any).calories,
-            protein_g: (savedRecipe.nutrition_info as any).protein_g
-          } : null
-        });
         
         console.log("Returning recipe with video data:", {
           id: savedRecipe.id,
