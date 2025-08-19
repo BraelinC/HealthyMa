@@ -15,6 +15,7 @@ import { communityService } from "./communityService";
 import { creatorService } from "./creatorService";
 import { mealPlanSharingService } from "./mealPlanSharingService";
 import { groqValidator } from "./groqValidator";
+import { recipeNutritionCalculator } from "./recipeNutritionCalculator";
 
 import Stripe from "stripe";
 import { insertProfileSchema, type InsertProfile, users } from "@shared/schema";
@@ -536,79 +537,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Save and return the recipe (for both fast and detailed modes)
       if (recipe) {
-        // Add nutrition calculation for detailed recipes
-        if (generationMode === 'detailed' && recipe.ingredients && recipe.ingredients.length > 0) {
+        // Add nutrition calculation using our new integrated calculator
+        if (!skipNutrition && recipe.ingredients && recipe.ingredients.length > 0) {
           try {
-            const { calculateRecipeNutrition } = await import('./nutritionCalculator');
-
-            // Helper function to get USDA nutrition data
-            const getUSDANutrition = async (foodName: string) => {
-              try {
-                console.log(`Looking up USDA nutrition for: "${foodName}"`);
-                const searchResponse = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
-
-                if (searchResponse.ok) {
-                  const searchData: any = await searchResponse.json();
-                  if (searchData.foods && searchData.foods.length > 0) {
-                    const foodId = searchData.foods[0].fdcId;
-                    console.log(`Found USDA food ID ${foodId} for "${foodName}"`);
-                    const nutritionResponse = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
-
-                    if (nutritionResponse.ok) {
-                      const nutritionData: any = await nutritionResponse.json();
-                      const nutrients = nutritionData.foodNutrients || [];
-
-                      let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 };
-
-                      nutrients.forEach((nutrient: any) => {
-                        const name = nutrient.nutrient?.name?.toLowerCase() || '';
-                        const value = parseFloat(nutrient.amount) || 0;
-
-                        if (name.includes('energy')) nutrition.calories = value;
-                        else if (name.includes('protein')) nutrition.protein = value;
-                        else if (name.includes('carbohydrate')) nutrition.carbs = value;
-                        else if (name.includes('total lipid') || name.includes('fat')) nutrition.fat = value;
-                        else if (name.includes('fiber')) nutrition.fiber = value;
-                        else if (name.includes('sugars')) nutrition.sugar = value;
-                        else if (name.includes('sodium')) nutrition.sodium = value;
-                      });
-
-                      console.log(`USDA nutrition for "${foodName}": ${nutrition.calories}cal, ${nutrition.protein}g protein`);
-                      return nutrition;
-                    } else {
-                      console.log(`Failed to get nutrition data for food ID ${foodId}`);
-                    }
-                  } else {
-                    console.log(`No USDA foods found for "${foodName}"`);
-                  }
-                } else {
-                  console.log(`USDA search failed for "${foodName}": ${searchResponse.status}`);
-                }
-                return null;
-              } catch (error) {
-                console.error(`Error fetching USDA nutrition for ${foodName}:`, error);
-                return null;
+            console.log('🍎 Starting nutrition calculation for recipe:', recipe.title);
+            
+            // Extract ingredient strings from recipe
+            const ingredientStrings = recipe.ingredients.map((ing: any) => {
+              if (typeof ing === 'string') {
+                return ing;
+              } else if (ing.display_text) {
+                return ing.display_text;
+              } else if (ing.measurements && ing.measurements.length > 0) {
+                const measurement = ing.measurements[0];
+                return `${measurement.quantity} ${measurement.unit} ${ing.name}`;
               }
-            };
+              return ing.name || '';
+            }).filter((s: string) => s.length > 0);
 
-            // Calculate nutrition with proper serving breakdown
-            const nutritionData = await calculateRecipeNutrition(recipe, getUSDANutrition);
+            console.log(`📝 Processing ${ingredientStrings.length} ingredients`);
+            
+            // Calculate nutrition using the new calculator
+            const servings = recipe.servings || 4;
+            const nutritionResult = await recipeNutritionCalculator.calculateRecipeNutrition(
+              ingredientStrings,
+              servings
+            );
 
-            recipe.nutrition_info = {
-              calories: nutritionData.perServing.calories,
-              protein_g: nutritionData.perServing.protein,
-              carbs_g: nutritionData.perServing.carbs,
-              fat_g: nutritionData.perServing.fat,
-              fiber_g: nutritionData.perServing.fiber,
-              sugar_g: nutritionData.perServing.sugar,
-              sodium_mg: nutritionData.perServing.sodium,
-              servings: nutritionData.servings,
-              total_calories: nutritionData.calories
-            };
+            if (nutritionResult) {
+              // Add nutrition info to recipe
+              recipe.nutrition_info = {
+                // Per serving nutrition
+                calories: nutritionResult.perServing.calories,
+                protein_g: nutritionResult.perServing.protein,
+                carbs_g: nutritionResult.perServing.carbs,
+                fat_g: nutritionResult.perServing.fat,
+                fiber_g: nutritionResult.perServing.fiber,
+                sugar_g: nutritionResult.perServing.sugar,
+                sodium_mg: nutritionResult.perServing.sodium,
+                cholesterol_mg: nutritionResult.perServing.cholesterol,
+                saturated_fat_g: nutritionResult.perServing.saturatedFat,
+                trans_fat_g: nutritionResult.perServing.transFat,
+                // Servings and totals
+                servings: nutritionResult.servings,
+                total_calories: nutritionResult.total.calories,
+                total_protein_g: nutritionResult.total.protein,
+                total_carbs_g: nutritionResult.total.carbs,
+                total_fat_g: nutritionResult.total.fat,
+                total_fiber_g: nutritionResult.total.fiber,
+                total_sugar_g: nutritionResult.total.sugar,
+                total_sodium_mg: nutritionResult.total.sodium,
+                // Include the ingredient breakdown for transparency
+                ingredient_nutrition: nutritionResult.ingredientBreakdown.map(item => ({
+                  ingredient: item.ingredient,
+                  amount: item.amount,
+                  calories: item.nutrition.calories,
+                  protein: item.nutrition.protein,
+                  carbs: item.nutrition.carbs,
+                  fat: item.nutrition.fat
+                }))
+              };
 
-            console.log(`Added per-serving nutrition: ${nutritionData.perServing.calories}cal per serving (${nutritionData.servings} servings total, ${nutritionData.calories} total calories)`);
+              console.log(`✅ Nutrition calculated successfully:`);
+              console.log(`   Per serving: ${nutritionResult.perServing.calories} cal`);
+              console.log(`   Macros: ${nutritionResult.perServing.protein}g protein, ${nutritionResult.perServing.carbs}g carbs, ${nutritionResult.perServing.fat}g fat`);
+            } else {
+              console.log('⚠️ Nutrition calculation returned null, proceeding without nutrition data');
+            }
           } catch (nutritionError: any) {
-            console.log('Nutrition calculation failed:', nutritionError.message);
+            console.error('❌ Nutrition calculation failed:', nutritionError.message);
             console.log('Proceeding without nutrition data');
           }
         }

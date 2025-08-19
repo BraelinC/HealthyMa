@@ -48,12 +48,35 @@ interface Recipe {
   ingredients: Ingredient[];
   instructions: string[];
   nutrition_info?: {
+    // Per serving nutrition
     calories: number;
     protein_g: number;
     carbs_g: number;
     fat_g: number;
-    fiber_g: number;
-    sodium_mg: number;
+    fiber_g?: number;
+    sugar_g?: number;
+    sodium_mg?: number;
+    cholesterol_mg?: number;
+    saturated_fat_g?: number;
+    trans_fat_g?: number;
+    // Servings and totals
+    servings?: number;
+    total_calories?: number;
+    total_protein_g?: number;
+    total_carbs_g?: number;
+    total_fat_g?: number;
+    total_fiber_g?: number;
+    total_sugar_g?: number;
+    total_sodium_mg?: number;
+    // Ingredient breakdown
+    ingredient_nutrition?: Array<{
+      ingredient: string;
+      amount: string;
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+    }>;
   };
   is_saved?: boolean;
   source_url?: string;
@@ -613,37 +636,115 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
             <div>
               <h4 className="font-semibold mb-4 text-purple-700">USDA Nutrition Analysis</h4>
 
-              {/* Main Macros - 3 prominent boxes */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                  <div className="text-2xl font-bold text-purple-700">{recipe.nutrition_info.calories}</div>
-                  <div className="text-sm font-medium text-purple-600">Calories</div>
+              {/* Servings indicator */}
+              {recipe.nutrition_info.servings && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="text-center">
+                    <span className="text-lg font-semibold text-amber-800">
+                      Recipe Makes: {recipe.nutrition_info.servings} Servings
+                    </span>
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-                  <div className="text-2xl font-bold text-green-700">{recipe.nutrition_info.protein_g}g</div>
-                  <div className="text-sm font-medium text-green-600">Protein</div>
+              )}
+
+              {/* Per Serving Section */}
+              <div className="mb-6">
+                <h5 className="text-sm font-semibold text-gray-600 mb-3">PER SERVING</h5>
+                
+                {/* Main Macros - 3 prominent boxes */}
+                <div className="grid grid-cols-3 gap-4 mb-3">
+                  <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                    <div className="text-2xl font-bold text-purple-700">{recipe.nutrition_info.calories}</div>
+                    <div className="text-sm font-medium text-purple-600">Calories</div>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                    <div className="text-2xl font-bold text-green-700">{recipe.nutrition_info.protein_g}g</div>
+                    <div className="text-sm font-medium text-green-600">Protein</div>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                    <div className="text-2xl font-bold text-blue-700">{recipe.nutrition_info.carbs_g}g</div>
+                    <div className="text-sm font-medium text-blue-600">Carbs</div>
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                  <div className="text-2xl font-bold text-blue-700">{recipe.nutrition_info.carbs_g}g</div>
-                  <div className="text-sm font-medium text-blue-600">Carbs</div>
+
+                {/* Secondary Macros - smaller boxes */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.fat_g}g</div>
+                    <div className="text-sm text-gray-500">Fat</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.fiber_g || 0}g</div>
+                    <div className="text-sm text-gray-500">Fiber</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.sodium_mg || 0}mg</div>
+                    <div className="text-sm text-gray-500">Sodium</div>
+                  </div>
                 </div>
               </div>
 
-              {/* Secondary Macros - smaller boxes underneath */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.fat_g}g</div>
-                  <div className="text-sm text-gray-500">Fat</div>
+              {/* Total Recipe Section - Only show if we have total data */}
+              {(recipe.nutrition_info.total_calories || recipe.nutrition_info.total_protein_g) && (
+                <div className="border-t pt-4">
+                  <h5 className="text-sm font-semibold text-gray-600 mb-3">TOTAL RECIPE</h5>
+                  
+                  {/* Total Macros */}
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                      <div className="text-xl font-bold text-purple-700">
+                        {recipe.nutrition_info.total_calories || (recipe.nutrition_info.calories * (recipe.nutrition_info.servings || 1))}
+                      </div>
+                      <div className="text-xs font-medium text-purple-600">Total Calories</div>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                      <div className="text-xl font-bold text-green-700">
+                        {recipe.nutrition_info.total_protein_g?.toFixed(1) || (recipe.nutrition_info.protein_g * (recipe.nutrition_info.servings || 1)).toFixed(1)}g
+                      </div>
+                      <div className="text-xs font-medium text-green-600">Total Protein</div>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                      <div className="text-xl font-bold text-blue-700">
+                        {recipe.nutrition_info.total_carbs_g?.toFixed(1) || (recipe.nutrition_info.carbs_g * (recipe.nutrition_info.servings || 1)).toFixed(1)}g
+                      </div>
+                      <div className="text-xs font-medium text-blue-600">Total Carbs</div>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                      <div className="text-xl font-bold text-orange-700">
+                        {recipe.nutrition_info.total_fat_g?.toFixed(1) || (recipe.nutrition_info.fat_g * (recipe.nutrition_info.servings || 1)).toFixed(1)}g
+                      </div>
+                      <div className="text-xs font-medium text-orange-600">Total Fat</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.fiber_g || 0}g</div>
-                  <div className="text-sm text-gray-500">Fiber</div>
+              )}
+
+              {/* Additional Nutrition Details */}
+              {(recipe.nutrition_info.sugar_g || recipe.nutrition_info.cholesterol_mg || recipe.nutrition_info.saturated_fat_g) && (
+                <div className="mt-4 pt-4 border-t">
+                  <h5 className="text-sm font-semibold text-gray-600 mb-3">ADDITIONAL DETAILS (Per Serving)</h5>
+                  <div className="grid grid-cols-3 gap-3">
+                    {recipe.nutrition_info.sugar_g !== undefined && (
+                      <div className="text-center p-2 bg-gray-50 rounded">
+                        <div className="text-sm font-semibold text-gray-700">{recipe.nutrition_info.sugar_g}g</div>
+                        <div className="text-xs text-gray-500">Sugar</div>
+                      </div>
+                    )}
+                    {recipe.nutrition_info.cholesterol_mg !== undefined && (
+                      <div className="text-center p-2 bg-gray-50 rounded">
+                        <div className="text-sm font-semibold text-gray-700">{recipe.nutrition_info.cholesterol_mg}mg</div>
+                        <div className="text-xs text-gray-500">Cholesterol</div>
+                      </div>
+                    )}
+                    {recipe.nutrition_info.saturated_fat_g !== undefined && (
+                      <div className="text-center p-2 bg-gray-50 rounded">
+                        <div className="text-sm font-semibold text-gray-700">{recipe.nutrition_info.saturated_fat_g}g</div>
+                        <div className="text-xs text-gray-500">Saturated Fat</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.sodium_mg || 0}mg</div>
-                  <div className="text-sm text-gray-500">Sodium</div>
-                </div>
-              </div>
+              )}
 
               <div className="text-xs text-gray-500 mt-4 p-3 bg-gray-50 rounded-lg">
                 <strong>Data Source:</strong> Nutrition values calculated from USDA FoodData Central database using authentic ingredient data and standard serving sizes based on USDA dietary guidelines.

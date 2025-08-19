@@ -1024,15 +1024,15 @@ function fallbackInstructionExtraction(text: string): string[] {
  * Format ingredient string with measurements
  */
 function extractMeasurements(ingredient: string): { quantity: number, unit: string }[] {
-  // Simple regex to extract measurements 
-  const measurementRegex = /(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\s*(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter)s?/gi;
+  // Enhanced regex to capture fractions and regular numbers
+  const measurementRegex = /(\d+\/\d+|\d+\s+\d+\/\d+|\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\s*(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter|clove|slice|can|jar|package|container)s?/gi;
   
-  // Use a simpler approach that doesn't require ES2018+
   const measurements: { quantity: number, unit: string }[] = [];
   let match;
   
   while ((match = measurementRegex.exec(ingredient)) !== null) {
-    let quantity = match[1].toLowerCase();
+    let quantityStr = match[1].toLowerCase();
+    let numericQuantity: number;
     
     // Convert text numbers to numeric
     const wordToNumber: Record<string, number> = {
@@ -1041,8 +1041,25 @@ function extractMeasurements(ingredient: string): { quantity: number, unit: stri
       'half': 0.5, 'quarter': 0.25
     };
     
-    const numericQuantity = wordToNumber[quantity] !== undefined ? 
-      wordToNumber[quantity] : parseFloat(quantity);
+    if (wordToNumber[quantityStr] !== undefined) {
+      numericQuantity = wordToNumber[quantityStr];
+    } else if (quantityStr.includes('/')) {
+      // Handle fractions like "1/2", "1/4", "1 1/2"
+      if (quantityStr.includes(' ')) {
+        // Mixed number like "1 1/2"
+        const parts = quantityStr.split(' ');
+        const whole = parseFloat(parts[0]);
+        const fractionParts = parts[1].split('/');
+        const fraction = parseFloat(fractionParts[0]) / parseFloat(fractionParts[1]);
+        numericQuantity = whole + fraction;
+      } else {
+        // Simple fraction like "1/2"
+        const fractionParts = quantityStr.split('/');
+        numericQuantity = parseFloat(fractionParts[0]) / parseFloat(fractionParts[1]);
+      }
+    } else {
+      numericQuantity = parseFloat(quantityStr);
+    }
     
     let unit = match[2].toLowerCase();
     
@@ -1050,7 +1067,8 @@ function extractMeasurements(ingredient: string): { quantity: number, unit: stri
     const unitMap: Record<string, string> = {
       'tablespoon': 'tbsp', 'teaspoon': 'tsp',
       'ounce': 'oz', 'pound': 'lb',
-      'gram': 'g', 'liter': 'l'
+      'gram': 'g', 'liter': 'l',
+      'clove': 'cloves', 'slice': 'slices'
     };
     
     const normalizedUnit = unitMap[unit] || unit;
@@ -1059,6 +1077,18 @@ function extractMeasurements(ingredient: string): { quantity: number, unit: stri
       quantity: numericQuantity,
       unit: normalizedUnit
     });
+  }
+  
+  // If no measurements found but ingredient contains "large" or similar size descriptors
+  if (measurements.length === 0) {
+    // Check for items like "4 large eggs", "2 medium onions"
+    const simpleQuantityMatch = ingredient.match(/^(\d+)\s+(large|medium|small)?\s*(.+)/i);
+    if (simpleQuantityMatch) {
+      measurements.push({
+        quantity: parseFloat(simpleQuantityMatch[1]),
+        unit: 'pieces'
+      });
+    }
   }
   
   return measurements;
@@ -1292,11 +1322,20 @@ export async function getRecipeFromYouTube(query: string, filters?: {
     return {
       title: videoInfo.title,
       description: videoInfo.description,
-      ingredients: ingredients.map(ingredient => ({
-        name: ingredient,
-        display_text: ingredient,
-        measurements: extractMeasurements(ingredient)
-      })),
+      ingredients: ingredients.map(ingredient => {
+        // Extract just the ingredient name without measurements for the 'name' field
+        const cleanName = ingredient
+          .replace(/^\d+\/\d+|\d+\s+\d+\/\d+|\d+(?:\.\d+)?/g, '')
+          .replace(/\b(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter|clove|slice|can|jar|package|container)s?\b/gi, '')
+          .replace(/^\s*(of|large|medium|small)\s+/i, '')
+          .trim();
+        
+        return {
+          name: cleanName || ingredient,
+          display_text: ingredient,
+          measurements: extractMeasurements(ingredient)
+        };
+      }),
       instructions: instructions,
       videoUrl: `https://www.youtube.com/watch?v=${videoInfo.id}`,
       thumbnailUrl: videoInfo.thumbnailUrl,

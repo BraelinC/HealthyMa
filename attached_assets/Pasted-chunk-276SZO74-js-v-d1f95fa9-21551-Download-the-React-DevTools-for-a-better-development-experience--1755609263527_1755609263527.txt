@@ -1,0 +1,274 @@
+chunk-276SZO74.js?v=d1f95fa9:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:128 Query function called for: /api/auth/user
+queryClient.ts:22 API Request: {url: '/api/auth/user', method: 'GET', hasBody: false}
+queryClient.ts:34 🔄 Received refreshed token from server, updating localStorage
+queryClient.ts:41 API Response: {url: '/api/auth/user', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: true}
+queryClient.ts:58 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-19T00:50:07.578Z"}}
+queryClient.ts:80 API Parsed Response: {user: {…}}
+queryClient.ts:131 Query result: {user: {…}}
+queryClient.ts:128 Query function called for: /api/profile
+queryClient.ts:22 API Request: {url: '/api/profile', method: 'GET', hasBody: false}
+queryClient.ts:128 Query function called for: /api/recipes/saved
+queryClient.ts:22 API Request: {url: '/api/recipes/saved', method: 'GET', hasBody: false}
+queryClient.ts:128 Query function called for: /api/recipes/generated
+queryClient.ts:22 API Request: {url: '/api/recipes/generated', method: 'GET', hasBody: false}
+queryClient.ts:41 API Response: {url: '/api/profile', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"id":33,"user_id":"user_1755468147872_11","profile_name":"My Profile","primary_goal":"Save Money","family_size":1,"members":[],"profile_type":"individual","preferences":[],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":[],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-18T15:43:04.693Z","updated_at":"2025-08-19T00:50:04.899Z"}
+queryClient.ts:80 API Parsed Response: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+queryClient.ts:131 Query result: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+queryClient.ts:41 API Response: {url: '/api/recipes/saved', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: []
+queryClient.ts:80 API Parsed Response: []
+queryClient.ts:131 Query result: []
+queryClient.ts:41 API Response: {url: '/api/recipes/generated', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: [{"id":398,"title":"Lasagna","description":"This  EASY Lasagna recipe is beefy, saucy and supremely flavorful. Homemade lasagna is better than any restaurant version and it feeds a crowd at dinner for way less than going out to eat.\n⬇️⬇️⬇️⬇️ CLICK FOR RECIPE ⬇️⬇️⬇️⬇️\n\nIngredients for Italian Lasagna:\n►1 lb ground beef (15-20% fat content)\n►1 small onion finely diced\n►2 large garlic cloves minced\n►1/4 cup red wine (any kind), or beef broth\n►1 Tbsp olive oil\n►24 oz Marinara Sauce (3 cups)\n►1/2 tsp sea salt\n►1/4 tsp black pepper ground\n►1/4 tsp dried thyme\n►1/2 tsp granulated sugar\n►2 Tbsp parsley finely chopped\n►9 lasagna noodles cooked al dente\n\nIngredients for Cheese Sauce:\n►16 oz low-fat cottage cheese\n►15 oz reduced-fat ricotta cheese\n►1 large egg\n►2 Tbsp parsley finely chopped, plus more to garnish\n►4 cups mozzarella cheese shredded, divided\n\n🖨PRINT THIS RECIPE: https://natashaskitchen.com/lasagna-recipe/\n📖 ORDER MY COOKBOOK HERE: https://amzlink.to/az0vR1N8PiUPw\n\n🎉For more Holiday Recipes, click here: https://natashaskitchen.com/category/holiday/\n\n⭐️TOOLS, USED IN THIS VIDEO (affiliate):\n►Oven Mitts: https://amzlink.to/az0jWjIm39jE3\n►Box Grater: https://amzlink.to/az0hO7LxZl0V5\n►Rectangular Baking Dish: https://amzlink.to/az0wet7iS3Szh\n\nALWAYS IN MY KITCHEN (affiliate):\n►See ALL TOOLS in our Shop: https://amzlink.to/az0eAEWDMABAC\n►Javelin Pro Thermometer: https://amzlink.to/az0ngl67IOPnt\n►My Favorite Cutting Board: https://amzlink.to/az0Wq8oQ19uRP\n►Hand Mixer: https://amzlink.to/az0pyXgX6NEaM\n►Favorite Blender: https://amzlink.to/az0edeFiMDZ5P\n►Food Processor: https://amzlink.to/az0VpLsYgbKx5\n►Glass Bowls: https://amzlink.to/az0pL0KwmB4yH\n►Kitchen Scale: https://amzlink.to/az0EQbKni8vXb\n►Glass Storage Containers: https://amzlink.to/az0Rk76ieqQ1K\n►Knife Block Set: https://amzlink.to/az0zfn1h7Nn1u\n►Our Dinnerware Set: https://amzlink.to/az04Dq4knOQqG\n►My White Apron: https://amzlink.to/az0faFt8CxaQy\n\n💌Fan Mail:\nNatasha's Kitchen\nPO Box 161\nMeridian, ID 83680\nUSA\n#lasagna #casserole #Natashaskitchen","image_url":"https://i.ytimg.com/vi/fVDsTP-pTXs/hqdefault.jpg","time_minutes":30,"cuisine":null,"diet":null,"ingredients":[{"name":"olive oil","display_text":"1 Tbsp olive oil","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"egg","display_text":"1 large egg","measurements":[{"quantity":1,"unit":"l"}]},{"name":"ground beef","display_text":"1 lb ground beef","measurements":[{"quantity":1,"unit":"lb"}]},{"name":"onion finely diced","display_text":"1 small onion finely diced","measurements":[{"quantity":1,"unit":"pieces"}]},{"name":"granulated sugar","display_text":"1/2 tsp granulated sugar","measurements":[{"quantity":0.5,"unit":"tsp"}]},{"name":"sea salt","display_text":"1/2 tsp sea salt","measurements":[{"quantity":0.5,"unit":"tsp"}]},{"name":"red wine","display_text":"1/4 cup red wine","measurements":[{"quantity":0.25,"unit":"cup"}]},{"name":"black pepper","display_text":"1/4 tsp black pepper","measurements":[{"quantity":0.25,"unit":"tsp"}]},{"name":"dried thyme","display_text":"1/4 tsp dried thyme","measurements":[{"quantity":0.25,"unit":"tsp"}]},{"name":"reduced-fat ricotta cheese","display_text":"15 oz reduced-fat ricotta cheese","measurements":[{"quantity":15,"unit":"oz"}]},{"name":"parsley finely chopped","display_text":"2 Tbsp parsley finely chopped","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"garlic  minced","display_text":"2 large garlic cloves minced","measurements":[{"quantity":2,"unit":"l"}]},{"name":"Marinara Sauce","display_text":"24 oz Marinara Sauce","measurements":[{"quantity":24,"unit":"oz"}]},{"name":"lasagna noodles","display_text":"9 lasagna noodles","measurements":[{"quantity":9,"unit":"l"}]}],"instructions":["Step 1: Preheat the oven to 375 °F (190 °C). Cook 9 lasagna noodles al dente"],"nutrition_info":{"calories":955,"protein_g":31,"carbs_g":90,"fat_g":46.9,"fiber_g":5.4,"sugar_g":12.8,"sodium_mg":2302,"cholesterol_mg":86,"saturated_fat_g":15.3,"trans_fat_g":2,"servings":4,"total_calories":3818,"ingredient_nutrition":[{"ingredient":"olive oil","amount":"1 Tbsp","calories":135,"protein":0,"carbs":0,"fat":15},{"ingredient":"egg","amount":"1 large","calories":5,"protein":0.1,"carbs":0.6,"fat":0.3},{"ingredient":"ground beef","amount":"1 lb","calories":1415,"protein":68.9,"carbs":0,"fat":121.5},{"ingredient":"onion finely","amount":"1 small","calories":4,"protein":0.1,"carbs":0,"fat":0},{"ingredient":"1/2 tsp granulated sugar","amount":"to taste","calories":4,"protein":0,"carbs":1,"fat":0},{"ingredient":"1/2 tsp sea salt","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"1/4 cup red wine","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"1/4 tsp black pepper","amount":"to taste","calories":3,"protein":0.1,"carbs":0.6,"fat":0},{"ingredient":"1/4 tsp dried thyme","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"reduced-fat r
+queryClient.ts:80 API Parsed Response: (13) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+queryClient.ts:131 Query result: (13) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+queryClient.ts:22 API Request: {url: '/api/recipes/generate', method: 'POST', hasBody: true}
+queryClient.ts:41 API Response: {url: '/api/recipes/generate', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"id":399,"title":"Lasagna","description":"This  EASY Lasagna recipe is beefy, saucy and supremely flavorful. Homemade lasagna is better than any restaurant version and it feeds a crowd at dinner for way less than going out to eat.\n⬇️⬇️⬇️⬇️ CLICK FOR RECIPE ⬇️⬇️⬇️⬇️\n\nIngredients for Italian Lasagna:\n►1 lb ground beef (15-20% fat content)\n►1 small onion finely diced\n►2 large garlic cloves minced\n►1/4 cup red wine (any kind), or beef broth\n►1 Tbsp olive oil\n►24 oz Marinara Sauce (3 cups)\n►1/2 tsp sea salt\n►1/4 tsp black pepper ground\n►1/4 tsp dried thyme\n►1/2 tsp granulated sugar\n►2 Tbsp parsley finely chopped\n►9 lasagna noodles cooked al dente\n\nIngredients for Cheese Sauce:\n►16 oz low-fat cottage cheese\n►15 oz reduced-fat ricotta cheese\n►1 large egg\n►2 Tbsp parsley finely chopped, plus more to garnish\n►4 cups mozzarella cheese shredded, divided\n\n🖨PRINT THIS RECIPE: https://natashaskitchen.com/lasagna-recipe/\n📖 ORDER MY COOKBOOK HERE: https://amzlink.to/az0vR1N8PiUPw\n\n🎉For more Holiday Recipes, click here: https://natashaskitchen.com/category/holiday/\n\n⭐️TOOLS, USED IN THIS VIDEO (affiliate):\n►Oven Mitts: https://amzlink.to/az0jWjIm39jE3\n►Box Grater: https://amzlink.to/az0hO7LxZl0V5\n►Rectangular Baking Dish: https://amzlink.to/az0wet7iS3Szh\n\nALWAYS IN MY KITCHEN (affiliate):\n►See ALL TOOLS in our Shop: https://amzlink.to/az0eAEWDMABAC\n►Javelin Pro Thermometer: https://amzlink.to/az0ngl67IOPnt\n►My Favorite Cutting Board: https://amzlink.to/az0Wq8oQ19uRP\n►Hand Mixer: https://amzlink.to/az0pyXgX6NEaM\n►Favorite Blender: https://amzlink.to/az0edeFiMDZ5P\n►Food Processor: https://amzlink.to/az0VpLsYgbKx5\n►Glass Bowls: https://amzlink.to/az0pL0KwmB4yH\n►Kitchen Scale: https://amzlink.to/az0EQbKni8vXb\n►Glass Storage Containers: https://amzlink.to/az0Rk76ieqQ1K\n►Knife Block Set: https://amzlink.to/az0zfn1h7Nn1u\n►Our Dinnerware Set: https://amzlink.to/az04Dq4knOQqG\n►My White Apron: https://amzlink.to/az0faFt8CxaQy\n\n💌Fan Mail:\nNatasha's Kitchen\nPO Box 161\nMeridian, ID 83680\nUSA\n#lasagna #casserole #Natashaskitchen","image_url":"https://i.ytimg.com/vi/fVDsTP-pTXs/hqdefault.jpg","time_minutes":30,"cuisine":null,"diet":null,"ingredients":[{"name":"olive oil","display_text":"1 Tbsp olive oil","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"egg","display_text":"1 large egg","measurements":[{"quantity":1,"unit":"l"}]},{"name":"ground beef","display_text":"1 lb ground beef","measurements":[{"quantity":1,"unit":"lb"}]},{"name":"onion finely diced","display_text":"1 small onion finely diced","measurements":[{"quantity":1,"unit":"pieces"}]},{"name":"granulated sugar","display_text":"1/2 tsp granulated sugar","measurements":[{"quantity":0.5,"unit":"tsp"}]},{"name":"sea salt","display_text":"1/2 tsp sea salt","measurements":[{"quantity":0.5,"unit":"tsp"}]},{"name":"red wine, or beef broth","display_text":"1/4 cup red wine, or beef broth","measurements":[{"quantity":0.25,"unit":"cup"}]},{"name":"black pepper ground","display_text":"1/4 tsp black pepper ground","measurements":[{"quantity":0.25,"unit":"tsp"}]},{"name":"dried thyme","display_text":"1/4 tsp dried thyme","measurements":[{"quantity":0.25,"unit":"tsp"}]},{"name":"parsley finely chopped, plus more to garnish","display_text":"2 Tbsp parsley finely chopped, plus more to garnish","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"garlic  minced","display_text":"2 large garlic cloves minced","measurements":[{"quantity":2,"unit":"l"}]},{"name":"Marinara Sauce","display_text":"24 oz Marinara Sauce","measurements":[{"quantity":24,"unit":"oz"}]},{"name":"mozzarella cheese shredded, divided","display_text":"4 cups mozzarella cheese shredded, divided","measurements":[{"quantity":4,"unit":"cup"}]},{"name":"lasagna noodles cooked al dente","display_text":"9 lasagna noodles cooked al dente","measurements":[{"quantity":9,"unit":"l"}]}],"instructions":["Step 1: Preheat the oven to 375 °F (190 °C). Cook 9 lasagna noodles al dente according to package directions, drain, and set aside."],"nutrition_info":{"calories":1245,"protein_g":77.4,"carbs_g":18.6,"fat_g":81.7,"fiber_g":1.9,"sugar_g":18.2,"sodium_mg":2695,"cholesterol_mg":243,"saturated_fat_g":39.3,"trans_fat_g":3.7,"servings":4,"total_calories":4978,"ingredient_nutrition":[{"ingredient":"olive oil","amount":"1 Tbsp","calories":135,"protein":0,"carbs":0,"fat":15},{"ingredient":"egg","amount":"1 large","calories":5,"protein":0.1,"carbs":0.6,"fat":0.3},{"ingredient":"ground beef","amount":"1 lb","calories":1415,"protein":68.9,"carbs":0,"fat":121.5},{"ingredient":"onion finely","amount":"1 small","calories":4,"protein":0.1,"carbs":0,"fat":0},{"ingredient":"1/2 tsp granulated sugar","amount":"to taste","calories":4,"protein":0,"carbs":1,"fat":0},{"ingredient":"1/2 tsp sea salt","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"1/4 cup red wine, or beef broth","amount":"to taste","calories":3,"protein":0.3,"carbs":0.1,"fat":0.2},{"ingredient":"1/4 tsp black pepper ground","amount":"to taste","calories":3,"protein":0.1,"carbs":0.6,"fat":0},{"ingredient":"1/4 tsp dried thyme","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"parsley finely , plus more to garnish","amount":"2 Tbsp","calories":11,"protein":0.9,"carbs":0,"fat":0.2},{"ingredient":"garlic clove","amount":"2 large","calories":5,"protein":0.1,"carbs":0,"fat":0.3},{"ingredient":"marinara sauce","amount":"24 oz","calories":442,"protein":11,"carbs":65.9,"fat":0},{"ingredient":"mozzarella cheese shredded, divided","amount":"4 cups","calories":2918,"protein":226.8,"carbs":0,"fat":189.3},{"ingredient":"noodles cooked al dente","amount":"9 lasagna","calories":31,"protein":1.1,"carbs":5.9,"fat":0}]},"video_id":"fVDsTP-pTXs","video_title":"Beef Lasagna Recipe | Easy Dinner | -  Natasha's Kitchen","video_channel":"Natashas Kitchen","is_saved":false,"created_at":"2025-08-19T13:07:22.595Z","user_id":"user_1755468147872_11"}
+queryClient.ts:80 API Parsed Response: {id: 399, title: 'Lasagna', description: 'This  EASY Lasagna recipe is beefy, saucy and supr…ID 83680\nUSA\n#lasagna #casserole #Natashaskitchen', image_url: 'https://i.ytimg.com/vi/fVDsTP-pTXs/hqdefault.jpg', time_minutes: 30, …}
+www-widgetapi.js:196 Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://www.youtube.com') does not match the recipient window's origin ('https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev').
+n.sendMessage @ www-widgetapi.js:196
+Hb @ www-widgetapi.js:192
+n.T @ www-widgetapi.js:191
+setInterval
+Cb @ www-widgetapi.js:193
+X @ www-widgetapi.js:178
+(anonymous) @ YouTube-WX27DLC5.js?v=d1f95fa9:155
+Promise.then
+load @ YouTube-WX27DLC5.js?v=d1f95fa9:152
+(anonymous) @ react-player.js?v=d1f95fa9:630
+componentDidMount @ YouTube-WX27DLC5.js?v=d1f95fa9:128
+safelyCallComponentDidMount @ chunk-276SZO74.js?v=d1f95fa9:16705
+reappearLayoutEffectsOnFiber @ chunk-276SZO74.js?v=d1f95fa9:17193
+reappearLayoutEffects_complete @ chunk-276SZO74.js?v=d1f95fa9:18089
+reappearLayoutEffects_begin @ chunk-276SZO74.js?v=d1f95fa9:18080
+commitLayoutEffects_begin @ chunk-276SZO74.js?v=d1f95fa9:17945
+commitLayoutEffects @ chunk-276SZO74.js?v=d1f95fa9:17920
+commitRootImpl @ chunk-276SZO74.js?v=d1f95fa9:19353
+commitRoot @ chunk-276SZO74.js?v=d1f95fa9:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=d1f95fa9:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=d1f95fa9:18718
+workLoop @ chunk-276SZO74.js?v=d1f95fa9:197
+flushWork @ chunk-276SZO74.js?v=d1f95fa9:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=d1f95fa9:384
+www.youtube.com/generate_204?X2HJ4g:1  GET https://www.youtube.com/generate_204?X2HJ4g net::ERR_BLOCKED_BY_CLIENT
+Image
+eval @ VM435:1
+hy @ fVDsTP-pTXs:1
+eval @ fVDsTP-pTXs:1
+Wy @ fVDsTP-pTXs:1
+By @ fVDsTP-pTXs:1
+$g @ fVDsTP-pTXs:1
+su @ fVDsTP-pTXs:1
+g @ fVDsTP-pTXs:1
+XK.Oeh_ @ fVDsTP-pTXs:1
+O0 @ fVDsTP-pTXs:1
+kF @ fVDsTP-pTXs:1
+J0 @ base.js:1248
+y4T @ base.js:2730
+(anonymous) @ base.js:2729
+x @ base.js:2099
+(anonymous) @ base.js:1672
+setTimeout
+apply @ VM303:4041
+g.MV @ base.js:1696
+(anonymous) @ base.js:2100
+p.zb @ www-embed-player.js:983
+g.nx @ base.js:2104
+(anonymous) @ base.js:2109
+setTimeout
+apply @ VM303:4041
+KQT.C.onload @ base.js:2110
+script
+Nr @ base.js:383
+g.bV @ base.js:382
+KQT @ base.js:2110
+brD @ base.js:2109
+g.lT @ base.js:2108
+tPR @ base.js:2729
+g.D.initialize @ base.js:9107
+hrT @ base.js:3851
+g.pm @ base.js:3859
+sH @ base.js:7238
+Jl1 @ base.js:7237
+g.p1 @ base.js:7208
+g.p1.create @ base.js:13370
+a.G @ www-embed-player.js:2263
+dE @ www-embed-player.js:2264
+p.loadNewVideoConfig @ www-embed-player.js:2258
+(anonymous) @ www-embed-player.js:2256
+setTimeout
+apply @ VM303:4041
+aE @ www-embed-player.js:2256
+uE @ www-embed-player.js:2296
+(anonymous) @ www-embed-player.js:2308
+(anonymous) @ fVDsTP-pTXs?autoplay=0&mute=0&controls=1&origin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&widgetid=1&forigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&aoriginsup=1&gporigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&vf=2:10
+base.js:1111  POST https://play.google.com/log?hasfast=true&auth=SAPISIDHASH+a303cac2b26955a63f3f3ec024a738814502d284+SAPISID3PHASH+a303cac2b26955a63f3f3ec024a738814502d284&authuser=0&format=json net::ERR_BLOCKED_BY_CLIENT
+(anonymous) @ base.js:1111
+D5R @ base.js:1112
+ptT @ base.js:1111
+g.D.flush @ base.js:8326
+T4.flush @ base.js:8336
+flush @ base.js:1225
+g.D.dO @ base.js:8378
+(anonymous) @ base.js:1234
+(anonymous) @ base.js:1229
+setTimeout
+apply @ VM303:4041
+y5s @ base.js:1229
+BE.Vd @ base.js:8432
+(anonymous) @ base.js:1245
+Promise.then
+E @ base.js:1245
+Wy @ fVDsTP-pTXs:1
+By @ fVDsTP-pTXs:1
+$g @ fVDsTP-pTXs:1
+su @ fVDsTP-pTXs:1
+g @ fVDsTP-pTXs:1
+XK.Oeh_ @ fVDsTP-pTXs:1
+O0 @ fVDsTP-pTXs:1
+kF @ fVDsTP-pTXs:1
+J0 @ base.js:1248
+y4T @ base.js:2730
+(anonymous) @ base.js:2729
+x @ base.js:2099
+(anonymous) @ base.js:1672
+setTimeout
+apply @ VM303:4041
+g.MV @ base.js:1696
+(anonymous) @ base.js:2100
+p.zb @ www-embed-player.js:983
+g.nx @ base.js:2104
+(anonymous) @ base.js:2109
+setTimeout
+apply @ VM303:4041
+KQT.C.onload @ base.js:2110
+script
+Nr @ base.js:383
+g.bV @ base.js:382
+KQT @ base.js:2110
+brD @ base.js:2109
+g.lT @ base.js:2108
+tPR @ base.js:2729
+g.D.initialize @ base.js:9107
+hrT @ base.js:3851
+g.pm @ base.js:3859
+sH @ base.js:7238
+Jl1 @ base.js:7237
+g.p1 @ base.js:7208
+g.p1.create @ base.js:13370
+a.G @ www-embed-player.js:2263
+dE @ www-embed-player.js:2264
+p.loadNewVideoConfig @ www-embed-player.js:2258
+(anonymous) @ www-embed-player.js:2256
+setTimeout
+apply @ VM303:4041
+aE @ www-embed-player.js:2256
+uE @ www-embed-player.js:2296
+(anonymous) @ www-embed-player.js:2308
+(anonymous) @ fVDsTP-pTXs?autoplay=0&mute=0&controls=1&origin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&widgetid=1&forigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&aoriginsup=1&gporigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&vf=2:10
+queryClient.ts:22 API Request: {url: '/api/recipes/generate', method: 'POST', hasBody: true}
+queryClient.ts:22 API Request: {url: '/api/recipes/generate', method: 'POST', hasBody: true}
+base.js:1111  POST https://play.google.com/log?hasfast=true&auth=SAPISIDHASH+a303cac2b26955a63f3f3ec024a738814502d284+SAPISID3PHASH+a303cac2b26955a63f3f3ec024a738814502d284&authuser=0&format=json net::ERR_BLOCKED_BY_CLIENT
+(anonymous) @ base.js:1111
+D5R @ base.js:1112
+ptT @ base.js:1111
+g.D.flush @ base.js:8326
+T4.flush @ base.js:8336
+flush @ base.js:1225
+g.D.dO @ base.js:8378
+JR @ base.js:1148
+g.D.dispatchEvent @ base.js:8352
+g.D.Ept @ base.js:8373
+setTimeout
+apply @ VM303:4041
+g.D.start @ base.js:8374
+EdP @ base.js:1190
+g.D.Lb @ base.js:8382
+g.D.Qe @ base.js:8381
+chP.Jo @ base.js:8300
+g.D.zP @ base.js:8423
+e @ base.js:1246
+$g @ fVDsTP-pTXs:1
+e @ VM434:1
+queryClient.ts:41 API Response: {url: '/api/recipes/generate', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"id":400,"title":"How to Make Perfect Stir Fry | Allrecipes","description":"For quick, easy, and budget-friendly meals, you can't beat stir-frying. Once you know the basics behind putting together a great stir-fry, you can easily introduce new ingredients, make a variety of sauces, or try traditional stir-fry recipes. Learn the four components of a sit try and the surprisingly simple techniques that go into making restaurant-worthy stir-fry dishes.\n\n00:00 Introduction\n00:10 4 Components of a Stir Fry\n00:28 Protein\n01:08 Vegetables\n01:51 Aromatics\n03:02 Sauce\n04:14 Stir Fry\n07:10 Final Result\n08:04 Alternative Recipe\n\nGet the recipes here: \nSuper Easy Stir Fry: https://www.allrecipes.com/article/super-easy-stir-fry/\n\nChef and mom of three, Nicole McLaughlin, will share all the cooking basics — plus some things you may have missed — as she walks you through comprehensive videos that include kitchen tips, food facts, and cooking techniques.\n\n_________\n\nAllrecipes Magazine is now available!\n\nU.S. subscribers, subscribe here: http://armagazine.com/subscribenow\nCanadian subscribers, subscribe here: http://themeredithstore.ca/p-282-allrecipes-subscription.aspx\n\nFacebook: http://www.facebook.com/Allrecipes\nInstagram: https://www.instagram.com/allrecipes/\nPinterest: https://www.pinterest.com/allrecipes/\nTikTok: https://www.tiktok.com/@allrecipes","image_url":"https://i.ytimg.com/vi/dZYFO2y9BrM/hqdefault.jpg","time_minutes":30,"cuisine":null,"diet":null,"ingredients":[{"name":"boneless chicken breast, thinly sliced","display_text":"1 lb boneless chicken breast, thinly sliced","measurements":[{"quantity":1,"unit":"lb"},{"quantity":1,"unit":"l"}]},{"name":"vegetable oil","display_text":"2 tablespoons vegetable oil","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"red bell pepper, sliced","display_text":"1 red bell pepper, sliced","measurements":[{"quantity":1,"unit":"pieces"}]},{"name":"green bell pepper, sliced","display_text":"1 green bell pepper, sliced","measurements":[{"quantity":1,"unit":"g"}]},{"name":"broccoli florets","display_text":"1 cup broccoli florets","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"carrot, julienned","display_text":"1 carrot, julienned","measurements":[{"quantity":1,"unit":"pieces"}]},{"name":"garlic, minced","display_text":"2 cloves garlic, minced","measurements":[{"quantity":2,"unit":"cloves"}]},{"name":"ginger, minced","display_text":"1 tablespoon ginger, minced","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"soy sauce","display_text":"1/2 cup soy sauce","measurements":[{"quantity":0.5,"unit":"cup"}]},{"name":"oyster sauce","display_text":"1/4 cup oyster sauce","measurements":[{"quantity":0.25,"unit":"cup"}]},{"name":"honey","display_text":"2 tablespoons honey","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"cornstarch","display_text":"1 tablespoon cornstarch","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"water","display_text":"1/4 cup water","measurements":[{"quantity":0.25,"unit":"cup"}]},{"name":"green onions, chopped","display_text":"2 green onions, chopped","measurements":[{"quantity":2,"unit":"g"}]},{"name":"sesame oil","display_text":"1 teaspoon sesame oil","measurements":[{"quantity":1,"unit":"tsp"}]},{"name":"crushed red pepper flakes","display_text":"1/2 teaspoon crushed red pepper flakes","measurements":[{"quantity":0.5,"unit":"tsp"}]},{"name":"Salt to taste","display_text":"Salt to taste","measurements":[]},{"name":"Cooked rice for serving, about -","display_text":"Cooked rice for serving, about 4-6 cups","measurements":[{"quantity":6,"unit":"cup"}]}],"instructions":["Slice vegetables such as bell peppers, carrots, and broccoli into uniform pieces.","Prepare aromatics by mincing garlic and ginger.","Mix soy sauce, oyster sauce, and a bit of sugar to create the stir fry sauce.","Heat a wok or large skillet over high heat, add oil, then stir fry the aromatics until fragrant.","Add the vegetables to the wok, stir frying them until they are tender but still crisp.","Pour the sauce over the vegetables, tossing to coat evenly and cook until the sauce thickens.","Serve the stir fry hot, optionally garnished with sesame seeds or chopped green onions."],"nutrition_info":{"calories":272,"protein_g":27.4,"carbs_g":6.2,"fat_g":5.2,"fiber_g":2.2,"sugar_g":8.4,"sodium_mg":118,"cholesterol_mg":84,"saturated_fat_g":1.9,"trans_fat_g":0,"servings":4,"total_calories":1087,"ingredient_nutrition":[{"ingredient":"boneless chicken breast, thinly","amount":"1 lb","calories":481,"protein":102.2,"carbs":0,"fat":8.8},{"ingredient":"vegetable oil","amount":"2 tablespoons","calories":257,"protein":0,"carbs":0,"fat":4.3},{"ingredient":"bell pepper,","amount":"1 red","calories":0,"protein":0,"carbs":0,"fat":0},{"ingredient":"bell pepper,","amount":"1 green","calories":0,"protein":0,"carbs":0,"fat":0},{"ingredient":"broccoli floret","amount":"1 cup","calories":84,"protein":5.6,"carbs":14.1,"fat":0},{"ingredient":"carrot, julienned","amount":"1","calories":41,"protein":1.2,"carbs":9.4,"fat":0},{"ingredient":"garlic,","amount":"2 cloves","calories":14,"protein":0,"carbs":0.1,"fat":1.5},{"ingredient":"ginger,","amount":"1 tablespoon","calories":0,"protein":0,"carbs":0,"fat":0},{"ingredient":"1/2 cup soy sauce","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"1/4 cup oyster sauce","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"honey","amount":"2 tablespoons","calories":91,"protein":0.1,"carbs":0,"fat":0},{"ingredient":"cornstarch","amount":"1 tablespoon","calories":57,"protein":0,"carbs":0,"fat":0},{"ingredient":"1/4 cup water","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"onions,","amount":"2 green","calories":1,"protein":0,"carbs":0.2,"fat":0},{"ingredient":"sesame oil","amount":"1 teaspoon","calories":44,"protein":0,"carbs":0,"fat":5},{"ingredient":"1/2 teaspoon crushed red pepper flake","amount":"to taste","calories":3,"protein":0.1,"carbs":0.6,"fat":0},{"ingredient":"salt to taste","amount":"to taste","calories":7,"protein":0.1,"carbs":0.1,"fat":0.7},{"ingredient":"cooked rice for serving, about 4-6 cup","amount":"to taste","calories":4,"protein":0.1,"carbs":0,"fat":0.4}]},"video_id":"dZYFO2y9BrM","video_title":"How to Make Perfect Stir Fry | Allrecipes","video_channel":"Allrecipes","is_saved":false,"created_at":"2025-08-19T13:08:02.448Z","user_id":"user_1755468147872_11"}
+queryClient.ts:80 API Parsed Response: {id: 400, title: 'How to Make Perfect Stir Fry | Allrecipes', description: 'For quick, easy, and budget-friendly meals, you ca…cipes/\nTikTok: https://www.tiktok.com/@allrecipes', image_url: 'https://i.ytimg.com/vi/dZYFO2y9BrM/hqdefault.jpg', time_minutes: 30, …}
+queryClient.ts:41 API Response: {url: '/api/recipes/generate', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"id":401,"title":"How to Make Perfect Stir Fry | Allrecipes","description":"For quick, easy, and budget-friendly meals, you can't beat stir-frying. Once you know the basics behind putting together a great stir-fry, you can easily introduce new ingredients, make a variety of sauces, or try traditional stir-fry recipes. Learn the four components of a sit try and the surprisingly simple techniques that go into making restaurant-worthy stir-fry dishes.\n\n00:00 Introduction\n00:10 4 Components of a Stir Fry\n00:28 Protein\n01:08 Vegetables\n01:51 Aromatics\n03:02 Sauce\n04:14 Stir Fry\n07:10 Final Result\n08:04 Alternative Recipe\n\nGet the recipes here: \nSuper Easy Stir Fry: https://www.allrecipes.com/article/super-easy-stir-fry/\n\nChef and mom of three, Nicole McLaughlin, will share all the cooking basics — plus some things you may have missed — as she walks you through comprehensive videos that include kitchen tips, food facts, and cooking techniques.\n\n_________\n\nAllrecipes Magazine is now available!\n\nU.S. subscribers, subscribe here: http://armagazine.com/subscribenow\nCanadian subscribers, subscribe here: http://themeredithstore.ca/p-282-allrecipes-subscription.aspx\n\nFacebook: http://www.facebook.com/Allrecipes\nInstagram: https://www.instagram.com/allrecipes/\nPinterest: https://www.pinterest.com/allrecipes/\nTikTok: https://www.tiktok.com/@allrecipes","image_url":"https://i.ytimg.com/vi/dZYFO2y9BrM/hqdefault.jpg","time_minutes":30,"cuisine":null,"diet":null,"ingredients":[{"name":"boneless chicken breast, thinly sliced","display_text":"1 lb boneless chicken breast, thinly sliced","measurements":[{"quantity":1,"unit":"lb"},{"quantity":1,"unit":"l"}]},{"name":"vegetable oil","display_text":"2 tablespoons vegetable oil","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"soy sauce","display_text":"1 tablespoon soy sauce","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"cornstarch","display_text":"1 tablespoon cornstarch","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"broccoli florets","display_text":"1 cup broccoli florets","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"sliced bell peppers","display_text":"1 cup sliced bell peppers","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"sliced carrots","display_text":"1 cup sliced carrots","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"snap peas","display_text":"1 cup snap peas","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"garlic, minced","display_text":"2 cloves garlic, minced","measurements":[{"quantity":2,"unit":"cloves"}]},{"name":"ginger, minced","display_text":"1 tablespoon ginger, minced","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"soy sauce","display_text":"1/4 cup soy sauce","measurements":[{"quantity":0.25,"unit":"cup"}]},{"name":"oyster sauce","display_text":"2 tablespoons oyster sauce","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"rice vinegar","display_text":"1 tablespoon rice vinegar","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"sesame oil","display_text":"1 teaspoon sesame oil","measurements":[{"quantity":1,"unit":"tsp"}]},{"name":"sugar","display_text":"1 teaspoon sugar","measurements":[{"quantity":1,"unit":"tsp"}]},{"name":"chicken broth","display_text":"1/2 cup chicken broth","measurements":[{"quantity":0.5,"unit":"cup"}]},{"name":"cornstarch mixed with   water","display_text":"2 teaspoons cornstarch mixed with 2 teaspoons water","measurements":[{"quantity":2,"unit":"tsp"},{"quantity":2,"unit":"tsp"}]},{"name":"cooked jasmine rice","display_text":"4 cups cooked jasmine rice","measurements":[{"quantity":4,"unit":"cup"}]},{"name":"green onions, sliced","display_text":"2 green onions, sliced","measurements":[{"quantity":2,"unit":"g"}]},{"name":"sesame seeds","display_text":"1 tablespoon sesame seeds","measurements":[{"quantity":1,"unit":"tbsp"}]}],"instructions":["Step 1: Slice 1 lb boneless chicken breast into thin strips, then toss with 1 tbsp cornstarch and a pinch of salt; set aside.","Step 2: In a small bowl whisk together 2 tbsp soy sauce, 1 tbsp oyster sauce, 1 tsp rice vinegar, 1 tsp sesame oil, 1 tsp sugar, ¼ cup chicken broth, and 1 tsp cornstarch mixed with 2 tsp water; this is the stir‑fry sauce.","Step 3: Prepare the vegetables: 2 cups broccoli florets, 1 sliced bell pepper, 1 sliced carrot (thin matchsticks), and 1 cup snap peas; mince 2 garlic cloves and 1 tsp fresh ginger.","Step 4: Heat a large wok or skillet over medium‑high heat until a drop of water sizzles, then add 2 tbsp vegetable oil and swirl to coat.","Step 5: Add the coated chicken in a single layer; stir‑fry 3–4 minutes, or until the"],"nutrition_info":{"calories":885,"protein_g":39.6,"carbs_g":132.1,"fat_g":26.4,"fiber_g":8.2,"sugar_g":4.9,"sodium_mg":557,"cholesterol_mg":84,"saturated_fat_g":1.9,"trans_fat_g":0,"servings":4,"total_calories":3539,"ingredient_nutrition":[{"ingredient":"boneless chicken breast, thinly","amount":"1 lb","calories":481,"protein":102.2,"carbs":0,"fat":8.8},{"ingredient":"vegetable oil","amount":"2 tablespoons","calories":257,"protein":0,"carbs":0,"fat":4.3},{"ingredient":"soy sauce","amount":"1 tablespoon","calories":8,"protein":1.2,"carbs":0.7,"fat":0.1},{"ingredient":"cornstarch","amount":"1 tablespoon","calories":57,"protein":0,"carbs":0,"fat":0},{"ingredient":"broccoli floret","amount":"1 cup","calories":84,"protein":5.6,"carbs":14.1,"fat":0},{"ingredient":"bell pepper","amount":"1 cup","calories":55,"protein":1.7,"carbs":0,"fat":0.3},{"ingredient":"carrot","amount":"1 cup","calories":106,"protein":2.1,"carbs":23.2,"fat":0.6},{"ingredient":"snap pea","amount":"1 cup","calories":98,"protein":5.6,"carbs":16.9,"fat":0},{"ingredient":"garlic,","amount":"2 cloves","calories":14,"protein":0,"carbs":0.1,"fat":1.5},{"ingredient":"ginger,","amount":"1 tablespoon","calories":0,"protein":0,"carbs":0,"fat":0},{"ingredient":"1/4 cup soy sauce","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"oyster sauce","amount":"2 tablespoons","calories":15,"protein":0.4,"carbs":3.3,"fat":0.1},{"ingredient":"rice vinegar","amount":"1 tablespoon","calories":4,"protein":0.2,"carbs":0.8,"fat":0},{"ingredient":"sesame oil","amount":"1 teaspoon","calories":44,"protein":0,"carbs":0,"fat":5},{"ingredient":"sugar","amount":"1 teaspoon","calories":19,"protein":0,"carbs":5,"fat":0},{"ingredient":"1/2 cup chicken broth","amount":"to taste","calories":2,"protein":0.3,"carbs":0.1,"fat":0},{"ingredient":"cornstarch mixed with 2 teaspoons water","amount":"2 teaspoons","calories":38,"protein":0,"carbs":0,"fat":0},{"ingredient":"cooked jasmine rice","amount":"4 cups","calories":2160,"protein":36,"carbs":462,"fat":0},{"ingredient":"onions,","amount":"2 green","calories":1,"protein":0,"carbs":0.2,"fat":0},{"ingredient":"sesame seed","amount":"1 tablespoon","calories":95,"protein":3,"carbs":2,"fat":85}]},"video_id":"dZYFO2y9BrM","video_title":"How to Make Perfect Stir Fry | Allrecipes","video_channel":"Allrecipes","is_saved":false,"created_at":"2025-08-19T13:08:05.438Z","user_id":"user_1755468147872_11"}
+queryClient.ts:80 API Parsed Response: {id: 401, title: 'How to Make Perfect Stir Fry | Allrecipes', description: 'For quick, easy, and budget-friendly meals, you ca…cipes/\nTikTok: https://www.tiktok.com/@allrecipes', image_url: 'https://i.ytimg.com/vi/dZYFO2y9BrM/hqdefault.jpg', time_minutes: 30, …}
+base.js:1111  POST https://play.google.com/log?hasfast=true&auth=SAPISIDHASH+a303cac2b26955a63f3f3ec024a738814502d284+SAPISID3PHASH+a303cac2b26955a63f3f3ec024a738814502d284&authuser=0&format=json net::ERR_BLOCKED_BY_CLIENT
+(anonymous) @ base.js:1111
+D5R @ base.js:1112
+ptT @ base.js:1111
+g.D.flush @ base.js:8326
+T4.flush @ base.js:8336
+flush @ base.js:1225
+g.D.dO @ base.js:8378
+JR @ base.js:1148
+g.D.dispatchEvent @ base.js:8352
+g.D.Ept @ base.js:8373
+setTimeout
+apply @ VM303:4041
+g.D.start @ base.js:8374
+EdP @ base.js:1190
+g.D.Lb @ base.js:8382
+g.D.Qe @ base.js:8381
+chP.Jo @ base.js:8300
+g.D.zP @ base.js:8423
+e @ base.js:1246
+$g @ fVDsTP-pTXs:1
+e @ VM434:1
+base.js:1111  POST https://play.google.com/log?hasfast=true&auth=SAPISIDHASH+a303cac2b26955a63f3f3ec024a738814502d284+SAPISID3PHASH+a303cac2b26955a63f3f3ec024a738814502d284&authuser=0&format=json net::ERR_BLOCKED_BY_CLIENT
+(anonymous) @ base.js:1111
+D5R @ base.js:1112
+ptT @ base.js:1111
+g.D.flush @ base.js:8326
+T4.flush @ base.js:8336
+flush @ base.js:1225
+g.D.dO @ base.js:8378
+JR @ base.js:1148
+g.D.dispatchEvent @ base.js:8352
+g.D.Ept @ base.js:8373
+setTimeout
+apply @ VM303:4041
+g.D.start @ base.js:8374
+EdP @ base.js:1190
+g.D.Lb @ base.js:8382
+g.D.Qe @ base.js:8381
+chP.Jo @ base.js:8300
+g.D.zP @ base.js:8423
+e @ base.js:1246
+$g @ fVDsTP-pTXs:1
+e @ VM434:1
+queryClient.ts:22 API Request: {url: '/api/recipes/generate', method: 'POST', hasBody: true}
+queryClient.ts:41 API Response: {url: '/api/recipes/generate', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"id":402,"title":"How to Make Perfect Stir Fry | Allrecipes","description":"For quick, easy, and budget-friendly meals, you can't beat stir-frying. Once you know the basics behind putting together a great stir-fry, you can easily introduce new ingredients, make a variety of sauces, or try traditional stir-fry recipes. Learn the four components of a sit try and the surprisingly simple techniques that go into making restaurant-worthy stir-fry dishes.\n\n00:00 Introduction\n00:10 4 Components of a Stir Fry\n00:28 Protein\n01:08 Vegetables\n01:51 Aromatics\n03:02 Sauce\n04:14 Stir Fry\n07:10 Final Result\n08:04 Alternative Recipe\n\nGet the recipes here: \nSuper Easy Stir Fry: https://www.allrecipes.com/article/super-easy-stir-fry/\n\nChef and mom of three, Nicole McLaughlin, will share all the cooking basics — plus some things you may have missed — as she walks you through comprehensive videos that include kitchen tips, food facts, and cooking techniques.\n\n_________\n\nAllrecipes Magazine is now available!\n\nU.S. subscribers, subscribe here: http://armagazine.com/subscribenow\nCanadian subscribers, subscribe here: http://themeredithstore.ca/p-282-allrecipes-subscription.aspx\n\nFacebook: http://www.facebook.com/Allrecipes\nInstagram: https://www.instagram.com/allrecipes/\nPinterest: https://www.pinterest.com/allrecipes/\nTikTok: https://www.tiktok.com/@allrecipes","image_url":"https://i.ytimg.com/vi/dZYFO2y9BrM/hqdefault.jpg","time_minutes":30,"cuisine":null,"diet":null,"ingredients":[{"name":"boneless chicken breast, thinly sliced","display_text":"1 lb boneless chicken breast, thinly sliced","measurements":[{"quantity":1,"unit":"lb"},{"quantity":1,"unit":"l"}]},{"name":"vegetable oil","display_text":"2 tablespoons vegetable oil","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"red bell pepper, sliced","display_text":"1 red bell pepper, sliced","measurements":[{"quantity":1,"unit":"pieces"}]},{"name":"green bell pepper, sliced","display_text":"1 green bell pepper, sliced","measurements":[{"quantity":1,"unit":"g"}]},{"name":"broccoli florets","display_text":"1 cup broccoli florets","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"snap peas","display_text":"1 cup snap peas","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"carrot, julienned","display_text":"1 medium carrot, julienned","measurements":[{"quantity":1,"unit":"pieces"}]},{"name":"garlic, minced","display_text":"2 cloves garlic, minced","measurements":[{"quantity":2,"unit":"cloves"}]},{"name":"ginger, minced","display_text":"1 tablespoon ginger, minced","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"soy sauce","display_text":"1/4 cup soy sauce","measurements":[{"quantity":0.25,"unit":"cup"}]},{"name":"oyster sauce","display_text":"2 tablespoons oyster sauce","measurements":[{"quantity":2,"unit":"tbsp"}]},{"name":"cornstarch","display_text":"1 tablespoon cornstarch","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"chicken broth","display_text":"1/2 cup chicken broth","measurements":[{"quantity":0.5,"unit":"cup"}]},{"name":"sesame oil","display_text":"1 teaspoon sesame oil","measurements":[{"quantity":1,"unit":"tsp"}]},{"name":"red pepper flakes","display_text":"1/2 teaspoon red pepper flakes","measurements":[{"quantity":0.5,"unit":"tsp"}]},{"name":"green onions, chopped","display_text":"2 green onions, chopped","measurements":[{"quantity":2,"unit":"g"}]},{"name":"cooked white rice, for serving","display_text":"2 cups cooked white rice, for serving","measurements":[{"quantity":2,"unit":"cup"}]}],"instructions":["Choose your protein, such as chicken, beef, or tofu, and cut it into thin, uniform slices.","Prepare your vegetables by washing and cutting them into bite-sized pieces. Common choices include bell peppers, broccoli, and carrots.","Mince your aromatics like garlic and ginger, which will add flavor to your stir-fry.","Mix your sauce ingredients together. A basic stir-fry sauce can include soy sauce, a sweetener like sugar or honey, and a thickening agent like cornstarch.","Heat your wok or large frying pan over high heat. Add oil and let it get hot.","Add the protein to the hot oil and stir-fry until it's nearly cooked through, then remove it from the pan.","Add more oil if necessary, then add the aromatics and stir-fry briefly until fragrant.","Add the vegetables and stir-fry until they are just tender but still crisp.","Return the protein to the pan, pour in the sauce, and stir everything together until the sauce thickens and coats the ingredients.","Serve the stir-fry hot, ideally over rice or noodles.","Prepare the vegetables by washing, peeling, and chopping them into bite-sized pieces.","Heat oil in a wok or large skillet over medium-high heat. Add the aromatics like garlic, ginger, and onions, and stir-fry until fragrant.","Mix the sauce ingredients in a bowl, combining soy sauce, oyster sauce, sugar, and cornstarch with water until smooth.","Add the prepared vegetables to the wok with the aromatics. Stir-fry for a few minutes until the vegetables start to soften.","Pour the sauce over the vegetables and stir well to coat. Continue to cook until the sauce thickens and the vegetables are cooked to your desired tenderness."],"nutrition_info":{"calories":380,"protein_g":31,"carbs_g":34.1,"fat_g":5.2,"fiber_g":4.2,"sugar_g":0.8,"sodium_mg":573,"cholesterol_mg":84,"saturated_fat_g":1.9,"trans_fat_g":0,"servings":4,"total_calories":1518,"ingredient_nutrition":[{"ingredient":"boneless chicken breast, thinly","amount":"1 lb","calories":481,"protein":102.2,"carbs":0,"fat":8.8},{"ingredient":"vegetable oil","amount":"2 tablespoons","calories":257,"protein":0,"carbs":0,"fat":4.3},{"ingredient":"bell pepper,","amount":"1 red","calories":0,"protein":0,"carbs":0,"fat":0},{"ingredient":"bell pepper,","amount":"1 green","calories":0,"protein":0,"carbs":0,"fat":0},{"ingredient":"broccoli floret","amount":"1 cup","calories":84,"protein":5.6,"carbs":14.1,"fat":0},{"ingredient":"snap pea","amount":"1 cup","calories":98,"protein":5.6,"carbs":16.9,"fat":0},{"ingredient":"carrot, julienned","amount":"1 medium","calories":0,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"garlic,","amount":"2 cloves","calories":14,"protein":0,"carbs":0.1,"fat":1.5},{"ingredient":"ginger,","amount":"1 tablespoon","calories":0,"protein":0,"carbs":0,"fat":0},{"ingredient":"1/4 cup soy sauce","amount":"to taste","calories":1,"protein":0,"carbs":0.1,"fat":0},{"ingredient":"oyster sauce","amount":"2 tablespoons","calories":15,"protein":0.4,"carbs":3.3,"fat":0.1},{"ingredient":"cornstarch","amount":"1 tablespoon","calories":57,"protein":0,"carbs":0,"fat":0},{"ingredient":"1/2 cup chicken broth","amount":"to taste","calories":2,"protein":0.3,"carbs":0.1,"fat":0},{"ingredient":"sesame oil","amount":"1 teaspoon","calories":44,"protein":0,"carbs":0,"fat":5},{"ingredient":"1/2 teaspoon red pepper flake","amount":"to taste","calories":3,"protein":0.1,"carbs":0.6,"fat":0},{"ingredient":"onions,","amount":"2 green","calories":1,"protein":0,"carbs":0.2,"fat":0},{"ingredient":"cooked white rice, for serving","amount":"2 cups","calories":461,"protein":9.6,"carbs":100.8,"fat":0.9}]},"video_id":"dZYFO2y9BrM","video_title":"How to Make Perfect Stir Fry | Allrecipes","video_channel":"Allrecipes","is_saved":false,"created_at":"2025-08-19T13:13:54.909Z","user_id":"user_1755468147872_11"}
+queryClient.ts:80 API Parsed Response: {id: 402, title: 'How to Make Perfect Stir Fry | Allrecipes', description: 'For quick, easy, and budget-friendly meals, you ca…cipes/\nTikTok: https://www.tiktok.com/@allrecipes', image_url: 'https://i.ytimg.com/vi/dZYFO2y9BrM/hqdefault.jpg', time_minutes: 30, …}
+base.js:1111  POST https://play.google.com/log?hasfast=true&auth=SAPISIDHASH+a303cac2b26955a63f3f3ec024a738814502d284+SAPISID3PHASH+a303cac2b26955a63f3f3ec024a738814502d284&authuser=0&format=json net::ERR_BLOCKED_BY_CLIENT
+(anonymous) @ base.js:1111
+D5R @ base.js:1112
+ptT @ base.js:1111
+g.D.flush @ base.js:8326
+T4.flush @ base.js:8336
+flush @ base.js:1225
+g.D.dO @ base.js:8378
+JR @ base.js:1148
+g.D.dispatchEvent @ base.js:8352
+g.D.Ept @ base.js:8373
+setTimeout
+apply @ VM303:4041
+g.D.start @ base.js:8374
+EdP @ base.js:1190
+g.D.Lb @ base.js:8382
+g.D.Qe @ base.js:8381
+chP.Jo @ base.js:8300
+g.D.zP @ base.js:8423
+e @ base.js:1246
+$g @ fVDsTP-pTXs:1
+e @ VM434:1

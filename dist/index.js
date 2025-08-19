@@ -1773,6 +1773,436 @@ var init_instacart = __esm({
   }
 });
 
+// server/whisperTranscriber.ts
+var whisperTranscriber_exports = {};
+__export(whisperTranscriber_exports, {
+  WhisperTranscriber: () => WhisperTranscriber,
+  whisperTranscriber: () => whisperTranscriber
+});
+import Groq from "groq-sdk";
+import ytdl from "@distube/ytdl-core";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { promisify } from "util";
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+import dotenv from "dotenv";
+var __filename, __dirname2, unlink, mkdir, WhisperTranscriber, whisperTranscriber;
+var init_whisperTranscriber = __esm({
+  "server/whisperTranscriber.ts"() {
+    "use strict";
+    __filename = fileURLToPath(import.meta.url);
+    __dirname2 = path.dirname(__filename);
+    dotenv.config({ path: path.join(__dirname2, "..", ".env") });
+    ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+    unlink = promisify(fs.unlink);
+    mkdir = promisify(fs.mkdir);
+    WhisperTranscriber = class {
+      client = null;
+      tempDir = path.join(__dirname2, "../temp/audio");
+      constructor() {
+        if (process.env.GROQ_API_KEY) {
+          console.log("\u{1F399}\uFE0F [WHISPER] Initializing with Whisper V3 Turbo");
+          this.client = new Groq({
+            apiKey: process.env.GROQ_API_KEY
+          });
+          this.ensureTempDir();
+        } else {
+          console.log("\u26A0\uFE0F [WHISPER] No API key found");
+        }
+      }
+      async ensureTempDir() {
+        try {
+          await mkdir(this.tempDir, { recursive: true });
+        } catch (error) {
+          console.error("Failed to create temp directory:", error);
+        }
+      }
+      /**
+       * Download audio from YouTube video
+       */
+      async downloadAudio(videoUrl) {
+        console.log("\u{1F4E5} [WHISPER] Downloading audio from YouTube...");
+        try {
+          const videoInfo = await ytdl.getInfo(videoUrl);
+          const videoId = videoInfo.videoDetails.videoId;
+          const duration = parseInt(videoInfo.videoDetails.lengthSeconds);
+          console.log(`\u{1F4FA} [WHISPER] Video: ${videoInfo.videoDetails.title}`);
+          console.log(`\u23F1\uFE0F [WHISPER] Duration: ${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, "0")}`);
+          const tempFilePath = path.join(this.tempDir, `${videoId}_${Date.now()}.mp3`);
+          console.log("\u{1F3B5} [WHISPER] Creating audio stream...");
+          const audioStream = ytdl(videoUrl, {
+            filter: "audioonly",
+            quality: "lowestaudio",
+            requestOptions: {
+              headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+              }
+            }
+          });
+          return new Promise((resolve, reject) => {
+            const command = ffmpeg(audioStream).audioBitrate(128).audioCodec("libmp3lame").format("mp3").on("error", (error) => {
+              console.error("\u274C [WHISPER] FFmpeg error:", error);
+              reject(error);
+            }).on("end", () => {
+              console.log("\u2705 [WHISPER] Audio downloaded successfully");
+              resolve(tempFilePath);
+            }).on("progress", (progress) => {
+              if (progress.percent) {
+                console.log(`\u23F3 [WHISPER] Processing: ${Math.round(progress.percent)}%`);
+              }
+            });
+            command.save(tempFilePath);
+          });
+        } catch (error) {
+          console.error("\u274C [WHISPER] Download failed:", error.message);
+          if (error.message?.includes("403") || error.message?.includes("Status code: 403")) {
+            console.log("\u26A0\uFE0F [WHISPER] YouTube blocked the download (403 Forbidden)");
+            console.log("\u{1F4A1} [WHISPER] This can happen with copyrighted content or age-restricted videos");
+          } else if (error.message?.includes("404")) {
+            console.log("\u26A0\uFE0F [WHISPER] Video not found (404)");
+          } else {
+            console.log("\u26A0\uFE0F [WHISPER] Unknown download error");
+          }
+          return null;
+        }
+      }
+      /**
+       * Split audio file into chunks for parallel processing
+       */
+      async splitAudioIntoChunks(audioPath, maxDurationMinutes = 5) {
+        console.log(`\u2702\uFE0F [WHISPER] Splitting audio into ${maxDurationMinutes}-minute chunks...`);
+        return new Promise((resolve, reject) => {
+          const chunks = [];
+          const maxDurationSeconds = maxDurationMinutes * 60;
+          ffmpeg.ffprobe(audioPath, (err, metadata) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            const duration = metadata.format.duration || 0;
+            const numChunks = Math.ceil(duration / maxDurationSeconds);
+            if (numChunks <= 1) {
+              console.log("\u{1F4DD} [WHISPER] Audio is short enough, no splitting needed");
+              resolve([audioPath]);
+              return;
+            }
+            console.log(`\u{1F4DD} [WHISPER] Splitting into ${numChunks} chunks`);
+            const promises = [];
+            for (let i = 0; i < numChunks; i++) {
+              const startTime = i * maxDurationSeconds;
+              const chunkPath = audioPath.replace(".mp3", `_chunk${i}.mp3`);
+              chunks.push(chunkPath);
+              promises.push(new Promise((resolveChunk, rejectChunk) => {
+                ffmpeg(audioPath).setStartTime(startTime).setDuration(maxDurationSeconds).audioCodec("libmp3lame").on("end", () => {
+                  console.log(`\u2705 [WHISPER] Chunk ${i + 1}/${numChunks} created`);
+                  resolveChunk(chunkPath);
+                }).on("error", rejectChunk).save(chunkPath);
+              }));
+            }
+            Promise.all(promises).then(() => resolve(chunks)).catch(reject);
+          });
+        });
+      }
+      /**
+       * Transcribe audio file using Whisper V3 Turbo
+       */
+      async transcribeAudio(audioPath, chunkIndex) {
+        if (!this.client) {
+          console.log("\u26A0\uFE0F [WHISPER] No client available");
+          return "";
+        }
+        try {
+          const chunkLabel = chunkIndex !== void 0 ? ` (chunk ${chunkIndex + 1})` : "";
+          console.log(`\u{1F399}\uFE0F [WHISPER] Transcribing audio${chunkLabel} with Whisper V3 Turbo...`);
+          const startTime = Date.now();
+          const audioBuffer = fs.readFileSync(audioPath);
+          const fileName = path.basename(audioPath);
+          const fileSizeMB = audioBuffer.length / (1024 * 1024);
+          console.log(`\u{1F4CA} [WHISPER] File size: ${fileSizeMB.toFixed(2)} MB`);
+          const transcription = await this.client.audio.transcriptions.create({
+            file: new File([audioBuffer], fileName, { type: "audio/mpeg" }),
+            model: "whisper-large-v3-turbo",
+            // Using V3 Turbo for fast transcription
+            response_format: "verbose_json",
+            language: "en",
+            // Specify English for better accuracy
+            temperature: 0.2
+            // Lower temperature for more accurate transcription
+          });
+          const timeTaken = Date.now() - startTime;
+          console.log(`\u2705 [WHISPER] Transcription complete${chunkLabel} in ${timeTaken}ms`);
+          if (transcription.segments) {
+            const segments = transcription.segments;
+            console.log(`\u{1F4DD} [WHISPER] Transcribed ${segments.length} segments`);
+          }
+          return transcription.text || "";
+        } catch (error) {
+          console.error("\u274C [WHISPER] Transcription failed:", error);
+          return "";
+        }
+      }
+      /**
+       * Transcribe YouTube video with automatic audio download
+       */
+      async transcribeYouTubeVideo(videoUrl) {
+        console.log("\u{1F680} [WHISPER] Starting YouTube video transcription...");
+        let audioPath = null;
+        let chunkPaths = [];
+        try {
+          audioPath = await this.downloadAudio(videoUrl);
+          if (!audioPath) {
+            console.error("\u274C [WHISPER] Failed to download audio");
+            return null;
+          }
+          const duration = await this.getAudioDuration(audioPath);
+          console.log(`\u23F1\uFE0F [WHISPER] Total duration: ${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, "0")}`);
+          if (duration > 300) {
+            console.log("\u{1F4CA} [WHISPER] Audio is longer than 5 minutes, splitting for parallel processing...");
+            chunkPaths = await this.splitAudioIntoChunks(audioPath, 5);
+            console.log(`\u{1F680} [WHISPER] Transcribing ${chunkPaths.length} chunks in parallel...`);
+            const transcriptionPromises = chunkPaths.map(
+              (chunkPath, index2) => this.transcribeAudio(chunkPath, index2)
+            );
+            const transcriptions = await Promise.all(transcriptionPromises);
+            const fullTranscript = transcriptions.join(" ");
+            await this.cleanupFiles(chunkPaths);
+            return {
+              transcript: fullTranscript,
+              duration,
+              chunks: chunkPaths.length
+            };
+          } else {
+            const transcript = await this.transcribeAudio(audioPath);
+            return {
+              transcript,
+              duration,
+              chunks: 1
+            };
+          }
+        } catch (error) {
+          console.error("\u274C [WHISPER] YouTube transcription failed:", error);
+          return null;
+        } finally {
+          if (audioPath) {
+            await this.cleanupFiles([audioPath]);
+          }
+        }
+      }
+      /**
+       * Get audio duration in seconds
+       */
+      async getAudioDuration(audioPath) {
+        return new Promise((resolve, reject) => {
+          ffmpeg.ffprobe(audioPath, (err, metadata) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(metadata.format.duration || 0);
+            }
+          });
+        });
+      }
+      /**
+       * Clean up temporary files
+       */
+      async cleanupFiles(filePaths) {
+        for (const filePath of filePaths) {
+          try {
+            if (fs.existsSync(filePath)) {
+              await unlink(filePath);
+              console.log(`\u{1F9F9} [WHISPER] Cleaned up: ${path.basename(filePath)}`);
+            }
+          } catch (error) {
+            console.error(`Failed to delete ${filePath}:`, error);
+          }
+        }
+      }
+      /**
+       * Transcribe with automatic fallback to Whisper if no transcript exists
+       */
+      async getTranscriptWithFallback(videoUrl, existingTranscript) {
+        if (existingTranscript && existingTranscript.length > 50) {
+          console.log("\u2705 [WHISPER] Using existing transcript");
+          return existingTranscript;
+        }
+        console.log("\u{1F504} [WHISPER] No transcript found, using Whisper V3 Turbo...");
+        const result = await this.transcribeYouTubeVideo(videoUrl);
+        if (result && result.transcript) {
+          console.log(`\u2705 [WHISPER] Generated transcript (${result.transcript.length} chars)`);
+          if (result.chunks && result.chunks > 1) {
+            console.log(`\u{1F4CA} [WHISPER] Processed ${result.chunks} chunks in parallel`);
+          }
+          return result.transcript;
+        }
+        console.log("\u274C [WHISPER] Failed to generate transcript");
+        return "";
+      }
+    };
+    whisperTranscriber = new WhisperTranscriber();
+  }
+});
+
+// server/groqInstructionGenerator.ts
+var groqInstructionGenerator_exports = {};
+__export(groqInstructionGenerator_exports, {
+  GroqInstructionGenerator: () => GroqInstructionGenerator,
+  groqInstructionGenerator: () => groqInstructionGenerator
+});
+import Groq2 from "groq-sdk";
+import dotenv2 from "dotenv";
+import path2 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
+var __filename2, __dirname3, GroqInstructionGenerator, groqInstructionGenerator;
+var init_groqInstructionGenerator = __esm({
+  "server/groqInstructionGenerator.ts"() {
+    "use strict";
+    __filename2 = fileURLToPath2(import.meta.url);
+    __dirname3 = path2.dirname(__filename2);
+    dotenv2.config({ path: path2.join(__dirname3, "..", ".env") });
+    GroqInstructionGenerator = class {
+      client = null;
+      constructor() {
+        if (process.env.GROQ_API_KEY) {
+          console.log("\u{1F680} [GROQ INSTRUCTION GEN] Initializing with GPT-OSS-120B");
+          this.client = new Groq2({
+            apiKey: process.env.GROQ_API_KEY
+          });
+        } else {
+          console.log("\u26A0\uFE0F [GROQ INSTRUCTION GEN] No API key found");
+        }
+      }
+      async generateInstructionsFromTranscript(transcript, recipeName, ingredients) {
+        console.log("\u{1F3AF} [GROQ INSTRUCTION GEN] Generating instructions for:", recipeName);
+        if (!this.client) {
+          console.log("\u26A0\uFE0F [GROQ INSTRUCTION GEN] No client available, returning empty");
+          return [];
+        }
+        if (!transcript || transcript.length < 50) {
+          console.log("\u274C [GROQ INSTRUCTION GEN] Transcript too short or missing");
+          return [];
+        }
+        try {
+          console.log("\u{1F4E1} [GROQ INSTRUCTION GEN] Calling GPT-OSS-120B to generate instructions...");
+          const startTime = Date.now();
+          const ingredientList = ingredients?.join(", ") || "standard ingredients";
+          const prompt = `You are a cooking expert. Convert this video transcript into clear step-by-step cooking instructions.
+
+Recipe: ${recipeName}
+Ingredients mentioned: ${ingredientList}
+
+Transcript:
+${transcript.substring(0, 3e3)} 
+
+Create numbered cooking instructions in this EXACT format:
+Step 1: [First action]
+Step 2: [Second action]
+Step 3: [Third action]
+...
+
+Rules:
+- Each step must start with "Step N:" where N is the step number
+- Keep each step clear and concise
+- Include specific times, temperatures, and measurements when mentioned
+- If transcript is unclear, use standard cooking logic
+- Generate between 4-10 steps
+- Make instructions actionable and easy to follow
+
+Return ONLY the numbered steps, nothing else.`;
+          const completion = await this.client.chat.completions.create({
+            model: "openai/gpt-oss-120b",
+            // Using the larger 120B model for better quality
+            messages: [{
+              role: "user",
+              content: prompt
+            }],
+            temperature: 0.3,
+            max_tokens: 500,
+            reasoning_effort: "medium"
+            // Add reasoning for better instruction generation
+          });
+          const response = completion.choices[0]?.message?.content || "";
+          const timeTaken = Date.now() - startTime;
+          console.log(`\u2705 [GROQ INSTRUCTION GEN] Generated in ${timeTaken}ms`);
+          console.log("\u{1F4DD} [GROQ INSTRUCTION GEN] Raw response:", response.substring(0, 200) + "...");
+          const instructions = this.parseInstructions(response);
+          if (instructions.length === 0) {
+            console.log("\u26A0\uFE0F [GROQ INSTRUCTION GEN] Failed to parse instructions, trying fallback");
+            return this.generateFallbackInstructions(recipeName, ingredients);
+          }
+          console.log(`\u2705 [GROQ INSTRUCTION GEN] Generated ${instructions.length} instructions`);
+          return instructions;
+        } catch (error) {
+          console.error("\u{1F525} [GROQ INSTRUCTION GEN] Error generating instructions:", error);
+          return this.generateFallbackInstructions(recipeName, ingredients);
+        }
+      }
+      parseInstructions(response) {
+        const lines = response.split(/Step \d+:|^\d+\.|^\d+\)/gm).map((line) => line.trim()).filter((line) => line.length > 10);
+        if (lines.length > 0) {
+          return lines.map((instruction, index2) => {
+            const cleaned = instruction.replace(/^[:\-\s]+/, "").replace(/^\d+[\.\)]\s*/, "").trim();
+            return `Step ${index2 + 1}: ${cleaned}`;
+          });
+        }
+        const altLines = response.split("\n").filter((line) => line.trim().length > 10).filter((line) => /step|cook|heat|mix|add|bake|boil|fry/i.test(line));
+        if (altLines.length > 0) {
+          return altLines.map((line, index2) => {
+            const cleaned = line.replace(/^[-\*\s]+/, "").replace(/^step\s*\d+[:\.\)]\s*/i, "").replace(/^\d+[\.\)]\s*/, "").trim();
+            return `Step ${index2 + 1}: ${cleaned}`;
+          });
+        }
+        return [];
+      }
+      generateFallbackInstructions(recipeName, ingredients) {
+        console.log("\u{1F527} [GROQ INSTRUCTION GEN] Generating fallback instructions");
+        const fallbackSteps = [
+          `Step 1: Gather all ingredients and prepare your workspace`,
+          `Step 2: Prep ingredients as needed (wash, chop, measure)`,
+          `Step 3: Follow standard cooking method for ${recipeName}`,
+          `Step 4: Cook until done according to recipe requirements`,
+          `Step 5: Season to taste and serve hot`
+        ];
+        if (recipeName.toLowerCase().includes("sandwich")) {
+          return [
+            `Step 1: Prepare all ingredients and have them ready`,
+            `Step 2: Toast bread slices if desired`,
+            `Step 3: Prepare the filling according to recipe`,
+            `Step 4: Assemble sandwich with prepared ingredients`,
+            `Step 5: Cut diagonally and serve immediately`
+          ];
+        } else if (recipeName.toLowerCase().includes("egg")) {
+          return [
+            `Step 1: Crack eggs into a bowl`,
+            `Step 2: Season with salt and pepper`,
+            `Step 3: Whisk eggs until well combined`,
+            `Step 4: Cook eggs in a pan over medium heat`,
+            `Step 5: Serve hot with chosen accompaniments`
+          ];
+        }
+        return fallbackSteps;
+      }
+      async enhanceInstructions(existingInstructions, recipeName) {
+        if (existingInstructions && existingInstructions.length > 0) {
+          const needsFormatting = !existingInstructions[0].toLowerCase().startsWith("step");
+          if (needsFormatting) {
+            console.log("\u{1F504} [GROQ INSTRUCTION GEN] Reformatting existing instructions");
+            return existingInstructions.map((instruction, index2) => {
+              if (instruction.toLowerCase().startsWith("step")) {
+                return instruction;
+              }
+              return `Step ${index2 + 1}: ${instruction}`;
+            });
+          }
+        }
+        return existingInstructions;
+      }
+    };
+    groqInstructionGenerator = new GroqInstructionGenerator();
+  }
+});
+
 // server/logmealEndpoint.ts
 var logmealEndpoint_exports = {};
 __export(logmealEndpoint_exports, {
@@ -2509,213 +2939,6 @@ var init_googleAuth = __esm({
     } else {
       console.log("Google OAuth not configured - skipping Google strategy setup");
     }
-  }
-});
-
-// server/nutritionCalculator.ts
-var nutritionCalculator_exports = {};
-__export(nutritionCalculator_exports, {
-  calculateRecipeNutrition: () => calculateRecipeNutrition
-});
-function parseIngredientQuantity(ingredientText) {
-  const text2 = ingredientText.toLowerCase().trim();
-  const patterns = [
-    // Fractions: 1/2, 3/4, etc.
-    /^(\d+\/\d+)\s*(\w+)?\s+(.+)/,
-    // Decimals: 1.5, 0.25, etc.
-    /^(\d*\.?\d+)\s*(\w+)?\s+(.+)/,
-    // Range: 1-2, 2-3, etc.
-    /^(\d+)-\d+\s*(\w+)?\s+(.+)/,
-    // Just number: 2 cups, 1 pound, etc.
-    /^(\d+)\s*(\w+)?\s+(.+)/
-  ];
-  for (const pattern of patterns) {
-    const match = text2.match(pattern);
-    if (match) {
-      let quantity = 1;
-      if (match[1].includes("/")) {
-        const [num, den] = match[1].split("/").map(Number);
-        quantity = num / den;
-      } else {
-        quantity = parseFloat(match[1]);
-      }
-      const unit = match[2] || "";
-      const foodName = match[3].trim();
-      return { quantity, unit, foodName };
-    }
-  }
-  return { quantity: 1, unit: "", foodName: text2 };
-}
-function convertToGrams(quantity, unit, foodType) {
-  const unitConversions = {
-    // Weight units (already in grams or convert to grams)
-    "g": 1,
-    "gram": 1,
-    "grams": 1,
-    "kg": 1e3,
-    "kilogram": 1e3,
-    "lb": 453.592,
-    "lbs": 453.592,
-    "pound": 453.592,
-    "pounds": 453.592,
-    "oz": 28.3495,
-    "ounce": 28.3495,
-    "ounces": 28.3495,
-    // Volume to weight conversions (approximate)
-    "cup": 240,
-    // ml, varies by ingredient
-    "cups": 240,
-    "tbsp": 15,
-    // ml
-    "tablespoon": 15,
-    "tablespoons": 15,
-    "tsp": 5,
-    // ml
-    "teaspoon": 5,
-    "teaspoons": 5,
-    "ml": 1,
-    // for liquids, 1ml ≈ 1g
-    "milliliter": 1,
-    "l": 1e3,
-    // liters
-    "liter": 1e3,
-    "liters": 1e3
-  };
-  const densityAdjustments = {
-    "flour": 0.5,
-    // flour is lighter
-    "sugar": 0.8,
-    // sugar is denser
-    "oil": 0.9,
-    // oil is less dense than water
-    "butter": 0.9,
-    // butter density
-    "rice": 0.8,
-    // dry rice
-    "pasta": 0.6
-    // dry pasta
-  };
-  let grams = quantity * (unitConversions[unit.toLowerCase()] || 100);
-  if (["cup", "cups", "tbsp", "tablespoon", "tablespoons", "tsp", "teaspoon", "teaspoons"].includes(unit.toLowerCase())) {
-    for (const [food, adjustment] of Object.entries(densityAdjustments)) {
-      if (foodType.toLowerCase().includes(food)) {
-        grams *= adjustment;
-        break;
-      }
-    }
-  }
-  return Math.max(grams, 10);
-}
-async function calculateIngredientNutrition(ingredientText, usdaNutrition) {
-  const { quantity, unit, foodName } = parseIngredientQuantity(ingredientText);
-  const grams = convertToGrams(quantity, unit, foodName);
-  const scale = grams / 100;
-  const calories = (usdaNutrition.calories || 0) * scale;
-  const protein = (usdaNutrition.protein || 0) * scale;
-  const carbs = (usdaNutrition.carbs || 0) * scale;
-  const fat = (usdaNutrition.fat || 0) * scale;
-  const fiber = (usdaNutrition.fiber || 0) * scale;
-  const sugar = (usdaNutrition.sugar || 0) * scale;
-  const sodium = (usdaNutrition.sodium || 0) * scale;
-  console.log(`Nutrition for ${ingredientText}: ${Math.round(calories)}cal (${grams}g scaled from ${quantity} ${unit})`);
-  return {
-    calories: Math.round(calories),
-    protein: Math.round(protein * 100) / 100,
-    carbs: Math.round(carbs * 100) / 100,
-    fat: Math.round(fat * 100) / 100,
-    fiber: Math.round(fiber * 100) / 100,
-    sugar: Math.round(sugar * 100) / 100,
-    sodium: Math.round(sodium * 100) / 100
-  };
-}
-function estimateServings(recipe) {
-  const title = recipe.title?.toLowerCase() || "";
-  const instructions = recipe.instructions?.join(" ").toLowerCase() || "";
-  const description = recipe.description?.toLowerCase() || "";
-  const servingPatterns = [
-    /serves?\s+(\d+)/,
-    /(\d+)\s+servings?/,
-    /makes?\s+(\d+)/,
-    /portions?\s+(\d+)/,
-    /(\d+)\s+portions?/,
-    /feeds?\s+(\d+)/,
-    /for\s+(\d+)\s+people/
-  ];
-  const allText = `${title} ${instructions} ${description}`;
-  for (const pattern of servingPatterns) {
-    const match = allText.match(pattern);
-    if (match) {
-      const servings = parseInt(match[1]);
-      if (servings >= 1 && servings <= 12) {
-        return servings;
-      }
-    }
-  }
-  const hasLargeQuantities = recipe.ingredients?.some((ing) => {
-    const ingredientText = typeof ing === "string" ? ing : ing.display_text || ing.name || String(ing);
-    const text2 = String(ingredientText).toLowerCase();
-    return text2.includes("lb") || text2.includes("pound") || text2.includes("2 cup") || text2.includes("3 cup") || text2.includes("large") || text2.includes("whole");
-  });
-  if (title.includes("family") || hasLargeQuantities) return 6;
-  if (title.includes("single") || title.includes("one")) return 1;
-  if (title.includes("couple") || title.includes("two")) return 2;
-  return 4;
-}
-async function calculateRecipeNutrition(recipe, getUSDANutrition) {
-  const servings = estimateServings(recipe);
-  console.log(`Estimated servings for "${recipe.title}": ${servings}`);
-  let totalNutrition = {
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-    fiber: 0,
-    sugar: 0,
-    sodium: 0
-  };
-  if (recipe.ingredients && recipe.ingredients.length > 0) {
-    for (const ingredient of recipe.ingredients) {
-      const ingredientText = typeof ingredient === "string" ? ingredient : ingredient.display_text || ingredient.name || String(ingredient);
-      try {
-        const cleanIngredientText = String(ingredientText).trim();
-        if (!cleanIngredientText) continue;
-        const { foodName } = parseIngredientQuantity(cleanIngredientText);
-        const usdaNutrition = await getUSDANutrition(foodName);
-        if (usdaNutrition) {
-          const nutrition = await calculateIngredientNutrition(cleanIngredientText, usdaNutrition);
-          totalNutrition.calories += nutrition.calories;
-          totalNutrition.protein += nutrition.protein;
-          totalNutrition.carbs += nutrition.carbs;
-          totalNutrition.fat += nutrition.fat;
-          totalNutrition.fiber += nutrition.fiber;
-          totalNutrition.sugar += nutrition.sugar;
-          totalNutrition.sodium += nutrition.sodium;
-        }
-      } catch (error) {
-        console.error(`Error calculating nutrition for ${ingredientText}:`, error);
-      }
-    }
-  }
-  const perServing = {
-    calories: Math.round(totalNutrition.calories / servings),
-    protein: Math.round(totalNutrition.protein / servings * 100) / 100,
-    carbs: Math.round(totalNutrition.carbs / servings * 100) / 100,
-    fat: Math.round(totalNutrition.fat / servings * 100) / 100,
-    fiber: Math.round(totalNutrition.fiber / servings * 100) / 100,
-    sugar: Math.round(totalNutrition.sugar / servings * 100) / 100,
-    sodium: Math.round(totalNutrition.sodium / servings * 100) / 100
-  };
-  console.log(`Total nutrition: ${totalNutrition.calories}cal for ${servings} servings`);
-  console.log(`Per serving: ${perServing.calories}cal, ${perServing.protein}g protein, ${perServing.carbs}g carbs, ${perServing.fat}g fat`);
-  return {
-    ...totalNutrition,
-    servings,
-    perServing
-  };
-}
-var init_nutritionCalculator = __esm({
-  "server/nutritionCalculator.ts"() {
-    "use strict";
   }
 });
 
@@ -4209,8 +4432,8 @@ __export(perplexitySearchLogger_exports, {
   logPerplexitySearch: () => logPerplexitySearch,
   perplexityLogger: () => perplexityLogger
 });
-import fs from "fs/promises";
-import path from "path";
+import fs2 from "fs/promises";
+import path6 from "path";
 async function logPerplexitySearch(query, response, category = "general", cached = false, userId, executionTime) {
   return perplexityLogger.logSearch(query, response, category, cached, userId, executionTime);
 }
@@ -4224,13 +4447,13 @@ var init_perplexitySearchLogger = __esm({
       maxFileSize = 10 * 1024 * 1024;
       // 10MB
       constructor() {
-        this.logFile = path.join(__dirname, "../logs/perplexity-searches.json");
+        this.logFile = path6.join(__dirname, "../logs/perplexity-searches.json");
         this.ensureLogDirectory();
       }
       async ensureLogDirectory() {
-        const logDir = path.dirname(this.logFile);
+        const logDir = path6.dirname(this.logFile);
         try {
-          await fs.mkdir(logDir, { recursive: true });
+          await fs2.mkdir(logDir, { recursive: true });
         } catch (error) {
           console.error("Failed to create log directory:", error);
         }
@@ -4284,7 +4507,7 @@ var init_perplexitySearchLogger = __esm({
       async saveEntry(entry) {
         let existingEntries = [];
         try {
-          const fileContent = await fs.readFile(this.logFile, "utf-8");
+          const fileContent = await fs2.readFile(this.logFile, "utf-8");
           existingEntries = JSON.parse(fileContent);
         } catch (error) {
           existingEntries = [];
@@ -4298,13 +4521,13 @@ var init_perplexitySearchLogger = __esm({
           await this.rotateLog();
           existingEntries = existingEntries.slice(0, Math.floor(this.maxEntries / 2));
         }
-        await fs.writeFile(this.logFile, content, "utf-8");
+        await fs2.writeFile(this.logFile, content, "utf-8");
       }
       async rotateLog() {
         const timestamp2 = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
         const rotatedFile = this.logFile.replace(".json", `-${timestamp2}.json`);
         try {
-          await fs.rename(this.logFile, rotatedFile);
+          await fs2.rename(this.logFile, rotatedFile);
           console.log(`\u{1F4E6} Rotated Perplexity log to: ${rotatedFile}`);
         } catch (error) {
           console.error("Failed to rotate log file:", error);
@@ -4312,7 +4535,7 @@ var init_perplexitySearchLogger = __esm({
       }
       async getSearchHistory(limit = 50) {
         try {
-          const fileContent = await fs.readFile(this.logFile, "utf-8");
+          const fileContent = await fs2.readFile(this.logFile, "utf-8");
           const entries = JSON.parse(fileContent);
           return entries.slice(0, limit);
         } catch (error) {
@@ -4322,7 +4545,7 @@ var init_perplexitySearchLogger = __esm({
       }
       async clearSearchHistory() {
         try {
-          await fs.writeFile(this.logFile, JSON.stringify([], null, 2), "utf-8");
+          await fs2.writeFile(this.logFile, JSON.stringify([], null, 2), "utf-8");
           console.log("\u{1F9F9} Cleared Perplexity search history");
         } catch (error) {
           console.error("Failed to clear search history:", error);
@@ -10052,21 +10275,21 @@ var init_intelligentPromptBuilder = __esm({
 });
 
 // server/cuisineMasterlistMigration.ts
-import fs2 from "fs";
-import path2 from "path";
+import fs3 from "fs";
+import path7 from "path";
 async function loadMasterlist(preferV2 = true) {
-  const basePath = path2.join(process.cwd(), "client", "src", "data");
+  const basePath = path7.join(process.cwd(), "client", "src", "data");
   if (preferV2) {
     try {
-      const v2Path = path2.join(basePath, "cultural_cuisine_masterlist_v2.json");
-      const v2Data = await fs2.promises.readFile(v2Path, "utf-8");
+      const v2Path = path7.join(basePath, "cultural_cuisine_masterlist_v2.json");
+      const v2Data = await fs3.promises.readFile(v2Path, "utf-8");
       return JSON.parse(v2Data);
     } catch (error) {
       console.log("\u{1F4C4} V2 masterlist not found, falling back to legacy format");
     }
   }
-  const legacyPath = path2.join(basePath, "cultural_cuisine_masterlist.json");
-  const legacyData = await fs2.promises.readFile(legacyPath, "utf-8");
+  const legacyPath = path7.join(basePath, "cultural_cuisine_masterlist.json");
+  const legacyData = await fs3.promises.readFile(legacyPath, "utf-8");
   return JSON.parse(legacyData);
 }
 var init_cuisineMasterlistMigration = __esm({
@@ -10858,7 +11081,7 @@ var init_culturalMealRankingEngine = __esm({
 });
 
 // server/llamaMealRanker.ts
-import fetch4 from "node-fetch";
+import fetch5 from "node-fetch";
 var LlamaMealRanker, llamaMealRanker;
 var init_llamaMealRanker = __esm({
   "server/llamaMealRanker.ts"() {
@@ -10956,7 +11179,7 @@ Score ALL ${maxMeals} meals. Numbers only, NO text in meal objects.`;
        * Call OpenAI API for GPT-4o mini inference
        */
       async callLlamaAPI(prompt) {
-        const response = await fetch4(this.apiEndpoint, {
+        const response = await fetch5(this.apiEndpoint, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${this.apiKey}`,
@@ -11563,12 +11786,14 @@ var init_intelligentMealBaseSelector = __esm({
 import express2 from "express";
 import session from "express-session";
 import cors from "cors";
-import dotenv from "dotenv";
+import dotenv6 from "dotenv";
+import path10 from "path";
+import { fileURLToPath as fileURLToPath6 } from "url";
 
 // server/routes.ts
 init_storage();
 import { createServer } from "http";
-import fetch5 from "node-fetch";
+import fetch6 from "node-fetch";
 
 // server/grok.ts
 import OpenAI from "openai";
@@ -12545,11 +12770,12 @@ function fallbackInstructionExtraction(text2) {
   return extractedSteps;
 }
 function extractMeasurements(ingredient) {
-  const measurementRegex = /(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\s*(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter)s?/gi;
+  const measurementRegex = /(\d+\/\d+|\d+\s+\d+\/\d+|\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\s*(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter|clove|slice|can|jar|package|container)s?/gi;
   const measurements = [];
   let match;
   while ((match = measurementRegex.exec(ingredient)) !== null) {
-    let quantity = match[1].toLowerCase();
+    let quantityStr = match[1].toLowerCase();
+    let numericQuantity;
     const wordToNumber = {
       "one": 1,
       "two": 2,
@@ -12564,7 +12790,22 @@ function extractMeasurements(ingredient) {
       "half": 0.5,
       "quarter": 0.25
     };
-    const numericQuantity = wordToNumber[quantity] !== void 0 ? wordToNumber[quantity] : parseFloat(quantity);
+    if (wordToNumber[quantityStr] !== void 0) {
+      numericQuantity = wordToNumber[quantityStr];
+    } else if (quantityStr.includes("/")) {
+      if (quantityStr.includes(" ")) {
+        const parts = quantityStr.split(" ");
+        const whole = parseFloat(parts[0]);
+        const fractionParts = parts[1].split("/");
+        const fraction = parseFloat(fractionParts[0]) / parseFloat(fractionParts[1]);
+        numericQuantity = whole + fraction;
+      } else {
+        const fractionParts = quantityStr.split("/");
+        numericQuantity = parseFloat(fractionParts[0]) / parseFloat(fractionParts[1]);
+      }
+    } else {
+      numericQuantity = parseFloat(quantityStr);
+    }
     let unit = match[2].toLowerCase();
     const unitMap = {
       "tablespoon": "tbsp",
@@ -12572,7 +12813,9 @@ function extractMeasurements(ingredient) {
       "ounce": "oz",
       "pound": "lb",
       "gram": "g",
-      "liter": "l"
+      "liter": "l",
+      "clove": "cloves",
+      "slice": "slices"
     };
     const normalizedUnit = unitMap[unit] || unit;
     measurements.push({
@@ -12580,11 +12823,21 @@ function extractMeasurements(ingredient) {
       unit: normalizedUnit
     });
   }
+  if (measurements.length === 0) {
+    const simpleQuantityMatch = ingredient.match(/^(\d+)\s+(large|medium|small)?\s*(.+)/i);
+    if (simpleQuantityMatch) {
+      measurements.push({
+        quantity: parseFloat(simpleQuantityMatch[1]),
+        unit: "pieces"
+      });
+    }
+  }
   return measurements;
 }
 async function getRecipeFromYouTube(query, filters) {
   try {
-    console.log(`Starting generalized recipe workflow for: "${query}"`);
+    console.log(`\u{1F3AC} [YOUTUBE] Starting generalized recipe workflow for: "${query}"`);
+    console.log(`\u{1F50D} [YOUTUBE] Filters:`, filters);
     let spoonacularRecipe = null;
     let cookingTimeMinutes = 30;
     try {
@@ -12603,10 +12856,34 @@ async function getRecipeFromYouTube(query, filters) {
       console.error("Failed to find a suitable recipe video");
       return null;
     }
-    console.log(`Found video: ${videoInfo.title} by ${videoInfo.channelTitle}`);
+    console.log(`\u2705 [YOUTUBE] Found video: ${videoInfo.title} by ${videoInfo.channelTitle}`);
+    console.log(`\u{1F517} [YOUTUBE] Video URL: https://www.youtube.com/watch?v=${videoInfo.id}`);
+    let transcript = "";
+    try {
+      const { whisperTranscriber: whisperTranscriber2 } = await Promise.resolve().then(() => (init_whisperTranscriber(), whisperTranscriber_exports));
+      console.log("\u{1F399}\uFE0F [YOUTUBE] Checking for transcript...");
+      const videoUrl = `https://www.youtube.com/watch?v=${videoInfo.id}`;
+      transcript = await whisperTranscriber2.getTranscriptWithFallback(
+        videoUrl,
+        videoInfo.description
+        // Use description as potential existing transcript
+      );
+      if (transcript && transcript.length > 50) {
+        console.log(`\u2705 [YOUTUBE] Got transcript (${transcript.length} chars)`);
+        console.log(`\u{1F4DD} [YOUTUBE] Transcript preview: ${transcript.substring(0, 150)}...`);
+      } else {
+        console.log("\u26A0\uFE0F [YOUTUBE] No transcript available");
+      }
+    } catch (error) {
+      console.error("\u274C [YOUTUBE] Error getting transcript:", error);
+      transcript = "";
+    }
+    console.log("\u{1F4AC} [YOUTUBE] Fetching video comments...");
     videoInfo.comments = await getVideoComments(videoInfo.id);
     let ingredients = [];
-    const descriptionIngredients = await extractIngredientsWithLLaVA(videoInfo.description);
+    console.log("\u{1F957} [YOUTUBE] Extracting ingredients...");
+    const textForIngredients = transcript || videoInfo.description;
+    const descriptionIngredients = await extractIngredientsWithLLaVA(textForIngredients);
     if (descriptionIngredients.length > 0) {
       console.log(`Found ${descriptionIngredients.length} ingredients in video description`);
       ingredients = descriptionIngredients.map(
@@ -12641,8 +12918,11 @@ async function getRecipeFromYouTube(query, filters) {
       console.log(`After deduplication: ${ingredients.length} ingredients`);
     }
     let instructions = [];
+    console.log("\u{1F4DD} [YOUTUBE] Extracting instructions...");
     try {
-      const aiInstructions = await extractInstructionsWithLLaVA("", videoInfo.description);
+      const textForInstructions = transcript || videoInfo.description;
+      console.log(`\u{1F50D} [YOUTUBE] Using ${transcript ? "transcript" : "description"} for instruction extraction`);
+      const aiInstructions = await extractInstructionsWithLLaVA(textForInstructions, videoInfo.description);
       if (aiInstructions.length > 0) {
         console.log(`LLaVA-Chef extracted ${aiInstructions.length} instruction steps`);
         instructions = aiInstructions;
@@ -12655,7 +12935,7 @@ async function getRecipeFromYouTube(query, filters) {
       instructions = fallbackInstructionExtraction(videoInfo.description);
     }
     if (ingredients.length === 0) {
-      console.log("No ingredients found in video description, generating from video title using Grok");
+      console.log("\u26A0\uFE0F [YOUTUBE] No ingredients found, generating from video title using Grok...");
       try {
         const grokIngredients = await generateIngredientsFromTitle(videoInfo.title);
         if (grokIngredients.length > 0) {
@@ -12671,17 +12951,53 @@ async function getRecipeFromYouTube(query, filters) {
       }
     }
     if (instructions.length === 0) {
-      console.log("Failed to extract instructions from video");
-      instructions = [];
+      console.log("\u26A0\uFE0F [YOUTUBE] No instructions extracted, attempting GPT-OSS-120B generation...");
+      console.log(`\u{1F4CA} [YOUTUBE] Available text sources:`);
+      console.log(`  - Transcript: ${transcript ? `${transcript.length} chars` : "NOT AVAILABLE"}`);
+      console.log(`  - Description: ${videoInfo.description ? `${videoInfo.description.length} chars` : "NOT AVAILABLE"}`);
+      try {
+        const { groqInstructionGenerator: groqInstructionGenerator2 } = await Promise.resolve().then(() => (init_groqInstructionGenerator(), groqInstructionGenerator_exports));
+        const textToUse = transcript || videoInfo.description || "";
+        if (textToUse.length > 50) {
+          console.log(`\u{1F916} [YOUTUBE] Using ${transcript ? "TRANSCRIPT" : "DESCRIPTION"} for GPT-OSS-120B generation`);
+          console.log(`\u{1F4DD} [YOUTUBE] Text preview: "${textToUse.substring(0, 200)}..."`);
+          instructions = await groqInstructionGenerator2.generateInstructionsFromTranscript(
+            textToUse,
+            videoInfo.title,
+            ingredients
+          );
+          if (instructions.length > 0) {
+            console.log(`\u2705 [YOUTUBE] GPT-OSS-120B successfully generated ${instructions.length} instructions`);
+            instructions.forEach((inst, idx) => {
+              console.log(`  ${idx + 1}. ${inst.substring(0, 80)}...`);
+            });
+          } else {
+            console.log(`\u274C [YOUTUBE] GPT-OSS-120B failed to generate instructions`);
+          }
+        } else {
+          console.log(`\u274C [YOUTUBE] Insufficient text for instruction generation (only ${textToUse.length} chars)`);
+        }
+      } catch (genError) {
+        console.error("\u274C [YOUTUBE] Error generating instructions with GPT-OSS-120B:", genError);
+      }
+      if (instructions.length === 0) {
+        console.log("\u26A0\uFE0F [YOUTUBE] No instructions generated, will be handled by validation pipeline");
+        instructions = [];
+      }
+    } else {
+      console.log(`\u2705 [YOUTUBE] Successfully extracted ${instructions.length} instructions`);
     }
     return {
       title: videoInfo.title,
       description: videoInfo.description,
-      ingredients: ingredients.map((ingredient) => ({
-        name: ingredient,
-        display_text: ingredient,
-        measurements: extractMeasurements(ingredient)
-      })),
+      ingredients: ingredients.map((ingredient) => {
+        const cleanName = ingredient.replace(/^\d+\/\d+|\d+\s+\d+\/\d+|\d+(?:\.\d+)?/g, "").replace(/\b(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter|clove|slice|can|jar|package|container)s?\b/gi, "").replace(/^\s*(of|large|medium|small)\s+/i, "").trim();
+        return {
+          name: cleanName || ingredient,
+          display_text: ingredient,
+          measurements: extractMeasurements(ingredient)
+        };
+      }),
       instructions,
       videoUrl: `https://www.youtube.com/watch?v=${videoInfo.id}`,
       thumbnailUrl: videoInfo.thumbnailUrl,
@@ -12690,7 +13006,9 @@ async function getRecipeFromYouTube(query, filters) {
       video_title: videoInfo.title,
       video_channel: videoInfo.channelTitle,
       source_url: `https://www.youtube.com/watch?v=${videoInfo.id}`,
-      source_name: videoInfo.channelTitle
+      source_name: videoInfo.channelTitle,
+      transcript: transcript || ""
+      // Store transcript for later use if needed
     };
     const formattedIngredients = ingredients.map((ingredient) => {
       let cleanedIngredient = ingredient.replace(/(\d+(?:\.\d+)?)\s*(cup|cups|tsp|tbsp|tablespoon|teaspoon|tablespoons|teaspoons)\s+\1\s*\2s?/gi, "$1 $2").replace(/(\d+(?:\.\d+)?)\s*(oz|ounce|ounces|pound|pounds|lb|lbs|g|gram|grams|ml|l|liter|liters)\s+\1\s*\2s?/gi, "$1 $2").replace(/(\b\w+)\s+\1\b/g, "$1").replace(/\s+/g, " ").trim();
@@ -13450,6 +13768,691 @@ var MealPlanSharingService = class {
 };
 var mealPlanSharingService = new MealPlanSharingService();
 
+// server/groqValidator.ts
+import Groq3 from "groq-sdk";
+import dotenv3 from "dotenv";
+import path3 from "path";
+import { fileURLToPath as fileURLToPath3 } from "url";
+var __filename3 = fileURLToPath3(import.meta.url);
+var __dirname4 = path3.dirname(__filename3);
+dotenv3.config({ path: path3.join(__dirname4, "..", ".env") });
+var GroqRecipeValidator = class {
+  client = null;
+  constructor() {
+    if (process.env.GROQ_API_KEY) {
+      console.log("\u{1F680} [GROQ VALIDATOR] Initializing with API key:", process.env.GROQ_API_KEY.substring(0, 10) + "...");
+      this.client = new Groq3({
+        apiKey: process.env.GROQ_API_KEY
+      });
+    } else {
+      console.log("\u26A0\uFE0F [GROQ VALIDATOR] No API key found, will use fallback validation");
+    }
+  }
+  async validateInstructions(instructions) {
+    let instructionText;
+    if (Array.isArray(instructions)) {
+      if (instructions.length === 0) {
+        console.log("\u274C [GROQ VALIDATOR] Empty instructions array, returning false");
+        return false;
+      }
+      instructionText = instructions.join(" ");
+      console.log("\u{1F50D} [GROQ VALIDATOR] Instructions provided as array with", instructions.length, "items, joined to string");
+    } else if (typeof instructions === "string") {
+      instructionText = instructions;
+    } else {
+      console.log("\u274C [GROQ VALIDATOR] Instructions missing or invalid type");
+      return false;
+    }
+    console.log("\u{1F50D} [GROQ VALIDATOR] Starting validation for instructions:", instructionText?.substring(0, 100) + "...");
+    if (!instructionText || instructionText.length < 30) {
+      console.log("\u274C [GROQ VALIDATOR] Instructions too short or missing, returning false");
+      return false;
+    }
+    if (!this.client) {
+      console.log("\u26A0\uFE0F [GROQ VALIDATOR] No Groq client, using fallback validation");
+      return this.fallbackValidation(instructionText);
+    }
+    try {
+      console.log("\u{1F4E1} [GROQ VALIDATOR] Calling validation model via Groq API...");
+      const startTime = Date.now();
+      const completion = await this.client.chat.completions.create({
+        model: "openai/gpt-oss-20b",
+        // Using GPT-OSS-20B for fast validation
+        messages: [{
+          role: "user",
+          content: `Reply with only VALID or INVALID. Are these clear cooking instructions? ${instructionText.substring(0, 500)}`
+        }],
+        temperature: 0,
+        max_tokens: 10
+      });
+      let response = completion.choices[0]?.message?.content?.trim() || "";
+      const reasoning = completion.choices[0]?.message?.reasoning || "";
+      if (!response && reasoning) {
+        console.log(`\u{1F4DD} [GROQ VALIDATOR] Extracting from reasoning: "${reasoning.substring(0, 100)}"`);
+        response = this.fallbackValidation(instructionText) ? "VALID" : "INVALID";
+        console.log(`\u{1F4DD} [GROQ VALIDATOR] Using fallback result: ${response}`);
+      }
+      const timeTaken = Date.now() - startTime;
+      console.log(`\u2705 [GROQ VALIDATOR] Validation response: "${response}" (took ${timeTaken}ms)`);
+      const isValid = response.includes("VALID") && !response.includes("INVALID");
+      console.log(`\u{1F4CA} [GROQ VALIDATOR] Validation result: ${isValid ? "VALID \u2713" : "INVALID \u2717"}`);
+      return isValid;
+    } catch (error) {
+      console.error("\u{1F525} [GROQ VALIDATOR] Groq API error:", error);
+      console.log("\u26A0\uFE0F [GROQ VALIDATOR] Falling back to local validation due to error");
+      return this.fallbackValidation(instructionText);
+    }
+  }
+  fallbackValidation(instructions) {
+    console.log("\u{1F527} [GROQ VALIDATOR] Running fallback validation...");
+    const hasMinLength = instructions.length > 50;
+    const hasCookingVerbs = /cook|bake|mix|heat|boil|fry|stir|add|pour|slice|chop/i.test(instructions);
+    const hasSteps = /\d+\.|step|first|then|next|finally/i.test(instructions);
+    console.log(`  - Has minimum length (>50 chars): ${hasMinLength}`);
+    console.log(`  - Has cooking verbs: ${hasCookingVerbs}`);
+    console.log(`  - Has step indicators: ${hasSteps}`);
+    const isValid = hasMinLength && hasCookingVerbs && hasSteps;
+    console.log(`\u{1F527} [GROQ VALIDATOR] Fallback result: ${isValid ? "VALID \u2713" : "INVALID \u2717"}`);
+    return isValid;
+  }
+  // Batch validation for multiple recipes
+  async validateBatch(recipes2) {
+    console.log(`\u{1F4E6} [GROQ VALIDATOR] Starting batch validation for ${recipes2.length} recipes`);
+    const validationPromises = recipes2.map(async (recipe, index2) => {
+      console.log(`  \u{1F373} Validating recipe ${index2 + 1}/${recipes2.length}: ${recipe.title || "Unknown"}`);
+      const isValid = await this.validateInstructions(recipe.instructions);
+      if (!isValid) {
+        console.log(`  \u274C Recipe "${recipe.title}" has invalid instructions, replacing with "No instructions available"`);
+        recipe.instructions = "No instructions available";
+      } else {
+        console.log(`  \u2705 Recipe "${recipe.title}" has valid instructions`);
+      }
+      return recipe;
+    });
+    const results = await Promise.all(validationPromises);
+    console.log(`\u{1F4E6} [GROQ VALIDATOR] Batch validation complete`);
+    return results;
+  }
+};
+var groqValidator = new GroqRecipeValidator();
+
+// server/groqIngredientParser.ts
+import Groq4 from "groq-sdk";
+import dotenv4 from "dotenv";
+import path4 from "path";
+import { fileURLToPath as fileURLToPath4 } from "url";
+var __filename4 = fileURLToPath4(import.meta.url);
+var __dirname5 = path4.dirname(__filename4);
+dotenv4.config({ path: path4.join(__dirname5, "..", ".env") });
+var GroqIngredientParser = class {
+  client = null;
+  constructor() {
+    if (process.env.GROQ_API_KEY) {
+      console.log("\u{1F680} [GROQ INGREDIENT PARSER] Initializing with GPT-OSS-20B");
+      this.client = new Groq4({
+        apiKey: process.env.GROQ_API_KEY
+      });
+    } else {
+      console.log("\u26A0\uFE0F [GROQ INGREDIENT PARSER] No API key found");
+    }
+  }
+  async parseIngredients(ingredients) {
+    console.log("\u{1F3AF} [GROQ INGREDIENT PARSER] Parsing", ingredients.length, "ingredients");
+    if (!this.client) {
+      console.log("\u274C [GROQ INGREDIENT PARSER] No Groq client available");
+      return [];
+    }
+    try {
+      console.log("\u{1F4E1} [GROQ INGREDIENT PARSER] Calling GPT-OSS-20B...");
+      const startTime = Date.now();
+      const prompt = `Parse these cooking ingredients into structured data. For each ingredient, extract:
+1. The clean ingredient name (lowercase, no amounts)
+2. The amount with unit
+3. The numeric quantity
+4. The unit of measurement
+
+Ingredients to parse:
+${ingredients.map((ing, i) => `${i + 1}. ${ing}`).join("\n")}
+
+Return a JSON array with this EXACT structure for each ingredient:
+[
+  {
+    "ingredient": "sugar",
+    "amount": "\xBD teaspoon",
+    "quantity": 0.5,
+    "unit": "teaspoon",
+    "originalText": "\xBD teaspoon sugar"
+  }
+]
+
+Rules:
+- Convert fractions to decimal numbers (\xBD = 0.5, \xBC = 0.25, \u215B = 0.125, \u2153 = 0.333, \u2154 = 0.667)
+- For items without units (like "4 eggs"), use "pieces" as unit
+- Keep the "amount" field exactly as written (with fractions if present)
+- Clean ingredient names should be lowercase and singular
+- Remove descriptors like "large", "fresh", "chopped" from ingredient name but keep in originalText
+
+Parse ALL ingredients and return ONLY the JSON array, no other text.`;
+      const completion = await this.client.chat.completions.create({
+        model: "openai/gpt-oss-20b",
+        messages: [{
+          role: "user",
+          content: prompt
+        }],
+        temperature: 0.1,
+        // Low temperature for consistent parsing
+        max_tokens: 2e3,
+        reasoning_effort: "medium"
+      });
+      const response = completion.choices[0]?.message?.content || "";
+      const timeTaken = Date.now() - startTime;
+      console.log(`\u2705 [GROQ INGREDIENT PARSER] Parsed in ${timeTaken}ms`);
+      let parsed;
+      try {
+        const jsonMatch = response.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("No JSON array found in response");
+        }
+      } catch (parseError) {
+        console.error("\u274C [GROQ INGREDIENT PARSER] Failed to parse JSON response:", parseError);
+        console.log("Raw response:", response.substring(0, 500));
+        return [];
+      }
+      const validated = parsed.filter((item, index2) => {
+        if (!item.ingredient || !item.amount) {
+          console.warn(`\u26A0\uFE0F [GROQ INGREDIENT PARSER] Skipping invalid item at index ${index2}`);
+          return false;
+        }
+        if (!item.originalText) {
+          item.originalText = ingredients[index2];
+        }
+        return true;
+      });
+      console.log(`\u2705 [GROQ INGREDIENT PARSER] Successfully parsed ${validated.length} ingredients`);
+      return validated;
+    } catch (error) {
+      console.error("\u{1F525} [GROQ INGREDIENT PARSER] Error parsing ingredients:", error);
+      return [];
+    }
+  }
+  // Format parsed ingredients as a table for display
+  formatAsTable(parsedIngredients) {
+    const lines = ["Ingredient | Amount"];
+    lines.push("-----------|-------");
+    parsedIngredients.forEach((item) => {
+      lines.push(`${item.ingredient} | ${item.amount}`);
+    });
+    return lines.join("\n");
+  }
+};
+var groqIngredientParser = new GroqIngredientParser();
+
+// server/usdaNutritionService.ts
+import fetch4 from "node-fetch";
+import dotenv5 from "dotenv";
+import path5 from "path";
+import { fileURLToPath as fileURLToPath5 } from "url";
+var __filename5 = fileURLToPath5(import.meta.url);
+var __dirname6 = path5.dirname(__filename5);
+dotenv5.config({ path: path5.join(__dirname6, "..", ".env") });
+var USDANutritionService = class {
+  apiKey;
+  baseUrl = "https://api.nal.usda.gov/fdc/v1";
+  cache = /* @__PURE__ */ new Map();
+  cacheExpiry = 7 * 24 * 60 * 60 * 1e3;
+  // 7 days
+  // USDA Nutrient IDs for common nutrients
+  nutrientIds = {
+    calories: 1008,
+    // Energy (kcal)
+    protein: 1003,
+    // Protein (g)
+    carbs: 1005,
+    // Carbohydrate, by difference (g)
+    fat: 1004,
+    // Total lipid (fat) (g)
+    fiber: 1079,
+    // Fiber, total dietary (g)
+    sugar: 2e3,
+    // Sugars, total including NLEA (g)
+    sodium: 1093,
+    // Sodium, Na (mg)
+    cholesterol: 1253,
+    // Cholesterol (mg)
+    saturatedFat: 1258,
+    // Fatty acids, total saturated (g)
+    transFat: 1257,
+    // Fatty acids, total trans (g)
+    vitaminA: 1106,
+    // Vitamin A, RAE (µg)
+    vitaminC: 1162,
+    // Vitamin C, total ascorbic acid (mg)
+    calcium: 1087,
+    // Calcium, Ca (mg)
+    iron: 1089
+    // Iron, Fe (mg)
+  };
+  constructor() {
+    this.apiKey = process.env.USDA_API_KEY;
+    if (!this.apiKey) {
+      console.log("\u26A0\uFE0F [USDA NUTRITION] No API key found. Set USDA_API_KEY in .env");
+    } else {
+      console.log("\u2705 [USDA NUTRITION] Service initialized with API key");
+    }
+  }
+  async searchFood(query) {
+    if (!this.apiKey) {
+      console.log("\u26A0\uFE0F [USDA NUTRITION] Cannot search without API key");
+      return null;
+    }
+    try {
+      console.log(`\u{1F50D} [USDA NUTRITION] Searching for: ${query}`);
+      const searchUrl = `${this.baseUrl}/foods/search?query=${encodeURIComponent(query)}&api_key=${this.apiKey}&pageSize=5`;
+      const searchResponse = await fetch4(searchUrl);
+      if (!searchResponse.ok) {
+        throw new Error(`USDA API error: ${searchResponse.status}`);
+      }
+      const searchData = await searchResponse.json();
+      if (!searchData.foods || searchData.foods.length === 0) {
+        console.log(`\u274C [USDA NUTRITION] No results found for: ${query}`);
+        return null;
+      }
+      const food = searchData.foods[0];
+      console.log(`\u2705 [USDA NUTRITION] Found: ${food.description} (ID: ${food.fdcId})`);
+      const detailUrl = `${this.baseUrl}/food/${food.fdcId}?api_key=${this.apiKey}`;
+      const detailResponse = await fetch4(detailUrl);
+      if (!detailResponse.ok) {
+        throw new Error(`USDA API detail error: ${detailResponse.status}`);
+      }
+      const detailData = await detailResponse.json();
+      console.log(`\u{1F4CB} [USDA NUTRITION] Food type: ${detailData.dataType}`);
+      console.log(`\u{1F4CB} [USDA NUTRITION] Nutrients count: ${detailData.foodNutrients?.length || 0}`);
+      if (detailData.foodNutrients && detailData.foodNutrients.length > 0) {
+        console.log(`\u{1F4CB} [USDA NUTRITION] Sample nutrients:`);
+        detailData.foodNutrients.slice(0, 5).forEach((n) => {
+          const name = n.nutrientName || n.nutrient?.name || n.name || "Unknown";
+          const value = n.amount || n.value || 0;
+          const unit = n.unitName || n.nutrient?.unitName || n.unit || "";
+          console.log(`   - ${name}: ${value} ${unit}`);
+        });
+      }
+      return {
+        fdcId: detailData.fdcId,
+        description: detailData.description,
+        dataType: detailData.dataType,
+        brandName: detailData.brandName,
+        foodNutrients: detailData.foodNutrients || []
+      };
+    } catch (error) {
+      console.error("\u{1F525} [USDA NUTRITION] Error searching food:", error);
+      return null;
+    }
+  }
+  async getNutritionData(ingredientName, quantity = 100, unit = "g") {
+    const cacheKey = `${ingredientName}_${quantity}_${unit}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
+      console.log(`\u{1F4E6} [USDA NUTRITION] Using cached data for: ${ingredientName}`);
+      return cached.data;
+    }
+    const foodItem = await this.searchFood(ingredientName);
+    if (!foodItem) {
+      console.log(`\u274C [USDA NUTRITION] No data found for: ${ingredientName}`);
+      return null;
+    }
+    const nutrition = this.extractNutritionFromFood(foodItem, quantity, unit);
+    this.cache.set(cacheKey, {
+      data: nutrition,
+      timestamp: Date.now()
+    });
+    return nutrition;
+  }
+  extractNutritionFromFood(food, quantity, unit) {
+    const nutrients = food.foodNutrients;
+    const multiplier = this.getMultiplier(quantity, unit);
+    const getNutrientValue = (nutrientId, namePatterns) => {
+      const nutrient = nutrients.find((n) => {
+        if (n.nutrientId === nutrientId) return true;
+        if (n.nutrient?.id === nutrientId) return true;
+        if (n.nutrient?.nutrientId === nutrientId) return true;
+        if (namePatterns) {
+          const name = (n.nutrientName || n.nutrient?.name || n.nutrient?.nutrientName || n.name || "").toLowerCase();
+          return namePatterns.some((pattern) => name.includes(pattern));
+        }
+        return false;
+      });
+      if (nutrient) {
+        let value = 0;
+        if (typeof nutrient.value === "number") value = nutrient.value;
+        else if (typeof nutrient.amount === "number") value = nutrient.amount;
+        else if (typeof nutrient.nutrient?.value === "number") value = nutrient.nutrient.value;
+        else if (typeof nutrient.nutrient?.amount === "number") value = nutrient.nutrient.amount;
+        const unitName = nutrient.unitName || nutrient.nutrient?.unitName || nutrient.unit || "";
+        const nutrientName = nutrient.nutrientName || nutrient.nutrient?.name || nutrient.nutrient?.nutrientName || nutrient.name || "Unknown";
+        if (value > 0) {
+          console.log(`   Found: ${nutrientName} = ${value} ${unitName}`);
+        }
+        return value * multiplier;
+      }
+      return 0;
+    };
+    return {
+      calories: Math.round(getNutrientValue(this.nutrientIds.calories, ["energy", "calorie"])),
+      protein: Math.round(getNutrientValue(this.nutrientIds.protein, ["protein"]) * 10) / 10,
+      carbs: Math.round(getNutrientValue(this.nutrientIds.carbs, ["carbohydrate"]) * 10) / 10,
+      fat: Math.round(getNutrientValue(this.nutrientIds.fat, ["total lipid", "fat"]) * 10) / 10,
+      fiber: Math.round(getNutrientValue(this.nutrientIds.fiber, ["fiber", "dietary fiber"]) * 10) / 10,
+      sugar: Math.round(getNutrientValue(this.nutrientIds.sugar, ["sugar", "total sugar"]) * 10) / 10,
+      sodium: Math.round(getNutrientValue(this.nutrientIds.sodium, ["sodium"])),
+      cholesterol: Math.round(getNutrientValue(this.nutrientIds.cholesterol, ["cholesterol"])),
+      saturatedFat: Math.round(getNutrientValue(this.nutrientIds.saturatedFat, ["saturated"]) * 10) / 10,
+      transFat: Math.round(getNutrientValue(this.nutrientIds.transFat, ["trans"]) * 10) / 10,
+      vitaminA: Math.round(getNutrientValue(this.nutrientIds.vitaminA, ["vitamin a"])),
+      vitaminC: Math.round(getNutrientValue(this.nutrientIds.vitaminC, ["vitamin c", "ascorbic acid"]) * 10) / 10,
+      calcium: Math.round(getNutrientValue(this.nutrientIds.calcium, ["calcium"])),
+      iron: Math.round(getNutrientValue(this.nutrientIds.iron, ["iron"]) * 10) / 10
+    };
+  }
+  getMultiplier(quantity, unit) {
+    const conversions = {
+      "g": quantity / 100,
+      "gram": quantity / 100,
+      "grams": quantity / 100,
+      "kg": quantity * 1e3 / 100,
+      "kilogram": quantity * 1e3 / 100,
+      "oz": quantity * 28.35 / 100,
+      "ounce": quantity * 28.35 / 100,
+      "lb": quantity * 453.592 / 100,
+      "pound": quantity * 453.592 / 100,
+      "cup": quantity * 240 / 100,
+      // Approximate for liquids
+      "cups": quantity * 240 / 100,
+      "tablespoon": quantity * 15 / 100,
+      "tablespoons": quantity * 15 / 100,
+      "tbsp": quantity * 15 / 100,
+      "teaspoon": quantity * 5 / 100,
+      "teaspoons": quantity * 5 / 100,
+      "tsp": quantity * 5 / 100,
+      "ml": quantity / 100,
+      // Assuming water density
+      "milliliter": quantity / 100,
+      "l": quantity * 1e3 / 100,
+      "liter": quantity * 1e3 / 100,
+      "piece": quantity,
+      // Varies greatly, use estimated values
+      "pieces": quantity,
+      "item": quantity,
+      "items": quantity,
+      "serving": quantity,
+      "servings": quantity
+    };
+    const unitLower = unit.toLowerCase();
+    return conversions[unitLower] || quantity / 100;
+  }
+  // Clear the cache
+  clearCache() {
+    this.cache.clear();
+    console.log("\u{1F9F9} [USDA NUTRITION] Cache cleared");
+  }
+};
+var usdaNutritionService = new USDANutritionService();
+
+// server/recipeNutritionCalculator.ts
+var RecipeNutritionCalculator = class {
+  constructor() {
+    console.log("\u{1F34E} [RECIPE NUTRITION] Calculator initialized");
+  }
+  /**
+   * Calculate nutrition for a recipe given its ingredients
+   */
+  async calculateRecipeNutrition(ingredients, servings = 4) {
+    console.log(`\u{1F4CA} [RECIPE NUTRITION] Calculating nutrition for ${ingredients.length} ingredients`);
+    console.log(`\u{1F37D}\uFE0F [RECIPE NUTRITION] Recipe serves: ${servings}`);
+    try {
+      const parsedIngredients = await groqIngredientParser.parseIngredients(ingredients);
+      if (!parsedIngredients || parsedIngredients.length === 0) {
+        console.error("\u274C [RECIPE NUTRITION] Failed to parse ingredients");
+        return null;
+      }
+      console.log(`\u2705 [RECIPE NUTRITION] Parsed ${parsedIngredients.length} ingredients`);
+      const ingredientBreakdown = [];
+      for (const parsed of parsedIngredients) {
+        console.log(`\u{1F50D} [RECIPE NUTRITION] Getting nutrition for: ${parsed.ingredient} (${parsed.amount})`);
+        const nutrition = await usdaNutritionService.getNutritionData(
+          parsed.ingredient,
+          parsed.quantity,
+          parsed.unit
+        );
+        if (nutrition) {
+          ingredientBreakdown.push({
+            ingredient: parsed.ingredient,
+            amount: parsed.amount,
+            nutrition
+          });
+        } else {
+          console.warn(`\u26A0\uFE0F [RECIPE NUTRITION] No USDA data for: ${parsed.ingredient} - skipping`);
+        }
+      }
+      if (ingredientBreakdown.length === 0) {
+        console.error("\u274C [RECIPE NUTRITION] No ingredients had USDA nutrition data");
+        return null;
+      }
+      const dataCompleteness = ingredientBreakdown.length / parsedIngredients.length * 100;
+      console.log(`\u{1F4CA} [RECIPE NUTRITION] Data completeness: ${dataCompleteness.toFixed(1)}% (${ingredientBreakdown.length}/${parsedIngredients.length} ingredients)`);
+      if (dataCompleteness < 50) {
+        console.warn("\u26A0\uFE0F [RECIPE NUTRITION] Less than 50% of ingredients have USDA data - insufficient for accurate nutrition");
+        return null;
+      }
+      const totalNutrition = this.sumNutrition(ingredientBreakdown.map((i) => i.nutrition));
+      const perServingNutrition = this.divideNutrition(totalNutrition, servings);
+      const result = {
+        servings,
+        perServing: perServingNutrition,
+        total: totalNutrition,
+        ingredientBreakdown
+      };
+      console.log(`\u2705 [RECIPE NUTRITION] Calculation complete`);
+      console.log(`\u{1F4CA} [RECIPE NUTRITION] Per serving: ${perServingNutrition.calories} calories`);
+      console.log(`\u{1F4CA} [RECIPE NUTRITION] Macros: ${perServingNutrition.protein}g protein, ${perServingNutrition.carbs}g carbs, ${perServingNutrition.fat}g fat`);
+      return result;
+    } catch (error) {
+      console.error("\u{1F525} [RECIPE NUTRITION] Error calculating nutrition:", error);
+      return null;
+    }
+  }
+  /**
+   * Parse ingredients and return formatted table
+   */
+  async parseIngredientsToTable(ingredients) {
+    const parsed = await groqIngredientParser.parseIngredients(ingredients);
+    if (parsed.length === 0) {
+      return "No ingredients could be parsed";
+    }
+    return groqIngredientParser.formatAsTable(parsed);
+  }
+  /**
+   * Sum nutrition data from multiple ingredients
+   */
+  sumNutrition(nutritionArray) {
+    const sum = {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+      sugar: 0,
+      sodium: 0,
+      cholesterol: 0,
+      saturatedFat: 0,
+      transFat: 0,
+      vitaminA: 0,
+      vitaminC: 0,
+      calcium: 0,
+      iron: 0
+    };
+    for (const nutrition of nutritionArray) {
+      sum.calories += nutrition.calories;
+      sum.protein += nutrition.protein;
+      sum.carbs += nutrition.carbs;
+      sum.fat += nutrition.fat;
+      sum.fiber += nutrition.fiber;
+      sum.sugar += nutrition.sugar;
+      sum.sodium += nutrition.sodium;
+      sum.cholesterol += nutrition.cholesterol;
+      sum.saturatedFat += nutrition.saturatedFat;
+      sum.transFat += nutrition.transFat;
+      if (nutrition.vitaminA !== void 0 && sum.vitaminA !== void 0) {
+        sum.vitaminA += nutrition.vitaminA;
+      }
+      if (nutrition.vitaminC !== void 0 && sum.vitaminC !== void 0) {
+        sum.vitaminC += nutrition.vitaminC;
+      }
+      if (nutrition.calcium !== void 0 && sum.calcium !== void 0) {
+        sum.calcium += nutrition.calcium;
+      }
+      if (nutrition.iron !== void 0 && sum.iron !== void 0) {
+        sum.iron += nutrition.iron;
+      }
+    }
+    return this.roundNutrition(sum);
+  }
+  /**
+   * Divide nutrition data by number of servings
+   */
+  divideNutrition(nutrition, servings) {
+    const divided = {
+      calories: nutrition.calories / servings,
+      protein: nutrition.protein / servings,
+      carbs: nutrition.carbs / servings,
+      fat: nutrition.fat / servings,
+      fiber: nutrition.fiber / servings,
+      sugar: nutrition.sugar / servings,
+      sodium: nutrition.sodium / servings,
+      cholesterol: nutrition.cholesterol / servings,
+      saturatedFat: nutrition.saturatedFat / servings,
+      transFat: nutrition.transFat / servings,
+      vitaminA: nutrition.vitaminA ? nutrition.vitaminA / servings : void 0,
+      vitaminC: nutrition.vitaminC ? nutrition.vitaminC / servings : void 0,
+      calcium: nutrition.calcium ? nutrition.calcium / servings : void 0,
+      iron: nutrition.iron ? nutrition.iron / servings : void 0
+    };
+    return this.roundNutrition(divided);
+  }
+  /**
+   * Round nutrition values to appropriate decimal places
+   */
+  roundNutrition(nutrition) {
+    return {
+      calories: Math.round(nutrition.calories),
+      protein: Math.round(nutrition.protein * 10) / 10,
+      carbs: Math.round(nutrition.carbs * 10) / 10,
+      fat: Math.round(nutrition.fat * 10) / 10,
+      fiber: Math.round(nutrition.fiber * 10) / 10,
+      sugar: Math.round(nutrition.sugar * 10) / 10,
+      sodium: Math.round(nutrition.sodium),
+      cholesterol: Math.round(nutrition.cholesterol),
+      saturatedFat: Math.round(nutrition.saturatedFat * 10) / 10,
+      transFat: Math.round(nutrition.transFat * 10) / 10,
+      vitaminA: nutrition.vitaminA ? Math.round(nutrition.vitaminA) : void 0,
+      vitaminC: nutrition.vitaminC ? Math.round(nutrition.vitaminC * 10) / 10 : void 0,
+      calcium: nutrition.calcium ? Math.round(nutrition.calcium) : void 0,
+      iron: nutrition.iron ? Math.round(nutrition.iron * 10) / 10 : void 0
+    };
+  }
+  /**
+   * Format nutrition data as a readable string
+   */
+  formatNutritionSummary(nutrition) {
+    const lines = [
+      `Calories: ${nutrition.calories}`,
+      `Protein: ${nutrition.protein}g`,
+      `Carbs: ${nutrition.carbs}g`,
+      `Fat: ${nutrition.fat}g`,
+      `Fiber: ${nutrition.fiber}g`,
+      `Sugar: ${nutrition.sugar}g`,
+      `Sodium: ${nutrition.sodium}mg`,
+      `Cholesterol: ${nutrition.cholesterol}mg`
+    ];
+    if (nutrition.saturatedFat > 0) {
+      lines.push(`Saturated Fat: ${nutrition.saturatedFat}g`);
+    }
+    if (nutrition.transFat > 0) {
+      lines.push(`Trans Fat: ${nutrition.transFat}g`);
+    }
+    if (nutrition.vitaminA) {
+      lines.push(`Vitamin A: ${nutrition.vitaminA}mcg`);
+    }
+    if (nutrition.vitaminC) {
+      lines.push(`Vitamin C: ${nutrition.vitaminC}mg`);
+    }
+    if (nutrition.calcium) {
+      lines.push(`Calcium: ${nutrition.calcium}mg`);
+    }
+    if (nutrition.iron) {
+      lines.push(`Iron: ${nutrition.iron}mg`);
+    }
+    return lines.join("\n");
+  }
+  /**
+   * Format complete recipe nutrition as HTML
+   */
+  formatNutritionHTML(recipeNutrition) {
+    const perServing = recipeNutrition.perServing;
+    return `
+<div class="nutrition-facts">
+  <h3>Nutrition Facts</h3>
+  <p>Servings: ${recipeNutrition.servings}</p>
+  <hr>
+  <h4>Amount Per Serving</h4>
+  <p><strong>Calories:</strong> ${perServing.calories}</p>
+  <hr>
+  <table>
+    <tr>
+      <td><strong>Total Fat</strong> ${perServing.fat}g</td>
+      <td>${Math.round(perServing.fat / 65 * 100)}%</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;Saturated Fat ${perServing.saturatedFat}g</td>
+      <td>${Math.round(perServing.saturatedFat / 20 * 100)}%</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;Trans Fat ${perServing.transFat}g</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><strong>Cholesterol</strong> ${perServing.cholesterol}mg</td>
+      <td>${Math.round(perServing.cholesterol / 300 * 100)}%</td>
+    </tr>
+    <tr>
+      <td><strong>Sodium</strong> ${perServing.sodium}mg</td>
+      <td>${Math.round(perServing.sodium / 2300 * 100)}%</td>
+    </tr>
+    <tr>
+      <td><strong>Total Carbohydrate</strong> ${perServing.carbs}g</td>
+      <td>${Math.round(perServing.carbs / 275 * 100)}%</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;Dietary Fiber ${perServing.fiber}g</td>
+      <td>${Math.round(perServing.fiber / 28 * 100)}%</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;Total Sugars ${perServing.sugar}g</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><strong>Protein</strong> ${perServing.protein}g</td>
+      <td>${Math.round(perServing.protein / 50 * 100)}%</td>
+    </tr>
+  </table>
+  <hr>
+  <p>* Percent Daily Values are based on a 2,000 calorie diet.</p>
+</div>`;
+  }
+};
+var recipeNutritionCalculator = new RecipeNutritionCalculator();
+
 // server/routes.ts
 init_schema();
 init_db();
@@ -13463,6 +14466,13 @@ var stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-06-30.basil"
 });
 async function registerRoutes(app2) {
+  app2.get("/api/test-cors", (_req, res) => {
+    res.json({
+      status: "CORS is working correctly!",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      message: "If you can see this from Whop, CORS is configured properly"
+    });
+  });
   const { registerUser: registerUser2, loginUser: loginUser2, getCurrentUser: getCurrentUser2, authenticateToken: authenticateToken2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
   app2.post("/api/auth/register", registerUser2);
   app2.post("/api/auth/login", loginUser2);
@@ -13710,7 +14720,7 @@ async function registerRoutes(app2) {
                 }
               }
               const spoonacularUrl = `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`;
-              const response = await fetch5(spoonacularUrl);
+              const response = await fetch6(spoonacularUrl);
               const data = await response.json();
               if (data.results && data.results.length > 0) {
                 spoonacularTime = data.results[0].readyInMinutes || 30;
@@ -13773,6 +14783,12 @@ async function registerRoutes(app2) {
           if (youtubeRecipe) {
             console.log("Successfully extracted recipe data from YouTube");
             console.log(`Recipe has ${youtubeRecipe.ingredients.length} ingredients and ${youtubeRecipe.instructions.length} instructions`);
+            if (Array.isArray(youtubeRecipe.instructions) && youtubeRecipe.instructions.length === 0) {
+              console.log("\u26A0\uFE0F [YOUTUBE EXTRACTION] Empty instructions array detected, will be fixed during validation");
+            } else if (!youtubeRecipe.instructions) {
+              console.log("\u26A0\uFE0F [YOUTUBE EXTRACTION] No instructions field detected");
+              youtubeRecipe.instructions = [];
+            }
             youtubeRecipe.cuisine = cuisine || youtubeRecipe.cuisine;
             youtubeRecipe.diet = dietRestrictions || youtubeRecipe.diet;
             youtubeRecipe.image_url = youtubeRecipe.thumbnailUrl || youtubeRecipe.image_url;
@@ -13803,66 +14819,66 @@ async function registerRoutes(app2) {
         }
       }
       if (recipe) {
-        if (generationMode === "detailed" && recipe.ingredients && recipe.ingredients.length > 0) {
+        if (!skipNutrition && recipe.ingredients && recipe.ingredients.length > 0) {
           try {
-            const { calculateRecipeNutrition: calculateRecipeNutrition2 } = await Promise.resolve().then(() => (init_nutritionCalculator(), nutritionCalculator_exports));
-            const getUSDANutrition = async (foodName) => {
-              try {
-                console.log(`Looking up USDA nutrition for: "${foodName}"`);
-                const searchResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
-                if (searchResponse.ok) {
-                  const searchData = await searchResponse.json();
-                  if (searchData.foods && searchData.foods.length > 0) {
-                    const foodId = searchData.foods[0].fdcId;
-                    console.log(`Found USDA food ID ${foodId} for "${foodName}"`);
-                    const nutritionResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
-                    if (nutritionResponse.ok) {
-                      const nutritionData2 = await nutritionResponse.json();
-                      const nutrients = nutritionData2.foodNutrients || [];
-                      let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 };
-                      nutrients.forEach((nutrient) => {
-                        const name = nutrient.nutrient?.name?.toLowerCase() || "";
-                        const value = parseFloat(nutrient.amount) || 0;
-                        if (name.includes("energy")) nutrition.calories = value;
-                        else if (name.includes("protein")) nutrition.protein = value;
-                        else if (name.includes("carbohydrate")) nutrition.carbs = value;
-                        else if (name.includes("total lipid") || name.includes("fat")) nutrition.fat = value;
-                        else if (name.includes("fiber")) nutrition.fiber = value;
-                        else if (name.includes("sugars")) nutrition.sugar = value;
-                        else if (name.includes("sodium")) nutrition.sodium = value;
-                      });
-                      console.log(`USDA nutrition for "${foodName}": ${nutrition.calories}cal, ${nutrition.protein}g protein`);
-                      return nutrition;
-                    } else {
-                      console.log(`Failed to get nutrition data for food ID ${foodId}`);
-                    }
-                  } else {
-                    console.log(`No USDA foods found for "${foodName}"`);
-                  }
-                } else {
-                  console.log(`USDA search failed for "${foodName}": ${searchResponse.status}`);
-                }
-                return null;
-              } catch (error) {
-                console.error(`Error fetching USDA nutrition for ${foodName}:`, error);
-                return null;
+            console.log("\u{1F34E} Starting nutrition calculation for recipe:", recipe.title);
+            const ingredientStrings = recipe.ingredients.map((ing) => {
+              if (typeof ing === "string") {
+                return ing;
+              } else if (ing.display_text) {
+                return ing.display_text;
+              } else if (ing.measurements && ing.measurements.length > 0) {
+                const measurement = ing.measurements[0];
+                return `${measurement.quantity} ${measurement.unit} ${ing.name}`;
               }
-            };
-            const nutritionData = await calculateRecipeNutrition2(recipe, getUSDANutrition);
-            recipe.nutrition_info = {
-              calories: nutritionData.perServing.calories,
-              protein_g: nutritionData.perServing.protein,
-              carbs_g: nutritionData.perServing.carbs,
-              fat_g: nutritionData.perServing.fat,
-              fiber_g: nutritionData.perServing.fiber,
-              sugar_g: nutritionData.perServing.sugar,
-              sodium_mg: nutritionData.perServing.sodium,
-              servings: nutritionData.servings,
-              total_calories: nutritionData.calories
-            };
-            console.log(`Added per-serving nutrition: ${nutritionData.perServing.calories}cal per serving (${nutritionData.servings} servings total, ${nutritionData.calories} total calories)`);
+              return ing.name || "";
+            }).filter((s) => s.length > 0);
+            console.log(`\u{1F4DD} Processing ${ingredientStrings.length} ingredients`);
+            const servings = recipe.servings || 4;
+            const nutritionResult = await recipeNutritionCalculator.calculateRecipeNutrition(
+              ingredientStrings,
+              servings
+            );
+            if (nutritionResult) {
+              recipe.nutrition_info = {
+                // Per serving nutrition
+                calories: nutritionResult.perServing.calories,
+                protein_g: nutritionResult.perServing.protein,
+                carbs_g: nutritionResult.perServing.carbs,
+                fat_g: nutritionResult.perServing.fat,
+                fiber_g: nutritionResult.perServing.fiber,
+                sugar_g: nutritionResult.perServing.sugar,
+                sodium_mg: nutritionResult.perServing.sodium,
+                cholesterol_mg: nutritionResult.perServing.cholesterol,
+                saturated_fat_g: nutritionResult.perServing.saturatedFat,
+                trans_fat_g: nutritionResult.perServing.transFat,
+                // Servings and totals
+                servings: nutritionResult.servings,
+                total_calories: nutritionResult.total.calories,
+                total_protein_g: nutritionResult.total.protein,
+                total_carbs_g: nutritionResult.total.carbs,
+                total_fat_g: nutritionResult.total.fat,
+                total_fiber_g: nutritionResult.total.fiber,
+                total_sugar_g: nutritionResult.total.sugar,
+                total_sodium_mg: nutritionResult.total.sodium,
+                // Include the ingredient breakdown for transparency
+                ingredient_nutrition: nutritionResult.ingredientBreakdown.map((item) => ({
+                  ingredient: item.ingredient,
+                  amount: item.amount,
+                  calories: item.nutrition.calories,
+                  protein: item.nutrition.protein,
+                  carbs: item.nutrition.carbs,
+                  fat: item.nutrition.fat
+                }))
+              };
+              console.log(`\u2705 Nutrition calculated successfully:`);
+              console.log(`   Per serving: ${nutritionResult.perServing.calories} cal`);
+              console.log(`   Macros: ${nutritionResult.perServing.protein}g protein, ${nutritionResult.perServing.carbs}g carbs, ${nutritionResult.perServing.fat}g fat`);
+            } else {
+              console.log("\u26A0\uFE0F Nutrition calculation returned null, proceeding without nutrition data");
+            }
           } catch (nutritionError) {
-            console.log("Nutrition calculation failed:", nutritionError.message);
+            console.error("\u274C Nutrition calculation failed:", nutritionError.message);
             console.log("Proceeding without nutrition data");
           }
         }
@@ -13896,6 +14912,49 @@ async function registerRoutes(app2) {
         } catch (mappingError) {
           console.warn("Dish name mapping error:", mappingError);
         }
+        console.log("\u{1F50D} [RECIPE GENERATION] Starting instruction validation for recipe:", recipeToSave.title);
+        console.log("\u{1F4DD} [RECIPE GENERATION] Original instructions type:", typeof recipeToSave.instructions);
+        console.log(
+          "\u{1F4DD} [RECIPE GENERATION] Original instructions:",
+          Array.isArray(recipeToSave.instructions) ? `Array with ${recipeToSave.instructions.length} items: ${JSON.stringify(recipeToSave.instructions.slice(0, 2))}...` : typeof recipeToSave.instructions === "string" ? recipeToSave.instructions.substring(0, 200) + "..." : recipeToSave.instructions
+        );
+        const isInstructionsValid = await groqValidator.validateInstructions(recipeToSave.instructions);
+        if (!isInstructionsValid) {
+          console.log("\u274C [RECIPE GENERATION] Instructions FAILED validation");
+          if (recipeToSave.transcript || recipeToSave.description) {
+            console.log("\u{1F916} [RECIPE GENERATION] Attempting to generate instructions with GPT-OSS-120B");
+            try {
+              const { groqInstructionGenerator: groqInstructionGenerator2 } = await Promise.resolve().then(() => (init_groqInstructionGenerator(), groqInstructionGenerator_exports));
+              const generatedInstructions = await groqInstructionGenerator2.generateInstructionsFromTranscript(
+                recipeToSave.transcript || recipeToSave.description || "",
+                recipeToSave.title,
+                recipeToSave.ingredients?.map(
+                  (ing) => typeof ing === "string" ? ing : ing.name || ing.display_text
+                )
+              );
+              if (generatedInstructions.length > 0) {
+                console.log(`\u2705 [RECIPE GENERATION] Generated ${generatedInstructions.length} instructions with GPT-OSS-120B`);
+                recipeToSave.instructions = generatedInstructions;
+              } else {
+                console.log("\u26A0\uFE0F [RECIPE GENERATION] Could not generate instructions, using fallback message");
+                recipeToSave.instructions = ["No instructions available"];
+              }
+            } catch (genError) {
+              console.error("Error generating instructions:", genError);
+              recipeToSave.instructions = ["No instructions available"];
+            }
+          } else {
+            console.log("\u26A0\uFE0F [RECIPE GENERATION] No transcript/description available for generation");
+            recipeToSave.instructions = ["No instructions available"];
+          }
+        } else {
+          console.log("\u2705 [RECIPE GENERATION] Instructions PASSED validation");
+          if (Array.isArray(recipeToSave.instructions) && recipeToSave.instructions.length === 0) {
+            console.log("\u26A0\uFE0F [RECIPE GENERATION] Valid but empty array detected, replacing with message");
+            recipeToSave.instructions = ["No instructions available"];
+          }
+        }
+        console.log("\u{1F4DD} [RECIPE GENERATION] Final instructions:", recipeToSave.instructions);
         let finalRecipe = { ...recipeToSave, title: familiarTitle, user_id: userId };
         if (dietRestrictions) {
           try {
@@ -14560,7 +15619,7 @@ async function registerRoutes(app2) {
         }]
       };
       console.log("\u{1F9EA} Testing Vision API with minimal request...");
-      const response = await fetch5(testUrl, {
+      const response = await fetch6(testUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(testRequest)
@@ -14631,7 +15690,7 @@ async function registerRoutes(app2) {
       console.log("\u{1F517} Vision API URL:", VISION_API_URL);
       let visionResponse;
       try {
-        visionResponse = await fetch5(VISION_API_URL, {
+        visionResponse = await fetch6(VISION_API_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -14878,7 +15937,7 @@ async function registerRoutes(app2) {
       }
       if (process.env.USDA_API_KEY) {
         try {
-          const searchResponse = await fetch5(
+          const searchResponse = await fetch6(
             `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`
           );
           if (searchResponse.ok) {
@@ -15087,7 +16146,7 @@ async function registerRoutes(app2) {
         console.log("Goal Weights:", filters.goalWeights);
         console.log("Weight-based Enhanced:", filters.weightBasedEnhanced);
       }
-      const response = await fetch5("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch6("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -16848,14 +17907,14 @@ async function registerRoutes(app2) {
 
 // server/vite.ts
 import express from "express";
-import fs3 from "fs";
-import path4 from "path";
+import fs4 from "fs";
+import path9 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path3 from "path";
+import path8 from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
   plugins: [
@@ -16869,14 +17928,14 @@ var vite_config_default = defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path3.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path3.resolve(import.meta.dirname, "shared"),
-      "@assets": path3.resolve(import.meta.dirname, "attached_assets")
+      "@": path8.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path8.resolve(import.meta.dirname, "shared"),
+      "@assets": path8.resolve(import.meta.dirname, "attached_assets")
     }
   },
-  root: path3.resolve(import.meta.dirname, "client"),
+  root: path8.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path3.resolve(import.meta.dirname, "dist/public"),
+    outDir: path8.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true
   },
   server: {
@@ -16928,13 +17987,13 @@ async function setupVite(app2, server) {
     }
     const url = req.originalUrl;
     try {
-      const clientTemplate = path4.resolve(
+      const clientTemplate = path9.resolve(
         import.meta.dirname,
         "..",
         "client",
         "index.html"
       );
-      let template = await fs3.promises.readFile(clientTemplate, "utf-8");
+      let template = await fs4.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
@@ -16948,21 +18007,28 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path4.resolve(import.meta.dirname, "public");
-  if (!fs3.existsSync(distPath)) {
+  const distPath = path9.resolve(import.meta.dirname, "public");
+  if (!fs4.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
   app2.use(express.static(distPath));
   app2.use("*", (_req, res) => {
-    res.sendFile(path4.resolve(distPath, "index.html"));
+    res.sendFile(path9.resolve(distPath, "index.html"));
   });
 }
 
 // server/index.ts
 init_googleAuth();
-dotenv.config();
+var __filename6 = fileURLToPath6(import.meta.url);
+var __dirname7 = path10.dirname(__filename6);
+dotenv6.config({ path: path10.join(__dirname7, "..", ".env") });
+console.log("\u{1F511} Environment loaded:", {
+  GROQ_API_KEY: !!process.env.GROQ_API_KEY,
+  YOUTUBE_API_KEY: !!process.env.YOUTUBE_API_KEY,
+  OPENAI_API_KEY: !!process.env.OPENAI_API_KEY
+});
 var app = express2();
 var corsOptions = {
   origin: function(origin, callback) {
@@ -17025,7 +18091,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use((req, res, next) => {
   const start = Date.now();
-  const path5 = req.path;
+  const path11 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -17034,8 +18100,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path5.startsWith("/api")) {
-      let logLine = `${req.method} ${path5} ${res.statusCode} in ${duration}ms`;
+    if (path11.startsWith("/api")) {
+      let logLine = `${req.method} ${path11} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
