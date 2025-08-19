@@ -175,27 +175,38 @@ export default function Communities() {
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            <Button
-              variant={!selectedCategory ? "default" : "outline"}
-              onClick={() => setSelectedCategory(undefined)}
-              size="sm"
-              className="flex-shrink-0"
+          <div className="relative">
+            <div 
+              className="flex gap-2 overflow-x-auto scrollbar-hide"
+              style={{ 
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                WebkitScrollbar: 'none'
+              }}
             >
-              All
-            </Button>
-            {Object.keys(categoryIcons).map((category) => (
               <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                onClick={() => setSelectedCategory(category)}
+                variant={!selectedCategory ? "default" : "outline"}
+                onClick={() => setSelectedCategory(undefined)}
                 size="sm"
                 className="flex-shrink-0"
               >
-                {categoryIcons[category as keyof typeof categoryIcons]}
-                <span className="ml-1 capitalize">{category}</span>
+                All
               </Button>
-            ))}
+              {Object.keys(categoryIcons).map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(category)}
+                  size="sm"
+                  className="flex-shrink-0"
+                >
+                  {categoryIcons[category as keyof typeof categoryIcons]}
+                  <span className="ml-1 capitalize">{category}</span>
+                </Button>
+              ))}
+            </div>
+            {/* Fade gradient hints for scrollable content */}
+            <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-white via-white to-transparent pointer-events-none opacity-70"></div>
           </div>
         </div>
 
