@@ -688,8 +688,10 @@ const Search = () => {
                           tags={[recipe.cuisine, recipe.diet].filter(Boolean)}
                           onClick={() => {
                             console.log('Clicking generated recipe:', recipe);
+                            console.log('Original recipe nutrition_info:', recipe.nutrition_info);
                             const transformedRecipe = transformGeneratedRecipe(recipe);
                             console.log('Transformed generated recipe:', transformedRecipe);
+                            console.log('Transformed nutrition_info:', transformedRecipe.nutrition_info);
                             setGeneratedRecipe(transformedRecipe);
                           }}
                         />
