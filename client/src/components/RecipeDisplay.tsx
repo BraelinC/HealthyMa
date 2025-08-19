@@ -637,14 +637,16 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
         <TabsContent value="nutrition" className="p-4 pt-3">
           {/* Debug: Show nutrition_info data */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-              <strong>Debug Info for Recipe ID {recipe.id}:</strong>
+            <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded text-xs">
+              <strong>✨ Testing New Recipe Generation - Debug Info for Recipe ID {recipe.id}:</strong>
               <br />
               nutrition_info exists: {recipe.nutrition_info ? 'YES' : 'NO'}
               <br />
               has calories: {recipe.nutrition_info?.calories ? 'YES' : 'NO'} 
               <br />
               has protein: {recipe.nutrition_info?.protein_g ? 'YES' : 'NO'}
+              <br />
+              ingredient_count: {recipe.ingredients?.length || 0}
               <br />
               nutrition_info: {JSON.stringify(recipe.nutrition_info)}
             </div>
