@@ -1,0 +1,147 @@
+chunk-276SZO74.js?v=d1f95fa9:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:128 Query function called for: /api/auth/user
+queryClient.ts:22 API Request: {url: '/api/auth/user', method: 'GET', hasBody: false}
+queryClient.ts:34 🔄 Received refreshed token from server, updating localStorage
+queryClient.ts:41 API Response: {url: '/api/auth/user', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: true}
+queryClient.ts:58 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-19T00:50:07.578Z"}}
+queryClient.ts:80 API Parsed Response: {user: {…}}
+queryClient.ts:131 Query result: {user: {…}}
+queryClient.ts:128 Query function called for: /api/profile
+queryClient.ts:22 API Request: {url: '/api/profile', method: 'GET', hasBody: false}
+queryClient.ts:128 Query function called for: /api/recipes/saved
+queryClient.ts:22 API Request: {url: '/api/recipes/saved', method: 'GET', hasBody: false}
+queryClient.ts:128 Query function called for: /api/recipes/generated
+queryClient.ts:22 API Request: {url: '/api/recipes/generated', method: 'GET', hasBody: false}
+queryClient.ts:41 API Response: {url: '/api/profile', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"id":33,"user_id":"user_1755468147872_11","profile_name":"My Profile","primary_goal":"Save Money","family_size":1,"members":[],"profile_type":"individual","preferences":[],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":[],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-18T15:43:04.693Z","updated_at":"2025-08-19T00:50:04.899Z"}
+queryClient.ts:80 API Parsed Response: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+queryClient.ts:131 Query result: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+queryClient.ts:41 API Response: {url: '/api/recipes/saved', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: []
+queryClient.ts:80 API Parsed Response: []
+queryClient.ts:131 Query result: []
+queryClient.ts:41 API Response: {url: '/api/recipes/generated', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: [{"id":406,"title":"CHICKEN STIR FRY RECIPE | QUICK AND EASY CHICKEN STIR FRY | STIR FRY CHICKEN","description":"30 Minute Chicken Stir Fry | Chicken Stir Fry Recipe | Stir Fry Chicken | Chicken Stir Fry | Chicken Stir Fry With Vegetables | Quick And Easy Chicken Stir Fry | Stir Fry Chicken Recipe | How To Make Chicken Stir Fry\n\n\nIngredients for Chicken Stir Fry:\n\nPrep Time - 15 mins\nCooking Time - 15 mins\n\n(Tsp-Teaspoon; Tbsp-Tablespoon)\n\n- Boneless Chicken - 1 lb or 450 gms (cut into bite sized pieces)\n\nSeasoning for the Chicken:\n- Salt- 1/2 tsp\n- White Pepper Powder- 1/2 tsp\n- Dark Soy Sauce- 1/2 tsp\n\nVegetables:\n- Broccoli florets- 2 US cup measure (100 gms)\n- Carrots, sliced- 1 US cup measure (90 gms)\n- Red Bell Pepper- 1 US cup measure (90 gms)\n- Yellow Bell Pepper- 1 US cup measure (90 gms)\n- Garlic, chopped- 2 tsp (around 4 cloves)\n- Ginger, chopped- 1.5 tsp\n\nStir Fry Sauces:\n- Chicken Stock- 1/4 cup (can use readymade low sodium chicken broth/stock too)\n- Dark Soy Sauce- 2.5 tsp\n- Red Chilli Sauce- 3 tsp\n- Honey- 1 tbsp\n- Corn slurry- 2 tsp corn flour/starch  (Mixed in 1 tbsp water)\n- Sesame Oil- 2 tsp\n\nOther Ingredients:\n- Oil- 2-3 tbsp\n- Salt- to season\n- Pepper Powder- 1/4 tsp\n\nPreparation:\n\nCut the boneless chicken into bite sized pieces.\nTake out the broccoli florets, cut the carrots into slices and the red & yellow peppers into cubes.\nAlso peel and chop the garlic and ginger.\n\nProcess:\n\n- Heat oil in a wok and add the chicken pieces. Give a stir for 30 secs and then add salt & white pepper powder to season the chicken. \n- Now stir fry on high heat for around 2-3 mins and then add 1/2 tsp Dark Soy Sauce. Give a mix and continue to stir fry on high heat for another 2-3 mins till the water has completely dried up and the chicken is fried and browned.\n- Remove and set aside on a plate.\n\n- In the same oil, add the chopped garlic & ginger. Give a stir for 15 secs and then add the sliced carrots and cubed red & yellow peppers. Mix and stir fry on high heat for 1 minute before adding the broccoli florets. Also add salt to season (a pinch) and 1/4 tsp pepper powder. Give a mix and continue to stir fry on high heat for 2 mins.\n- Now add the sautéed chicken pieces and give a mix on high heat for 1 minute.\n- Add the Dark Soy Sauce, Chicken broth, Red Chilli Sauce and honey. Give a mix and stir fry on high heat for around 2 mins till the sauce has nearly dried up.\n- Now add the corn slurry and the sesame oil, give a mix and continue to stir fry on high heat for 1 min till all the sauce has dried up and coats the chicken and vegetables.\n\n\n\n\n\n\n#chickenstirfry #stirfrychicken #30minchickenstirfry #chickenstirfryrecipe #stirfryrecipe #chickenrecipe #stirfrychickenrecipe #spiceeats #spiceeeatsrescipes #spiceeatschicken","image_url":"https://i.ytimg.com/vi/5dybdeTylz0/hqdefault.jpg","time_minutes":30,"cuisine":null,"diet":null,"ingredients":[{"name":"carrots, sliced","display_text":"1 cup carrots, sliced","measurements":[{"quantity":1,"unit":"cup"}]},{"name":"boneless chicken","display_text":"1 lb boneless chicken","measurements":[{"quantity":1,"unit":"lb"},{"quantity":1,"unit":"l"}]},{"name":"honey","display_text":"1 tbsp honey","measurements":[{"quantity":1,"unit":"tbsp"}]},{"name":"ginger, chopped","display_text":"1.5 tsp ginger, chopped","measurements":[{"quantity":1.5,"unit":"tsp"}]},{"name":"salt","display_text":"1/2 tsp salt","measurements":[{"quantity":0.5,"unit":"tsp"}]},{"name":"white pepper powder","display_text":"1/2 tsp white pepper powder","measurements":[{"quantity":0.5,"unit":"tsp"}]},{"name":"broccoli florets","display_text":"2 cups broccoli florets","measurements":[{"quantity":2,"unit":"cup"}]},{"name":"corn slurry","display_text":"2 tsp corn slurry","measurements":[{"quantity":2,"unit":"tsp"}]},{"name":"garlic, chopped","display_text":"2 tsp garlic, chopped","measurements":[{"quantity":2,"unit":"tsp"}]},{"name":"sesame oil","display_text":"2 tsp sesame oil","measurements":[{"quantity":2,"unit":"tsp"}]},{"name":"dark soy sauce","display_text":"2.5 tsp dark soy sauce","measurements":[{"quantity":2.5,"unit":"tsp"}]},{"name":"red chilli sauce","display_text":"3 tsp red chilli sauce","measurements":[{"quantity":3,"unit":"tsp"}]}],"instructions":["Cut the boneless chicken into bite sized pieces.","Cut the broccoli into florets, slice the carrots, and cube the red and yellow peppers.","Peel and chop the garlic and ginger.","Heat 2-3 tablespoons of oil in a wok.","Add the chicken pieces to the wok and stir for 30 seconds.","Season the chicken with 1/2 teaspoon of salt and 1/2 teaspoon of white pepper powder.","Stir fry the chicken on high heat for 2-3 minutes.","Add 1/2 teaspoon of dark soy sauce to the chicken and continue stir frying.","Cut the chicken into bite-sized pieces.","Heat oil in a wok and add the chicken pieces. Stir for 30 seconds, then add salt and white pepper powder to season the chicken.","Stir fry the chicken on high heat 
+queryClient.ts:80 API Parsed Response: (21) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+queryClient.ts:131 Query result: (21) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Search.tsx:687 Clicking generated recipe: {id: 406, title: 'CHICKEN STIR FRY RECIPE | QUICK AND EASY CHICKEN STIR FRY | STIR FRY CHICKEN', description: '30 Minute Chicken Stir Fry | Chicken Stir Fry Reci… #spiceeats #spiceeeatsrescipes #spiceeatschicken', image_url: 'https://i.ytimg.com/vi/5dybdeTylz0/hqdefault.jpg', time_minutes: 30, …}
+Search.tsx:689 Transformed generated recipe: {id: 406, title: 'CHICKEN STIR FRY RECIPE | QUICK AND EASY CHICKEN STIR FRY | STIR FRY CHICKEN', description: '30 Minute Chicken Stir Fry | Chicken Stir Fry Reci… #spiceeats #spiceeeatsrescipes #spiceeatschicken', image_url: 'https://i.ytimg.com/vi/5dybdeTylz0/hqdefault.jpg', time_minutes: 30, …}
+www.youtube.com/generate_204?X3mCRg:1  GET https://www.youtube.com/generate_204?X3mCRg net::ERR_BLOCKED_BY_CLIENT
+Image
+eval @ VM4902:1
+hy @ 5dybdeTylz0:1
+eval @ 5dybdeTylz0:1
+Wy @ 5dybdeTylz0:1
+By @ 5dybdeTylz0:1
+$g @ 5dybdeTylz0:1
+su @ 5dybdeTylz0:1
+g @ 5dybdeTylz0:1
+XK.Oeh_ @ 5dybdeTylz0:1
+O0 @ 5dybdeTylz0:1
+kF @ 5dybdeTylz0:1
+J0 @ base.js:1248
+y4T @ base.js:2730
+(anonymous) @ base.js:2729
+x @ base.js:2099
+(anonymous) @ base.js:1672
+setTimeout
+apply @ VM4736:3698
+g.MV @ base.js:1696
+(anonymous) @ base.js:2100
+p.zb @ www-embed-player.js:983
+g.nx @ base.js:2104
+(anonymous) @ base.js:2109
+setTimeout
+apply @ VM4736:3698
+KQT.C.onload @ base.js:2110
+script
+Nr @ base.js:383
+g.bV @ base.js:382
+KQT @ base.js:2110
+brD @ base.js:2109
+g.lT @ base.js:2108
+tPR @ base.js:2729
+g.D.initialize @ base.js:9107
+hrT @ base.js:3851
+g.pm @ base.js:3859
+sH @ base.js:7238
+Jl1 @ base.js:7237
+g.p1 @ base.js:7208
+g.p1.create @ base.js:13370
+a.G @ www-embed-player.js:2263
+dE @ www-embed-player.js:2264
+p.loadNewVideoConfig @ www-embed-player.js:2258
+(anonymous) @ www-embed-player.js:2256
+setTimeout
+apply @ VM4736:3698
+aE @ www-embed-player.js:2256
+uE @ www-embed-player.js:2296
+(anonymous) @ www-embed-player.js:2308
+(anonymous) @ 5dybdeTylz0?autoplay=0&mute=0&controls=1&origin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&widgetid=1&forigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&aoriginsup=1&gporigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&vf=1:10
+base.js:1111  POST https://play.google.com/log?hasfast=true&auth=SAPISIDHASH+a303cac2b26955a63f3f3ec024a738814502d284+SAPISID3PHASH+a303cac2b26955a63f3f3ec024a738814502d284&authuser=0&format=json net::ERR_BLOCKED_BY_CLIENT
+(anonymous) @ base.js:1111
+D5R @ base.js:1112
+ptT @ base.js:1111
+g.D.flush @ base.js:8326
+T4.flush @ base.js:8336
+flush @ base.js:1225
+g.D.dO @ base.js:8378
+(anonymous) @ base.js:1234
+(anonymous) @ base.js:1229
+setTimeout
+apply @ VM4736:3698
+y5s @ base.js:1229
+BE.Vd @ base.js:8432
+(anonymous) @ base.js:1245
+Promise.then
+E @ base.js:1245
+Wy @ 5dybdeTylz0:1
+By @ 5dybdeTylz0:1
+$g @ 5dybdeTylz0:1
+su @ 5dybdeTylz0:1
+g @ 5dybdeTylz0:1
+XK.Oeh_ @ 5dybdeTylz0:1
+O0 @ 5dybdeTylz0:1
+kF @ 5dybdeTylz0:1
+J0 @ base.js:1248
+y4T @ base.js:2730
+(anonymous) @ base.js:2729
+x @ base.js:2099
+(anonymous) @ base.js:1672
+setTimeout
+apply @ VM4736:3698
+g.MV @ base.js:1696
+(anonymous) @ base.js:2100
+p.zb @ www-embed-player.js:983
+g.nx @ base.js:2104
+(anonymous) @ base.js:2109
+setTimeout
+apply @ VM4736:3698
+KQT.C.onload @ base.js:2110
+script
+Nr @ base.js:383
+g.bV @ base.js:382
+KQT @ base.js:2110
+brD @ base.js:2109
+g.lT @ base.js:2108
+tPR @ base.js:2729
+g.D.initialize @ base.js:9107
+hrT @ base.js:3851
+g.pm @ base.js:3859
+sH @ base.js:7238
+Jl1 @ base.js:7237
+g.p1 @ base.js:7208
+g.p1.create @ base.js:13370
+a.G @ www-embed-player.js:2263
+dE @ www-embed-player.js:2264
+p.loadNewVideoConfig @ www-embed-player.js:2258
+(anonymous) @ www-embed-player.js:2256
+setTimeout
+apply @ VM4736:3698
+aE @ www-embed-player.js:2256
+uE @ www-embed-player.js:2296
+(anonymous) @ www-embed-player.js:2308
+(anonymous) @ 5dybdeTylz0?autoplay=0&mute=0&controls=1&origin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&widgetid=1&forigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&aoriginsup=1&gporigin=https%3A%2F%2Fc3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev%2Fsearch&vf=1:10

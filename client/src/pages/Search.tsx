@@ -57,6 +57,7 @@ interface GeneratedRecipe {
     fiber_g?: number;
     sodium_mg?: number;
   };
+  nutrition_info?: any; // Add this field to match backend data
   video_channel?: string;
   total_nutrition?: {
     calories: number;
@@ -95,6 +96,7 @@ const transformSavedRecipe = (savedRecipe: any): GeneratedRecipe => {
       video_id: savedRecipe.video_id,
       video_title: savedRecipe.video_title,
       video_channel: savedRecipe.video_channel,
+      nutrition_info: savedRecipe.nutrition_info, // Add this missing field!
       total_nutrition: savedRecipe.total_nutrition
     };
   } catch (error) {
@@ -132,6 +134,7 @@ const transformGeneratedRecipe = (genRecipe: any): GeneratedRecipe => {
       video_id: genRecipe.video_id,
       video_title: genRecipe.video_title,
       video_channel: genRecipe.video_channel,
+      nutrition_info: genRecipe.nutrition_info, // Add this missing field!
       total_nutrition: genRecipe.total_nutrition
     };
   } catch (error) {
