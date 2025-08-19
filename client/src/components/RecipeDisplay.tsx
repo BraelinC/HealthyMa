@@ -246,7 +246,10 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   // Instacart integration
   const shopRecipeWithInstacart = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/recipes/instacart", recipe);
+      return await apiRequest("/api/recipes/instacart", {
+        method: "POST",
+        body: JSON.stringify(recipe),
+      });
     },
     onSuccess: async (response) => {
       const data = await response.json();
@@ -632,7 +635,18 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
         </TabsContent>
 
         <TabsContent value="nutrition" className="p-4 pt-3">
-          {recipe.nutrition_info ? (
+          {/* Debug: Show nutrition_info data */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+              <strong>Debug Info:</strong>
+              <br />
+              nutrition_info exists: {recipe.nutrition_info ? 'YES' : 'NO'}
+              <br />
+              nutrition_info: {JSON.stringify(recipe.nutrition_info)}
+            </div>
+          )}
+          
+          {recipe.nutrition_info && recipe.nutrition_info.calories ? (
             <div>
               <h4 className="font-semibold mb-4 text-purple-700">USDA Nutrition Analysis</h4>
 
