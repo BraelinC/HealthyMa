@@ -11,12 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-// Log to verify env loaded
-console.log('🔑 Environment loaded:', {
-  GROQ_API_KEY: !!process.env.GROQ_API_KEY,
-  YOUTUBE_API_KEY: !!process.env.YOUTUBE_API_KEY,
-  OPENAI_API_KEY: !!process.env.OPENAI_API_KEY
-});
+
 
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -48,7 +43,6 @@ const corsOptions = {
     if (allowed) {
       callback(null, true);
     } else {
-      console.log(`CORS blocked origin: ${origin}`);
       callback(null, false);
     }
   },
@@ -154,10 +148,6 @@ app.use((req, res, next) => {
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
     
-    // Log API key status
-    console.log("🔑 API Keys Status:");
-    console.log(`   - Instacart: ${process.env.INSTACART_API_KEY ? '✅ Available' : '❌ Not found'}`);
-    console.log(`   - YouTube: ${process.env.YOUTUBE_API_KEY ? '✅ Available' : '❌ Not found'}`);
-    console.log(`   - OpenAI: ${process.env.OPENAI_API_KEY ? '✅ Available' : '❌ Not found'}`);
+
   });
 })();

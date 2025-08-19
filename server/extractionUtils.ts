@@ -37,7 +37,6 @@ export function extractIngredients(source: string): string[] {
         if (line.includes(marker)) {
           inIngredientsSection = true;
           ingredientsSectionStartLine = i;
-          console.log(`Found ingredients section starting at line ${i}: "${lines[i]}"`);
           break;
         }
       }

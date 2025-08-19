@@ -748,9 +748,7 @@ const Search = () => {
                           timeMinutes={recipe.time_minutes || 0}
                           tags={[recipe.cuisine, recipe.diet].filter(Boolean)}
                           onClick={() => {
-                            console.log('Clicking saved recipe:', recipe);
                             const transformedRecipe = transformSavedRecipe(recipe);
-                            console.log('Transformed saved recipe:', transformedRecipe);
                             setGeneratedRecipe(transformedRecipe);
                           }}
                         />

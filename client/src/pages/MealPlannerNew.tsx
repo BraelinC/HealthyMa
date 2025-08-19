@@ -132,15 +132,9 @@ export default function MealPlanner() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        console.log('🚀 Fetching profile using session auth');
         const profile = await apiRequest('/api/profile', {
           method: 'GET'
         });
-          console.log('✅ Profile data received:', {
-            profile_type: profile.profile_type,
-            has_members: profile.members ? profile.members.length : 0,
-            member_names: profile.members ? profile.members.map((m: any) => m.name) : []
-          });
           
           setUserProfile(profile);
           // If it's a family profile, pre-select all family members
@@ -149,18 +143,14 @@ export default function MealPlanner() {
           }
           
           // Auto-detect goal from profile (skip Weight-Based Planning)
-          console.log('🔍 Profile primary_goal:', profile.primary_goal);
           if (profile.primary_goal && profile.primary_goal !== 'Weight-Based Planning') {
             const isValidGoal = unifiedGoals.some(g => g.value === profile.primary_goal);
             if (isValidGoal) {
-              console.log('✅ Setting primaryGoal from profile:', profile.primary_goal);
               setPrimaryGoal(profile.primary_goal);
             } else {
-              console.log('⚠️ Invalid goal in profile, defaulting to Save Money');
               setPrimaryGoal('Save Money');
             }
           } else {
-            console.log('⚠️ Weight-Based Planning detected, defaulting to Save Money');
             setPrimaryGoal('Save Money');
           }
       } catch (error) {
@@ -195,7 +185,6 @@ export default function MealPlanner() {
   };
 
   const handleStreamingComplete = async (data: any) => {
-    console.log('Streaming generation complete:', data);
     setShowStreamingGenerator(false);
     
     // Reset state to ensure proper display
@@ -204,23 +193,17 @@ export default function MealPlanner() {
     setGeneratedPlan(data);
     
     // Check if this is the user's first generated meal plan and unlock achievement
-    console.log('🎯 Checking for First Steps achievement unlock...');
     try {
       const firstStepsAchievement = await achievementService.getAchievement('first_steps');
       if (firstStepsAchievement && !firstStepsAchievement.isUnlocked) {
-        console.log('🏆 First meal plan generated - unlocking First Steps achievement');
         await achievementService.trackMealPlanCreated();
-      } else {
-        console.log('ℹ️ First Steps achievement already unlocked or not found');
       }
     } catch (error) {
-      console.error('Error checking achievements:', error);
+      // Achievement tracking failed silently
     }
     
     // Auto-save the generated meal plan
-    console.log('Triggering auto-save in 500ms...');
     setTimeout(() => {
-      console.log('Auto-save timeout reached, calling autoSaveMealPlan...');
       autoSaveMealPlan(data);
     }, 500); // Small delay to ensure state is updated
   };
@@ -296,26 +279,19 @@ export default function MealPlanner() {
         mealPlan: mealPlan.meal_plan
       });
 
-      console.log('✅ Auto-save to session cache successful:', sessionPlan.name);
+
       setIsAutoSaving(false);
       
     } catch (error) {
-      console.error('❌ Auto-save to session cache failed:', error);
       setIsAutoSaving(false);
     }
   };
 
   // Auto-save function - now uses session cache instead of database
   const autoSaveMealPlan = (mealPlan: PlanResponse) => {
-    console.log('🔄 AutoSave: Starting session cache auto-save...');
-    console.log('🔄 AutoSave: Meal plan data:', mealPlan);
-    
     if (!shouldAutoSaveMealPlan(mealPlan)) {
-      console.log('❌ AutoSave: Skipping auto-save - meal plan does not meet criteria');
       return;
     }
-
-    console.log('✅ AutoSave: Meal plan meets criteria, saving to session cache...');
     
     // Use session cache instead of database save
     autoSaveToSessionCache(mealPlan);
@@ -365,8 +341,11 @@ export default function MealPlanner() {
       setShoppingUrl(data.products_link_url);
       window.open(data.products_link_url, '_blank');
     } catch (error) {
-      console.error('Error creating shopping list:', error);
-      alert('Failed to create shopping list. Please try again.');
+      toast({
+        title: "Error",
+        description: "Failed to create shopping list. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -407,24 +386,16 @@ export default function MealPlanner() {
   // Force re-render when meal plan changes
   const mealPlanDays = generatedPlan?.meal_plan ? Object.keys(generatedPlan.meal_plan).sort() : [];
   
-  // Debug logging
-  useEffect(() => {
-    if (generatedPlan?.meal_plan) {
-      console.log('Meal plan keys:', Object.keys(generatedPlan.meal_plan));
-      console.log('Sorted meal plan days:', mealPlanDays);
-    }
-  }, [generatedPlan]);
 
-  // Update numDays when date range changes - NO LIMITATIONS!
+
+  // Update numDays when date range changes
   const updateDateRange = (range: DateRange | undefined) => {
-    console.log('updateDateRange called with:', range);
     setDateRange(range);
     if (range?.from) {
       setStartDate(range.from);
       if (range.to) {
         setEndDate(range.to);
         const days = differenceInDays(range.to, range.from) + 1;
-        console.log('Setting numDays to:', days);
         setNumDays([days]);
       } else {
         // Only start date selected - keep end date undefined until user selects it
@@ -461,15 +432,18 @@ export default function MealPlanner() {
   return (
     <div className="p-2 sm:p-6 max-w-6xl mx-auto space-y-3 sm:space-y-6">
 
-      {/* Header */}
-      <div className="text-center space-y-1 sm:space-y-2">
-        <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent" style={{ background: 'linear-gradient(to right, #50C878, #45B369)', WebkitBackgroundClip: 'text', backgroundClip: 'text' }}>
-          AI Weekly Meal Planner
-        </h1>
-        <p className="text-muted-foreground text-sm sm:text-lg">
-          Get personalized meal plans with smart shopping lists
+      {/* Enhanced Header */}
+      <div className="text-center space-y-3 sm:space-y-4 mb-6">
+        <div className="relative">
+          <h1 className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 bg-clip-text text-transparent">
+            AI Weekly Meal Planner
+          </h1>
+          <div className="absolute -top-2 -right-2 text-2xl">🍽️</div>
+        </div>
+        <p className="text-gray-600 text-base sm:text-xl max-w-2xl mx-auto leading-relaxed">
+          Create personalized meal plans tailored to your preferences with smart shopping integration
         </p>
-        <div className="flex justify-center mt-3">
+        <div className="flex justify-center mt-4">
           <ProfileSystemIndicator />
         </div>
       </div>
@@ -519,14 +493,19 @@ export default function MealPlanner() {
         </Card>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-3 sm:gap-6">
-        {/* Planning Controls */}
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ChefHat className="h-5 w-5" style={{ color: '#50C878' }} />
-              Plan Your Week
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Enhanced Planning Controls */}
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-green-50/30">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+                <ChefHat className="h-6 w-6 text-white" />
+              </div>
+              Plan Your Perfect Week
             </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">
+              Customize your meal planning experience with smart preferences
+            </p>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             {/* Auto-shown Calendar Date Range - Primary Filter */}
@@ -536,11 +515,17 @@ export default function MealPlanner() {
                 <label className="font-semibold text-lg">Select Your Planning Period</label>
               </div>
               
-              {/* Calendar auto-shows on page load */}
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <div className="p-3 border-b bg-white rounded-t-lg">
-                  <p className="text-sm text-muted-foreground">
-                    Click and drag to select your meal planning dates
+              {/* Enhanced Calendar */}
+              <div className="border border-green-200 rounded-xl p-4 bg-gradient-to-br from-white to-green-50/20 shadow-sm">
+                <div className="p-4 border-b border-green-100 bg-white/80 rounded-t-xl backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CalendarIcon className="h-5 w-5 text-green-600" />
+                    <p className="text-sm font-medium text-gray-700">
+                      Select your meal planning dates
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Click and drag to choose your planning period
                   </p>
                 </div>
                 <CustomCalendar
@@ -554,23 +539,37 @@ export default function MealPlanner() {
                     return date < yesterday;
                   }}
                 />
-                <div className="mt-2 p-2 bg-white rounded-b-lg text-center">
-                  <p className="text-sm font-medium text-green-700">
+                <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-b-xl text-center border-t border-green-100">
+                  <p className="text-sm font-medium text-green-800">
                     {startDate && endDate ? 
-                      `${format(startDate, "EEEE, MMM d")} to ${format(endDate, "EEEE, MMM d")} (${numDays[0]} days)` :
-                      startDate ? `${format(startDate, "EEEE, MMM d")} - select end date` :
-                      "Select your date range above"
+                      <>
+                        <span className="font-semibold">{format(startDate, "EEEE, MMM d")}</span>
+                        <span className="text-green-600 mx-2">→</span>
+                        <span className="font-semibold">{format(endDate, "EEEE, MMM d")}</span>
+                        <span className="ml-2 px-2 py-1 bg-green-200 text-green-800 rounded-full text-xs">
+                          {numDays[0]} days
+                        </span>
+                      </> :
+                      startDate ? 
+                        <>
+                          <span className="font-semibold">{format(startDate, "EEEE, MMM d")}</span>
+                          <span className="text-green-600 ml-2">- select end date</span>
+                        </> :
+                        <span className="text-gray-500">Select your date range above</span>
                     }
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Condensed Main Filters */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Consolidated Goal Selection */}
-              <div className="space-y-2">
-                <label className="font-medium text-sm">Main Goal</label>
+            {/* Enhanced Main Filters */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Enhanced Goal Selection */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-green-600" />
+                  <label className="font-medium text-sm text-gray-700">Main Goal</label>
+                </div>
                 <Select value={primaryGoal} onValueChange={(value) => {
                   setPrimaryGoal(value);
                   // Auto-set nutrition goal based on unified goal system
@@ -579,30 +578,41 @@ export default function MealPlanner() {
                     setNutritionGoal(matchedGoal.nutritionFocus);
                   }
                 }}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Choose goal" />
+                  <SelectTrigger className="h-10 border-green-200 focus:border-green-400">
+                    <SelectValue placeholder="Choose your goal" />
                   </SelectTrigger>
                   <SelectContent>
                     {unifiedGoals.map((goal) => (
                       <SelectItem key={goal.value} value={goal.value}>
-                        {goal.label}
+                        <div className="flex items-center gap-2">
+                          <span>{goal.label}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Meals per Day */}
-              <div className="space-y-2">
-                <label className="font-medium text-sm">Meals/Day: {mealsPerDay[0]}</label>
-                <Slider 
-                  min={1} max={4} step={1} 
-                  value={mealsPerDay} 
-                  onValueChange={setMealsPerDay}
-                  className="w-full"
-                />
-                <div className="text-xs text-muted-foreground text-center">
-                  Total: {numDays[0] * mealsPerDay[0]} meals
+              {/* Enhanced Meals per Day */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ChefHat className="h-4 w-4 text-green-600" />
+                  <label className="font-medium text-sm text-gray-700">
+                    Meals per Day: <span className="font-bold text-green-600">{mealsPerDay[0]}</span>
+                  </label>
+                </div>
+                <div className="space-y-2">
+                  <Slider 
+                    min={1} max={4} step={1} 
+                    value={mealsPerDay} 
+                    onValueChange={setMealsPerDay}
+                    className="w-full"
+                  />
+                  <div className="text-xs text-center">
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                      Total: {numDays[0] * mealsPerDay[0]} meals
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -695,29 +705,43 @@ export default function MealPlanner() {
               <Button 
                 onClick={handleGeneratePlan} 
                 disabled={isGenerating || !startDate || !endDate}
-                className="w-full hover:opacity-90"
-                style={{ background: 'linear-gradient(to right, #50C878, #45B369)' }}
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
               >
-                {isGenerating ? "Generating Plan..." : "Generate Meal Plan"}
+                {isGenerating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Generating Your Perfect Plan...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <ChefHat className="h-5 w-5" />
+                    Generate AI Meal Plan
+                  </div>
+                )}
               </Button>
               
             </div>
           </CardContent>
         </Card>
 
-        {/* Generated Plan */}
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-green-500" />
-              Your Meal Plan
+        {/* Enhanced Generated Plan */}
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-blue-50/30">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+                <CalendarDays className="h-6 w-6 text-white" />
+              </div>
+              Your AI-Generated Meal Plan
               {isAutoSaving && (
-                <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                  <div className="animate-spin h-3 w-3 border border-blue-600 border-t-transparent rounded-full"></div>
+                <div className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                  <div className="animate-spin h-3 w-3 border-2 border-emerald-600 border-t-transparent rounded-full"></div>
                   Auto-saving...
                 </div>
               )}
             </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">
+              Your personalized weekly meal plan with nutrition-optimized recipes
+            </p>
           </CardHeader>
           <CardContent>
             {showStreamingGenerator ? (
@@ -740,9 +764,14 @@ export default function MealPlanner() {
                 onCancel={handleStreamingCancel}
               />
             ) : !generatedPlan ? (
-              <div className="text-center text-muted-foreground py-12">
-                <ChefHat className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p>Generate a meal plan to get started!</p>
+              <div className="text-center text-gray-500 py-16">
+                <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-full p-8 w-32 h-32 mx-auto mb-6 flex items-center justify-center">
+                  <ChefHat className="h-16 w-16 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Ready to Generate Your Plan?</h3>
+                <p className="text-sm max-w-md mx-auto">
+                  Select your dates and preferences above, then click "Generate AI Meal Plan" to create your personalized weekly menu
+                </p>
               </div>
             ) : (
               <div className="space-y-4">

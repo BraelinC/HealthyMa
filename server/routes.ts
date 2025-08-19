@@ -136,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { generateToken } = await import("./auth");
       const newToken = generateToken(userId, newCreatorStatus);
 
-      console.log(`🔄 Toggled creator status for user ${userId}: ${newCreatorStatus}`);
+
 
       res.json({ 
         message: `Creator mode ${newCreatorStatus ? 'enabled' : 'disabled'}`,
@@ -155,9 +155,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (isGoogleOAuthConfigured) {
     // Initiate Google OAuth login
     app.get("/api/auth/google", (req, res, next) => {
-      console.log("Google OAuth initiated");
-      console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
-      console.log("Callback URL:", `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`);
       passport.authenticate("google", {
         scope: ["profile", "email"]
       })(req, res, next);
@@ -179,7 +176,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const userData = encodeURIComponent(JSON.stringify(userWithoutPassword));
           res.redirect(`/?token=${token}&user=${userData}&success=google`);
         } catch (error) {
-          console.error("Google callback error:", error);
           res.redirect("/?error=callback_failed");
         }
       }
@@ -233,7 +229,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error("Test login error:", error);
       res.status(500).json({ message: "Test login failed" });
     }
   });
@@ -303,7 +298,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: paymentAmount / 100 // Send back amount in dollars
       });
     } catch (error: any) {
-      console.error('Error creating payment intent:', error);
       res.status(500).json({ 
         message: "Error creating payment intent: " + error.message 
       });
@@ -344,7 +338,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: 'Trial setup created successfully'
       });
     } catch (error: any) {
-      console.error('Error creating trial subscription:', error);
       res.status(500).json({ 
         message: "Error setting up trial: " + error.message 
       });
@@ -1552,7 +1545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }]
       };
       
-      console.log('🧪 Testing Vision API with minimal request...');
+
       
       const response = await fetch(testUrl, {
         method: 'POST',
@@ -1607,11 +1600,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const VISION_API_KEY = 'AIzaSyBZNfvaAwCwgZHi4a9MKs8CkaRaMAxUPm4';
       const VISION_API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`;
       
-      console.log('🔑 Using API key:', VISION_API_KEY.substring(0, 10) + '...');
-      
       // Remove data URL prefix if present
       const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
-      console.log('📦 Base64 image size after cleanup:', base64Image.length);
       
       // Create Vision API request
       const visionRequest = {
@@ -1637,7 +1627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       console.log('📡 Calling Google Vision API...');
-      console.log('🔗 Vision API URL:', VISION_API_URL);
+
       
       // Call Vision API
       let visionResponse;
@@ -1650,8 +1640,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           body: JSON.stringify(visionRequest)
         });
       } catch (fetchError: any) {
-        console.error('❌ Network error calling Vision API:', fetchError.message);
-        console.error('Full error:', fetchError);
         return res.status(500).json({ 
           error: 'Network error calling Vision API',
           details: fetchError.message 
@@ -1812,7 +1800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Limit to top 10 detections
       const finalIngredients = detectedIngredients.slice(0, 10);
       
-      console.log(`📊 Final detection: ${finalIngredients.length} ingredients`);
+
       
       res.json({
         ingredients: finalIngredients,

@@ -12,7 +12,6 @@ import EditableMealPlanner from "@/pages/EditableMealPlanner";
 import MealPlanner from "@/pages/MealPlannerNew";
 import Profile from "@/pages/Profile";
 
-import { TestingPage } from "@/pages/TestingPage";
 import IconShowcase from "@/pages/IconShowcase";
 import { HandPlatter, BookOpen, ChefHat, LogOut, User, CalendarDays, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,7 +58,7 @@ function AppHeader() {
               <AvatarFallback className="text-sm bg-gradient-to-br from-purple-500 to-emerald-500 text-white font-semibold">
                 {(() => {
                   // Use profile name from profile data, fallback to user.full_name
-                  const name = profileData?.profile_name || typedUser.full_name || '';
+                  const name = (profileData as any)?.profile_name || typedUser.full_name || '';
                   const words = name.split(' ');
                   
                   if (words.length >= 2) {
@@ -72,7 +71,7 @@ function AppHeader() {
                 })()}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium hidden sm:block">{profileData?.profile_name || typedUser.full_name || typedUser.email}</span>
+            <span className="text-sm font-medium hidden sm:block">{(profileData as any)?.profile_name || typedUser.full_name || typedUser.email}</span>
           </Link>
         )}
       </div>
@@ -236,7 +235,6 @@ function Router() {
           <Route path="/community/:id" component={CommunityDetail} />
           <Route path="/profile" component={Profile} />
 
-          <Route path="/testing" component={TestingPage} />
           <Route path="/icons" component={IconShowcase} />
           <Route component={NotFound} />
         </Switch>
