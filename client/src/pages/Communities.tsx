@@ -165,8 +165,8 @@ export default function Communities() {
         </div>
 
         {/* Search and Filters */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
+        <div className="mb-6 space-y-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
               placeholder="Search communities..."
@@ -175,11 +175,12 @@ export default function Communities() {
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             <Button
               variant={!selectedCategory ? "default" : "outline"}
               onClick={() => setSelectedCategory(undefined)}
               size="sm"
+              className="flex-shrink-0"
             >
               All
             </Button>
@@ -189,6 +190,7 @@ export default function Communities() {
                 variant={selectedCategory === category ? "default" : "outline"}
                 onClick={() => setSelectedCategory(category)}
                 size="sm"
+                className="flex-shrink-0"
               >
                 {categoryIcons[category as keyof typeof categoryIcons]}
                 <span className="ml-1 capitalize">{category}</span>
