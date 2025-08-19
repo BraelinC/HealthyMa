@@ -638,15 +638,19 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
           {/* Debug: Show nutrition_info data */}
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-              <strong>Debug Info:</strong>
+              <strong>Debug Info for Recipe ID {recipe.id}:</strong>
               <br />
               nutrition_info exists: {recipe.nutrition_info ? 'YES' : 'NO'}
+              <br />
+              has calories: {recipe.nutrition_info?.calories ? 'YES' : 'NO'} 
+              <br />
+              has protein: {recipe.nutrition_info?.protein_g ? 'YES' : 'NO'}
               <br />
               nutrition_info: {JSON.stringify(recipe.nutrition_info)}
             </div>
           )}
           
-          {recipe.nutrition_info && recipe.nutrition_info.calories ? (
+          {recipe.nutrition_info && recipe.nutrition_info.calories && recipe.nutrition_info.protein_g ? (
             <div>
               <h4 className="font-semibold mb-4 text-purple-700">USDA Nutrition Analysis</h4>
 
@@ -766,7 +770,10 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className="text-gray-500">Nutrition information not available for this recipe.</div>
+              <div className="text-gray-500 mb-3">Nutrition information not available for this recipe.</div>
+              <div className="text-sm text-gray-400">
+                Try one of the "Stir Fry" or "Lasagna" recipes above - they have full nutrition data!
+              </div>
             </div>
           )}
         </TabsContent>

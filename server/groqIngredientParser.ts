@@ -102,7 +102,28 @@ Parse ALL ingredients and return ONLY the JSON array, no other text.`;
       } catch (parseError) {
         console.error('❌ [GROQ INGREDIENT PARSER] Failed to parse JSON response:', parseError);
         console.log('Raw response:', response.substring(0, 500));
-        return [];
+        
+        // Fallback: try to extract individual ingredient objects
+        try {
+          const objectMatches = response.match(/\{[^{}]*\}/g);
+          if (objectMatches) {
+            const fallbackParsed = objectMatches.map(match => JSON.parse(match));
+            console.log('✅ [GROQ INGREDIENT PARSER] Recovered using fallback parsing');
+            return fallbackParsed;
+          }
+        } catch (fallbackError) {
+          console.log('❌ [GROQ INGREDIENT PARSER] Fallback parsing also failed');
+        }
+        
+        // Final fallback: create simple structure from original ingredients
+        console.log('🔧 [GROQ INGREDIENT PARSER] Using basic ingredient fallback');
+        return ingredients.map((ing, i) => ({
+          ingredient: ing.toLowerCase().replace(/^[\d\s\/]+/, '').trim().split(' ').pop() || 'ingredient',
+          amount: ing.match(/^[\d\s\/¼½¾⅓⅔⅛⅜⅝⅞\w]*/) ? (ing.match(/^[\d\s\/¼½¾⅓⅔⅛⅜⅝⅞\w]*/) || ['1'])[0].trim() : '1',
+          quantity: 1,
+          unit: 'piece',
+          originalText: ing
+        }));
       }
 
       // Validate and clean up parsed data
