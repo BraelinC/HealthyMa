@@ -3,9 +3,12 @@ import session from "express-session";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import { fileURLToPath } from "url";
 
 // Load environment variables from .env file BEFORE any other imports that use them
 // Look for .env in parent directory (project root)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // Log to verify env loaded
