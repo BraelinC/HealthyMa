@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Search as SearchIcon, 
   Filter, 
@@ -48,6 +49,14 @@ interface GeneratedRecipe {
   source_name?: string;
   video_id?: string;
   video_title?: string;
+  nutrition?: {
+    calories?: number;
+    protein_g?: number;
+    carbs_g?: number;
+    fat_g?: number;
+    fiber_g?: number;
+    sodium_mg?: number;
+  };
   video_channel?: string;
   total_nutrition?: {
     calories: number;
@@ -197,23 +206,11 @@ const Search = () => {
   const { data: savedRecipes, isLoading: isLoadingSaved } = useQuery({
     queryKey: ['/api/recipes/saved'],
     enabled: true,
-    onSuccess: (data) => {
-      console.log('Saved recipes API response:', data);
-      if (data && data.length > 0) {
-        console.log('First saved recipe structure:', JSON.stringify(data[0], null, 2));
-      }
-    }
   });
 
   const { data: generatedRecipes, isLoading: isLoadingGenerated } = useQuery({
     queryKey: ['/api/recipes/generated'],
     enabled: true,
-    onSuccess: (data) => {
-      console.log('Generated recipes API response:', data);
-      if (data && data.length > 0) {
-        console.log('First generated recipe structure:', JSON.stringify(data[0], null, 2));
-      }
-    }
   });
 
   const generateRecipeMutation = useMutation({
@@ -558,54 +555,102 @@ const Search = () => {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold mb-3 text-teal-600">Ingredients</h4>
-                        <ul className="space-y-1">
+                    {/* Recipe Display with Tabs */}
+                    <Tabs defaultValue="ingredients" className="w-full">
+                      <TabsList className="w-full grid grid-cols-3 h-10 bg-purple-100 rounded-lg">
+                        <TabsTrigger value="ingredients" className="text-xs data-[state=active]:bg-white data-[state=active]:text-purple-600">Ingredients</TabsTrigger>
+                        <TabsTrigger value="instructions" className="text-xs data-[state=active]:bg-white data-[state=active]:text-purple-600">Instructions</TabsTrigger>
+                        <TabsTrigger value="nutrition" className="text-xs data-[state=active]:bg-white data-[state=active]:text-purple-600">Nutrition</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="ingredients" className="p-4 pt-3">
+                        <ul className="space-y-2">
                           {Array.isArray(generatedRecipe.ingredients) && generatedRecipe.ingredients.map((ingredient, index) => (
-                            <li key={index} className="text-sm text-gray-700 flex items-start">
-                              <span className="mr-2">•</span>
-                              {typeof ingredient === 'string' ? ingredient : ingredient.display_text}
+                            <li key={index} className="flex items-start gap-2 text-sm">
+                              <Checkbox 
+                                id={`ingredient-${index}`} 
+                                className="mt-0.5" 
+                              />
+                              <label 
+                                htmlFor={`ingredient-${index}`} 
+                                className="cursor-pointer text-gray-700"
+                              >
+                                {typeof ingredient === 'string' ? ingredient : ingredient.display_text}
+                              </label>
                             </li>
                           ))}
                         </ul>
-                      </div>
-                      <div>
-                        <Button
-                          variant="ghost"
-                          onClick={() => setShowInstructions(!showInstructions)}
-                          className="w-full justify-between p-0 h-auto text-left font-semibold text-teal-600 hover:bg-transparent"
-                        >
-                          <h4 className="font-semibold text-teal-600">Instructions</h4>
-                          {showInstructions ? (
-                            <ChevronUp className="h-4 w-4 text-teal-600" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-teal-600" />
-                          )}
-                        </Button>
-                        {showInstructions && (
-                          <ol className="space-y-2 mt-3">
-                            {generatedRecipe.instructions.map((step, index) => (
-                              <li key={index} className="text-sm text-gray-700 flex">
-                                <span className="font-medium text-teal-600 mr-2 flex-shrink-0">{index + 1}.</span>
-                                <span>{step}</span>
-                              </li>
-                            ))}
-                          </ol>
-                        )}
-                      </div>
-                    </div>
+                        
+                        {/* Shop Button */}
+                        <div className="mt-4">
+                          <Button
+                            onClick={createShoppingList}
+                            size="sm"
+                            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white gap-1.5 text-xs h-9"
+                          >
+                            <ShoppingCart className="h-3.5 w-3.5" />
+                            Shop Ingredients
+                          </Button>
+                        </div>
+                      </TabsContent>
 
-                    <div className="flex justify-center mt-4">
-                      <Button
-                        onClick={createShoppingList}
-                        size="sm"
-                        className="bg-teal-500 hover:bg-teal-600 text-white"
-                      >
-                        <ShoppingCart className="h-4 w-4 mr-1" />
-                        Create Shopping List
-                      </Button>
-                    </div>
+                      <TabsContent value="instructions" className="p-4 pt-3">
+                        <ol className="space-y-3">
+                          {generatedRecipe.instructions.map((step, index) => (
+                            <li key={index} className="flex gap-2 text-sm">
+                              <span className="flex-shrink-0 w-5 h-5 bg-purple-600 rounded-full text-white flex items-center justify-center text-xs">
+                                {index + 1}
+                              </span>
+                              <span className="text-gray-700">{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </TabsContent>
+
+                      <TabsContent value="nutrition" className="p-4 pt-3">
+                        {generatedRecipe.nutrition ? (
+                          <div>
+                            <h4 className="font-semibold mb-4 text-purple-700">Nutrition Information</h4>
+                            
+                            {/* Main Macros - 3 prominent boxes */}
+                            <div className="grid grid-cols-3 gap-4 mb-4">
+                              <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                                <div className="text-2xl font-bold text-purple-700">{generatedRecipe.nutrition.calories || 0}</div>
+                                <div className="text-sm font-medium text-purple-600">Calories</div>
+                              </div>
+                              <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200">
+                                <div className="text-2xl font-bold text-emerald-700">{generatedRecipe.nutrition.protein_g || 0}g</div>
+                                <div className="text-sm font-medium text-emerald-600">Protein</div>
+                              </div>
+                              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                                <div className="text-2xl font-bold text-blue-700">{generatedRecipe.nutrition.carbs_g || 0}g</div>
+                                <div className="text-sm font-medium text-blue-600">Carbs</div>
+                              </div>
+                            </div>
+
+                            {/* Secondary Macros */}
+                            <div className="grid grid-cols-3 gap-3 mb-4">
+                              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                <div className="text-lg font-semibold text-gray-700">{generatedRecipe.nutrition.fat_g || 0}g</div>
+                                <div className="text-sm text-gray-500">Fat</div>
+                              </div>
+                              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                <div className="text-lg font-semibold text-gray-700">{generatedRecipe.nutrition.fiber_g || 0}g</div>
+                                <div className="text-sm text-gray-500">Fiber</div>
+                              </div>
+                              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                <div className="text-lg font-semibold text-gray-700">{generatedRecipe.nutrition.sodium_mg || 0}mg</div>
+                                <div className="text-sm text-gray-500">Sodium</div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="text-gray-500">Nutrition information not available for this recipe.</div>
+                          </div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 </CardContent>
               </Card>
