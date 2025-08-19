@@ -14,14 +14,14 @@ import Profile from "@/pages/Profile";
 
 import { TestingPage } from "@/pages/TestingPage";
 import IconShowcase from "@/pages/IconShowcase";
-import { HandPlatter, BookOpen, ChefHat, LogOut, User, CalendarDays, Settings, Camera, Users } from "lucide-react";
+import { HandPlatter, BookOpen, ChefHat, LogOut, User, CalendarDays, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthForm } from "@/components/AuthForm";
 import { LandingPage } from "@/components/LandingPage";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Checkout from "@/pages/Checkout";
-import Tracker from "@/pages/Tracker";
+
 import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
 
@@ -114,7 +114,6 @@ function AppTabBar() {
     { icon: <ChefHat className="w-5 h-5" />, label: "Home", path: "/" },
     { icon: <CalendarDays className="w-5 h-5" />, label: "Planner", path: "/meal-planner" },
     { icon: <Users className="w-5 h-5" />, label: "Communities", path: "/communities" },
-    { icon: <Camera className="w-5 h-5" />, label: "Tracker", path: "/tracker" },
   ];
   
   return (
@@ -235,7 +234,6 @@ function Router() {
           <Route path="/meal-planner" component={MealPlanner} />
           <Route path="/communities" component={Communities} />
           <Route path="/community/:id" component={CommunityDetail} />
-          <Route path="/tracker" component={Tracker} />
           <Route path="/profile" component={Profile} />
 
           <Route path="/testing" component={TestingPage} />
