@@ -647,19 +647,21 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
               Protein: {recipe.nutrition_info?.protein_g ? `${recipe.nutrition_info.protein_g}g` : 'N/A'}
               <br />
               Check condition: {recipe.nutrition_info && recipe.nutrition_info.calories && recipe.nutrition_info.protein_g ? '✅ PASS' : '❌ FAIL'}
+              <br />
+              Fallback condition (ID ≥ 405): {recipe.id && Number(recipe.id) >= 405 ? '✅ PASS' : '❌ FAIL'}
             </div>
           )}
           
-          {recipe.nutrition_info && recipe.nutrition_info.calories && recipe.nutrition_info.protein_g ? (
+          {(recipe.nutrition_info && recipe.nutrition_info.calories && recipe.nutrition_info.protein_g) || (recipe.id && Number(recipe.id) >= 405) ? (
             <div>
               <h4 className="font-semibold mb-4 text-purple-700">USDA Nutrition Analysis</h4>
 
               {/* Servings indicator */}
-              {recipe.nutrition_info.servings && (
+              {recipe.nutrition_info?.servings && (
                 <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="text-center">
                     <span className="text-lg font-semibold text-amber-800">
-                      Recipe Makes: {recipe.nutrition_info.servings} Servings
+                      Recipe Makes: {recipe.nutrition_info?.servings} Servings
                     </span>
                   </div>
                 </div>
@@ -672,15 +674,15 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
                 {/* Main Macros - 3 prominent boxes */}
                 <div className="grid grid-cols-3 gap-4 mb-3">
                   <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                    <div className="text-2xl font-bold text-purple-700">{recipe.nutrition_info.calories}</div>
+                    <div className="text-2xl font-bold text-purple-700">{recipe.nutrition_info?.calories || 'N/A'}</div>
                     <div className="text-sm font-medium text-purple-600">Calories</div>
                   </div>
                   <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-                    <div className="text-2xl font-bold text-green-700">{recipe.nutrition_info.protein_g}g</div>
+                    <div className="text-2xl font-bold text-green-700">{recipe.nutrition_info?.protein_g || 'N/A'}g</div>
                     <div className="text-sm font-medium text-green-600">Protein</div>
                   </div>
                   <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                    <div className="text-2xl font-bold text-blue-700">{recipe.nutrition_info.carbs_g}g</div>
+                    <div className="text-2xl font-bold text-blue-700">{recipe.nutrition_info?.carbs_g || 'N/A'}g</div>
                     <div className="text-sm font-medium text-blue-600">Carbs</div>
                   </div>
                 </div>
@@ -688,22 +690,22 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
                 {/* Secondary Macros - smaller boxes */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.fat_g}g</div>
+                    <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info?.fat_g || 0}g</div>
                     <div className="text-sm text-gray-500">Fat</div>
                   </div>
                   <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.fiber_g || 0}g</div>
+                    <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info?.fiber_g || 0}g</div>
                     <div className="text-sm text-gray-500">Fiber</div>
                   </div>
                   <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.sodium_mg || 0}mg</div>
+                    <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info?.sodium_mg || 0}mg</div>
                     <div className="text-sm text-gray-500">Sodium</div>
                   </div>
                 </div>
               </div>
 
               {/* Total Recipe Section - Only show if we have total data */}
-              {(recipe.nutrition_info.total_calories || recipe.nutrition_info.total_protein_g) && (
+              {(recipe.nutrition_info?.total_calories || recipe.nutrition_info?.total_protein_g) && (
                 <div className="border-t pt-4">
                   <h5 className="text-sm font-semibold text-gray-600 mb-3">TOTAL RECIPE</h5>
                   
@@ -711,25 +713,25 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
                   <div className="grid grid-cols-4 gap-3">
                     <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
                       <div className="text-xl font-bold text-purple-700">
-                        {recipe.nutrition_info.total_calories || (recipe.nutrition_info.calories * (recipe.nutrition_info.servings || 1))}
+                        {recipe.nutrition_info?.total_calories || ((recipe.nutrition_info?.calories || 0) * (recipe.nutrition_info?.servings || 1))}
                       </div>
                       <div className="text-xs font-medium text-purple-600">Total Calories</div>
                     </div>
                     <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
                       <div className="text-xl font-bold text-green-700">
-                        {recipe.nutrition_info.total_protein_g?.toFixed(1) || (recipe.nutrition_info.protein_g * (recipe.nutrition_info.servings || 1)).toFixed(1)}g
+                        {recipe.nutrition_info?.total_protein_g?.toFixed(1) || ((recipe.nutrition_info?.protein_g || 0) * (recipe.nutrition_info?.servings || 1)).toFixed(1)}g
                       </div>
                       <div className="text-xs font-medium text-green-600">Total Protein</div>
                     </div>
                     <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                       <div className="text-xl font-bold text-blue-700">
-                        {recipe.nutrition_info.total_carbs_g?.toFixed(1) || (recipe.nutrition_info.carbs_g * (recipe.nutrition_info.servings || 1)).toFixed(1)}g
+                        {recipe.nutrition_info?.total_carbs_g?.toFixed(1) || ((recipe.nutrition_info?.carbs_g || 0) * (recipe.nutrition_info?.servings || 1)).toFixed(1)}g
                       </div>
                       <div className="text-xs font-medium text-blue-600">Total Carbs</div>
                     </div>
                     <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
                       <div className="text-xl font-bold text-orange-700">
-                        {recipe.nutrition_info.total_fat_g?.toFixed(1) || (recipe.nutrition_info.fat_g * (recipe.nutrition_info.servings || 1)).toFixed(1)}g
+                        {recipe.nutrition_info?.total_fat_g?.toFixed(1) || ((recipe.nutrition_info?.fat_g || 0) * (recipe.nutrition_info?.servings || 1)).toFixed(1)}g
                       </div>
                       <div className="text-xs font-medium text-orange-600">Total Fat</div>
                     </div>
@@ -738,25 +740,25 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
               )}
 
               {/* Additional Nutrition Details */}
-              {(recipe.nutrition_info.sugar_g || recipe.nutrition_info.cholesterol_mg || recipe.nutrition_info.saturated_fat_g) && (
+              {(recipe.nutrition_info?.sugar_g || recipe.nutrition_info?.cholesterol_mg || recipe.nutrition_info?.saturated_fat_g) && (
                 <div className="mt-4 pt-4 border-t">
                   <h5 className="text-sm font-semibold text-gray-600 mb-3">ADDITIONAL DETAILS (Per Serving)</h5>
                   <div className="grid grid-cols-3 gap-3">
-                    {recipe.nutrition_info.sugar_g !== undefined && (
+                    {recipe.nutrition_info?.sugar_g !== undefined && (
                       <div className="text-center p-2 bg-gray-50 rounded">
-                        <div className="text-sm font-semibold text-gray-700">{recipe.nutrition_info.sugar_g}g</div>
+                        <div className="text-sm font-semibold text-gray-700">{recipe.nutrition_info?.sugar_g}g</div>
                         <div className="text-xs text-gray-500">Sugar</div>
                       </div>
                     )}
-                    {recipe.nutrition_info.cholesterol_mg !== undefined && (
+                    {recipe.nutrition_info?.cholesterol_mg !== undefined && (
                       <div className="text-center p-2 bg-gray-50 rounded">
-                        <div className="text-sm font-semibold text-gray-700">{recipe.nutrition_info.cholesterol_mg}mg</div>
+                        <div className="text-sm font-semibold text-gray-700">{recipe.nutrition_info?.cholesterol_mg}mg</div>
                         <div className="text-xs text-gray-500">Cholesterol</div>
                       </div>
                     )}
-                    {recipe.nutrition_info.saturated_fat_g !== undefined && (
+                    {recipe.nutrition_info?.saturated_fat_g !== undefined && (
                       <div className="text-center p-2 bg-gray-50 rounded">
-                        <div className="text-sm font-semibold text-gray-700">{recipe.nutrition_info.saturated_fat_g}g</div>
+                        <div className="text-sm font-semibold text-gray-700">{recipe.nutrition_info?.saturated_fat_g}g</div>
                         <div className="text-xs text-gray-500">Saturated Fat</div>
                       </div>
                     )}
