@@ -638,13 +638,15 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
           {/* Debug: Show nutrition_info data */}
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded text-xs">
-              <strong>✅ Recipe ID {recipe.id} - NUTRITION WORKING!</strong>
+              <strong>🔍 NUTRITION DEBUG - Recipe ID {recipe.id}</strong>
               <br />
-              nutrition_info: {recipe.nutrition_info ? 'FOUND' : 'MISSING'}
+              nutrition_info exists: {recipe.nutrition_info ? 'YES' : 'NO'}
+              <br />
+              Raw nutrition_info: {JSON.stringify(recipe.nutrition_info, null, 2)}
               <br />
               Calories: {recipe.nutrition_info?.calories || 'N/A'}
               <br />
-              Protein: {recipe.nutrition_info?.protein_g ? `${recipe.nutrition_info.protein_g}g` : 'N/A'}
+              Protein (protein_g): {recipe.nutrition_info?.protein_g ? `${recipe.nutrition_info.protein_g}g` : 'N/A'}
               <br />
               Check condition: {recipe.nutrition_info && recipe.nutrition_info.calories && recipe.nutrition_info.protein_g ? '✅ PASS' : '❌ FAIL'}
               <br />
