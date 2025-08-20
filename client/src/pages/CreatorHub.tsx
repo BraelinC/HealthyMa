@@ -72,7 +72,19 @@ export default function CreatorHub() {
   
   // Navigate to create community
   const handleCreateCommunity = () => {
+    console.log("🔄 Navigating to community creation page...");
+    console.log("🔍 Current location before navigation:", window.location.href);
     setLocation("/community/create");
+    console.log("🔍 setLocation called with: /community/create");
+    
+    // Force navigation as backup
+    setTimeout(() => {
+      console.log("🔍 Checking location after navigation:", window.location.href);
+      if (!window.location.pathname.includes('/community/create')) {
+        console.log("🔄 Force navigating with window.location");
+        window.location.href = '/community/create';
+      }
+    }, 100);
   };
 
   // Fetch creator stats

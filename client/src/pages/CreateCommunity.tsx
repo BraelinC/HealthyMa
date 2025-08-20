@@ -66,10 +66,26 @@ interface CommunityFormData {
 }
 
 export default function CreateCommunity() {
+  console.log("🚀 CreateCommunity component loaded");
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
+  
+  // Check if user is authenticated and is a creator
+  if (!isAuthenticated) {
+    console.log("❌ User not authenticated, redirecting to auth");
+    setLocation("/auth");
+    return null;
+  }
+  
+  if (!user?.is_creator) {
+    console.log("❌ User is not a creator, redirecting to creator-hub");
+    setLocation("/creator-hub");
+    return null;
+  }
+  
+  console.log("✅ User authenticated and is creator, showing create community form");
   
   const [formData, setFormData] = useState<CommunityFormData>({
     name: "",
