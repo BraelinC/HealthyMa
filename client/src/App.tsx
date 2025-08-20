@@ -235,6 +235,7 @@ function Router() {
           <Route path="/meal-planner" component={MealPlanner} />
           <Route path="/communities" component={Communities} />
           <Route path="/community/create" component={CreateCommunity} />
+          <Route path="/create" component={CreateCommunity} />
           <Route path="/creator-hub" component={CreatorHub} />
           <Route path="/community/:id" component={CommunityDetail} />
           <Route path="/profile" component={Profile} />
