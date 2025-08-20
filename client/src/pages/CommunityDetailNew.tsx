@@ -192,19 +192,30 @@ export default function CommunityDetailNew() {
     <>
       <style dangerouslySetInnerHTML={{
         __html: `
-          .community-detail-container * {
+          .community-detail-container {
             background-color: #111827 !important;
+            z-index: 999 !important;
+            position: relative !important;
+          }
+          .community-detail-container *,
+          .community-detail-container *::before,
+          .community-detail-container *::after {
+            background-color: #111827 !important;
+            z-index: inherit !important;
           }
           .community-detail-container [data-state="active"] {
             background-color: #374151 !important;
             color: white !important;
+            z-index: 1000 !important;
           }
           .community-detail-container [role="tablist"] {
             background-color: #1f2937 !important;
+            z-index: 1001 !important;
           }
           .community-detail-container [role="tab"] {
             background-color: #1f2937 !important;
             color: #d1d5db !important;
+            z-index: 1002 !important;
           }
           .community-detail-container [role="tab"]:hover {
             background-color: #374151 !important;
@@ -212,8 +223,13 @@ export default function CommunityDetailNew() {
           }
           .community-detail-container [role="tabpanel"] {
             background-color: #111827 !important;
+            z-index: 1000 !important;
           }
-          .community-detail-container .bg-white {
+          .community-detail-container .bg-white,
+          .community-detail-container [class*="bg-white"] {
+            background-color: #111827 !important;
+          }
+          .community-detail-container [data-radix-popper-content-wrapper] {
             background-color: #111827 !important;
           }
         `
@@ -223,7 +239,8 @@ export default function CommunityDetailNew() {
         style={{ 
           backgroundColor: '#111827',
           position: 'relative',
-          zIndex: 1
+          zIndex: 999,
+          minHeight: '100vh'
         }}
       >
       {/* Mobile Header - Fixed position to prevent scrolling issues */}
