@@ -72,6 +72,12 @@ export default function CreateCommunity() {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   
+  // Debug user state
+  console.log("🔍 CreateCommunity - isAuthenticated:", isAuthenticated);
+  console.log("🔍 CreateCommunity - user:", user);
+  console.log("🔍 CreateCommunity - user.is_creator:", (user as any)?.is_creator);
+  console.log("🔍 CreateCommunity - typeof user.is_creator:", typeof (user as any)?.is_creator);
+  
   // Show loading while authentication is being determined
   if (!isAuthenticated) {
     return (
@@ -85,7 +91,12 @@ export default function CreateCommunity() {
   }
   
   // Show message if user is not a creator (instead of redirecting)
-  if (!(user as any)?.is_creator) {
+  const isCreator = (user as any)?.is_creator;
+  console.log("🔍 CreateCommunity - Checking creator status:", isCreator);
+  console.log("🔍 CreateCommunity - Will show creator required?", !isCreator);
+  
+  if (!isCreator) {
+    console.log("❌ CreateCommunity - Showing Creator Mode Required because is_creator is:", isCreator);
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
         <div className="text-center">

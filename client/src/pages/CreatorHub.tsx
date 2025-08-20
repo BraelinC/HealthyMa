@@ -414,10 +414,25 @@ export default function CreatorHub() {
                 className="bg-purple-600 hover:bg-purple-700 text-white"
                 onClick={async (e) => {
                   console.log("🔥 NEW COMMUNITY BUTTON CLICKED!", Date.now());
-                  alert("Button clicked! Check console.");
+                  console.log("🔍 Button event:", e);
+                  console.log("🔍 Current window location:", window.location.href);
+                  console.log("🔍 Current user:", user);
+                  console.log("🔍 User is_creator:", (user as any)?.is_creator);
+                  
+                  alert("Button clicked! Check console logs for details.");
+                  
                   e.preventDefault();
                   e.stopPropagation();
+                  
+                  console.log("🔄 About to call handleCreateCommunity...");
                   await handleCreateCommunity();
+                  console.log("✅ handleCreateCommunity completed");
+                  
+                  // Additional backup navigation
+                  setTimeout(() => {
+                    console.log("🔄 Backup navigation to /create");
+                    window.location.href = "/create";
+                  }, 2000);
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
