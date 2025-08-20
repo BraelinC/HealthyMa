@@ -14,14 +14,17 @@ export class GroqRecipeValidator {
   private client: Groq | null = null;
   
   constructor() {
-    // Initialize only if API key exists
-    if (process.env.GROQ_API_KEY) {
-      console.log('🚀 [GROQ VALIDATOR] Initializing with API key:', process.env.GROQ_API_KEY.substring(0, 10) + '...');
+    // Use GROQ_API_KEY from Replit Secrets
+    const groqApiKey = process.env.GROQ_API_KEY;
+    
+    if (groqApiKey) {
+      console.log('🚀 [GROQ VALIDATOR] Initializing with API key:', groqApiKey.substring(0, 10) + '...');
+      console.log('✅ [GROQ VALIDATOR] API key loaded successfully');
       this.client = new Groq({
-        apiKey: process.env.GROQ_API_KEY
+        apiKey: groqApiKey
       });
     } else {
-      console.log('⚠️ [GROQ VALIDATOR] No API key found, will use fallback validation');
+      console.error('❌ [GROQ VALIDATOR] GROQ_API_KEY not found, using fallback validation');
     }
   }
 

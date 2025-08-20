@@ -18,7 +18,15 @@ import { groqValidator } from "./groqValidator";
 import { recipeNutritionCalculator } from "./recipeNutritionCalculator";
 
 import Stripe from "stripe";
-import { insertProfileSchema, type InsertProfile, users } from "@shared/schema";
+import { 
+  insertProfileSchema, 
+  type InsertProfile, 
+  users,
+  communities,
+  communityMembers,
+  sharedMealPlans,
+  creatorFollowers
+} from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -4470,6 +4478,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching creator meal plans:", error);
       res.status(500).json({ message: "Failed to fetch creator meal plans" });
+    }
+  });
+
+  // Get creator stats
+  app.get("/api/creator/stats", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get follower count
+      const followers = await db.select()
+        .from(creatorFollowers)
+        .where(eq(creatorFollowers.creator_id, userId));
+      
+      // Get communities
+      const communities = await db.select()
+        .from(communities)
+        .where(eq(communities.creator_id, userId));
+      
+      // Get shared meal plans
+      const sharedPlans = await db.select()
+        .from(sharedMealPlans)
+        .where(eq(sharedMealPlans.sharer_id, userId));
+      
+      // Calculate engagement and earnings (mock data for now)
+      const stats = {
+        totalFollowers: followers.length,
+        totalCommunities: communities.length,
+        totalSharedPlans: sharedPlans.length,
+        totalEarnings: 0, // Will implement with Stripe
+        engagementRate: 78, // Mock percentage
+        averageRating: 4.5, // Mock rating
+        thisMonthGrowth: 12, // Mock growth percentage
+        activeMemberships: 0, // Will implement with membership system
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching creator stats:", error);
+      res.status(500).json({ message: "Failed to fetch creator stats" });
+    }
+  });
+
+  // Get creator's communities
+  app.get("/api/creator/communities", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      const creatorCommunities = await db.select()
+        .from(communities)
+        .where(eq(communities.creator_id, userId));
+      
+      // Add member counts and revenue data
+      const communitiesWithStats = await Promise.all(
+        creatorCommunities.map(async (community) => {
+          const members = await db.select()
+            .from(communityMembers)
+            .where(eq(communityMembers.community_id, community.id));
+          
+          return {
+            ...community,
+            memberCount: members.length,
+            monthlyRevenue: 0, // Will implement with Stripe
+            engagementRate: Math.floor(Math.random() * 30) + 60, // Mock percentage
+          };
+        })
+      );
+      
+      res.json(communitiesWithStats);
+    } catch (error) {
+      console.error("Error fetching creator communities:", error);
+      res.status(500).json({ message: "Failed to fetch creator communities" });
     }
   });
 

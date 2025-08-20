@@ -80,6 +80,16 @@ interface ChatMessage {
 // STEP 2.1: Transform saved recipes to GeneratedRecipe format
 const transformSavedRecipe = (savedRecipe: any): GeneratedRecipe => {
   try {
+    // Parse nutrition_info if it's a string
+    let nutritionInfo = savedRecipe.nutrition_info;
+    if (typeof nutritionInfo === 'string') {
+      try {
+        nutritionInfo = JSON.parse(nutritionInfo);
+      } catch (e) {
+        console.warn('Failed to parse nutrition_info:', e);
+      }
+    }
+    
     return {
       id: savedRecipe.id,
       title: savedRecipe.title || 'Untitled Recipe',
@@ -96,8 +106,8 @@ const transformSavedRecipe = (savedRecipe: any): GeneratedRecipe => {
       video_id: savedRecipe.video_id,
       video_title: savedRecipe.video_title,
       video_channel: savedRecipe.video_channel,
-      nutrition_info: savedRecipe.nutrition_info, // Keep this for RecipeDisplay component  
-      nutrition: savedRecipe.nutrition_info, // Add this for Search component nutrition display
+      nutrition_info: nutritionInfo, // Keep parsed nutrition info
+      nutrition: nutritionInfo, // Also map to nutrition for compatibility
       total_nutrition: savedRecipe.total_nutrition
     };
   } catch (error) {
@@ -119,6 +129,16 @@ const transformSavedRecipe = (savedRecipe: any): GeneratedRecipe => {
 // STEP 2.2: Transform generated recipes to GeneratedRecipe format
 const transformGeneratedRecipe = (genRecipe: any): GeneratedRecipe => {
   try {
+    // Parse nutrition_info if it's a string
+    let nutritionInfo = genRecipe.nutrition_info;
+    if (typeof nutritionInfo === 'string') {
+      try {
+        nutritionInfo = JSON.parse(nutritionInfo);
+      } catch (e) {
+        console.warn('Failed to parse nutrition_info:', e);
+      }
+    }
+    
     return {
       id: genRecipe.id,
       title: genRecipe.title || 'Untitled Recipe',
@@ -135,8 +155,8 @@ const transformGeneratedRecipe = (genRecipe: any): GeneratedRecipe => {
       video_id: genRecipe.video_id,
       video_title: genRecipe.video_title,
       video_channel: genRecipe.video_channel,
-      nutrition_info: genRecipe.nutrition_info, // Keep this for RecipeDisplay component
-      nutrition: genRecipe.nutrition_info, // Add this for Search component nutrition display
+      nutrition_info: nutritionInfo, // Keep parsed nutrition info
+      nutrition: nutritionInfo, // Also map to nutrition for compatibility
       total_nutrition: genRecipe.total_nutrition
     };
   } catch (error) {
@@ -619,56 +639,67 @@ const Search = () => {
                           <div>Recipe ID: {generatedRecipe.id}</div>
                           <div>Has nutrition: {!!generatedRecipe.nutrition ? '✅ YES' : '❌ NO'}</div>
                           <div>Has nutrition_info: {!!generatedRecipe.nutrition_info ? '✅ YES' : '❌ NO'}</div>
+                          <div>Full recipe object keys: {Object.keys(generatedRecipe).join(', ')}</div>
                           {generatedRecipe.nutrition && (
                             <div>
-                              <div>Calories: {generatedRecipe.nutrition.calories}</div>
-                              <div>Protein: {generatedRecipe.nutrition.protein_g}g</div>
-                              <div>Carbs: {generatedRecipe.nutrition.carbs_g}g</div>
-                              <div>Fat: {generatedRecipe.nutrition.fat_g}g</div>
+                              <div>nutrition.calories: {generatedRecipe.nutrition.calories}</div>
+                              <div>nutrition.protein_g: {generatedRecipe.nutrition.protein_g}g</div>
+                              <div>nutrition.carbs_g: {generatedRecipe.nutrition.carbs_g}g</div>
+                              <div>nutrition.fat_g: {generatedRecipe.nutrition.fat_g}g</div>
                             </div>
                           )}
                           {generatedRecipe.nutrition_info && (
                             <div>
-                              <div>Nutrition_info Calories: {generatedRecipe.nutrition_info.calories}</div>
-                              <div>Nutrition_info Protein: {generatedRecipe.nutrition_info.protein_g}g</div>
+                              <div>nutrition_info type: {typeof generatedRecipe.nutrition_info}</div>
+                              <div>nutrition_info stringified: {JSON.stringify(generatedRecipe.nutrition_info).substring(0, 200)}</div>
+                              <div>nutrition_info.calories: {generatedRecipe.nutrition_info.calories}</div>
+                              <div>nutrition_info.protein_g: {generatedRecipe.nutrition_info.protein_g}g</div>
                             </div>
                           )}
                         </div>
-                        {generatedRecipe.nutrition ? (
+                        {(generatedRecipe.nutrition || generatedRecipe.nutrition_info) ? (
                           <div>
                             <h4 className="font-semibold mb-4 text-purple-700">Nutrition Information</h4>
                             
-                            {/* Main Macros - 3 prominent boxes */}
-                            <div className="grid grid-cols-3 gap-4 mb-4">
-                              <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                                <div className="text-2xl font-bold text-purple-700">{generatedRecipe.nutrition.calories || 0}</div>
-                                <div className="text-sm font-medium text-purple-600">Calories</div>
-                              </div>
-                              <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200">
-                                <div className="text-2xl font-bold text-emerald-700">{generatedRecipe.nutrition.protein_g || 0}g</div>
-                                <div className="text-sm font-medium text-emerald-600">Protein</div>
-                              </div>
-                              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                                <div className="text-2xl font-bold text-blue-700">{generatedRecipe.nutrition.carbs_g || 0}g</div>
-                                <div className="text-sm font-medium text-blue-600">Carbs</div>
-                              </div>
-                            </div>
+                            {/* Use nutrition_info first, fall back to nutrition */}
+                            {(() => {
+                              const nutritionData = generatedRecipe.nutrition_info || generatedRecipe.nutrition || {};
+                              return (
+                                <>
+                                  {/* Main Macros - 3 prominent boxes */}
+                                  <div className="grid grid-cols-3 gap-4 mb-4">
+                                    <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                                      <div className="text-2xl font-bold text-purple-700">{nutritionData.calories || 0}</div>
+                                      <div className="text-sm font-medium text-purple-600">Calories</div>
+                                    </div>
+                                    <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200">
+                                      <div className="text-2xl font-bold text-emerald-700">{nutritionData.protein_g || nutritionData.protein || 0}g</div>
+                                      <div className="text-sm font-medium text-emerald-600">Protein</div>
+                                    </div>
+                                    <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                                      <div className="text-2xl font-bold text-blue-700">{nutritionData.carbs_g || nutritionData.carbs || 0}g</div>
+                                      <div className="text-sm font-medium text-blue-600">Carbs</div>
+                                    </div>
+                                  </div>
 
-                            {/* Secondary Macros */}
-                            <div className="grid grid-cols-3 gap-3 mb-4">
-                              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                                <div className="text-lg font-semibold text-gray-700">{generatedRecipe.nutrition.fat_g || 0}g</div>
-                                <div className="text-sm text-gray-500">Fat</div>
-                              </div>
-                              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                                <div className="text-lg font-semibold text-gray-700">{generatedRecipe.nutrition.fiber_g || 0}g</div>
-                                <div className="text-sm text-gray-500">Fiber</div>
-                              </div>
-                              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                                <div className="text-lg font-semibold text-gray-700">{generatedRecipe.nutrition.sodium_mg || 0}mg</div>
-                                <div className="text-sm text-gray-500">Sodium</div>
-                              </div>
-                            </div>
+                                  {/* Secondary Macros */}
+                                  <div className="grid grid-cols-3 gap-3 mb-4">
+                                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                      <div className="text-lg font-semibold text-gray-700">{nutritionData.fat_g || nutritionData.fat || 0}g</div>
+                                      <div className="text-sm text-gray-500">Fat</div>
+                                    </div>
+                                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                      <div className="text-lg font-semibold text-gray-700">{nutritionData.fiber_g || nutritionData.fiber || 0}g</div>
+                                      <div className="text-sm text-gray-500">Fiber</div>
+                                    </div>
+                                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                                      <div className="text-lg font-semibold text-gray-700">{nutritionData.sodium_mg || nutritionData.sodium || 0}mg</div>
+                                      <div className="text-sm text-gray-500">Sodium</div>
+                                    </div>
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
                         ) : (
                           <div className="text-center py-8">

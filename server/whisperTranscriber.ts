@@ -26,16 +26,20 @@ export class WhisperTranscriber {
   private tempDir: string = path.join(__dirname, '../temp/audio');
   
   constructor() {
-    if (process.env.GROQ_API_KEY) {
+    // Use GROQ_API_KEY from Replit Secrets
+    const groqApiKey = process.env.GROQ_API_KEY;
+    
+    if (groqApiKey) {
       console.log('🎙️ [WHISPER] Initializing with Whisper V3 Turbo');
+      console.log('✅ [WHISPER] API key loaded successfully');
       this.client = new Groq({
-        apiKey: process.env.GROQ_API_KEY
+        apiKey: groqApiKey
       });
       
       // Ensure temp directory exists
       this.ensureTempDir();
     } else {
-      console.log('⚠️ [WHISPER] No API key found');
+      console.error('❌ [WHISPER] GROQ_API_KEY not found in environment');
     }
   }
   

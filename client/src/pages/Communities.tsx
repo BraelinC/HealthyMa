@@ -306,7 +306,9 @@ export default function Communities() {
                     <p className="text-gray-600 max-w-xs">
                       Start sharing your meal plans and build a following
                     </p>
-                    <Button>Create Community</Button>
+                    <Link href="/community/create">
+                      <Button>Create Community</Button>
+                    </Link>
                   </div>
                 </Card>
               </div>

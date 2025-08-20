@@ -14,13 +14,17 @@ export class GroqInstructionGenerator {
   private client: Groq | null = null;
   
   constructor() {
-    if (process.env.GROQ_API_KEY) {
+    // Use GROQ_API_KEY from Replit Secrets
+    const groqApiKey = process.env.GROQ_API_KEY;
+    
+    if (groqApiKey) {
       console.log('🚀 [GROQ INSTRUCTION GEN] Initializing with GPT-OSS-120B');
+      console.log('✅ [GROQ INSTRUCTION GEN] API key loaded successfully');
       this.client = new Groq({
-        apiKey: process.env.GROQ_API_KEY
+        apiKey: groqApiKey
       });
     } else {
-      console.log('⚠️ [GROQ INSTRUCTION GEN] No API key found');
+      console.error('❌ [GROQ INSTRUCTION GEN] GROQ_API_KEY not found in environment');
     }
   }
 

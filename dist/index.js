@@ -1802,14 +1802,16 @@ var init_whisperTranscriber = __esm({
       client = null;
       tempDir = path.join(__dirname2, "../temp/audio");
       constructor() {
-        if (process.env.GROQ_API_KEY) {
+        const groqApiKey = process.env.GROQ_API_KEY;
+        if (groqApiKey) {
           console.log("\u{1F399}\uFE0F [WHISPER] Initializing with Whisper V3 Turbo");
+          console.log("\u2705 [WHISPER] API key loaded successfully");
           this.client = new Groq({
-            apiKey: process.env.GROQ_API_KEY
+            apiKey: groqApiKey
           });
           this.ensureTempDir();
         } else {
-          console.log("\u26A0\uFE0F [WHISPER] No API key found");
+          console.error("\u274C [WHISPER] GROQ_API_KEY not found in environment");
         }
       }
       async ensureTempDir() {
@@ -2064,13 +2066,15 @@ var init_groqInstructionGenerator = __esm({
     GroqInstructionGenerator = class {
       client = null;
       constructor() {
-        if (process.env.GROQ_API_KEY) {
+        const groqApiKey = process.env.GROQ_API_KEY;
+        if (groqApiKey) {
           console.log("\u{1F680} [GROQ INSTRUCTION GEN] Initializing with GPT-OSS-120B");
+          console.log("\u2705 [GROQ INSTRUCTION GEN] API key loaded successfully");
           this.client = new Groq2({
-            apiKey: process.env.GROQ_API_KEY
+            apiKey: groqApiKey
           });
         } else {
-          console.log("\u26A0\uFE0F [GROQ INSTRUCTION GEN] No API key found");
+          console.error("\u274C [GROQ INSTRUCTION GEN] GROQ_API_KEY not found in environment");
         }
       }
       async generateInstructionsFromTranscript(transcript, recipeName, ingredients) {
@@ -13779,13 +13783,15 @@ dotenv3.config({ path: path3.join(__dirname4, "..", ".env") });
 var GroqRecipeValidator = class {
   client = null;
   constructor() {
-    if (process.env.GROQ_API_KEY) {
-      console.log("\u{1F680} [GROQ VALIDATOR] Initializing with API key:", process.env.GROQ_API_KEY.substring(0, 10) + "...");
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (groqApiKey) {
+      console.log("\u{1F680} [GROQ VALIDATOR] Initializing with API key:", groqApiKey.substring(0, 10) + "...");
+      console.log("\u2705 [GROQ VALIDATOR] API key loaded successfully");
       this.client = new Groq3({
-        apiKey: process.env.GROQ_API_KEY
+        apiKey: groqApiKey
       });
     } else {
-      console.log("\u26A0\uFE0F [GROQ VALIDATOR] No API key found, will use fallback validation");
+      console.error("\u274C [GROQ VALIDATOR] GROQ_API_KEY not found, using fallback validation");
     }
   }
   async validateInstructions(instructions) {
@@ -13887,13 +13893,16 @@ dotenv4.config({ path: path4.join(__dirname5, "..", ".env") });
 var GroqIngredientParser = class {
   client = null;
   constructor() {
-    if (process.env.GROQ_API_KEY) {
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (groqApiKey) {
       console.log("\u{1F680} [GROQ INGREDIENT PARSER] Initializing with GPT-OSS-20B");
+      console.log("\u2705 [GROQ INGREDIENT PARSER] API key loaded successfully");
       this.client = new Groq4({
-        apiKey: process.env.GROQ_API_KEY
+        apiKey: groqApiKey
       });
     } else {
-      console.log("\u26A0\uFE0F [GROQ INGREDIENT PARSER] No API key found");
+      console.error("\u274C [GROQ INGREDIENT PARSER] GROQ_API_KEY not found in environment");
+      console.error("\u274C [GROQ INGREDIENT PARSER] Please add GROQ_API_KEY to Replit Secrets");
     }
   }
   async parseIngredients(ingredients) {
@@ -13958,7 +13967,24 @@ Parse ALL ingredients and return ONLY the JSON array, no other text.`;
       } catch (parseError) {
         console.error("\u274C [GROQ INGREDIENT PARSER] Failed to parse JSON response:", parseError);
         console.log("Raw response:", response.substring(0, 500));
-        return [];
+        try {
+          const objectMatches = response.match(/\{[^{}]*\}/g);
+          if (objectMatches) {
+            const fallbackParsed = objectMatches.map((match) => JSON.parse(match));
+            console.log("\u2705 [GROQ INGREDIENT PARSER] Recovered using fallback parsing");
+            return fallbackParsed;
+          }
+        } catch (fallbackError) {
+          console.log("\u274C [GROQ INGREDIENT PARSER] Fallback parsing also failed");
+        }
+        console.log("\u{1F527} [GROQ INGREDIENT PARSER] Using basic ingredient fallback");
+        return ingredients.map((ing, i) => ({
+          ingredient: ing.toLowerCase().replace(/^[\d\s\/]+/, "").trim().split(" ").pop() || "ingredient",
+          amount: ing.match(/^[\d\s\/¼½¾⅓⅔⅛⅜⅝⅞\w]*/) ? (ing.match(/^[\d\s\/¼½¾⅓⅔⅛⅜⅝⅞\w]*/) || ["1"])[0].trim() : "1",
+          quantity: 1,
+          unit: "piece",
+          originalText: ing
+        }));
       }
       const validated = parsed.filter((item, index2) => {
         if (!item.ingredient || !item.amount) {
@@ -14494,7 +14520,6 @@ async function registerRoutes(app2) {
       }).where(eq7(users.id, userId));
       const { generateToken: generateToken2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
       const newToken = generateToken2(userId, newCreatorStatus);
-      console.log(`\u{1F504} Toggled creator status for user ${userId}: ${newCreatorStatus}`);
       res.json({
         message: `Creator mode ${newCreatorStatus ? "enabled" : "disabled"}`,
         is_creator: newCreatorStatus,
@@ -14508,9 +14533,6 @@ async function registerRoutes(app2) {
   const { passport: passport2, isGoogleOAuthConfigured: isGoogleOAuthConfigured2, handleGoogleCallback: handleGoogleCallback2 } = await Promise.resolve().then(() => (init_googleAuth(), googleAuth_exports));
   if (isGoogleOAuthConfigured2) {
     app2.get("/api/auth/google", (req, res, next) => {
-      console.log("Google OAuth initiated");
-      console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
-      console.log("Callback URL:", `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`);
       passport2.authenticate("google", {
         scope: ["profile", "email"]
       })(req, res, next);
@@ -14528,7 +14550,6 @@ async function registerRoutes(app2) {
           const userData = encodeURIComponent(JSON.stringify(userWithoutPassword));
           res.redirect(`/?token=${token}&user=${userData}&success=google`);
         } catch (error) {
-          console.error("Google callback error:", error);
           res.redirect("/?error=callback_failed");
         }
       }
@@ -14569,7 +14590,6 @@ async function registerRoutes(app2) {
         message: "Test user login successful"
       });
     } catch (error) {
-      console.error("Test login error:", error);
       res.status(500).json({ message: "Test login failed" });
     }
   });
@@ -14624,7 +14644,6 @@ async function registerRoutes(app2) {
         // Send back amount in dollars
       });
     } catch (error) {
-      console.error("Error creating payment intent:", error);
       res.status(500).json({
         message: "Error creating payment intent: " + error.message
       });
@@ -14657,7 +14676,6 @@ async function registerRoutes(app2) {
         message: "Trial setup created successfully"
       });
     } catch (error) {
-      console.error("Error creating trial subscription:", error);
       res.status(500).json({
         message: "Error setting up trial: " + error.message
       });
@@ -15618,7 +15636,6 @@ async function registerRoutes(app2) {
           features: [{ type: "LABEL_DETECTION", maxResults: 1 }]
         }]
       };
-      console.log("\u{1F9EA} Testing Vision API with minimal request...");
       const response = await fetch6(testUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -15662,9 +15679,7 @@ async function registerRoutes(app2) {
       });
       const VISION_API_KEY = "AIzaSyBZNfvaAwCwgZHi4a9MKs8CkaRaMAxUPm4";
       const VISION_API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`;
-      console.log("\u{1F511} Using API key:", VISION_API_KEY.substring(0, 10) + "...");
       const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
-      console.log("\u{1F4E6} Base64 image size after cleanup:", base64Image.length);
       const visionRequest = {
         requests: [{
           image: {
@@ -15687,7 +15702,6 @@ async function registerRoutes(app2) {
         }]
       };
       console.log("\u{1F4E1} Calling Google Vision API...");
-      console.log("\u{1F517} Vision API URL:", VISION_API_URL);
       let visionResponse;
       try {
         visionResponse = await fetch6(VISION_API_URL, {
@@ -15698,8 +15712,6 @@ async function registerRoutes(app2) {
           body: JSON.stringify(visionRequest)
         });
       } catch (fetchError) {
-        console.error("\u274C Network error calling Vision API:", fetchError.message);
-        console.error("Full error:", fetchError);
         return res.status(500).json({
           error: "Network error calling Vision API",
           details: fetchError.message
@@ -15822,7 +15834,6 @@ async function registerRoutes(app2) {
       }
       detectedIngredients.sort((a, b) => b.confidence - a.confidence);
       const finalIngredients = detectedIngredients.slice(0, 10);
-      console.log(`\u{1F4CA} Final detection: ${finalIngredients.length} ingredients`);
       res.json({
         ingredients: finalIngredients,
         raw: {
@@ -17901,6 +17912,56 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch creator meal plans" });
     }
   });
+  app2.get("/api/creator/stats", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const followers = await db.select().from(creatorFollowers).where(eq7(creatorFollowers.creator_id, userId));
+      const communities2 = await db.select().from(communities2).where(eq7(communities2.creator_id, userId));
+      const sharedPlans = await db.select().from(sharedMealPlans).where(eq7(sharedMealPlans.sharer_id, userId));
+      const stats = {
+        totalFollowers: followers.length,
+        totalCommunities: communities2.length,
+        totalSharedPlans: sharedPlans.length,
+        totalEarnings: 0,
+        // Will implement with Stripe
+        engagementRate: 78,
+        // Mock percentage
+        averageRating: 4.5,
+        // Mock rating
+        thisMonthGrowth: 12,
+        // Mock growth percentage
+        activeMemberships: 0
+        // Will implement with membership system
+      };
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching creator stats:", error);
+      res.status(500).json({ message: "Failed to fetch creator stats" });
+    }
+  });
+  app2.get("/api/creator/communities", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const creatorCommunities = await db.select().from(communities).where(eq7(communities.creator_id, userId));
+      const communitiesWithStats = await Promise.all(
+        creatorCommunities.map(async (community) => {
+          const members = await db.select().from(communityMembers).where(eq7(communityMembers.community_id, community.id));
+          return {
+            ...community,
+            memberCount: members.length,
+            monthlyRevenue: 0,
+            // Will implement with Stripe
+            engagementRate: Math.floor(Math.random() * 30) + 60
+            // Mock percentage
+          };
+        })
+      );
+      res.json(communitiesWithStats);
+    } catch (error) {
+      console.error("Error fetching creator communities:", error);
+      res.status(500).json({ message: "Failed to fetch creator communities" });
+    }
+  });
   const httpServer = createServer(app2);
   return httpServer;
 }
@@ -18024,11 +18085,6 @@ init_googleAuth();
 var __filename6 = fileURLToPath6(import.meta.url);
 var __dirname7 = path10.dirname(__filename6);
 dotenv6.config({ path: path10.join(__dirname7, "..", ".env") });
-console.log("\u{1F511} Environment loaded:", {
-  GROQ_API_KEY: !!process.env.GROQ_API_KEY,
-  YOUTUBE_API_KEY: !!process.env.YOUTUBE_API_KEY,
-  OPENAI_API_KEY: !!process.env.OPENAI_API_KEY
-});
 var app = express2();
 var corsOptions = {
   origin: function(origin, callback) {
@@ -18051,7 +18107,6 @@ var corsOptions = {
     if (allowed) {
       callback(null, true);
     } else {
-      console.log(`CORS blocked origin: ${origin}`);
       callback(null, false);
     }
   },
@@ -18138,9 +18193,5 @@ app.use((req, res, next) => {
   });
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
-    console.log("\u{1F511} API Keys Status:");
-    console.log(`   - Instacart: ${process.env.INSTACART_API_KEY ? "\u2705 Available" : "\u274C Not found"}`);
-    console.log(`   - YouTube: ${process.env.YOUTUBE_API_KEY ? "\u2705 Available" : "\u274C Not found"}`);
-    console.log(`   - OpenAI: ${process.env.OPENAI_API_KEY ? "\u2705 Available" : "\u274C Not found"}`);
   });
 })();

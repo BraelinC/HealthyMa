@@ -22,13 +22,18 @@ export class GroqIngredientParser {
   private client: Groq | null = null;
   
   constructor() {
-    if (process.env.GROQ_API_KEY) {
+    // Use GROQ_API_KEY from Replit Secrets
+    const groqApiKey = process.env.GROQ_API_KEY;
+    
+    if (groqApiKey) {
       console.log('🚀 [GROQ INGREDIENT PARSER] Initializing with GPT-OSS-20B');
+      console.log('✅ [GROQ INGREDIENT PARSER] API key loaded successfully');
       this.client = new Groq({
-        apiKey: process.env.GROQ_API_KEY
+        apiKey: groqApiKey
       });
     } else {
-      console.log('⚠️ [GROQ INGREDIENT PARSER] No API key found');
+      console.error('❌ [GROQ INGREDIENT PARSER] GROQ_API_KEY not found in environment');
+      console.error('❌ [GROQ INGREDIENT PARSER] Please add GROQ_API_KEY to Replit Secrets');
     }
   }
 

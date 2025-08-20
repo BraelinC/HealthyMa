@@ -23,6 +23,8 @@ import Checkout from "@/pages/Checkout";
 
 import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
+import CreatorHub from "@/pages/CreatorHub";
+import CreateCommunity from "@/pages/CreateCommunity";
 
 // ========== LANDING PAGE TOGGLE ==========
 // Set this to false to skip the landing page and go directly to login
@@ -232,6 +234,8 @@ function Router() {
           <Route path="/search" component={Search} />
           <Route path="/meal-planner" component={MealPlanner} />
           <Route path="/communities" component={Communities} />
+          <Route path="/community/create" component={CreateCommunity} />
+          <Route path="/creator-hub" component={CreatorHub} />
           <Route path="/community/:id" component={CommunityDetail} />
           <Route path="/profile" component={Profile} />
 
