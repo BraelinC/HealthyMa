@@ -86,16 +86,18 @@ export default function Communities() {
   // Override creator status for testing
   const isCreator = user?.is_creator || forceCreatorMode;
 
-  // Fetch communities
+  // Fetch communities - only when authenticated
   const { data: communities = [], isLoading: loadingCommunities } = useQuery({
     queryKey: ["/api/communities", selectedCategory],
     queryFn: async () => {
+      const { apiRequest } = await import("@/lib/queryClient");
       const params = new URLSearchParams();
       if (selectedCategory) params.append("category", selectedCategory);
-      const response = await fetch(`/api/communities?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch communities");
-      return response.json();
+      return await apiRequest(`/api/communities?${params}`, {
+        method: "GET",
+      });
     },
+    enabled: isAuthenticated, // Only fetch when user is authenticated
   });
 
   // Fetch trending meal plans
@@ -239,8 +241,13 @@ export default function Communities() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredCommunities.map((community: Community) => (
-                  <Card key={community.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <Link href={`/community/${community.id}`}>
+                  <Card key={community.id} className="hover:shadow-lg transition-shadow">
+                    <div className="cursor-pointer" onClick={() => {
+                      // Only navigate if not clicking on buttons
+                      if (!community.creator_id === (user as any)?.id && !community.isMember) {
+                        window.location.href = `/community/${community.id}`;
+                      }
+                    }}>
                       {community.cover_image && (
                         <div className="h-32 bg-gradient-to-br from-purple-400 to-emerald-400 rounded-t-lg" />
                       )}
@@ -285,6 +292,7 @@ export default function Communities() {
                               className="w-full"
                               onClick={(e) => {
                                 e.preventDefault();
+                                e.stopPropagation();
                                 joinCommunity.mutate(community.id);
                               }}
                               disabled={joinCommunity.isPending}
@@ -294,7 +302,7 @@ export default function Communities() {
                           )
                         )}
                       </CardContent>
-                    </Link>
+                    </div>
                   </Card>
                 ))}
               </div>
