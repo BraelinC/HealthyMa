@@ -190,57 +190,69 @@ export default function CommunityDetailNew() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Mobile Header - Fixed position to prevent scrolling issues */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3">
+      {/* Mobile Header - Always cover the logo */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/communities">
-              <Button variant="ghost" size="sm" className="text-white p-2">
+              <Button variant="ghost" size="sm" className="text-white p-2 hover:bg-gray-700">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
             <div className="flex items-center gap-2">
               <Avatar className="w-8 h-8">
-                <AvatarFallback className="bg-purple-600 text-white text-sm">
+                <AvatarFallback className="bg-purple-600 text-white text-sm font-bold">
                   {community.name[0]}
                 </AvatarFallback>
               </Avatar>
-              <h1 className="font-semibold text-lg">{community.name}</h1>
+              <h1 className="font-semibold text-lg text-white truncate">{community.name}</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-white p-2">
+            <Button variant="ghost" size="sm" className="text-white p-2 hover:bg-gray-700">
               <Search className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="sm" className="text-white p-2">
+            <Button variant="ghost" size="sm" className="text-white p-2 hover:bg-gray-700">
               <MoreHorizontal className="w-5 h-5" />
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Add padding to account for fixed header */}
-      <div className="pt-16"></div>
+      {/* Tab Navigation - Fixed below header, always visible */}
+      <div className="fixed top-16 left-0 right-0 z-40 bg-gray-800 border-b border-gray-700 shadow-sm">
+        <Tabs defaultValue="community" className="w-full">
+          <TabsList className="w-full bg-transparent border-none rounded-none h-12 p-0">
+            <TabsTrigger 
+              value="community" 
+              className="flex-1 h-full rounded-none data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors"
+            >
+              Community
+            </TabsTrigger>
+            <TabsTrigger 
+              value="meals" 
+              className="flex-1 h-full rounded-none data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors"
+            >
+              Meal Plans
+            </TabsTrigger>
+            <TabsTrigger 
+              value="calendar" 
+              className="flex-1 h-full rounded-none data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors"
+            >
+              Calendar
+            </TabsTrigger>
+            <TabsTrigger 
+              value="members" 
+              className="flex-1 h-full rounded-none data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors"
+            >
+              Members
+            </TabsTrigger>
+          </TabsList>
 
-      {/* Tab Navigation - Fixed position */}
-      <Tabs defaultValue="community" className="w-full">
-        <TabsList className="fixed top-16 left-0 right-0 z-40 w-full bg-gray-800 border-b border-gray-700 rounded-none h-12">
-          <TabsTrigger value="community" className="flex-1 data-[state=active]:bg-gray-700">
-            Community
-          </TabsTrigger>
-          <TabsTrigger value="meals" className="flex-1 data-[state=active]:bg-gray-700">
-            Meal Plans
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex-1 data-[state=active]:bg-gray-700">
-            Calendar
-          </TabsTrigger>
-          <TabsTrigger value="members" className="flex-1 data-[state=active]:bg-gray-700">
-            Members
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Community Tab Content - Add padding for fixed tabs */}
-        <TabsContent value="community" className="p-4 space-y-4 mt-12 pt-4">
+          {/* All content starts below the fixed header and tabs */}
+          <div className="pt-28"> {/* 64px header + 48px tabs = 112px, use 28 for extra spacing */}
+            {/* Community Tab Content */}
+            <TabsContent value="community" className="p-4 space-y-4 m-0 bg-gray-900">
           {/* Community Stats Banner - Only show for non-members */}
           {!isMember && (
             <Card className="bg-gradient-to-r from-purple-600 to-blue-600 border-none">
@@ -404,73 +416,75 @@ export default function CommunityDetailNew() {
         </TabsContent>
 
         {/* Meal Plans Tab */}
-        <TabsContent value="meals" className="p-4">
-          <div className="text-center py-8">
-            <ChefHat className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">Shared Meal Plans</h3>
-            <p className="text-gray-400 mb-4">Discover and share amazing meal plans with the community</p>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="w-4 h-4 mr-1" />
-              Share a Meal Plan
-            </Button>
-          </div>
+        <TabsContent value="meals" className="p-4 m-0 bg-gray-900">
+              <div className="text-center py-8">
+                <ChefHat className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Shared Meal Plans</h3>
+                <p className="text-gray-400 mb-4">Discover and share amazing meal plans with the community</p>
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Share a Meal Plan
+                </Button>
+              </div>
         </TabsContent>
 
         {/* Calendar Tab */}
-        <TabsContent value="calendar" className="p-4">
-          <div className="text-center py-8">
-            <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">Community Calendar</h3>
-            <p className="text-gray-400">View upcoming events and challenges</p>
-          </div>
+        <TabsContent value="calendar" className="p-4 m-0 bg-gray-900">
+              <div className="text-center py-8">
+                <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Community Calendar</h3>
+                <p className="text-gray-400">View upcoming events and challenges</p>
+              </div>
         </TabsContent>
 
         {/* Members Tab */}
-        <TabsContent value="members" className="p-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white">Members ({community.member_count})</h3>
-              <Button variant="outline" size="sm" className="border-gray-600 text-gray-300">
-                <Plus className="w-4 h-4 mr-1" />
-                Invite
-              </Button>
-            </div>
-            
-            {/* Member List Preview */}
-            <div className="space-y-3">
-              {[
-                { name: "Sarah Chen", role: "Creator", level: 15 },
-                { name: "Mike Johnson", role: "Moderator", level: 12 },
-                { name: "Emily Rodriguez", role: "Member", level: 8 },
-              ].map((member, index) => (
-                <Card key={index} className="bg-gray-800 border-gray-700">
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarFallback className="bg-purple-600 text-white">
-                            {member.name[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-medium text-white">{member.name}</h4>
-                          <p className="text-sm text-gray-400">{member.role}</p>
+        <TabsContent value="members" className="p-4 m-0 bg-gray-900">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-white">Members ({community.member_count})</h3>
+                  <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Invite
+                  </Button>
+                </div>
+                
+                {/* Member List Preview */}
+                <div className="space-y-3">
+                  {[
+                    { name: "Sarah Chen", role: "Creator", level: 15 },
+                    { name: "Mike Johnson", role: "Moderator", level: 12 },
+                    { name: "Emily Rodriguez", role: "Member", level: 8 },
+                  ].map((member, index) => (
+                    <Card key={index} className="bg-gray-800 border-gray-700">
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarFallback className="bg-purple-600 text-white">
+                                {member.name[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h4 className="font-medium text-white">{member.name}</h4>
+                              <p className="text-sm text-gray-400">{member.role}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1 text-sm text-gray-400">
+                              <TrendingUp className="w-3 h-3" />
+                              Level {member.level}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-sm text-gray-400">
-                          <TrendingUp className="w-3 h-3" />
-                          Level {member.level}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
         </TabsContent>
-      </Tabs>
+          </div>
+        </Tabs>
+      </div>
     </div>
   );
 }
