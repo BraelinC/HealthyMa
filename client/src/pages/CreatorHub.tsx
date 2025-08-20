@@ -69,6 +69,11 @@ export default function CreatorHub() {
 
   // Check if user is a creator
   const isCreator = user?.is_creator;
+  
+  // Navigate to create community
+  const handleCreateCommunity = () => {
+    setLocation("/community/create");
+  };
 
   // Fetch creator stats
   const { data: stats, isLoading: loadingStats } = useQuery({
@@ -387,7 +392,7 @@ export default function CreatorHub() {
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </Button>
-              <Button size="sm" onClick={() => setLocation("/community/create")}>
+              <Button size="sm" onClick={handleCreateCommunity}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Community
               </Button>
@@ -493,7 +498,7 @@ export default function CreatorHub() {
                 <CardContent>
                   <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 mb-4">No communities yet</p>
-                  <Button onClick={() => setLocation("/community/create")}>
+                  <Button onClick={handleCreateCommunity}>
                     Create Your First Community
                   </Button>
                 </CardContent>

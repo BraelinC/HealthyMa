@@ -1,0 +1,44 @@
+chunk-276SZO74.js?v=c915f5e3:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: {url: '/api/auth/user', method: 'GET', hasBody: false}
+queryClient.ts:49 API Response: {url: '/api/auth/user', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-19T00:50:07.578Z"}}
+queryClient.ts:88 API Parsed Response: {user: {…}}
+queryClient.ts:139 Query result: {user: {…}}
+queryClient.ts:136 Query function called for: /api/profile
+queryClient.ts:30 API Request: {url: '/api/profile', method: 'GET', hasBody: false}
+queryClient.ts:30 API Request: {url: '/api/creator/stats', method: 'GET', hasBody: false}
+queryClient.ts:30 API Request: {url: '/api/creator/communities', method: 'GET', hasBody: false}
+queryClient.ts:49 API Response: {url: '/api/profile', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"id":33,"user_id":"user_1755468147872_11","profile_name":"My Profile","primary_goal":"Save Money","family_size":1,"members":[],"profile_type":"individual","preferences":[],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":[],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-18T15:43:04.693Z","updated_at":"2025-08-19T00:50:04.899Z"}
+queryClient.ts:88 API Parsed Response: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+queryClient.ts:139 Query result: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+queryClient.ts:49 API Response: {url: '/api/creator/communities', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: []
+queryClient.ts:88 API Parsed Response: []
+queryClient.ts:49 API Response: {url: '/api/creator/stats', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"totalFollowers":0,"totalCommunities":0,"totalSharedPlans":0,"totalEarnings":0,"engagementRate":78,"averageRating":4.5,"thisMonthGrowth":12,"activeMemberships":0}
+queryClient.ts:88 API Parsed Response: {totalFollowers: 0, totalCommunities: 0, totalSharedPlans: 0, totalEarnings: 0, engagementRate: 78, …}
+queryClient.ts:30 API Request: {url: '/api/user/toggle-creator', method: 'POST', hasBody: false}
+queryClient.ts:49 API Response: {url: '/api/user/toggle-creator', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"message":"Creator mode disabled","is_creator":false,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3NTU0NjgxNDc4NzJfMTEiLCJpc0NyZWF0b3IiOmZhbHNlLCJpYXQiOjE3NTU3MTAzMDcsImV4cCI6MTc1ODMwMjMwN30.Y82VVps6Xox3GOS_15_1Jlku7GTTgVf26-GuXLraLP0"}
+queryClient.ts:88 API Parsed Response: {message: 'Creator mode disabled', is_creator: false, token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO…MwN30.Y82VVps6Xox3GOS_15_1Jlku7GTTgVf26-GuXLraLP0'}
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: {url: '/api/auth/user', method: 'GET', hasBody: false}
+queryClient.ts:49 API Response: {url: '/api/auth/user', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":false,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-20T17:18:27.638Z"}}
+queryClient.ts:88 API Parsed Response: {user: {…}}
+queryClient.ts:139 Query result: {user: {…}}
+queryClient.ts:30 API Request: {url: '/api/user/toggle-creator', method: 'POST', hasBody: false}
+queryClient.ts:49 API Response: {url: '/api/user/toggle-creator', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"message":"Creator mode enabled","is_creator":true,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3NTU0NjgxNDc4NzJfMTEiLCJpc0NyZWF0b3IiOnRydWUsImlhdCI6MTc1NTcxMDMyMCwiZXhwIjoxNzU4MzAyMzIwfQ.U0DP5MCaxpoJOoeJD90_0kmTb91swm0-HMx_ynZMIdM"}
+queryClient.ts:88 API Parsed Response: {message: 'Creator mode enabled', is_creator: true, token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO…zIwfQ.U0DP5MCaxpoJOoeJD90_0kmTb91swm0-HMx_ynZMIdM'}
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: {url: '/api/auth/user', method: 'GET', hasBody: false}
+queryClient.ts:49 API Response: {url: '/api/auth/user', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-20T17:18:40.134Z"}}
+queryClient.ts:88 API Parsed Response: {user: {…}}
+queryClient.ts:139 Query result: {user: {…}}
