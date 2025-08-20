@@ -6,7 +6,15 @@ export async function apiRequest(
   url: string,
   options: RequestInit = {}
 ): Promise<any> {
-  const token = localStorage.getItem('auth_token');
+  let token = localStorage.getItem('auth_token');
+  
+  // Clear malformed tokens
+  if (token && (token === 'null' || token.length < 10)) {
+    console.log('🔧 Clearing malformed token:', token);
+    localStorage.removeItem('auth_token');
+    token = null;
+  }
+  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...((options.headers as Record<string, string>) || {}),

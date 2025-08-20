@@ -4507,7 +4507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(creatorFollowers.creator_id, userId));
       
       // Get communities
-      const communities = await db.select()
+      const userCommunities = await db.select()
         .from(communities)
         .where(eq(communities.creator_id, userId));
       
@@ -4519,7 +4519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate engagement and earnings (mock data for now)
       const stats = {
         totalFollowers: followers.length,
-        totalCommunities: communities.length,
+        totalCommunities: userCommunities.length,
         totalSharedPlans: sharedPlans.length,
         totalEarnings: 0, // Will implement with Stripe
         engagementRate: 78, // Mock percentage

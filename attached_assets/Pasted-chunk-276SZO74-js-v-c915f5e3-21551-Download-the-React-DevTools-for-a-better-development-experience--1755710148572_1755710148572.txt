@@ -1,0 +1,221 @@
+chunk-276SZO74.js?v=c915f5e3:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:128 Query function called for: /api/auth/user
+queryClient.ts:22 API Request: {url: '/api/auth/user', method: 'GET', hasBody: false}
+queryClient.ts:41 API Response: {url: '/api/auth/user', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-19T00:50:07.578Z"}}
+queryClient.ts:80 API Parsed Response: {user: {…}}
+queryClient.ts:131 Query result: {user: {…}}
+queryClient.ts:128 Query function called for: /api/profile
+queryClient.ts:22 API Request: {url: '/api/profile', method: 'GET', hasBody: false}
+queryClient.ts:41 API Response: {url: '/api/profile', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:58 API Response Text: {"id":33,"user_id":"user_1755468147872_11","profile_name":"My Profile","primary_goal":"Save Money","family_size":1,"members":[],"profile_type":"individual","preferences":[],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":[],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-18T15:43:04.693Z","updated_at":"2025-08-19T00:50:04.899Z"}
+queryClient.ts:80 API Parsed Response: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+queryClient.ts:131 Query result: {id: 33, user_id: 'user_1755468147872_11', profile_name: 'My Profile', primary_goal: 'Save Money', family_size: 1, …}
+CreatorHub.tsx:78  GET https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/creator/stats 403 (Forbidden)
+queryFn @ CreatorHub.tsx:78
+fetchFn @ @tanstack_react-query.js?v=c915f5e3:840
+run @ @tanstack_react-query.js?v=c915f5e3:494
+start @ @tanstack_react-query.js?v=c915f5e3:536
+fetch @ @tanstack_react-query.js?v=c915f5e3:926
+executeFetch_fn @ @tanstack_react-query.js?v=c915f5e3:2211
+onSubscribe @ @tanstack_react-query.js?v=c915f5e3:1898
+subscribe @ @tanstack_react-query.js?v=c915f5e3:24
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:3022
+subscribeToStore @ chunk-276SZO74.js?v=c915f5e3:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=c915f5e3:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=c915f5e3:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=c915f5e3:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=c915f5e3:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=c915f5e3:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=c915f5e3:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=c915f5e3:19447
+commitRootImpl @ chunk-276SZO74.js?v=c915f5e3:19416
+commitRoot @ chunk-276SZO74.js?v=c915f5e3:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=c915f5e3:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=c915f5e3:9119
+(anonymous) @ chunk-276SZO74.js?v=c915f5e3:18627
+queryClient.ts:141 Query retry attempt: 0 for error: Error: Failed to fetch stats
+    at queryFn (CreatorHub.tsx:83:31)
+CreatorHub.tsx:94  GET https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/creator/communities 403 (Forbidden)
+queryFn @ CreatorHub.tsx:94
+fetchFn @ @tanstack_react-query.js?v=c915f5e3:840
+run @ @tanstack_react-query.js?v=c915f5e3:494
+start @ @tanstack_react-query.js?v=c915f5e3:536
+fetch @ @tanstack_react-query.js?v=c915f5e3:926
+executeFetch_fn @ @tanstack_react-query.js?v=c915f5e3:2211
+onSubscribe @ @tanstack_react-query.js?v=c915f5e3:1898
+subscribe @ @tanstack_react-query.js?v=c915f5e3:24
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:3022
+subscribeToStore @ chunk-276SZO74.js?v=c915f5e3:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=c915f5e3:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=c915f5e3:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=c915f5e3:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=c915f5e3:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=c915f5e3:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=c915f5e3:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=c915f5e3:19447
+commitRootImpl @ chunk-276SZO74.js?v=c915f5e3:19416
+commitRoot @ chunk-276SZO74.js?v=c915f5e3:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=c915f5e3:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=c915f5e3:9119
+(anonymous) @ chunk-276SZO74.js?v=c915f5e3:18627
+queryClient.ts:141 Query retry attempt: 0 for error: Error: Failed to fetch communities
+    at queryFn (CreatorHub.tsx:99:31)
+CreatorHub.tsx:78  GET https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/creator/stats 403 (Forbidden)
+queryFn @ CreatorHub.tsx:78
+fetchFn @ @tanstack_react-query.js?v=c915f5e3:840
+run @ @tanstack_react-query.js?v=c915f5e3:494
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:519
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:515
+Promise.catch
+run @ @tanstack_react-query.js?v=c915f5e3:498
+start @ @tanstack_react-query.js?v=c915f5e3:536
+fetch @ @tanstack_react-query.js?v=c915f5e3:926
+executeFetch_fn @ @tanstack_react-query.js?v=c915f5e3:2211
+onSubscribe @ @tanstack_react-query.js?v=c915f5e3:1898
+subscribe @ @tanstack_react-query.js?v=c915f5e3:24
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:3022
+subscribeToStore @ chunk-276SZO74.js?v=c915f5e3:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=c915f5e3:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=c915f5e3:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=c915f5e3:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=c915f5e3:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=c915f5e3:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=c915f5e3:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=c915f5e3:19447
+commitRootImpl @ chunk-276SZO74.js?v=c915f5e3:19416
+commitRoot @ chunk-276SZO74.js?v=c915f5e3:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=c915f5e3:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=c915f5e3:9119
+(anonymous) @ chunk-276SZO74.js?v=c915f5e3:18627
+queryClient.ts:141 Query retry attempt: 1 for error: Error: Failed to fetch stats
+    at queryFn (CreatorHub.tsx:83:31)
+CreatorHub.tsx:94  GET https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/creator/communities 403 (Forbidden)
+queryFn @ CreatorHub.tsx:94
+fetchFn @ @tanstack_react-query.js?v=c915f5e3:840
+run @ @tanstack_react-query.js?v=c915f5e3:494
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:519
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:515
+Promise.catch
+run @ @tanstack_react-query.js?v=c915f5e3:498
+start @ @tanstack_react-query.js?v=c915f5e3:536
+fetch @ @tanstack_react-query.js?v=c915f5e3:926
+executeFetch_fn @ @tanstack_react-query.js?v=c915f5e3:2211
+onSubscribe @ @tanstack_react-query.js?v=c915f5e3:1898
+subscribe @ @tanstack_react-query.js?v=c915f5e3:24
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:3022
+subscribeToStore @ chunk-276SZO74.js?v=c915f5e3:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=c915f5e3:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=c915f5e3:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=c915f5e3:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=c915f5e3:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=c915f5e3:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=c915f5e3:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=c915f5e3:19447
+commitRootImpl @ chunk-276SZO74.js?v=c915f5e3:19416
+commitRoot @ chunk-276SZO74.js?v=c915f5e3:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=c915f5e3:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=c915f5e3:9119
+(anonymous) @ chunk-276SZO74.js?v=c915f5e3:18627
+queryClient.ts:141 Query retry attempt: 1 for error: Error: Failed to fetch communities
+    at queryFn (CreatorHub.tsx:99:31)
+CreatorHub.tsx:109  POST https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/user/toggle-creator 403 (Forbidden)
+mutationFn @ CreatorHub.tsx:109
+fn @ @tanstack_react-query.js?v=c915f5e3:1189
+run @ @tanstack_react-query.js?v=c915f5e3:494
+start @ @tanstack_react-query.js?v=c915f5e3:536
+execute @ @tanstack_react-query.js?v=c915f5e3:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=c915f5e3:2630
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:3295
+onClick @ CreatorHub.tsx:306
+callCallback2 @ chunk-276SZO74.js?v=c915f5e3:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=c915f5e3:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=c915f5e3:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=c915f5e3:3736
+executeDispatch @ chunk-276SZO74.js?v=c915f5e3:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=c915f5e3:7034
+processDispatchQueue @ chunk-276SZO74.js?v=c915f5e3:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=c915f5e3:7051
+(anonymous) @ chunk-276SZO74.js?v=c915f5e3:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=c915f5e3:18913
+batchedUpdates @ chunk-276SZO74.js?v=c915f5e3:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=c915f5e3:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=c915f5e3:5478
+dispatchEvent @ chunk-276SZO74.js?v=c915f5e3:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=c915f5e3:5449
+CreatorHub.tsx:94  GET https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/creator/communities 403 (Forbidden)
+queryFn @ CreatorHub.tsx:94
+fetchFn @ @tanstack_react-query.js?v=c915f5e3:840
+run @ @tanstack_react-query.js?v=c915f5e3:494
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:519
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:515
+Promise.catch
+run @ @tanstack_react-query.js?v=c915f5e3:498
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:519
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:515
+Promise.catch
+run @ @tanstack_react-query.js?v=c915f5e3:498
+start @ @tanstack_react-query.js?v=c915f5e3:536
+fetch @ @tanstack_react-query.js?v=c915f5e3:926
+executeFetch_fn @ @tanstack_react-query.js?v=c915f5e3:2211
+onSubscribe @ @tanstack_react-query.js?v=c915f5e3:1898
+subscribe @ @tanstack_react-query.js?v=c915f5e3:24
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:3022
+subscribeToStore @ chunk-276SZO74.js?v=c915f5e3:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=c915f5e3:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=c915f5e3:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=c915f5e3:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=c915f5e3:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=c915f5e3:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=c915f5e3:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=c915f5e3:19447
+commitRootImpl @ chunk-276SZO74.js?v=c915f5e3:19416
+commitRoot @ chunk-276SZO74.js?v=c915f5e3:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=c915f5e3:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=c915f5e3:9119
+(anonymous) @ chunk-276SZO74.js?v=c915f5e3:18627
+queryClient.ts:141 Query retry attempt: 2 for error: Error: Failed to fetch communities
+    at queryFn (CreatorHub.tsx:99:31)
+CreatorHub.tsx:78  GET https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/api/creator/stats 403 (Forbidden)
+queryFn @ CreatorHub.tsx:78
+fetchFn @ @tanstack_react-query.js?v=c915f5e3:840
+run @ @tanstack_react-query.js?v=c915f5e3:494
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:519
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:515
+Promise.catch
+run @ @tanstack_react-query.js?v=c915f5e3:498
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:519
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:515
+Promise.catch
+run @ @tanstack_react-query.js?v=c915f5e3:498
+start @ @tanstack_react-query.js?v=c915f5e3:536
+fetch @ @tanstack_react-query.js?v=c915f5e3:926
+executeFetch_fn @ @tanstack_react-query.js?v=c915f5e3:2211
+onSubscribe @ @tanstack_react-query.js?v=c915f5e3:1898
+subscribe @ @tanstack_react-query.js?v=c915f5e3:24
+(anonymous) @ @tanstack_react-query.js?v=c915f5e3:3022
+subscribeToStore @ chunk-276SZO74.js?v=c915f5e3:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=c915f5e3:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=c915f5e3:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=c915f5e3:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=c915f5e3:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=c915f5e3:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=c915f5e3:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=c915f5e3:19447
+commitRootImpl @ chunk-276SZO74.js?v=c915f5e3:19416
+commitRoot @ chunk-276SZO74.js?v=c915f5e3:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=c915f5e3:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=c915f5e3:9119
+(anonymous) @ chunk-276SZO74.js?v=c915f5e3:18627
+queryClient.ts:141 Query retry attempt: 2 for error: Error: Failed to fetch stats
+    at queryFn (CreatorHub.tsx:83:31)

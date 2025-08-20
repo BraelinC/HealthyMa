@@ -74,14 +74,8 @@ export default function CreatorHub() {
   const { data: stats, isLoading: loadingStats } = useQuery({
     queryKey: ["/api/creator/stats"],
     queryFn: async () => {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/creator/stats", {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch stats");
-      return response.json();
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest("/api/creator/stats");
     },
     enabled: isAuthenticated && isCreator,
   });
@@ -90,14 +84,8 @@ export default function CreatorHub() {
   const { data: communities = [], isLoading: loadingCommunities } = useQuery({
     queryKey: ["/api/creator/communities"],
     queryFn: async () => {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/creator/communities", {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch communities");
-      return response.json();
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest("/api/creator/communities");
     },
     enabled: isAuthenticated && isCreator,
   });
@@ -105,16 +93,10 @@ export default function CreatorHub() {
   // Become creator mutation
   const becomeCreator = useMutation({
     mutationFn: async () => {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/user/toggle-creator", {
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest("/api/user/toggle-creator", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
       });
-      if (!response.ok) throw new Error("Failed to become creator");
-      return response.json();
     },
     onSuccess: (data) => {
       // Update token with new creator status
