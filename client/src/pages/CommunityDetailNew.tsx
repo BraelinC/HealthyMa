@@ -189,7 +189,43 @@ export default function CommunityDetailNew() {
   };
 
   return (
-    <div className="min-h-screen !bg-gray-900 text-white" style={{ backgroundColor: '#111827 !important' }}>
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .community-detail-container * {
+            background-color: #111827 !important;
+          }
+          .community-detail-container [data-state="active"] {
+            background-color: #374151 !important;
+            color: white !important;
+          }
+          .community-detail-container [role="tablist"] {
+            background-color: #1f2937 !important;
+          }
+          .community-detail-container [role="tab"] {
+            background-color: #1f2937 !important;
+            color: #d1d5db !important;
+          }
+          .community-detail-container [role="tab"]:hover {
+            background-color: #374151 !important;
+            color: white !important;
+          }
+          .community-detail-container [role="tabpanel"] {
+            background-color: #111827 !important;
+          }
+          .community-detail-container .bg-white {
+            background-color: #111827 !important;
+          }
+        `
+      }} />
+      <div 
+        className="community-detail-container min-h-screen bg-gray-900 text-white" 
+        style={{ 
+          backgroundColor: '#111827',
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
       {/* Mobile Header - Fixed position to prevent scrolling issues */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -223,8 +259,9 @@ export default function CommunityDetailNew() {
       <div className="pt-16"></div>
 
       {/* Tab Navigation - Fixed position */}
-      <Tabs defaultValue="community" className="w-full bg-gray-900">
-        <TabsList className="fixed top-16 left-0 right-0 z-40 w-full !bg-gray-800 border-b border-gray-700 rounded-none h-12">
+      <Tabs defaultValue="community" className="w-full bg-gray-900" style={{ backgroundColor: '#111827 !important' }}>
+        <TabsList className="fixed top-16 left-0 right-0 z-50 w-full !bg-gray-800 border-b border-gray-700 rounded-none h-12" 
+                  style={{ backgroundColor: '#1f2937 !important', zIndex: 50 }}>
           <TabsTrigger value="community" className="flex-1 !bg-gray-800 !text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white hover:!bg-gray-700 hover:!text-white">
             Community
           </TabsTrigger>
@@ -471,6 +508,7 @@ export default function CommunityDetailNew() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </>
   );
 }
