@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { 
@@ -72,20 +72,41 @@ export default function CreateCommunity() {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   
-  // Check if user is authenticated and is a creator
-  if (!isAuthenticated) {
-    console.log("❌ User not authenticated, redirecting to auth");
-    setLocation("/auth");
-    return null;
+  // Use useEffect for navigation to avoid render-time redirects
+  useEffect(() => {
+    if (isAuthenticated !== undefined) {
+      if (!isAuthenticated) {
+        console.log("❌ User not authenticated, redirecting to auth");
+        setLocation("/auth");
+        return;
+      }
+      
+      if (!user?.is_creator) {
+        console.log("❌ User is not a creator, redirecting to creator-hub");
+        setLocation("/creator-hub");
+        return;
+      }
+      
+      console.log("✅ User authenticated and is creator, showing create community form");
+    }
+  }, [isAuthenticated, user?.is_creator, setLocation]);
+  
+  // Show loading while authentication is being determined
+  if (isAuthenticated === undefined) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
   
-  if (!user?.is_creator) {
-    console.log("❌ User is not a creator, redirecting to creator-hub");
-    setLocation("/creator-hub");
+  // Don't render the form until we confirm user is authenticated and is a creator
+  if (!isAuthenticated || !user?.is_creator) {
     return null;
   }
-  
-  console.log("✅ User authenticated and is creator, showing create community form");
   
   const [formData, setFormData] = useState<CommunityFormData>({
     name: "",
