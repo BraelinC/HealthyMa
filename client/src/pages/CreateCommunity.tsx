@@ -75,8 +75,12 @@ export default function CreateCommunity() {
   // Debug user state
   console.log("🔍 CreateCommunity - isAuthenticated:", isAuthenticated);
   console.log("🔍 CreateCommunity - user:", user);
-  console.log("🔍 CreateCommunity - user.is_creator:", (user as any)?.is_creator);
-  console.log("🔍 CreateCommunity - typeof user.is_creator:", typeof (user as any)?.is_creator);
+  
+  // Fix user access - useAuth returns {user: {...}} so we need user.user
+  const actualUser = (user as any)?.user || user;
+  console.log("🔍 CreateCommunity - actualUser:", actualUser);
+  console.log("🔍 CreateCommunity - actualUser.is_creator:", actualUser?.is_creator);
+  console.log("🔍 CreateCommunity - typeof actualUser.is_creator:", typeof actualUser?.is_creator);
   
   // Show loading while authentication is being determined
   if (!isAuthenticated) {
@@ -91,7 +95,7 @@ export default function CreateCommunity() {
   }
   
   // Show message if user is not a creator (instead of redirecting)
-  const isCreator = (user as any)?.is_creator;
+  const isCreator = actualUser?.is_creator;
   console.log("🔍 CreateCommunity - Checking creator status:", isCreator);
   console.log("🔍 CreateCommunity - Will show creator required?", !isCreator);
   
@@ -104,26 +108,80 @@ export default function CreateCommunity() {
             <Users className="w-16 h-16 text-purple-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Creator Mode Required</h2>
             <p className="text-gray-600 mb-6">You need to be in creator mode to create communities.</p>
-            <Button 
-              onClick={(e) => {
-                console.log("🔥 GO TO CREATOR HUB BUTTON CLICKED!", Date.now());
-                console.log("🔍 Event:", e);
-                console.log("🔍 Current location:", location);
-                console.log("🔍 About to navigate to /creator-hub");
-                e.preventDefault();
-                e.stopPropagation();
-                setLocation("/creator-hub");
-                console.log("✅ setLocation called with /creator-hub");
-                // Also try direct navigation as backup
-                setTimeout(() => {
-                  console.log("🔄 Backup navigation attempt");
-                  window.location.href = "/creator-hub";
-                }, 1000);
-              }} 
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Go to Creator Hub
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                onClick={(e) => {
+                  console.log("🔥 GO TO CREATOR HUB BUTTON CLICKED!", Date.now());
+                  console.log("🔍 Event:", e);
+                  console.log("🔍 Current location:", location);
+                  console.log("🔍 About to navigate to /creator-hub");
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLocation("/creator-hub");
+                  console.log("✅ setLocation called with /creator-hub");
+                  // Also try direct navigation as backup
+                  setTimeout(() => {
+                    console.log("🔄 Backup navigation attempt");
+                    window.location.href = "/creator-hub";
+                  }, 1000);
+                }} 
+                variant="outline"
+                className="border-purple-600 text-purple-600 hover:bg-purple-50"
+              >
+                Go to Creator Hub
+              </Button>
+              
+              <Button 
+                onClick={async (e) => {
+                  console.log("🔥 ENABLE CREATOR MODE BUTTON CLICKED!", Date.now());
+                  console.log("🔍 Current user:", user);
+                  console.log("🔍 Current actualUser:", actualUser);
+                  console.log("🔍 Current is_creator:", actualUser?.is_creator);
+                  
+                  e.preventDefault();
+                  e.stopPropagation();
+                  
+                  try {
+                    console.log("🔄 Attempting to enable creator mode...");
+                    
+                    // Make direct API call to enable creator mode
+                    const { apiRequest } = await import("@/lib/queryClient");
+                    const result = await apiRequest("/api/user/toggle-creator", {
+                      method: "POST",
+                    });
+                    
+                    console.log("✅ Creator mode API response:", result);
+                    
+                    // Update token if provided
+                    if (result.token) {
+                      localStorage.setItem("auth_token", result.token);
+                    }
+                    
+                    toast({
+                      title: "Creator Mode Enabled!",
+                      description: "You can now create communities. Reloading page...",
+                    });
+                    
+                    // Force page reload to refresh user state
+                    setTimeout(() => {
+                      console.log("🔄 Reloading page to refresh user state");
+                      window.location.reload();
+                    }, 1000);
+                    
+                  } catch (error) {
+                    console.error("❌ Failed to enable creator mode:", error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to enable creator mode. Please try again.",
+                      variant: "destructive",
+                    });
+                  }
+                }} 
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                Enable Creator Mode & Continue
+              </Button>
+            </div>
           </div>
         </div>
       </div>

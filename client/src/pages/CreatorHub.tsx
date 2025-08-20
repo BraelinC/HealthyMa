@@ -131,7 +131,19 @@ export default function CreatorHub() {
         title: "Welcome to the Creator Program!",
         description: "You can now create communities and share content.",
       });
-      setShowOnboarding(true);
+      console.log("✅ Creator mode mutation success, data:", data);
+      
+      // Check if we came from /community/create and should redirect back
+      const referrer = document.referrer;
+      console.log("🔍 Document referrer:", referrer);
+      if (referrer.includes('/community/create') || referrer.includes('/create')) {
+        console.log("🔄 Came from creation page, redirecting back to /create");
+        setTimeout(() => {
+          setLocation("/create");
+        }, 500);
+      } else {
+        setShowOnboarding(true);
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -307,7 +319,28 @@ export default function CreatorHub() {
               </p>
               <Button 
                 size="lg"
-                onClick={() => becomeCreator.mutate()}
+                onClick={async () => {
+                  console.log("🔥 START YOUR CREATOR JOURNEY CLICKED!");
+                  console.log("🔍 Current user:", user);
+                  console.log("🔍 Current is_creator:", (user as any)?.is_creator);
+                  
+                  if (!(user as any)?.is_creator) {
+                    console.log("🔄 Need to enable creator mode first...");
+                    try {
+                      await becomeCreator.mutateAsync();
+                      console.log("✅ Creator mode enabled, now navigating to /create");
+                      setTimeout(() => {
+                        console.log("🔄 Navigating to /create after creator mode enabled");
+                        setLocation("/create");
+                      }, 1000);
+                    } catch (error) {
+                      console.error("❌ Failed to enable creator mode:", error);
+                    }
+                  } else {
+                    console.log("✅ Already a creator, navigating directly to /create");
+                    setLocation("/create");
+                  }
+                }}
                 disabled={becomeCreator.isPending}
                 className="gap-2"
               >
