@@ -72,6 +72,39 @@ export default function CreateCommunity() {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   
+  // Initialize formData state early to avoid hook order issues
+  const [formData, setFormData] = useState<CommunityFormData>({
+    name: "",
+    description: "",
+    category: "",
+    isPublic: true,
+    membershipTiers: {
+      free: {
+        enabled: true,
+        benefits: ["Access to community discussions", "View shared meal plans"],
+      },
+      premium: {
+        enabled: false,
+        price: 9.99,
+        benefits: ["All free benefits", "Exclusive meal plans", "Weekly challenges", "Member badge"],
+      },
+      vip: {
+        enabled: false,
+        price: 19.99,
+        benefits: ["All premium benefits", "1-on-1 coaching", "Custom meal plans", "VIP badge"],
+      },
+    },
+    features: {
+      mealPlans: true,
+      discussions: true,
+      challenges: false,
+      coaching: false,
+      events: false,
+    },
+    goals: [],
+    rules: [],
+  });
+  
   // Debug user state
   console.log("🔍 CreateCommunity - isAuthenticated:", isAuthenticated);
   console.log("🔍 CreateCommunity - user:", user);
@@ -194,38 +227,6 @@ export default function CreateCommunity() {
   }
   
   console.log("✅ User authenticated and is creator, showing create community form");
-  
-  const [formData, setFormData] = useState<CommunityFormData>({
-    name: "",
-    description: "",
-    category: "",
-    isPublic: true,
-    membershipTiers: {
-      free: {
-        enabled: true,
-        benefits: ["Access to community discussions", "View shared meal plans"],
-      },
-      premium: {
-        enabled: false,
-        price: 9.99,
-        benefits: ["All free benefits", "Exclusive meal plans", "Weekly challenges", "Member badge"],
-      },
-      vip: {
-        enabled: false,
-        price: 19.99,
-        benefits: ["All premium benefits", "1-on-1 coaching", "Custom meal plans", "VIP badge"],
-      },
-    },
-    features: {
-      mealPlans: true,
-      discussions: true,
-      challenges: false,
-      coaching: false,
-      events: false,
-    },
-    goals: [],
-    rules: [],
-  });
 
   const steps = [
     {
