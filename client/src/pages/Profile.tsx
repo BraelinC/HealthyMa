@@ -1267,24 +1267,12 @@ export default function Profile() {
                       <Button
                         onClick={async () => {
                           try {
-                            const response = await fetch('/api/user/toggle-creator', {
+                            const { apiRequest } = await import("@/lib/queryClient");
+                            const data = await apiRequest('/api/user/toggle-creator', {
                               method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-                                'Content-Type': 'application/json',
-                              },
                             });
                             
-                            if (!response.ok) {
-                              throw new Error('Failed to toggle creator status');
-                            }
-                            
-                            const data = await response.json();
-                            
-                            // Update token if provided
-                            if (data.token) {
-                              localStorage.setItem('auth_token', data.token);
-                            }
+                            // apiRequest already handles token updates automatically
                             
                             // Refresh user data
                             queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });

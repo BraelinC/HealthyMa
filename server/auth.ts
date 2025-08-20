@@ -58,10 +58,13 @@ export function verifyToken(token: string): { userId: string; needsRefresh?: boo
   // First try with current secret
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    console.log(`✅ [AUTH DEBUG] Token verified with current secret for:`, decoded.userId);
     return decoded;
   } catch (error: any) {
+    console.log(`⚠️ [AUTH DEBUG] Token verification failed with current secret:`, error.name, error.message);
     // If it's not a signature error, token is invalid
     if (error.name !== 'JsonWebTokenError' || error.message !== 'invalid signature') {
+      console.log(`❌ [AUTH DEBUG] Non-signature error, token is invalid`);
       return null;
     }
     
@@ -85,14 +88,23 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+  console.log(`🔍 [AUTH DEBUG] Authorization header:`, authHeader ? 'Present' : 'Missing');
+  
   if (!token) {
+    console.log(`❌ [AUTH DEBUG] No token found`);
     return res.status(401).json({ message: "Access token required" });
   }
 
+  console.log(`🔍 [AUTH DEBUG] Token length:`, token.length);
+  console.log(`🔍 [AUTH DEBUG] Token preview:`, token.substring(0, 20) + '...');
+  
   const decoded = verifyToken(token);
   if (!decoded) {
+    console.log(`❌ [AUTH DEBUG] Token verification failed`);
     return res.status(403).json({ message: "Invalid token" });
   }
+  
+  console.log(`✅ [AUTH DEBUG] Token verified for user:`, decoded.userId);
 
   try {
     const user = await storage.getUser(decoded.userId);

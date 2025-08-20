@@ -121,17 +121,10 @@ export default function Communities() {
   // Join community mutation
   const joinCommunity = useMutation({
     mutationFn: async (communityId: number) => {
-      const response = await fetch(`/api/communities/${communityId}/join`, {
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest(`/api/communities/${communityId}/join`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to join community");
-      }
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/communities"] });

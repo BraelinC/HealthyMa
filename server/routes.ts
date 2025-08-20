@@ -122,7 +122,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Toggle creator status endpoint (for testing)
   app.post("/api/user/toggle-creator", authenticateToken, async (req: any, res) => {
     try {
-      console.log(`🔍 [DEBUG] toggle-creator called for user:`, req.user?.id);
+      console.log(`🔍 [DEBUG] toggle-creator called`);
+      console.log(`🔍 [DEBUG] Request headers:`, req.headers.authorization ? 'Auth header present' : 'No auth header');
+      console.log(`🔍 [DEBUG] req.user:`, req.user);
       const userId = req.user?.id;
       if (!userId) {
         console.log(`❌ [DEBUG] No user ID in toggle-creator request`);
