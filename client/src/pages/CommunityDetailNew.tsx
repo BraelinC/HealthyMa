@@ -67,6 +67,10 @@ export default function CommunityDetailNew() {
     enabled: !!id && isAuthenticated,
   });
 
+  // Check if user is already a member based on memberInfo existence
+  const isMember = community?.memberInfo || community?.isMember;
+  const isCreator = community?.memberInfo?.role === 'creator' || community?.creator_id === (user as any)?.id;
+
   // Mock posts data (replace with real API call later)
   const mockPosts: CommunityPost[] = [
     {
@@ -186,8 +190,8 @@ export default function CommunityDetailNew() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Mobile Header */}
-      <header className="sticky top-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3">
+      {/* Mobile Header - Fixed position to prevent scrolling issues */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/communities">
@@ -215,9 +219,12 @@ export default function CommunityDetailNew() {
         </div>
       </header>
 
-      {/* Tab Navigation */}
+      {/* Add padding to account for fixed header */}
+      <div className="pt-16"></div>
+
+      {/* Tab Navigation - Fixed position */}
       <Tabs defaultValue="community" className="w-full">
-        <TabsList className="w-full bg-gray-800 border-b border-gray-700 rounded-none h-12">
+        <TabsList className="fixed top-16 left-0 right-0 z-40 w-full bg-gray-800 border-b border-gray-700 rounded-none h-12">
           <TabsTrigger value="community" className="flex-1 data-[state=active]:bg-gray-700">
             Community
           </TabsTrigger>
@@ -232,10 +239,10 @@ export default function CommunityDetailNew() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Community Tab Content */}
-        <TabsContent value="community" className="p-4 space-y-4 mt-0">
-          {/* Community Stats Banner */}
-          {!community.isMember && (
+        {/* Community Tab Content - Add padding for fixed tabs */}
+        <TabsContent value="community" className="p-4 space-y-4 mt-12 pt-4">
+          {/* Community Stats Banner - Only show for non-members */}
+          {!isMember && (
             <Card className="bg-gradient-to-r from-purple-600 to-blue-600 border-none">
               <CardContent className="p-4 text-white">
                 <h3 className="font-semibold mb-2">Join {community.name}</h3>
@@ -254,8 +261,8 @@ export default function CommunityDetailNew() {
             </Card>
           )}
 
-          {/* Post Creation */}
-          {community.isMember && (
+          {/* Post Creation - Only show for members */}
+          {isMember && (
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-4">
                 <div className="flex gap-3">
