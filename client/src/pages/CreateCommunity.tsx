@@ -85,7 +85,7 @@ export default function CreateCommunity() {
   }
   
   // Show message if user is not a creator (instead of redirecting)
-  if (!user?.is_creator) {
+  if (!(user as any)?.is_creator) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
         <div className="text-center">
@@ -312,7 +312,7 @@ export default function CreateCommunity() {
     }
   };
 
-  if (!isAuthenticated || !user?.is_creator) {
+  if (!isAuthenticated || !(user as any)?.is_creator) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
         <Card className="max-w-md">
@@ -741,7 +741,7 @@ export default function CreateCommunity() {
 
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Trophy className="w-6 h-6 text-yellow-600" />
+                        <Award className="w-6 h-6 text-yellow-600" />
                         <div>
                           <p className="font-medium">Challenges</p>
                           <p className="text-sm text-gray-600">
