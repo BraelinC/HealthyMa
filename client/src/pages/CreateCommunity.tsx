@@ -213,11 +213,9 @@ export default function CreateCommunity() {
   // Create community mutation
   const createCommunity = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/communities", {
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest("/api/communities", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           ...formData,
           settings: {
@@ -228,19 +226,17 @@ export default function CreateCommunity() {
           },
         }),
       });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create community");
-      }
-      
-      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast({
         title: "Community Created!",
         description: "Your community has been successfully created.",
       });
+      
+      // Invalidate communities cache to refresh the list
+      const { queryClient } = await import("@/lib/queryClient");
+      await queryClient.invalidateQueries({ queryKey: ["/api/creator/communities"] });
+      
       setLocation(`/community/${data.id}/manage`);
     },
     onError: (error: Error) => {
