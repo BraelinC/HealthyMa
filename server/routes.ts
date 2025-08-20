@@ -4087,7 +4087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
 
   // Get all communities
-  app.get("/api/communities", async (req: any, res) => {
+  app.get("/api/communities", authenticateToken, async (req: any, res) => {
     try {
       const category = req.query.category as string | undefined;
       const userId = req.user?.id;
@@ -4101,7 +4101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get community details
-  app.get("/api/communities/:id", async (req: any, res) => {
+  app.get("/api/communities/:id", authenticateToken, async (req: any, res) => {
     try {
       const communityId = Number(req.params.id);
       const userId = req.user?.id;

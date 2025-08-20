@@ -265,20 +265,33 @@ export default function Communities() {
                           {community.description}
                         </CardDescription>
                         {isAuthenticated && (
-                          <Button
-                            variant={community.isMember ? "outline" : "default"}
-                            size="sm"
-                            className="w-full"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (!community.isMember) {
+                          // Show different buttons based on membership and creator status
+                          community.creator_id === (user as any)?.id ? (
+                            <Link href={`/community/${community.id}/manage`}>
+                              <Button variant="secondary" size="sm" className="w-full">
+                                Manage Community
+                              </Button>
+                            </Link>
+                          ) : community.isMember ? (
+                            <Link href={`/community/${community.id}`}>
+                              <Button variant="outline" size="sm" className="w-full">
+                                Enter Community
+                              </Button>
+                            </Link>
+                          ) : (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="w-full"
+                              onClick={(e) => {
+                                e.preventDefault();
                                 joinCommunity.mutate(community.id);
-                              }
-                            }}
-                            disabled={community.isMember}
-                          >
-                            {community.isMember ? "Joined" : "Join Community"}
-                          </Button>
+                              }}
+                              disabled={joinCommunity.isPending}
+                            >
+                              {joinCommunity.isPending ? "Joining..." : "Join Community"}
+                            </Button>
+                          )
                         )}
                       </CardContent>
                     </Link>
