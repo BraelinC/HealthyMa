@@ -223,7 +223,7 @@ export default function CommunityDetailNew() {
       <div className="pt-16"></div>
 
       {/* Tab Navigation - Fixed position */}
-      <Tabs defaultValue="community" className="w-full">
+      <Tabs defaultValue="community" className="w-full bg-gray-900">
         <TabsList className="fixed top-16 left-0 right-0 z-40 w-full bg-gray-800 border-b border-gray-700 rounded-none h-12">
           <TabsTrigger value="community" className="flex-1 data-[state=active]:bg-gray-700">
             Community
@@ -240,7 +240,7 @@ export default function CommunityDetailNew() {
         </TabsList>
 
         {/* Community Tab Content - Add padding for fixed tabs */}
-        <TabsContent value="community" className="p-4 space-y-4 mt-12 pt-4">
+        <TabsContent value="community" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900 min-h-screen">
           {/* Community Stats Banner - Only show for non-members */}
           {!isMember && (
             <Card className="bg-gradient-to-r from-purple-600 to-blue-600 border-none">
@@ -404,7 +404,7 @@ export default function CommunityDetailNew() {
         </TabsContent>
 
         {/* Meal Plans Tab */}
-        <TabsContent value="meals" className="p-4">
+        <TabsContent value="meals" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900">
           <div className="text-center py-8">
             <ChefHat className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white mb-2">Shared Meal Plans</h3>
@@ -417,7 +417,7 @@ export default function CommunityDetailNew() {
         </TabsContent>
 
         {/* Calendar Tab */}
-        <TabsContent value="calendar" className="p-4">
+        <TabsContent value="calendar" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900">
           <div className="text-center py-8">
             <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white mb-2">Community Calendar</h3>
@@ -426,7 +426,7 @@ export default function CommunityDetailNew() {
         </TabsContent>
 
         {/* Members Tab */}
-        <TabsContent value="members" className="p-4">
+        <TabsContent value="members" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-white">Members ({community.member_count})</h3>
