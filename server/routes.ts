@@ -4114,6 +4114,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get community stats for management dashboard
+  app.get("/api/communities/:id/stats", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      // For now, return placeholder stats - can be enhanced later with real data
+      const stats = {
+        newMembersThisWeek: 0,
+        engagementRate: 85,
+        activeToday: 0,
+        totalPosts: 0,
+        totalComments: 0
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching community stats:", error);
+      res.status(500).json({ message: "Failed to fetch community stats" });
+    }
+  });
+
   // Create a new community
   app.post("/api/communities", authenticateToken, async (req: any, res) => {
     try {

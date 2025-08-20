@@ -25,6 +25,7 @@ import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
 import CreatorHub from "@/pages/CreatorHub";
 import CreateCommunity from "@/pages/CreateCommunity";
+import CommunityManage from "@/pages/CommunityManage";
 
 // ========== LANDING PAGE TOGGLE ==========
 // Set this to false to skip the landing page and go directly to login
@@ -237,6 +238,7 @@ function Router() {
           <Route path="/community/create" component={CreateCommunity} />
           <Route path="/create" component={CreateCommunity} />
           <Route path="/creator-hub" component={CreatorHub} />
+          <Route path="/community/:id/manage" component={CommunityManage} />
           <Route path="/community/:id" component={CommunityDetail} />
           <Route path="/profile" component={Profile} />
 
