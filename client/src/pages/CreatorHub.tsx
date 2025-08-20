@@ -411,10 +411,13 @@ export default function CreatorHub() {
               </Button>
               <Button 
                 size="sm" 
-                onClick={(e) => {
-                  console.log("🔥 BUTTON CLICKED!");
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                onClick={async (e) => {
+                  console.log("🔥 NEW COMMUNITY BUTTON CLICKED!", Date.now());
+                  alert("Button clicked! Check console.");
                   e.preventDefault();
-                  handleCreateCommunity();
+                  e.stopPropagation();
+                  await handleCreateCommunity();
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -523,10 +526,13 @@ export default function CreatorHub() {
                   <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 mb-4">No communities yet</p>
                   <Button 
-                    onClick={(e) => {
-                      console.log("🔥 CREATE FIRST COMMUNITY BUTTON CLICKED!");
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    onClick={async (e) => {
+                      console.log("🔥 CREATE FIRST COMMUNITY BUTTON CLICKED!", Date.now());
+                      alert("First community button clicked! Check console.");
                       e.preventDefault();
-                      handleCreateCommunity();
+                      e.stopPropagation();
+                      await handleCreateCommunity();
                     }}
                   >
                     Create Your First Community
