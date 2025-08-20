@@ -4456,13 +4456,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get top creators
   app.get("/api/creators/top", async (req: any, res) => {
     try {
+      console.log(`🔍 [DEBUG] /api/creators/top called with query:`, req.query);
       const metric = (req.query.metric as 'followers' | 'plans' | 'rating') || 'followers';
       const limit = parseInt(req.query.limit as string) || 10;
       
       const creators = await creatorService.getTopCreators(metric, limit);
+      console.log(`✅ [DEBUG] Returning ${creators.length} creators`);
       res.json(creators);
     } catch (error) {
-      console.error("Error fetching top creators:", error);
+      console.error("❌ [DEBUG] Error fetching top creators:", error);
       res.status(500).json({ message: "Failed to fetch top creators" });
     }
   });
@@ -4484,7 +4486,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get creator stats
   app.get("/api/creator/stats", authenticateToken, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      console.log(`🔍 [DEBUG] /api/creator/stats called for user:`, req.user?.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`❌ [DEBUG] No user ID found in request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
       
       // Get follower count
       const followers = await db.select()

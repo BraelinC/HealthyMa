@@ -222,23 +222,49 @@ export class CreatorService {
 
   // Get top creators by various metrics
   async getTopCreators(metric: 'followers' | 'plans' | 'rating' = 'followers', limit: number = 10) {
-    let query = db.select()
-      .from(creatorProfiles)
-      .innerJoin(users, eq(creatorProfiles.user_id, users.id));
-
-    switch (metric) {
-      case 'followers':
-        query = query.orderBy(desc(creatorProfiles.follower_count));
-        break;
-      case 'plans':
-        query = query.orderBy(desc(creatorProfiles.total_plans_shared));
-        break;
-      case 'rating':
-        query = query.orderBy(desc(creatorProfiles.average_rating));
-        break;
+    console.log(`🔍 [DEBUG] Getting top creators by ${metric}, limit: ${limit}`);
+    
+    // Check if any creator profiles exist first
+    const allProfiles = await db.select().from(creatorProfiles);
+    console.log(`📊 [DEBUG] Total creator profiles in database: ${allProfiles.length}`);
+    
+    if (allProfiles.length === 0) {
+      console.log(`⚠️ [DEBUG] No creator profiles found, returning empty array`);
+      return [];
     }
 
-    const creators = await query.limit(limit);
+    let creators;
+    switch (metric) {
+      case 'followers':
+        creators = await db.select()
+          .from(creatorProfiles)
+          .innerJoin(users, eq(creatorProfiles.user_id, users.id))
+          .orderBy(desc(creatorProfiles.follower_count))
+          .limit(limit);
+        break;
+      case 'plans':
+        creators = await db.select()
+          .from(creatorProfiles)
+          .innerJoin(users, eq(creatorProfiles.user_id, users.id))
+          .orderBy(desc(creatorProfiles.total_plans_shared))
+          .limit(limit);
+        break;
+      case 'rating':
+        creators = await db.select()
+          .from(creatorProfiles)
+          .innerJoin(users, eq(creatorProfiles.user_id, users.id))
+          .orderBy(desc(creatorProfiles.average_rating))
+          .limit(limit);
+        break;
+      default:
+        creators = await db.select()
+          .from(creatorProfiles)
+          .innerJoin(users, eq(creatorProfiles.user_id, users.id))
+          .orderBy(desc(creatorProfiles.follower_count))
+          .limit(limit);
+    }
+
+    console.log(`✅ [DEBUG] Found ${creators.length} creators for metric: ${metric}`);
 
     return creators.map(c => ({
       profile: c.creator_profiles,
