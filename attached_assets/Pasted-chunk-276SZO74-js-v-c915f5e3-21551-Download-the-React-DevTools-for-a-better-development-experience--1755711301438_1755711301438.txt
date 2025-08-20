@@ -1,0 +1,34 @@
+chunk-276SZO74.js?v=c915f5e3:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-20T17:32:42.448Z"}}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:136 Query function called for: /api/profile
+queryClient.ts:30 API Request: Object
+queryClient.ts:30 API Request: Object
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"totalFollowers":0,"totalCommunities":0,"totalSharedPlans":0,"totalEarnings":0,"engagementRate":78,"averageRating":4.5,"thisMonthGrowth":12,"activeMemberships":0}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"id":33,"user_id":"user_1755468147872_11","profile_name":"My Profile","primary_goal":"Save Money","family_size":1,"members":[],"profile_type":"individual","preferences":[],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":[],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-18T15:43:04.693Z","updated_at":"2025-08-19T00:50:04.899Z"}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: []
+queryClient.ts:88 API Parsed Response: Array(0)
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Creator mode disabled","is_creator":false,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3NTU0NjgxNDc4NzJfMTEiLCJpc0NyZWF0b3IiOmZhbHNlLCJpYXQiOjE3NTU3MTEyOTEsImV4cCI6MTc1ODMwMzI5MX0.sryyPI77xOo0EHFY6CC_Sj_PgdaxcDsoSFCd5o8c_pY"}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":false,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-20T17:34:51.900Z"}}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object

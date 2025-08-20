@@ -68,15 +68,15 @@ export default function CreatorHub() {
   const [onboardingStep, setOnboardingStep] = useState(0);
 
   // Check if user is a creator
-  const isCreator = user?.is_creator;
+  const isCreator = (user as any)?.is_creator;
   
   // Navigate to create community
   const handleCreateCommunity = async () => {
     console.log("🔄 Navigating to community creation page...");
-    console.log("🔍 Current user creator status:", user?.is_creator);
+    console.log("🔍 Current user creator status:", (user as any)?.is_creator);
     
     // If not creator, enable creator mode first
-    if (!user?.is_creator) {
+    if (!(user as any)?.is_creator) {
       console.log("🔄 Enabling creator mode first...");
       try {
         await becomeCreator.mutateAsync();
@@ -88,8 +88,8 @@ export default function CreatorHub() {
     }
     
     console.log("🔍 Current location before navigation:", window.location.href);
-    setLocation("/community/create");
-    console.log("🔍 setLocation called with: /community/create");
+    setLocation("/create");
+    console.log("🔍 setLocation called with: /create");
   };
 
   // Fetch creator stats
