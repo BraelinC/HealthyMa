@@ -23,6 +23,7 @@ import Checkout from "@/pages/Checkout";
 
 import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
+import CommunityDetailNew from "@/pages/CommunityDetailNew";
 import CreatorHub from "@/pages/CreatorHub";
 import CreateCommunity from "@/pages/CreateCommunity";
 import CommunityManage from "@/pages/CommunityManage";
@@ -239,7 +240,7 @@ function Router() {
           <Route path="/create" component={CreateCommunity} />
           <Route path="/creator-hub" component={CreatorHub} />
           <Route path="/community/:id/manage" component={CommunityManage} />
-          <Route path="/community/:id" component={CommunityDetail} />
+          <Route path="/community/:id" component={CommunityDetailNew} />
           <Route path="/profile" component={Profile} />
 
           <Route path="/icons" component={IconShowcase} />
