@@ -189,7 +189,7 @@ export default function CommunityDetailNew() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
       {/* Mobile Header - Always cover the logo */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3 shadow-lg">
         <div className="flex items-center justify-between">
@@ -222,7 +222,7 @@ export default function CommunityDetailNew() {
       {/* Tab Navigation - Fixed below header, always visible */}
       <div className="fixed top-16 left-0 right-0 z-40 bg-gray-800 border-b border-gray-700 shadow-sm">
         <Tabs defaultValue="community" className="w-full">
-          <TabsList className="w-full bg-transparent border-none rounded-none h-12 p-0">
+          <TabsList className="w-full bg-gray-800 border-none rounded-none h-12 p-0">
             <TabsTrigger 
               value="community" 
               className="flex-1 h-full rounded-none data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors"
@@ -250,9 +250,10 @@ export default function CommunityDetailNew() {
           </TabsList>
 
           {/* All content starts below the fixed header and tabs */}
-          <div className="pt-28"> {/* 64px header + 48px tabs = 112px, use 28 for extra spacing */}
+          <div className="pt-28 bg-gray-900 min-h-screen"> {/* 64px header + 48px tabs = 112px, use 28 for extra spacing */}
             {/* Community Tab Content */}
-            <TabsContent value="community" className="p-4 space-y-4 m-0 bg-gray-900">
+            <TabsContent value="community" className="p-0 space-y-4 m-0 bg-gray-900 min-h-screen">
+              <div className="p-4 space-y-4">
           {/* Community Stats Banner - Only show for non-members */}
           {!isMember && (
             <Card className="bg-gradient-to-r from-purple-600 to-blue-600 border-none">
@@ -412,12 +413,14 @@ export default function CommunityDetailNew() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+              </div>
+            </div>
         </TabsContent>
 
         {/* Meal Plans Tab */}
-        <TabsContent value="meals" className="p-4 m-0 bg-gray-900">
-              <div className="text-center py-8">
+        <TabsContent value="meals" className="p-0 m-0 bg-gray-900 min-h-screen">
+          <div className="p-4">
+            <div className="text-center py-8">
                 <ChefHat className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-white mb-2">Shared Meal Plans</h3>
                 <p className="text-gray-400 mb-4">Discover and share amazing meal plans with the community</p>
@@ -425,21 +428,25 @@ export default function CommunityDetailNew() {
                   <Plus className="w-4 h-4 mr-1" />
                   Share a Meal Plan
                 </Button>
-              </div>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Calendar Tab */}
-        <TabsContent value="calendar" className="p-4 m-0 bg-gray-900">
-              <div className="text-center py-8">
-                <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">Community Calendar</h3>
-                <p className="text-gray-400">View upcoming events and challenges</p>
-              </div>
+        <TabsContent value="calendar" className="p-0 m-0 bg-gray-900 min-h-screen">
+          <div className="p-4">
+            <div className="text-center py-8">
+              <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">Community Calendar</h3>
+              <p className="text-gray-400">View upcoming events and challenges</p>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Members Tab */}
-        <TabsContent value="members" className="p-4 m-0 bg-gray-900">
-              <div className="space-y-4">
+        <TabsContent value="members" className="p-0 m-0 bg-gray-900 min-h-screen">
+          <div className="p-4">
+            <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-white">Members ({community.member_count})</h3>
                   <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
@@ -480,7 +487,8 @@ export default function CommunityDetailNew() {
                     </Card>
                   ))}
                 </div>
-              </div>
+            </div>
+          </div>
         </TabsContent>
           </div>
         </Tabs>
