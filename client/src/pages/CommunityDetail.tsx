@@ -131,10 +131,12 @@ export default function CommunityDetail() {
         ? `/api/communities/${communityId}/leave`
         : `/api/communities/${communityId}/join`;
       
+      const token = localStorage.getItem("auth_token");
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
       });
       
@@ -376,14 +378,26 @@ export default function CommunityDetail() {
                   </Dialog>
                 )}
                 
-                <Button 
-                  variant={community.memberInfo ? "outline" : "secondary"}
-                  onClick={() => joinCommunity.mutate()}
-                  disabled={joinCommunity.isPending}
-                  className={community.memberInfo ? "bg-white text-purple-600" : ""}
-                >
-                  {community.memberInfo ? "Leave Community" : "Join Community"}
-                </Button>
+                {/* Show Manage button for creators, Join/Leave for others */}
+                {community.creator_id === user?.id ? (
+                  <Link href={`/community/${communityId}/manage`}>
+                    <Button variant="secondary" className="bg-white text-purple-600">
+                      Manage Community
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button 
+                    variant={community.memberInfo ? "outline" : "secondary"}
+                    onClick={() => joinCommunity.mutate()}
+                    disabled={joinCommunity.isPending}
+                    className={community.memberInfo ? "bg-white text-purple-600" : ""}
+                  >
+                    {joinCommunity.isPending 
+                      ? (community.memberInfo ? "Leaving..." : "Joining...") 
+                      : (community.memberInfo ? "Leave Community" : "Join Community")
+                    }
+                  </Button>
+                )}
               </div>
             )}
           </div>
