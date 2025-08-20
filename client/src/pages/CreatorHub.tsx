@@ -133,6 +133,12 @@ export default function CreatorHub() {
       });
       console.log("✅ Creator mode mutation success, data:", data);
       
+      // Force refetch user data to ensure UI updates
+      setTimeout(async () => {
+        await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+        console.log("🔄 User data refetched after creator mode toggle");
+      }, 100);
+      
       // Check if we came from /community/create and should redirect back
       const referrer = document.referrer;
       console.log("🔍 Document referrer:", referrer);
@@ -140,7 +146,7 @@ export default function CreatorHub() {
         console.log("🔄 Came from creation page, redirecting back to /create");
         setTimeout(() => {
           setLocation("/create");
-        }, 500);
+        }, 1000); // Longer delay to ensure user state is updated
       } else {
         setShowOnboarding(true);
       }
@@ -324,15 +330,50 @@ export default function CreatorHub() {
                   console.log("🔍 Current user:", user);
                   console.log("🔍 Current is_creator:", (user as any)?.is_creator);
                   
-                  if (!(user as any)?.is_creator) {
+                  const currentUser = (user as any)?.user || user;
+                  console.log("🔍 Checking current user creator status:", currentUser?.is_creator);
+                  
+                  if (!currentUser?.is_creator) {
                     console.log("🔄 Need to enable creator mode first...");
                     try {
-                      await becomeCreator.mutateAsync();
-                      console.log("✅ Creator mode enabled, now navigating to /create");
-                      setTimeout(() => {
-                        console.log("🔄 Navigating to /create after creator mode enabled");
-                        setLocation("/create");
-                      }, 1000);
+                      const result = await becomeCreator.mutateAsync();
+                      console.log("✅ Creator mode enabled, result:", result);
+                      
+                      // Wait for user data to update by polling
+                      let attempts = 0;
+                      const maxAttempts = 10;
+                      const checkCreatorStatus = async () => {
+                        attempts++;
+                        console.log(`🔍 Checking creator status, attempt ${attempts}/${maxAttempts}`);
+                        
+                        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                        const freshUserData = await queryClient.fetchQuery({ queryKey: ["/api/auth/user"] });
+                        const freshUser = (freshUserData as any)?.user || freshUserData;
+                        
+                        console.log("🔍 Fresh user data:", freshUser);
+                        console.log("🔍 Fresh user is_creator:", freshUser?.is_creator);
+                        
+                        if (freshUser?.is_creator) {
+                          console.log("✅ Creator status confirmed! Navigating to /create");
+                          setLocation("/create");
+                          return true;
+                        } else if (attempts < maxAttempts) {
+                          console.log("⏳ Creator status not yet updated, retrying in 500ms...");
+                          setTimeout(checkCreatorStatus, 500);
+                          return false;
+                        } else {
+                          console.log("❌ Creator status not updated after max attempts, forcing page reload");
+                          toast({
+                            title: "Creator Mode Enabled",
+                            description: "Refreshing page to complete setup...",
+                          });
+                          setTimeout(() => window.location.reload(), 1000);
+                          return false;
+                        }
+                      };
+                      
+                      setTimeout(checkCreatorStatus, 200);
+                      
                     } catch (error) {
                       console.error("❌ Failed to enable creator mode:", error);
                     }

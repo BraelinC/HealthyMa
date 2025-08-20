@@ -162,10 +162,15 @@ export default function CreateCommunity() {
                       description: "You can now create communities. Reloading page...",
                     });
                     
-                    // Force page reload to refresh user state
+                    // Invalidate and refetch user data instead of page reload
+                    console.log("🔄 Invalidating user cache...");
+                    const { queryClient } = await import("@/lib/queryClient");
+                    await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                    await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+                    
+                    console.log("🔄 User data refreshed, checking if we can proceed...");
                     setTimeout(() => {
-                      console.log("🔄 Reloading page to refresh user state");
-                      window.location.reload();
+                      window.location.reload(); // Still reload to ensure clean state
                     }, 1000);
                     
                   } catch (error) {
