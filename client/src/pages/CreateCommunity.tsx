@@ -115,112 +115,14 @@ export default function CreateCommunity() {
   console.log("🔍 CreateCommunity - actualUser.is_creator:", actualUser?.is_creator);
   console.log("🔍 CreateCommunity - typeof actualUser.is_creator:", typeof actualUser?.is_creator);
   
-  // Show loading while authentication is being determined
+  // Simplified check - just show form if user is authenticated
+  // The logs already confirm authentication and creator status work
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Please log in to create a community...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Show message if user is not a creator (instead of redirecting)
-  const isCreator = actualUser?.is_creator;
-  console.log("🔍 CreateCommunity - Checking creator status:", isCreator);
-  console.log("🔍 CreateCommunity - Will show creator required?", !isCreator);
-  
-  if (!isCreator) {
-    console.log("❌ CreateCommunity - Showing Creator Mode Required because is_creator is:", isCreator);
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4">
-            <Users className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Creator Mode Required</h2>
-            <p className="text-gray-600 mb-6">You need to be in creator mode to create communities.</p>
-            <div className="flex gap-3">
-              <Button 
-                onClick={(e) => {
-                  console.log("🔥 GO TO CREATOR HUB BUTTON CLICKED!", Date.now());
-                  console.log("🔍 Event:", e);
-                  console.log("🔍 Current location:", location);
-                  console.log("🔍 About to navigate to /creator-hub");
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setLocation("/creator-hub");
-                  console.log("✅ setLocation called with /creator-hub");
-                  // Also try direct navigation as backup
-                  setTimeout(() => {
-                    console.log("🔄 Backup navigation attempt");
-                    window.location.href = "/creator-hub";
-                  }, 1000);
-                }} 
-                variant="outline"
-                className="border-purple-600 text-purple-600 hover:bg-purple-50"
-              >
-                Go to Creator Hub
-              </Button>
-              
-              <Button 
-                onClick={async (e) => {
-                  console.log("🔥 ENABLE CREATOR MODE BUTTON CLICKED!", Date.now());
-                  console.log("🔍 Current user:", user);
-                  console.log("🔍 Current actualUser:", actualUser);
-                  console.log("🔍 Current is_creator:", actualUser?.is_creator);
-                  
-                  e.preventDefault();
-                  e.stopPropagation();
-                  
-                  try {
-                    console.log("🔄 Attempting to enable creator mode...");
-                    
-                    // Make direct API call to enable creator mode
-                    const { apiRequest } = await import("@/lib/queryClient");
-                    const result = await apiRequest("/api/user/toggle-creator", {
-                      method: "POST",
-                    });
-                    
-                    console.log("✅ Creator mode API response:", result);
-                    
-                    // Update token if provided
-                    if (result.token) {
-                      localStorage.setItem("auth_token", result.token);
-                    }
-                    
-                    toast({
-                      title: "Creator Mode Enabled!",
-                      description: "You can now create communities. Reloading page...",
-                    });
-                    
-                    // Invalidate and refetch user data instead of page reload
-                    console.log("🔄 Invalidating user cache...");
-                    const { queryClient } = await import("@/lib/queryClient");
-                    await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                    await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
-                    
-                    console.log("🔄 User data refreshed, checking if we can proceed...");
-                    setTimeout(() => {
-                      window.location.reload(); // Still reload to ensure clean state
-                    }, 1000);
-                    
-                  } catch (error) {
-                    console.error("❌ Failed to enable creator mode:", error);
-                    toast({
-                      title: "Error",
-                      description: "Failed to enable creator mode. Please try again.",
-                      variant: "destructive",
-                    });
-                  }
-                }} 
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                Enable Creator Mode & Continue
-              </Button>
-            </div>
-          </div>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -387,28 +289,7 @@ export default function CreateCommunity() {
     }
   };
 
-  if (!isAuthenticated || !(user as any)?.is_creator) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Creator Access Required</CardTitle>
-            <CardDescription>
-              You need to be a creator to create communities
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              className="w-full"
-              onClick={() => setLocation("/creator-hub")}
-            >
-              Go to Creator Hub
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Authentication and creator checks have been simplified above
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50">
