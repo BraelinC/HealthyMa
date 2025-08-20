@@ -189,7 +189,7 @@ export default function CommunityDetailNew() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen !bg-gray-900 text-white" style={{ backgroundColor: '#111827 !important' }}>
       {/* Mobile Header - Fixed position to prevent scrolling issues */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -224,17 +224,17 @@ export default function CommunityDetailNew() {
 
       {/* Tab Navigation - Fixed position */}
       <Tabs defaultValue="community" className="w-full bg-gray-900">
-        <TabsList className="fixed top-16 left-0 right-0 z-40 w-full bg-gray-800 border-b border-gray-700 rounded-none h-12">
-          <TabsTrigger value="community" className="flex-1 data-[state=active]:bg-gray-700">
+        <TabsList className="fixed top-16 left-0 right-0 z-40 w-full !bg-gray-800 border-b border-gray-700 rounded-none h-12">
+          <TabsTrigger value="community" className="flex-1 !bg-gray-800 !text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white hover:!bg-gray-700 hover:!text-white">
             Community
           </TabsTrigger>
-          <TabsTrigger value="meals" className="flex-1 data-[state=active]:bg-gray-700">
+          <TabsTrigger value="meals" className="flex-1 !bg-gray-800 !text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white hover:!bg-gray-700 hover:!text-white">
             Meal Plans
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex-1 data-[state=active]:bg-gray-700">
+          <TabsTrigger value="calendar" className="flex-1 !bg-gray-800 !text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white hover:!bg-gray-700 hover:!text-white">
             Calendar
           </TabsTrigger>
-          <TabsTrigger value="members" className="flex-1 data-[state=active]:bg-gray-700">
+          <TabsTrigger value="members" className="flex-1 !bg-gray-800 !text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white hover:!bg-gray-700 hover:!text-white">
             Members
           </TabsTrigger>
         </TabsList>
