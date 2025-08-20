@@ -404,7 +404,14 @@ export default function CreatorHub() {
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </Button>
-              <Button size="sm" onClick={handleCreateCommunity}>
+              <Button 
+                size="sm" 
+                onClick={(e) => {
+                  console.log("🔥 BUTTON CLICKED!");
+                  e.preventDefault();
+                  handleCreateCommunity();
+                }}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 New Community
               </Button>
@@ -510,7 +517,13 @@ export default function CreatorHub() {
                 <CardContent>
                   <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 mb-4">No communities yet</p>
-                  <Button onClick={handleCreateCommunity}>
+                  <Button 
+                    onClick={(e) => {
+                      console.log("🔥 CREATE FIRST COMMUNITY BUTTON CLICKED!");
+                      e.preventDefault();
+                      handleCreateCommunity();
+                    }}
+                  >
                     Create Your First Community
                   </Button>
                 </CardContent>
