@@ -122,8 +122,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Toggle creator status endpoint (for testing)
   app.post("/api/user/toggle-creator", authenticateToken, async (req: any, res) => {
     try {
+      console.log(`🔍 [DEBUG] toggle-creator called for user:`, req.user?.id);
       const userId = req.user?.id;
       if (!userId) {
+        console.log(`❌ [DEBUG] No user ID in toggle-creator request`);
         return res.status(401).json({ message: "User not authenticated" });
       }
 
@@ -4340,6 +4342,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CREATOR ROUTES
   // ============================================
 
+  // Get top creators - MUST BE BEFORE /:id route
+  app.get("/api/creators/top", async (req: any, res) => {
+    console.log("🚀 TOP CREATORS ENDPOINT HIT - DEBUG!");
+    try {
+      console.log(`🔍 [DEBUG] /api/creators/top called with query:`, req.query);
+      const metric = (req.query.metric as 'followers' | 'plans' | 'rating') || 'followers';
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      console.log(`📊 [DEBUG] About to call getTopCreators with metric: ${metric}, limit: ${limit}`);
+      const creators = await creatorService.getTopCreators(metric, limit);
+      console.log(`✅ [DEBUG] getTopCreators returned ${creators?.length || 0} creators`);
+      res.json(creators);
+    } catch (error) {
+      console.error("❌ [DEBUG] Error fetching top creators:", error);
+      res.status(500).json({ message: "Failed to fetch top creators" });
+    }
+  });
+
   // Get or create creator profile
   app.get("/api/creators/:id", async (req: any, res) => {
     try {
@@ -4453,21 +4473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get top creators
-  app.get("/api/creators/top", async (req: any, res) => {
-    try {
-      console.log(`🔍 [DEBUG] /api/creators/top called with query:`, req.query);
-      const metric = (req.query.metric as 'followers' | 'plans' | 'rating') || 'followers';
-      const limit = parseInt(req.query.limit as string) || 10;
-      
-      const creators = await creatorService.getTopCreators(metric, limit);
-      console.log(`✅ [DEBUG] Returning ${creators.length} creators`);
-      res.json(creators);
-    } catch (error) {
-      console.error("❌ [DEBUG] Error fetching top creators:", error);
-      res.status(500).json({ message: "Failed to fetch top creators" });
-    }
-  });
+
 
   // Get creator's meal plans
   app.get("/api/creators/:id/meal-plans", async (req: any, res) => {
@@ -4530,7 +4536,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get creator's communities
   app.get("/api/creator/communities", authenticateToken, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      console.log(`🔍 [DEBUG] /api/creator/communities called for user:`, req.user?.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`❌ [DEBUG] No user ID in creator/communities request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
       
       const creatorCommunities = await db.select()
         .from(communities)
