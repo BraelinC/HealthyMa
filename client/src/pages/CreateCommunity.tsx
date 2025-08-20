@@ -93,7 +93,24 @@ export default function CreateCommunity() {
             <Users className="w-16 h-16 text-purple-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Creator Mode Required</h2>
             <p className="text-gray-600 mb-6">You need to be in creator mode to create communities.</p>
-            <Button onClick={() => setLocation("/creator-hub")} className="bg-purple-600 hover:bg-purple-700">
+            <Button 
+              onClick={(e) => {
+                console.log("🔥 GO TO CREATOR HUB BUTTON CLICKED!", Date.now());
+                console.log("🔍 Event:", e);
+                console.log("🔍 Current location:", location);
+                console.log("🔍 About to navigate to /creator-hub");
+                e.preventDefault();
+                e.stopPropagation();
+                setLocation("/creator-hub");
+                console.log("✅ setLocation called with /creator-hub");
+                // Also try direct navigation as backup
+                setTimeout(() => {
+                  console.log("🔄 Backup navigation attempt");
+                  window.location.href = "/creator-hub";
+                }, 1000);
+              }} 
+              className="bg-purple-600 hover:bg-purple-700"
+            >
               Go to Creator Hub
             </Button>
           </div>
