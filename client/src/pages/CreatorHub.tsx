@@ -71,20 +71,25 @@ export default function CreatorHub() {
   const isCreator = user?.is_creator;
   
   // Navigate to create community
-  const handleCreateCommunity = () => {
+  const handleCreateCommunity = async () => {
     console.log("🔄 Navigating to community creation page...");
+    console.log("🔍 Current user creator status:", user?.is_creator);
+    
+    // If not creator, enable creator mode first
+    if (!user?.is_creator) {
+      console.log("🔄 Enabling creator mode first...");
+      try {
+        await becomeCreator.mutateAsync();
+        console.log("✅ Creator mode enabled, now navigating...");
+      } catch (error) {
+        console.error("❌ Failed to enable creator mode:", error);
+        return;
+      }
+    }
+    
     console.log("🔍 Current location before navigation:", window.location.href);
     setLocation("/community/create");
     console.log("🔍 setLocation called with: /community/create");
-    
-    // Force navigation as backup
-    setTimeout(() => {
-      console.log("🔍 Checking location after navigation:", window.location.href);
-      if (!window.location.pathname.includes('/community/create')) {
-        console.log("🔄 Force navigating with window.location");
-        window.location.href = '/community/create';
-      }
-    }, 100);
   };
 
   // Fetch creator stats
@@ -118,7 +123,7 @@ export default function CreatorHub() {
     onSuccess: (data) => {
       // Update token with new creator status
       if (data.token) {
-        localStorage.setItem("token", data.token);
+        localStorage.setItem("auth_token", data.token);
       }
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });

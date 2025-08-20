@@ -72,41 +72,37 @@ export default function CreateCommunity() {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   
-  // Use useEffect for navigation to avoid render-time redirects
-  useEffect(() => {
-    if (isAuthenticated !== undefined) {
-      if (!isAuthenticated) {
-        console.log("❌ User not authenticated, redirecting to auth");
-        setLocation("/auth");
-        return;
-      }
-      
-      if (!user?.is_creator) {
-        console.log("❌ User is not a creator, redirecting to creator-hub");
-        setLocation("/creator-hub");
-        return;
-      }
-      
-      console.log("✅ User authenticated and is creator, showing create community form");
-    }
-  }, [isAuthenticated, user?.is_creator, setLocation]);
-  
   // Show loading while authentication is being determined
-  if (isAuthenticated === undefined) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Please log in to create a community...</p>
         </div>
       </div>
     );
   }
   
-  // Don't render the form until we confirm user is authenticated and is a creator
-  if (!isAuthenticated || !user?.is_creator) {
-    return null;
+  // Show message if user is not a creator (instead of redirecting)
+  if (!user?.is_creator) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4">
+            <Users className="w-16 h-16 text-purple-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Creator Mode Required</h2>
+            <p className="text-gray-600 mb-6">You need to be in creator mode to create communities.</p>
+            <Button onClick={() => setLocation("/creator-hub")} className="bg-purple-600 hover:bg-purple-700">
+              Go to Creator Hub
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
+  
+  console.log("✅ User authenticated and is creator, showing create community form");
   
   const [formData, setFormData] = useState<CommunityFormData>({
     name: "",
