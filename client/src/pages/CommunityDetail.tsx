@@ -308,7 +308,7 @@ export default function CommunityDetail() {
             {isAuthenticated && (
               <div className="flex gap-2">
                 {/* Share button - Only for creators who are members */}
-                {community.memberInfo && user?.is_creator && (
+                {community.memberInfo && (user as any)?.is_creator && (
                   <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
                     <DialogTrigger asChild>
                       <Button variant="secondary">
@@ -379,7 +379,7 @@ export default function CommunityDetail() {
                 )}
                 
                 {/* Show Manage button for creators, Join/Leave for others */}
-                {community.creator_id === user?.id ? (
+                {community.creator_id === (user as any)?.id ? (
                   <Link href={`/community/${communityId}/manage`}>
                     <Button variant="secondary" className="bg-white text-purple-600">
                       Manage Community
@@ -450,12 +450,12 @@ export default function CommunityDetail() {
                     <CardContent>
                       <ChefHat className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 mb-4">No meal plans shared yet</p>
-                      {community.memberInfo && user?.is_creator && (
+                      {community.memberInfo && (user as any)?.is_creator && (
                         <Button onClick={() => setShowShareDialog(true)}>
                           Be the first to share!
                         </Button>
                       )}
-                      {community.memberInfo && !user?.is_creator && (
+                      {community.memberInfo && !(user as any)?.is_creator && (
                         <div className="space-y-2">
                           <p className="text-sm text-gray-500">
                             Creator mode required to share meal plans
@@ -522,7 +522,7 @@ export default function CommunityDetail() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {community.topContributors.slice(0, 5).map((contributor, index) => (
+                  {community.topContributors.slice(0, 5).map((contributor: any, index: number) => (
                     <div key={contributor.user_id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Badge 
