@@ -189,7 +189,16 @@ export default function CommunityDetailNew() {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-900 text-white overflow-y-auto">
+    <div className="fixed inset-0 bg-gray-900 text-white overflow-y-auto z-[9999]" style={{ 
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100vh',
+      zIndex: 9999
+    }}>
       {/* Mobile Header - Sticky position */}
       <header className="sticky top-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
