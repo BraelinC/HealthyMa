@@ -443,26 +443,15 @@ export class CommunityService {
     .limit(limit)
     .offset(offset);
 
-    // Get user likes if userId provided (simplified to avoid SQL IN clause issues)
-    let userLikes: Set<number> = new Set();
-    if (userId && posts.length > 0) {
-      for (const { post } of posts) {
-        const [existingLike] = await db.select()
-          .from(communityPostLikes)
-          .where(and(
-            eq(communityPostLikes.post_id, post.id),
-            eq(communityPostLikes.user_id, userId)
-          ));
-        if (existingLike) {
-          userLikes.add(post.id);
-        }
-      }
-    }
-
+    // Return posts with proper formatting for frontend
     return posts.map(({ post, author }) => ({
       ...post,
+      username: author?.full_name || author?.firstName || 'Anonymous',
+      likes_count: post.likes,
       author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
-      isLiked: userLikes.has(post.id)
+      isLiked: false,
+      is_liked: false,
+      created_at: new Date(post.created_at).toLocaleString()
     }));
   }
 

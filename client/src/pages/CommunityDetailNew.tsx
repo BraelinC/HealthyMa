@@ -85,7 +85,7 @@ export default function CommunityDetailNew() {
       if (!response.ok) throw new Error('Failed to fetch posts');
       return response.json();
     },
-    enabled: false, // Temporarily disabled to show mock posts
+    enabled: !!id && !!community, // Re-enabled to show real posts
   });
 
   // Check if user is already a member based on memberInfo existence
@@ -146,7 +146,9 @@ export default function CommunityDetailNew() {
     },
     onSuccess: () => {
       setNewPostContent("");
+      // Invalidate both the generic and filtered query keys
       queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`, activeFilter] });
       toast({
         title: "Post shared!",
         description: "Your post has been shared with the community.",
