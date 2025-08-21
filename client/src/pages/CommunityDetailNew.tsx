@@ -189,62 +189,9 @@ export default function CommunityDetailNew() {
   };
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          .community-detail-container {
-            background-color: #111827 !important;
-            z-index: 999 !important;
-            position: relative !important;
-          }
-          .community-detail-container *,
-          .community-detail-container *::before,
-          .community-detail-container *::after {
-            background-color: #111827 !important;
-            z-index: inherit !important;
-          }
-          .community-detail-container [data-state="active"] {
-            background-color: #374151 !important;
-            color: white !important;
-            z-index: 1000 !important;
-          }
-          .community-detail-container [role="tablist"] {
-            background-color: #1f2937 !important;
-            z-index: 1001 !important;
-          }
-          .community-detail-container [role="tab"] {
-            background-color: #1f2937 !important;
-            color: #d1d5db !important;
-            z-index: 1002 !important;
-          }
-          .community-detail-container [role="tab"]:hover {
-            background-color: #374151 !important;
-            color: white !important;
-          }
-          .community-detail-container [role="tabpanel"] {
-            background-color: #111827 !important;
-            z-index: 1000 !important;
-          }
-          .community-detail-container .bg-white,
-          .community-detail-container [class*="bg-white"] {
-            background-color: #111827 !important;
-          }
-          .community-detail-container [data-radix-popper-content-wrapper] {
-            background-color: #111827 !important;
-          }
-        `
-      }} />
-      <div 
-        className="community-detail-container min-h-screen bg-gray-900 text-white" 
-        style={{ 
-          backgroundColor: '#111827',
-          position: 'relative',
-          zIndex: 999,
-          minHeight: '100vh'
-        }}
-      >
-      {/* Mobile Header - Fixed position to prevent scrolling issues */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div className="fixed inset-0 bg-gray-900 text-white overflow-y-auto">
+      {/* Mobile Header - Sticky position */}
+      <header className="sticky top-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/communities">
@@ -272,29 +219,25 @@ export default function CommunityDetailNew() {
         </div>
       </header>
 
-      {/* Add padding to account for fixed header */}
-      <div className="pt-16"></div>
-
-      {/* Tab Navigation - Fixed position */}
-      <Tabs defaultValue="community" className="w-full bg-gray-900" style={{ backgroundColor: '#111827 !important' }}>
-        <TabsList className="fixed top-16 left-0 right-0 z-50 w-full !bg-gray-800 border-b border-gray-700 rounded-none h-12" 
-                  style={{ backgroundColor: '#1f2937 !important', zIndex: 50 }}>
-          <TabsTrigger value="community" className="flex-1 !bg-gray-800 !text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white hover:!bg-gray-700 hover:!text-white">
+      {/* Tab Navigation - Sticky position */}
+      <Tabs defaultValue="community" className="w-full bg-gray-900">
+        <TabsList className="sticky top-0 z-40 w-full bg-gray-800 border-b border-gray-700 rounded-none h-12">
+          <TabsTrigger value="community" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
             Community
           </TabsTrigger>
-          <TabsTrigger value="meals" className="flex-1 !bg-gray-800 !text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white hover:!bg-gray-700 hover:!text-white">
+          <TabsTrigger value="meals" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
             Meal Plans
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex-1 !bg-gray-800 !text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white hover:!bg-gray-700 hover:!text-white">
+          <TabsTrigger value="calendar" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
             Calendar
           </TabsTrigger>
-          <TabsTrigger value="members" className="flex-1 !bg-gray-800 !text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white hover:!bg-gray-700 hover:!text-white">
+          <TabsTrigger value="members" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
             Members
           </TabsTrigger>
         </TabsList>
 
-        {/* Community Tab Content - Add padding for fixed tabs */}
-        <TabsContent value="community" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900 min-h-screen">
+        {/* Community Tab Content */}
+        <TabsContent value="community" className="p-4 space-y-4 bg-gray-900 min-h-screen">
           {/* Community Stats Banner - Only show for non-members */}
           {!isMember && (
             <Card className="bg-gradient-to-r from-purple-600 to-blue-600 border-none">
@@ -525,7 +468,6 @@ export default function CommunityDetailNew() {
           </div>
         </TabsContent>
       </Tabs>
-      </div>
-    </>
+    </div>
   );
 }
