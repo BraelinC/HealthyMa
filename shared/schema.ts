@@ -624,6 +624,55 @@ export const communityChallenges = pgTable("community_challenges", {
   dateIdx: index("challenges_date_idx").on(table.start_date, table.end_date),
 }));
 
+// Community posts table for general discussions, questions, announcements, etc.
+export const communityPosts = pgTable("community_posts", {
+  id: serial("id").primaryKey(),
+  community_id: integer("community_id").notNull().references(() => communities.id),
+  author_id: varchar("author_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  post_type: text("post_type").notNull().default("discussion"), // "discussion", "question", "announcement", "meal_share"
+  meal_plan_id: integer("meal_plan_id").references(() => mealPlans.id), // For meal share posts
+  images: json("images").default([]), // Array of image URLs
+  likes: integer("likes").default(0),
+  comments_count: integer("comments_count").default(0),
+  is_pinned: boolean("is_pinned").default(false),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  communityIdx: index("community_posts_community_idx").on(table.community_id),
+  authorIdx: index("community_posts_author_idx").on(table.author_id),
+  typeIdx: index("community_posts_type_idx").on(table.post_type),
+  createdIdx: index("community_posts_created_idx").on(table.created_at),
+}));
+
+// Community post comments table
+export const communityPostComments = pgTable("community_post_comments", {
+  id: serial("id").primaryKey(),
+  post_id: integer("post_id").notNull().references(() => communityPosts.id, { onDelete: "cascade" }),
+  author_id: varchar("author_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  parent_id: integer("parent_id"), // For nested replies
+  likes: integer("likes").default(0),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  postIdx: index("post_comments_post_idx").on(table.post_id),
+  authorIdx: index("post_comments_author_idx").on(table.author_id),
+  parentIdx: index("post_comments_parent_idx").on(table.parent_id),
+}));
+
+// Community post likes table
+export const communityPostLikes = pgTable("community_post_likes", {
+  id: serial("id").primaryKey(),
+  post_id: integer("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
+  comment_id: integer("comment_id").references(() => communityPostComments.id, { onDelete: "cascade" }),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  postUserIdx: index("post_likes_post_user_idx").on(table.post_id, table.user_id),
+  commentUserIdx: index("post_likes_comment_user_idx").on(table.comment_id, table.user_id),
+}));
+
 // Type exports for community tables
 export type Community = typeof communities.$inferSelect;
 export type InsertCommunity = typeof communities.$inferInsert;
@@ -651,6 +700,15 @@ export type InsertCreatorFollower = typeof creatorFollowers.$inferInsert;
 
 export type CommunityChallenge = typeof communityChallenges.$inferSelect;
 export type InsertCommunityChallenge = typeof communityChallenges.$inferInsert;
+
+export type CommunityPost = typeof communityPosts.$inferSelect;
+export type InsertCommunityPost = typeof communityPosts.$inferInsert;
+
+export type CommunityPostComment = typeof communityPostComments.$inferSelect;
+export type InsertCommunityPostComment = typeof communityPostComments.$inferInsert;
+
+export type CommunityPostLike = typeof communityPostLikes.$inferSelect;
+export type InsertCommunityPostLike = typeof communityPostLikes.$inferInsert;
 
 // Storage interfaces
 export interface IStorage {

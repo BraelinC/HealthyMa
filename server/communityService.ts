@@ -6,16 +6,25 @@ import {
   mealPlanReviews,
   mealPlanRemixes,
   communityDiscussions,
+  communityPosts,
+  communityPostComments,
+  communityPostLikes,
   creatorProfiles,
   creatorFollowers,
+  users,
   type Community,
   type CommunityMember,
   type SharedMealPlan,
   type MealPlanReview,
+  type CommunityPost,
+  type CommunityPostComment,
   type InsertCommunity,
   type InsertCommunityMember,
   type InsertSharedMealPlan,
   type InsertMealPlanReview,
+  type InsertCommunityPost,
+  type InsertCommunityPostComment,
+  type InsertCommunityPostLike,
 } from "@shared/schema";
 import { eq, and, desc, sql, gte } from "drizzle-orm";
 
@@ -356,6 +365,197 @@ export class CommunityService {
         .set({ success_rate: successRate })
         .where(eq(sharedMealPlans.id, sharedPlanId));
     }
+  }
+
+  // ============================================
+  // COMMUNITY POSTS METHODS
+  // ============================================
+
+  // Create a new community post
+  async createCommunityPost(
+    userId: string, 
+    communityId: number, 
+    data: Omit<InsertCommunityPost, 'author_id' | 'community_id'>
+  ): Promise<CommunityPost & { author: any }> {
+    // Verify membership
+    await this.verifyMembership(userId, communityId);
+
+    const [post] = await db.insert(communityPosts).values({
+      ...data,
+      author_id: userId,
+      community_id: communityId,
+    }).returning();
+
+    // Get author info
+    const [author] = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      full_name: users.full_name,
+    }).from(users).where(eq(users.id, userId));
+
+    // Award points for posting
+    await this.awardPoints(userId, communityId, 10, "created_post");
+
+    return {
+      ...post,
+      author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+    };
+  }
+
+  // Get community posts with pagination and filtering
+  async getCommunityPosts(
+    communityId: number, 
+    options: {
+      limit?: number;
+      offset?: number;
+      type?: string;
+      userId?: string;
+    } = {}
+  ) {
+    const { limit = 20, offset = 0, type, userId } = options;
+
+    let query = db.select({
+      post: communityPosts,
+      author: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        full_name: users.full_name,
+      }
+    })
+    .from(communityPosts)
+    .leftJoin(users, eq(communityPosts.author_id, users.id))
+    .where(eq(communityPosts.community_id, communityId));
+
+    if (type) {
+      query = query.where(and(
+        eq(communityPosts.community_id, communityId),
+        eq(communityPosts.post_type, type)
+      ));
+    }
+
+    const posts = await query
+      .orderBy(desc(communityPosts.is_pinned), desc(communityPosts.created_at))
+      .limit(limit)
+      .offset(offset);
+
+    // Get user likes if userId provided
+    let userLikes: Set<number> = new Set();
+    if (userId) {
+      const likes = await db.select()
+        .from(communityPostLikes)
+        .where(and(
+          eq(communityPostLikes.user_id, userId),
+          sql`${communityPostLikes.post_id} IN (${posts.map(p => p.post.id).join(',')})`
+        ));
+      userLikes = new Set(likes.map(l => l.post_id!));
+    }
+
+    return posts.map(({ post, author }) => ({
+      ...post,
+      author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+      isLiked: userLikes.has(post.id)
+    }));
+  }
+
+  // Like/unlike a community post
+  async togglePostLike(userId: string, postId: number): Promise<{ liked: boolean, likesCount: number }> {
+    // Check if already liked
+    const [existingLike] = await db.select()
+      .from(communityPostLikes)
+      .where(and(
+        eq(communityPostLikes.post_id, postId),
+        eq(communityPostLikes.user_id, userId)
+      ));
+
+    if (existingLike) {
+      // Unlike - remove like and decrement count
+      await db.delete(communityPostLikes)
+        .where(and(
+          eq(communityPostLikes.post_id, postId),
+          eq(communityPostLikes.user_id, userId)
+        ));
+
+      await db.update(communityPosts)
+        .set({ likes: sql`${communityPosts.likes} - 1` })
+        .where(eq(communityPosts.id, postId));
+
+      const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
+      return { liked: false, likesCount: post.likes || 0 };
+    } else {
+      // Like - add like and increment count
+      await db.insert(communityPostLikes).values({
+        post_id: postId,
+        user_id: userId,
+      });
+
+      await db.update(communityPosts)
+        .set({ likes: sql`${communityPosts.likes} + 1` })
+        .where(eq(communityPosts.id, postId));
+
+      const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
+      return { liked: true, likesCount: post.likes || 0 };
+    }
+  }
+
+  // Add a comment to a community post
+  async addPostComment(
+    userId: string, 
+    postId: number, 
+    content: string, 
+    parentId?: number
+  ): Promise<CommunityPostComment & { author: any }> {
+    const [comment] = await db.insert(communityPostComments).values({
+      post_id: postId,
+      author_id: userId,
+      content,
+      parent_id: parentId,
+    }).returning();
+
+    // Increment comments count on post
+    await db.update(communityPosts)
+      .set({ comments_count: sql`${communityPosts.comments_count} + 1` })
+      .where(eq(communityPosts.id, postId));
+
+    // Get author info
+    const [author] = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      full_name: users.full_name,
+    }).from(users).where(eq(users.id, userId));
+
+    return {
+      ...comment,
+      author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+    };
+  }
+
+  // Get comments for a post
+  async getPostComments(postId: number, userId?: string) {
+    const comments = await db.select({
+      comment: communityPostComments,
+      author: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        full_name: users.full_name,
+      }
+    })
+    .from(communityPostComments)
+    .leftJoin(users, eq(communityPostComments.author_id, users.id))
+    .where(eq(communityPostComments.post_id, postId))
+    .orderBy(communityPostComments.created_at);
+
+    return comments.map(({ comment, author }) => ({
+      ...comment,
+      author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+    }));
   }
 }
 

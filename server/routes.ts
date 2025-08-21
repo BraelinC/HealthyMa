@@ -4204,6 +4204,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // COMMUNITY POSTS API ROUTES
+  // ============================================
+
+  // Get community posts
+  app.get("/api/communities/:id/posts", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const type = req.query.type as string;
+
+      const posts = await communityService.getCommunityPosts(communityId, {
+        limit,
+        offset,
+        type,
+        userId,
+      });
+
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching community posts:", error);
+      res.status(500).json({ message: "Failed to fetch community posts" });
+    }
+  });
+
+  // Create a new community post
+  app.post("/api/communities/:id/posts", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { content, post_type = "discussion", meal_plan_id, images } = req.body;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Post content is required" });
+      }
+
+      if (content.length > 5000) {
+        return res.status(400).json({ message: "Post content is too long (max 5000 characters)" });
+      }
+
+      const post = await communityService.createCommunityPost(userId, communityId, {
+        content: content.trim(),
+        post_type,
+        meal_plan_id,
+        images: images || [],
+      });
+
+      res.json(post);
+    } catch (error: any) {
+      console.error("Error creating community post:", error);
+      if (error.message === "You must be a member to perform this action") {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to create community post" });
+    }
+  });
+
   // Share a meal plan to community
   app.post("/api/communities/:id/share-meal-plan", authenticateToken, async (req: any, res) => {
     try {

@@ -67,6 +67,27 @@ export default function CommunityDetailNew() {
     enabled: !!id && isAuthenticated,
   });
 
+  // Fetch community posts
+  const { data: posts = [], isLoading: postsLoading } = useQuery({
+    queryKey: [`/api/communities/${id}/posts`, activeFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (activeFilter !== "all") {
+        params.append("type", activeFilter === "meal-shares" ? "meal_share" : activeFilter);
+      }
+      const queryString = params.toString();
+      const url = `/api/communities/${id}/posts${queryString ? `?${queryString}` : ""}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch posts');
+      return response.json();
+    },
+    enabled: !!id && !!community,
+  });
+
   // Check if user is already a member based on memberInfo existence
   const isMember = community?.memberInfo || community?.isMember;
   const isCreator = community?.memberInfo?.role === 'creator' || community?.creator_id === (user as any)?.id;
@@ -125,6 +146,7 @@ export default function CommunityDetailNew() {
     },
     onSuccess: () => {
       setNewPostContent("");
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`] });
       toast({
         title: "Post shared!",
         description: "Your post has been shared with the community.",
@@ -331,7 +353,16 @@ export default function CommunityDetailNew() {
 
           {/* Posts Feed */}
           <div className="space-y-4">
-            {mockPosts.map((post) => (
+            {posts.length === 0 && !postsLoading && (
+              <Card className="bg-gray-800 border-gray-700">
+                <CardContent className="p-6 text-center">
+                  <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-white mb-2">No posts yet</h3>
+                  <p className="text-gray-400">Be the first to share something with the community!</p>
+                </CardContent>
+              </Card>
+            )}
+            {posts.map((post: any) => (
               <Card key={post.id} className="bg-gray-800 border-gray-700">
                 <CardContent className="p-4">
                   {/* Post Header */}
