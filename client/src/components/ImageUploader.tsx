@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, Paperclip, X, Image as ImageIcon } from "lucide-react";
+import { Camera, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface ImageUploaderProps {
@@ -13,7 +13,6 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const uploadImage = async (file: File): Promise<string> => {
     try {
@@ -122,40 +121,26 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
     onImagesChange(updatedImages);
   };
 
-  const openGallery = () => {
+  const openFileSelector = () => {
     fileInputRef.current?.click();
   };
 
-  const openCamera = () => {
-    cameraInputRef.current?.click();
-  };
-
   return (
-    <div className={`space-y-3 ${className}`}>
-      {/* Upload Buttons */}
-      <div className="flex gap-2">
+    <div className={`${className}`}>
+      {/* Upload Button */}
+      <div className="flex items-center gap-2">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          onClick={openCamera}
+          onClick={openFileSelector}
           disabled={uploading || selectedImages.length >= maxImages}
           className="text-gray-400 hover:text-white p-2"
         >
           <Camera className="w-5 h-5" />
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={openGallery}
-          disabled={uploading || selectedImages.length >= maxImages}
-          className="text-gray-400 hover:text-white p-2"
-        >
-          <Paperclip className="w-5 h-5" />
-        </Button>
         {selectedImages.length > 0 && (
-          <span className="text-sm text-gray-400 flex items-center">
+          <span className="text-sm text-gray-400">
             {selectedImages.length}/{maxImages} images
           </span>
         )}
@@ -163,34 +148,36 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
 
       {/* Image Preview Grid */}
       {selectedImages.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
-          {selectedImages.map((imageUrl, index) => (
-            <div key={index} className="relative group">
-              <img
-                src={imageUrl}
-                alt={`Upload ${index + 1}`}
-                className="w-full h-20 object-cover rounded-lg bg-gray-700"
-                onError={(e) => {
-                  // Fallback for broken images
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  target.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
-                }}
-              />
-              <div className="hidden fallback-icon absolute inset-0 flex items-center justify-center bg-gray-700 rounded-lg">
-                <ImageIcon className="w-8 h-8 text-gray-400" />
+        <div className="mt-3">
+          <div className="flex flex-wrap gap-2">
+            {selectedImages.map((imageUrl, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={imageUrl}
+                  alt={`Upload ${index + 1}`}
+                  className="w-16 h-16 object-cover rounded-lg bg-gray-700"
+                  onError={(e) => {
+                    // Fallback for broken images
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                  }}
+                />
+                <div className="hidden fallback-icon absolute inset-0 flex items-center justify-center bg-gray-700 rounded-lg">
+                  <ImageIcon className="w-6 h-6 text-gray-400" />
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => removeImage(index)}
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => removeImage(index)}
-                className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
@@ -202,19 +189,12 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
         </div>
       )}
 
-      {/* Hidden file inputs */}
+      {/* Hidden file input with both camera and gallery options */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         multiple
-        className="hidden"
-        onChange={(e) => handleFileSelect(e.target.files)}
-      />
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
         capture="environment"
         className="hidden"
         onChange={(e) => handleFileSelect(e.target.files)}

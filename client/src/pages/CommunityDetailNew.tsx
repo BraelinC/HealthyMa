@@ -317,13 +317,12 @@ export default function CommunityDetailNew() {
                       className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 resize-none"
                       rows={3}
                     />
-                    <ImageUploader 
-                      onImagesChange={setSelectedImages}
-                      maxImages={4}
-                      className="mb-3"
-                    />
                     <div className="flex items-center justify-between">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
+                        <ImageUploader 
+                          onImagesChange={setSelectedImages}
+                          maxImages={4}
+                        />
                         <Button variant="ghost" size="sm" className="text-gray-400 p-2">
                           <ChefHat className="w-4 h-4" />
                         </Button>
@@ -412,7 +411,7 @@ export default function CommunityDetailNew() {
                         post.images.length === 2 ? 'grid-cols-2' :
                         'grid-cols-2'
                       }`}>
-                        {post.images.slice(0, 4).map((imageUrl, index) => (
+                        {post.images.slice(0, 4).map((imageUrl: string, index: number) => (
                           <div key={index} className="relative group">
                             <img
                               src={imageUrl}
