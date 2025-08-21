@@ -67,7 +67,7 @@ export default function CommunityDetailNew() {
     enabled: !!id && isAuthenticated,
   });
 
-  // Fetch community posts
+  // Temporarily disable API call to show mock posts with the visual style you liked
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: [`/api/communities/${id}/posts`, activeFilter],
     queryFn: async () => {
@@ -85,7 +85,7 @@ export default function CommunityDetailNew() {
       if (!response.ok) throw new Error('Failed to fetch posts');
       return response.json();
     },
-    enabled: !!id && !!community,
+    enabled: false, // Temporarily disabled to show mock posts
   });
 
   // Check if user is already a member based on memberInfo existence

@@ -4255,7 +4255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: content.trim(),
         post_type,
         meal_plan_id,
-        images: images || [],
+        images: images && Array.isArray(images) ? images : null,
       });
 
       res.json(post);

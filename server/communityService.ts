@@ -51,13 +51,16 @@ export class CommunityService {
 
   // Get all communities with optional filtering
   async getCommunities(category?: string, userId?: string) {
-    let query = db.select().from(communities);
+    let whereConditions = [];
     
     if (category) {
-      query = query.where(eq(communities.category, category));
+      whereConditions.push(eq(communities.category, category));
     }
 
-    const allCommunities = await query.orderBy(desc(communities.member_count));
+    const allCommunities = await db.select()
+      .from(communities)
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .orderBy(desc(communities.member_count));
 
     // If userId provided, mark which communities the user is a member of
     if (userId) {
@@ -210,15 +213,16 @@ export class CommunityService {
     minRating?: number;
     tags?: string[];
   }) {
-    let query = db.select()
-      .from(sharedMealPlans)
-      .where(eq(sharedMealPlans.community_id, communityId));
+    let whereConditions = [eq(sharedMealPlans.community_id, communityId)];
 
     if (filter?.featured) {
-      query = query.where(eq(sharedMealPlans.is_featured, true));
+      whereConditions.push(eq(sharedMealPlans.is_featured, true));
     }
 
-    const plans = await query.orderBy(desc(sharedMealPlans.created_at));
+    const plans = await db.select()
+      .from(sharedMealPlans)
+      .where(and(...whereConditions))
+      .orderBy(desc(sharedMealPlans.created_at));
 
     // Filter by tags if provided
     if (filter?.tags && filter.tags.length > 0) {
@@ -416,7 +420,13 @@ export class CommunityService {
   ) {
     const { limit = 20, offset = 0, type, userId } = options;
 
-    let query = db.select({
+    let whereConditions = [eq(communityPosts.community_id, communityId)];
+
+    if (type) {
+      whereConditions.push(eq(communityPosts.post_type, type));
+    }
+
+    const posts = await db.select({
       post: communityPosts,
       author: {
         id: users.id,
@@ -428,30 +438,25 @@ export class CommunityService {
     })
     .from(communityPosts)
     .leftJoin(users, eq(communityPosts.author_id, users.id))
-    .where(eq(communityPosts.community_id, communityId));
+    .where(and(...whereConditions))
+    .orderBy(desc(communityPosts.is_pinned), desc(communityPosts.created_at))
+    .limit(limit)
+    .offset(offset);
 
-    if (type) {
-      query = query.where(and(
-        eq(communityPosts.community_id, communityId),
-        eq(communityPosts.post_type, type)
-      ));
-    }
-
-    const posts = await query
-      .orderBy(desc(communityPosts.is_pinned), desc(communityPosts.created_at))
-      .limit(limit)
-      .offset(offset);
-
-    // Get user likes if userId provided
+    // Get user likes if userId provided (simplified to avoid SQL IN clause issues)
     let userLikes: Set<number> = new Set();
-    if (userId) {
-      const likes = await db.select()
-        .from(communityPostLikes)
-        .where(and(
-          eq(communityPostLikes.user_id, userId),
-          sql`${communityPostLikes.post_id} IN (${posts.map(p => p.post.id).join(',')})`
-        ));
-      userLikes = new Set(likes.map(l => l.post_id!));
+    if (userId && posts.length > 0) {
+      for (const { post } of posts) {
+        const [existingLike] = await db.select()
+          .from(communityPostLikes)
+          .where(and(
+            eq(communityPostLikes.post_id, post.id),
+            eq(communityPostLikes.user_id, userId)
+          ));
+        if (existingLike) {
+          userLikes.add(post.id);
+        }
+      }
     }
 
     return posts.map(({ post, author }) => ({
