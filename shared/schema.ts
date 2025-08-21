@@ -632,7 +632,7 @@ export const communityPosts = pgTable("community_posts", {
   content: text("content").notNull(),
   post_type: text("post_type").notNull().default("discussion"), // "discussion", "question", "announcement", "meal_share"
   meal_plan_id: integer("meal_plan_id").references(() => mealPlans.id), // For meal share posts
-  images: json("images").default(null), // Array of image URLs
+  images: text("images"), // JSON string of image URLs
   likes: integer("likes").default(0),
   comments_count: integer("comments_count").default(0),
   is_pinned: boolean("is_pinned").default(false),
