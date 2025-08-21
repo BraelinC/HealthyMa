@@ -189,13 +189,12 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
         </div>
       )}
 
-      {/* Hidden file input with both camera and gallery options */}
+      {/* Hidden file input for gallery selection */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         multiple
-        capture="environment"
         className="hidden"
         onChange={(e) => handleFileSelect(e.target.files)}
       />
