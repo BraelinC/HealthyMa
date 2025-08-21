@@ -386,8 +386,18 @@ export class CommunityService {
 
     console.log('Creating post with data:', JSON.stringify(data, null, 2));
 
+    // Handle images properly for PostgreSQL JSON column
+    const imagesForDB = data.images && Array.isArray(data.images) && data.images.length > 0 
+      ? data.images 
+      : null; // Use null instead of empty array to avoid PostgreSQL array literal issue
+
+    console.log('Images for DB:', imagesForDB);
+
     const [post] = await db.insert(communityPosts).values({
-      ...data,
+      content: data.content,
+      post_type: data.post_type || 'discussion',
+      meal_plan_id: data.meal_plan_id || null,
+      images: imagesForDB,
       author_id: userId,
       community_id: communityId,
     }).returning();
@@ -448,6 +458,7 @@ export class CommunityService {
     // Return posts with proper formatting for frontend
     return posts.map(({ post, author }) => ({
       ...post,
+      images: post.images || [], // Convert null to empty array for frontend
       username: author?.full_name || author?.firstName || 'Anonymous',
       likes_count: post.likes,
       author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
