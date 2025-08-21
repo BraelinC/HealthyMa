@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { ImageUploader } from "@/components/ImageUploader";
 
 interface Community {
   id: number;
@@ -40,6 +41,7 @@ interface CommunityPost {
   meal_plan_id?: number;
   meal_title?: string;
   meal_image?: string;
+  images?: string[];
   likes_count: number;
   comments_count: number;
   is_pinned: boolean;
@@ -54,6 +56,7 @@ export default function CommunityDetailNew() {
   const queryClient = useQueryClient();
   const [newPostContent, setNewPostContent] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
   // Fetch community details
   const { data: community, isLoading } = useQuery({
@@ -137,15 +140,20 @@ export default function CommunityDetailNew() {
 
   // Create new post mutation
   const createPostMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, images }: { content: string; images: string[] }) => {
       const { apiRequest } = await import("@/lib/queryClient");
       return await apiRequest(`/api/communities/${id}/posts`, {
         method: "POST",
-        body: JSON.stringify({ content, post_type: "discussion" }),
+        body: JSON.stringify({ 
+          content, 
+          post_type: "discussion",
+          images: images.length > 0 ? images : null,
+        }),
       });
     },
     onSuccess: () => {
       setNewPostContent("");
+      setSelectedImages([]);
       // Invalidate both the generic and filtered query keys
       queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`] });
       queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`, activeFilter] });
@@ -309,23 +317,25 @@ export default function CommunityDetailNew() {
                       className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 resize-none"
                       rows={3}
                     />
+                    <ImageUploader 
+                      onImagesChange={setSelectedImages}
+                      maxImages={4}
+                      className="mb-3"
+                    />
                     <div className="flex items-center justify-between">
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" className="text-gray-400 p-2">
-                          <Camera className="w-4 h-4" />
-                        </Button>
                         <Button variant="ghost" size="sm" className="text-gray-400 p-2">
                           <ChefHat className="w-4 h-4" />
                         </Button>
                       </div>
                       <Button 
-                        onClick={() => createPostMutation.mutate(newPostContent)}
+                        onClick={() => createPostMutation.mutate({ content: newPostContent, images: selectedImages })}
                         disabled={!newPostContent.trim() || createPostMutation.isPending}
                         size="sm"
                         className="bg-purple-600 hover:bg-purple-700"
                       >
                         <Send className="w-4 h-4 mr-1" />
-                        Post
+                        {createPostMutation.isPending ? "Posting..." : "Post"}
                       </Button>
                     </div>
                   </div>
@@ -394,6 +404,34 @@ export default function CommunityDetailNew() {
                   {/* Post Content */}
                   <div className="mb-4">
                     <p className="text-gray-200 mb-3">{post.content}</p>
+                    
+                    {/* Post Images */}
+                    {post.images && post.images.length > 0 && (
+                      <div className={`grid gap-2 mb-3 ${
+                        post.images.length === 1 ? 'grid-cols-1' :
+                        post.images.length === 2 ? 'grid-cols-2' :
+                        'grid-cols-2'
+                      }`}>
+                        {post.images.slice(0, 4).map((imageUrl, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={imageUrl}
+                              alt={`Post image ${index + 1}`}
+                              className="w-full h-32 object-cover rounded-lg bg-gray-700"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                            {post.images!.length > 4 && index === 3 && (
+                              <div className="absolute inset-0 bg-black bg-opacity-60 rounded-lg flex items-center justify-center">
+                                <span className="text-white font-medium">+{post.images!.length - 4}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     
                     {/* Meal Share Preview */}
                     {post.post_type === 'meal_share' && post.meal_image && (

@@ -16,6 +16,7 @@ import { creatorService } from "./creatorService";
 import { mealPlanSharingService } from "./mealPlanSharingService";
 import { groqValidator } from "./groqValidator";
 import { recipeNutritionCalculator } from "./recipeNutritionCalculator";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 import Stripe from "stripe";
 import { 
@@ -4086,6 +4087,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // COMMUNITY & MEAL PLAN SHARING ROUTES
   // ============================================
 
+  // Object Storage Routes for Community Image Uploads
+  app.post('/api/objects/upload', authenticateToken, async (req: any, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error('Error getting upload URL:', error);
+      res.status(500).json({ error: 'Failed to get upload URL' });
+    }
+  });
+
+  app.get('/objects/:objectPath(*)', async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error('Error serving object:', error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
   // Get all communities
   app.get("/api/communities", authenticateToken, async (req: any, res) => {
     try {
@@ -4255,7 +4282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: content.trim(),
         post_type,
         meal_plan_id,
-        images: images && Array.isArray(images) ? images : null,
+        images: images && Array.isArray(images) && images.length > 0 ? images : null,
       });
 
       res.json(post);
