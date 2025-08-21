@@ -44,7 +44,15 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
         throw new Error('Failed to upload image');
       }
 
-      return uploadURL;
+      // Return the object path that can be accessed via our server
+      // Extract the object ID from the upload URL and return the server path
+      const url = new URL(uploadURL);
+      const objectPath = url.pathname;
+      const objectId = objectPath.split('/').pop()?.split('?')[0];
+      
+      const serverPath = `/objects/uploads/${objectId}`;
+      console.log('Upload successful. Server path:', serverPath);
+      return serverPath;
     } catch (error) {
       console.error('Upload error:', error);
       throw error;

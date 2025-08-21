@@ -191,6 +191,19 @@ export class ObjectStorageService {
     const entityId = rawObjectPath.slice(objectEntityDir.length);
     return `/objects/${entityId}`;
   }
+
+  // Helper method to get the object entity path from upload URL
+  getObjectEntityPathFromUploadURL(uploadURL: string): string {
+    try {
+      const url = new URL(uploadURL);
+      const pathParts = url.pathname.split('/');
+      const objectName = pathParts[pathParts.length - 1].split('?')[0];
+      return `/objects/uploads/${objectName}`;
+    } catch (error) {
+      console.error('Error parsing upload URL:', error);
+      return uploadURL;
+    }
+  }
 }
 
 function parseObjectPath(path: string): {

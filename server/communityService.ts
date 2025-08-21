@@ -384,6 +384,8 @@ export class CommunityService {
     // Verify membership
     await this.verifyMembership(userId, communityId);
 
+    console.log('Creating post with data:', JSON.stringify(data, null, 2));
+
     const [post] = await db.insert(communityPosts).values({
       ...data,
       author_id: userId,
@@ -451,7 +453,7 @@ export class CommunityService {
       author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
       isLiked: false,
       is_liked: false,
-      created_at: new Date(post.created_at).toLocaleString()
+      created_at: post.created_at ? new Date(post.created_at).toLocaleString() : new Date().toLocaleString()
     }));
   }
 

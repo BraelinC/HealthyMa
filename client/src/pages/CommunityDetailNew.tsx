@@ -147,7 +147,7 @@ export default function CommunityDetailNew() {
         body: JSON.stringify({ 
           content, 
           post_type: "discussion",
-          images: images.length > 0 ? images : null,
+          images: images || [],
         }),
       });
     },
