@@ -26,19 +26,23 @@ async function setupCreatorAccount() {
         .set({
           full_name: "NutriMa Creator",
           password_hash: hashedPassword,
+          is_creator: true,
           updatedAt: new Date(),
         })
         .where(eq(users.id, userId));
       
       console.log("✅ Updated creator account password");
     } else {
-      // Create new creator user
+      // Create new creator user with proper ID generation
+      const userId_generated = `user_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       const [newUser] = await db.insert(users)
         .values({
+          id: userId_generated,
           email,
           full_name: "NutriMa Creator",
           password_hash: hashedPassword,
           phone: "5551234567",
+          is_creator: true, // Make sure this user is marked as creator
         })
         .returning();
       

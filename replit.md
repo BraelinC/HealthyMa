@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 22, 2025**: Created new creator account with full community management permissions
+- Successfully set up creator account: `creator@nutrima.com` / `Creator123!`
+- Account has proper creator status and can create/manage communities
+- Added backend validation preventing users from liking their own posts and comments
+- Hidden like buttons in UI for user's own content (posts and comments)
+- Users can now only like content from other community members
+- Maintained purple visual feedback for likes with thumbs up icons consistently
+
 **August 21, 2025**: Successfully resolved PostgreSQL JSON array storage issue preventing post creation
 - Fixed critical "malformed array literal" database error that was blocking all post creation attempts
 - Changed images column from JSON type to TEXT type, storing arrays as JSON strings
