@@ -1,0 +1,33 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle for icon -->
+  <circle cx="30" cy="30" r="20" fill="url(#purpleGradient)" />
+  
+  <!-- HandPlatter Icon (simplified) -->
+  <g transform="translate(22, 22)" fill="white">
+    <path d="M8 4C8 2.9 7.1 2 6 2C4.9 2 4 2.9 4 4V8H2C0.9 8 0 8.9 0 10S0.9 12 2 12H14C15.1 12 16 11.1 16 10S15.1 8 14 8H12V4C12 2.9 11.1 2 10 2C8.9 2 8 2.9 8 4Z"/>
+    <circle cx="8" cy="14" r="1"/>
+  </g>
+  
+  <!-- Healthy Mama Text -->
+  <text x="60" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="url(#purpleGradient)">Healthy Mama</text>
+  
+  <!-- Shadow effect -->
+  <defs>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  
+  <circle cx="30" cy="30" r="20" fill="url(#purpleGradient)" filter="url(#shadow)" opacity="0.8"/>
+  <g transform="translate(22, 22)" fill="white">
+    <path d="M8 4C8 2.9 7.1 2 6 2C4.9 2 4 2.9 4 4V8H2C0.9 8 0 8.9 0 10S0.9 12 2 12H14C15.1 12 16 11.1 16 10S15.1 8 14 8H12V4C12 2.9 11.1 2 10 2C8.9 2 8 2.9 8 4Z"/>
+    <circle cx="8" cy="14" r="1"/>
+  </g>
+</svg>
