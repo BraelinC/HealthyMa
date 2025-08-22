@@ -100,9 +100,9 @@ export default function PostDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="fixed inset-0 bg-gray-900 z-[100] overflow-y-auto">
       {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+      <header className="bg-gray-800 border-b border-gray-700 sticky top-0 z-[101]">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <Button
