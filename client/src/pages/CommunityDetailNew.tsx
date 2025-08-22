@@ -84,50 +84,59 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
   const [showLessonView, setShowLessonView] = useState(false);
   const { toast } = useToast();
 
-  // Mock data representing Skool-style courses/modules with lessons
+  // Mock data representing Tyler's community courses
   const mockCourses = [
     {
       id: 1,
       title: "Start Here",
-      emoji: "🌟",
-      progress_percentage: 25,
+      emoji: "🌟", 
+      progress_percentage: 50,
       isExpanded: false,
       lessons: [
-        { id: 1, title: "The Mission", emoji: "🚀", completed: false },
-        { id: 2, title: "Introduce Yourself", emoji: "👋", completed: false },
-        { id: 3, title: "Roadmap", emoji: "🗺️", completed: false },
-        { id: 4, title: "All ABOARD", emoji: "📢", completed: false },
-        { id: 5, title: "Rules & Guidelines", emoji: "👮", completed: false },
-        { id: 6, title: "Meet The Team", emoji: "👨‍👩‍👧‍👦", completed: false },
-        { id: 7, title: "Calendar", emoji: "📅", completed: false },
+        { id: 1, title: "Welcome to Tyler's Community", emoji: "👋", completed: true, description: "Meet Tyler and learn about this nutrition community" },
+        { id: 2, title: "Community Guidelines", emoji: "📋", completed: true, description: "Essential rules for a healthy community environment" },
+        { id: 3, title: "Introduce Yourself", emoji: "💬", completed: false, description: "Share your nutrition goals with the community" },
+        { id: 4, title: "Getting the Most Out of This Community", emoji: "🎯", completed: false, description: "Tips for maximizing your learning experience" },
       ]
     },
     {
       id: 2,
-      title: "Healthy Family Meal Plans",
-      emoji: "🍽️",
-      progress_percentage: 0,
+      title: "Tyler's 30-Day Meal Transformation",
+      emoji: "🔥",
+      progress_percentage: 15,
       isExpanded: false,
       lessons: [
-        { id: 8, title: "Meal Planning Basics", emoji: "📋", completed: false },
-        { id: 9, title: "Quick Breakfast Ideas", emoji: "🥞", completed: false },
-        { id: 10, title: "Balanced Lunch Recipes", emoji: "🥗", completed: false },
-        { id: 11, title: "Healthy Dinner Options", emoji: "🍲", completed: false },
-        { id: 12, title: "Kid-Friendly Snacks", emoji: "🍎", completed: false },
-        { id: 13, title: "Weekly Meal Prep", emoji: "📦", completed: false },
+        { id: 5, title: "Week 1: Foundation Building", emoji: "🏗️", completed: true, description: "Setting up your kitchen and mindset for success" },
+        { id: 6, title: "Meal Prep Mastery", emoji: "📦", completed: false, description: "Tyler's proven meal prep system for busy families" },
+        { id: 7, title: "Macro Balance Made Simple", emoji: "⚖️", completed: false, description: "Understanding protein, carbs, and fats without complexity" },
+        { id: 8, title: "Emergency Meal Solutions", emoji: "🚨", completed: false, description: "Quick healthy options when life gets chaotic" },
+        { id: 9, title: "Week 2-4: Advanced Strategies", emoji: "🎓", completed: false, description: "Building sustainable long-term habits" },
       ]
     },
     {
       id: 3,
-      title: "Budget-Friendly Cooking",
+      title: "Budget Nutrition Secrets",
       emoji: "💰",
       progress_percentage: 0,
       isExpanded: false,
       lessons: [
-        { id: 14, title: "Shopping Smart", emoji: "🛒", completed: false },
-        { id: 15, title: "Pantry Staples", emoji: "🏪", completed: false },
-        { id: 16, title: "Bulk Cooking Strategies", emoji: "👥", completed: false },
-        { id: 17, title: "Leftover Magic", emoji: "✨", completed: false },
+        { id: 10, title: "Shopping Like a Pro", emoji: "🛒", completed: false, description: "Tyler's shopping strategies to cut costs by 40%" },
+        { id: 11, title: "Pantry Power Foods", emoji: "🏪", completed: false, description: "Essential ingredients that maximize nutrition per dollar" },
+        { id: 12, title: "Batch Cooking for Families", emoji: "👨‍👩‍👧‍👦", completed: false, description: "Feed your family healthy meals on $50/week" },
+        { id: 13, title: "Seasonal Eating Guide", emoji: "🍂", completed: false, description: "Save money by eating with the seasons" },
+      ]
+    },
+    {
+      id: 4,
+      title: "Tyler's Recipe Vault",
+      emoji: "📚",
+      progress_percentage: 0,
+      isExpanded: false,
+      lessons: [
+        { id: 14, title: "5-Minute Breakfast Recipes", emoji: "🥞", completed: false, description: "Start your day right with these quick options" },
+        { id: 15, title: "Lunchbox Heroes", emoji: "🍱", completed: false, description: "Packed lunches that kids actually eat" },
+        { id: 16, title: "Dinner Winners", emoji: "🍽️", completed: false, description: "Family-tested dinner recipes under 30 minutes" },
+        { id: 17, title: "Healthy Desserts & Snacks", emoji: "🍓", completed: false, description: "Satisfy cravings without derailing progress" },
       ]
     }
   ];
@@ -192,42 +201,86 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold text-white mb-3">About This Lesson</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Learn the fundamentals of meal planning that will save you time and money while ensuring your family eats healthy, delicious meals every day.
+                <p className="text-gray-300 leading-relaxed mb-4">
+                  {selectedLesson.description || "Learn practical nutrition strategies that busy families can implement immediately."}
                 </p>
+                <div className="space-y-3 text-gray-300">
+                  <p>In this lesson, you'll discover:</p>
+                  <ul className="list-disc ml-6 space-y-1">
+                    <li>Tyler's proven framework for sustainable meal planning</li>
+                    <li>How to save 5+ hours per week on meal prep</li>
+                    <li>Budget-friendly strategies that don't compromise nutrition</li>
+                    <li>Real-world examples from Tyler's family kitchen</li>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Ingredients & Instructions */}
+            {/* Key Takeaways & Action Steps */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="bg-gray-800 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-white text-lg">Ingredients</CardTitle>
+                  <CardTitle className="text-white text-lg">Key Takeaways</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2 text-gray-300">
-                    <li>• 1 cup rice</li>
-                    <li>• 2 cups water</li>
-                    <li>• 1 tsp salt</li>
-                    <li>• 2 tbsp butter</li>
+                    <li>✓ Plan meals around your family's schedule</li>
+                    <li>✓ Focus on 5-7 core ingredients each week</li>
+                    <li>✓ Prep vegetables on Sunday, proteins on Wednesday</li>
+                    <li>✓ Keep emergency backup meals ready</li>
                   </ul>
                 </CardContent>
               </Card>
 
               <Card className="bg-gray-800 border-gray-700">
                 <CardHeader>
-                  <CardTitle className="text-white text-lg">Instructions</CardTitle>
+                  <CardTitle className="text-white text-lg">Action Steps</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ol className="space-y-2 text-gray-300">
-                    <li>1. Rinse rice until water runs clear</li>
-                    <li>2. Bring water and salt to boil</li>
-                    <li>3. Add rice and reduce heat</li>
-                    <li>4. Simmer for 18 minutes</li>
+                    <li>1. Download Tyler's meal planning template</li>
+                    <li>2. Audit your current pantry staples</li>
+                    <li>3. Choose 3 go-to recipes for this week</li>
+                    <li>4. Set up your meal prep zone</li>
                   </ol>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Community Discussion */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white text-lg">Discussion & Questions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-gray-700/50 p-4 rounded-lg">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>SL</AvatarFallback>
+                      </Avatar>
+                      <span className="text-white font-medium">Sarah L.</span>
+                      <span className="text-gray-400 text-sm">2 hours ago</span>
+                    </div>
+                    <p className="text-gray-300">This meal prep strategy is a game changer! Cut my prep time in half.</p>
+                  </div>
+                  <div className="bg-gray-700/50 p-4 rounded-lg">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>MJ</AvatarFallback>
+                      </Avatar>
+                      <span className="text-white font-medium">Mike J.</span>
+                      <span className="text-gray-400 text-sm">5 hours ago</span>
+                    </div>
+                    <p className="text-gray-300">Question: How do you handle picky eaters with this system?</p>
+                    <div className="ml-11 mt-2 p-2 bg-purple-600/20 rounded border-l-2 border-purple-600">
+                      <span className="text-purple-400 font-medium">Tyler:</span>
+                      <span className="text-gray-300 ml-2">Great question! I cover this in Week 2 - the key is involving kids in the planning process.</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}
