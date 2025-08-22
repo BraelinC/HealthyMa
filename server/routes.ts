@@ -4318,6 +4318,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Toggle like on a community comment
+  app.post("/api/communities/:communityId/posts/:postId/comments/:commentId/like", authenticateToken, async (req: any, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const result = await communityService.toggleCommentLike(userId, commentId);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error toggling comment like:", error);
+      if (error.message === "Comment not found" || error.message === "Post not found" || error.message === "You must be a member to perform this action") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to toggle comment like" });
+    }
+  });
+
   // Share a meal plan to community
   app.post("/api/communities/:id/share-meal-plan", authenticateToken, async (req: any, res) => {
     try {
@@ -4357,12 +4378,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const postId = Number(req.params.postId);
       const nested = req.query.nested === 'true';
+      const userId = req.user?.id; // Get current user ID for like status
 
       if (nested) {
-        const comments = await communityCommentsService.getNestedComments(postId);
+        const comments = await communityCommentsService.getNestedComments(postId, userId);
         res.json(comments);
       } else {
-        const comments = await communityCommentsService.getPostComments(postId);
+        // Use the communityService method that includes like status
+        const comments = await communityService.getPostComments(postId, userId);
         res.json(comments);
       }
     } catch (error) {

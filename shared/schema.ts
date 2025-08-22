@@ -672,6 +672,16 @@ export const communityPostLikes = pgTable("community_post_likes", {
   postUserIdx: index("post_likes_post_user_idx").on(table.post_id, table.user_id),
 }));
 
+// Community comment likes table
+export const communityCommentLikes = pgTable("community_comment_likes", {
+  id: serial("id").primaryKey(),
+  comment_id: integer("comment_id").notNull().references(() => communityPostComments.id, { onDelete: "cascade" }),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  commentUserIdx: index("comment_likes_comment_user_idx").on(table.comment_id, table.user_id),
+}));
+
 // Type exports for community tables
 export type Community = typeof communities.$inferSelect;
 export type InsertCommunity = typeof communities.$inferInsert;

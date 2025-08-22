@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { ImageUploader } from '@/components/ImageUploader';
 import { formatDistanceToNow } from 'date-fns';
-import { MessageCircle, Heart, Reply, Send, MoreHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageCircle, ThumbsUp, Reply, Send, MoreHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Comment {
   id: number;
@@ -17,6 +17,7 @@ interface Comment {
   parent_id?: number;
   images?: string[];
   likes: number;
+  isLiked?: boolean;
   created_at: string;
   updated_at: string;
   author: {
@@ -41,6 +42,46 @@ function CommentItem({ comment, communityId, onReply }: {
 }) {
   const [showReplies, setShowReplies] = useState(false);
   const hasReplies = comment.children && comment.children.length > 0;
+  const queryClient = useQueryClient();
+
+  const commentLikeMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/communities/${communityId}/posts/${comment.post_id}/comments/${comment.id}/like`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: (data) => {
+      // Update the comment in cache optimistically
+      queryClient.setQueryData([`/api/communities/${communityId}/posts/${comment.post_id}/comments`], (oldComments: Comment[] | undefined) => {
+        if (!oldComments) return oldComments;
+        
+        const updateComment = (comments: Comment[]): Comment[] => {
+          return comments.map((c) => {
+            if (c.id === comment.id) {
+              return {
+                ...c,
+                likes: data.likesCount,
+                isLiked: data.liked,
+              };
+            }
+            // Update nested children recursively
+            if (c.children) {
+              return {
+                ...c,
+                children: updateComment(c.children),
+              };
+            }
+            return c;
+          });
+        };
+        
+        return updateComment(oldComments);
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to toggle comment like:', error);
+    },
+  });
 
   return (
     <div className="space-y-3">
@@ -86,9 +127,17 @@ function CommentItem({ comment, communityId, onReply }: {
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-400 hover:text-red-400 p-1 h-auto"
+              className={`p-1 h-auto transition-colors ${
+                comment.isLiked 
+                  ? 'text-purple-400 hover:text-purple-300' 
+                  : 'text-gray-400 hover:text-purple-400'
+              }`}
+              onClick={() => commentLikeMutation.mutate()}
+              disabled={commentLikeMutation.isPending}
             >
-              <Heart className="w-4 h-4 mr-1" />
+              <ThumbsUp 
+                className={`w-4 h-4 mr-1 ${comment.isLiked ? 'fill-current' : ''}`}
+              />
               <span className="text-xs">{comment.likes}</span>
             </Button>
             

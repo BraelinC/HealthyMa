@@ -9,6 +9,7 @@ import {
   communityPosts,
   communityPostComments,
   communityPostLikes,
+  communityCommentLikes,
   creatorProfiles,
   creatorFollowers,
   users,
@@ -536,6 +537,66 @@ export class CommunityService {
     }
   }
 
+  // Like/unlike a community comment
+  async toggleCommentLike(userId: string, commentId: number): Promise<{ liked: boolean, likesCount: number }> {
+    // Verify comment exists
+    const [comment] = await db.select()
+      .from(communityPostComments)
+      .where(eq(communityPostComments.id, commentId));
+
+    if (!comment) {
+      throw new Error("Comment not found");
+    }
+
+    // Verify user is a member of the community (through the post)
+    const [post] = await db.select()
+      .from(communityPosts)
+      .where(eq(communityPosts.id, comment.post_id));
+
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    await this.verifyMembership(userId, post.community_id);
+
+    // Check if already liked using the dedicated comment likes table
+    const [existingLike] = await db.select()
+      .from(communityCommentLikes)
+      .where(and(
+        eq(communityCommentLikes.comment_id, commentId),
+        eq(communityCommentLikes.user_id, userId)
+      ));
+
+    if (existingLike) {
+      // Unlike - remove like and decrement count
+      await db.delete(communityCommentLikes)
+        .where(and(
+          eq(communityCommentLikes.comment_id, commentId),
+          eq(communityCommentLikes.user_id, userId)
+        ));
+
+      await db.update(communityPostComments)
+        .set({ likes: sql`${communityPostComments.likes} - 1` })
+        .where(eq(communityPostComments.id, commentId));
+
+      const [updatedComment] = await db.select().from(communityPostComments).where(eq(communityPostComments.id, commentId));
+      return { liked: false, likesCount: updatedComment.likes || 0 };
+    } else {
+      // Like - add like and increment count
+      await db.insert(communityCommentLikes).values({
+        comment_id: commentId,
+        user_id: userId,
+      });
+
+      await db.update(communityPostComments)
+        .set({ likes: sql`${communityPostComments.likes} + 1` })
+        .where(eq(communityPostComments.id, commentId));
+
+      const [updatedComment] = await db.select().from(communityPostComments).where(eq(communityPostComments.id, commentId));
+      return { liked: true, likesCount: updatedComment.likes || 0 };
+    }
+  }
+
   // Add a comment to a community post
   async addPostComment(
     userId: string, 
@@ -587,9 +648,30 @@ export class CommunityService {
     .where(eq(communityPostComments.post_id, postId))
     .orderBy(communityPostComments.created_at);
 
+    // If no userId provided, just return comments without like status
+    if (!userId) {
+      return comments.map(({ comment, author }) => ({
+        ...comment,
+        author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+        isLiked: false
+      }));
+    }
+
+    // Get all comment likes for this user for these comments
+    const commentIds = comments.map(({ comment }) => comment.id);
+    const userLikes = commentIds.length > 0 ? await db.select()
+      .from(communityCommentLikes)
+      .where(and(
+        eq(communityCommentLikes.user_id, userId),
+        sql`${communityCommentLikes.comment_id} IN (${sql.join(commentIds.map(id => sql`${id}`), sql`, `)})`
+      )) : [];
+
+    const likedCommentIds = new Set(userLikes.map(like => like.comment_id));
+
     return comments.map(({ comment, author }) => ({
       ...comment,
-      author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+      author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+      isLiked: likedCommentIds.has(comment.id)
     }));
   }
 }
