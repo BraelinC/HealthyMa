@@ -10,6 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 22, 2025**: Successfully implemented like functionality for community posts
+- Added like-only system (no unlike feature) as requested - users can like posts but cannot unlike them
+- Created like API endpoint at `/api/communities/:communityId/posts/:postId/like` with authentication
+- Implemented `likePost` method in CommunityService with duplicate like prevention
+- Added like buttons with thumbs-up icons to both community list and post detail pages
+- Integrated real-time cache invalidation to update like counts immediately after liking
+- Updated backend to include user's like status (`is_liked`) for each post in community feeds
+- Fixed app routing to make Communities the default homepage instead of meal planning interface
+
 **August 21, 2025**: Successfully resolved PostgreSQL JSON array storage issue preventing post creation
 - Fixed critical "malformed array literal" database error that was blocking all post creation attempts
 - Changed images column from JSON type to TEXT type, storing arrays as JSON strings
