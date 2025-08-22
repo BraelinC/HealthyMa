@@ -81,10 +81,8 @@ export default function Communities() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
-  const [forceCreatorMode, setForceCreatorMode] = useState(false);
-
-  // Override creator status for testing
-  const isCreator = user?.is_creator || forceCreatorMode;
+  // Use actual creator status from user account
+  const isCreator = user?.is_creator;
 
   // Fetch communities - only when authenticated
   const { data: communities = [], isLoading: loadingCommunities } = useQuery({
@@ -164,17 +162,7 @@ export default function Communities() {
                 Join communities to discover and share amazing meal plans with creators and food enthusiasts
               </p>
             </div>
-            {/* Creator Mode Toggle for Testing */}
-            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-2">
-              <span className="text-sm text-gray-600">Creator Mode</span>
-              <Button
-                variant={forceCreatorMode ? "default" : "outline"}
-                size="sm"
-                onClick={() => setForceCreatorMode(!forceCreatorMode)}
-              >
-                {forceCreatorMode ? "ON" : "OFF"}
-              </Button>
-            </div>
+
           </div>
         </div>
 
@@ -341,7 +329,7 @@ export default function Communities() {
                       Become a creator to share your meal plans and build your own community
                     </p>
                     <Badge className="bg-purple-100 text-purple-700">
-                      Creator Mode Required
+                      Creator Account Required
                     </Badge>
                   </div>
                 </Card>
