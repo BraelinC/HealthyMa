@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUploader } from "@/components/ImageUploader";
+import { CommentsSection } from "@/components/CommentsSection";
 
 interface Community {
   id: number;
@@ -57,6 +58,17 @@ export default function CommunityDetailNew() {
   const [newPostContent, setNewPostContent] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
+
+  const toggleComments = (postId: number) => {
+    const newExpanded = new Set(expandedComments);
+    if (newExpanded.has(postId)) {
+      newExpanded.delete(postId);
+    } else {
+      newExpanded.add(postId);
+    }
+    setExpandedComments(newExpanded);
+  };
 
   // Fetch community details
   const { data: community, isLoading } = useQuery({
@@ -464,7 +476,12 @@ export default function CommunityDetailNew() {
                         <ThumbsUp className="w-4 h-4 mr-1" />
                         {post.likes_count}
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-gray-400 hover:text-white p-1"
+                        onClick={() => toggleComments(post.id)}
+                      >
                         <MessageCircle className="w-4 h-4 mr-1" />
                         {post.comments_count}
                       </Button>
@@ -473,6 +490,15 @@ export default function CommunityDetailNew() {
                       <Share2 className="w-4 h-4" />
                     </Button>
                   </div>
+
+                  {/* Comments Section */}
+                  <CommentsSection
+                    postId={post.id}
+                    communityId={parseInt(id!)}
+                    commentsCount={post.comments_count}
+                    isExpanded={expandedComments.has(post.id)}
+                    onToggle={() => toggleComments(post.id)}
+                  />
                 </CardContent>
               </Card>
             ))}

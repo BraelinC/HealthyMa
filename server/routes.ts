@@ -12,6 +12,7 @@ import { authenticateToken } from "./auth"; // Import JWT auth middleware
 import { rateLimiter } from "./rateLimiter";
 import { handleLogMealDetection } from "./logmealEndpoint";
 import { communityService } from "./communityService";
+import { communityCommentsService } from "./communityCommentsService";
 import { creatorService } from "./creatorService";
 import { mealPlanSharingService } from "./mealPlanSharingService";
 import { groqValidator } from "./groqValidator";
@@ -4322,6 +4323,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error sharing meal plan:", error);
       res.status(500).json({ message: "Failed to share meal plan" });
+    }
+  });
+
+  // ============================================
+  // COMMUNITY COMMENTS API ROUTES
+  // ============================================
+
+  // Get comments for a specific post
+  app.get("/api/communities/:id/posts/:postId/comments", authenticateToken, async (req: any, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const nested = req.query.nested === 'true';
+
+      if (nested) {
+        const comments = await communityCommentsService.getNestedComments(postId);
+        res.json(comments);
+      } else {
+        const comments = await communityCommentsService.getPostComments(postId);
+        res.json(comments);
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  // Create a new comment
+  app.post("/api/communities/:id/posts/:postId/comments", authenticateToken, async (req: any, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { content, parent_id, images } = req.body;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+
+      if (content.length > 2000) {
+        return res.status(400).json({ message: "Comment is too long (max 2000 characters)" });
+      }
+
+      const comment = await communityCommentsService.createComment({
+        post_id: postId,
+        author_id: userId,
+        content: content.trim(),
+        parent_id: parent_id || null,
+        images: images && Array.isArray(images) && images.length > 0 ? images : null,
+      });
+
+      res.json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  // Update a comment
+  app.put("/api/communities/:id/posts/:postId/comments/:commentId", authenticateToken, async (req: any, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { content, images } = req.body;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+
+      if (content.length > 2000) {
+        return res.status(400).json({ message: "Comment is too long (max 2000 characters)" });
+      }
+
+      const comment = await communityCommentsService.updateComment(commentId, userId, {
+        content: content.trim(),
+        images: images && Array.isArray(images) && images.length > 0 ? images : null,
+      });
+
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      res.json(comment);
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      res.status(500).json({ message: "Failed to update comment" });
+    }
+  });
+
+  // Delete a comment
+  app.delete("/api/communities/:id/posts/:postId/comments/:commentId", authenticateToken, async (req: any, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const success = await communityCommentsService.deleteComment(commentId, userId);
+
+      if (!success) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      res.json({ message: "Comment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
     }
   });
 

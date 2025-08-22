@@ -652,6 +652,7 @@ export const communityPostComments = pgTable("community_post_comments", {
   author_id: varchar("author_id").notNull().references(() => users.id),
   content: text("content").notNull(),
   parent_id: integer("parent_id"), // For nested replies
+  images: text("images"), // JSON string of image URLs (same as posts)
   likes: integer("likes").default(0),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
