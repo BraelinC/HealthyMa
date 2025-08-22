@@ -259,23 +259,51 @@ export default function CommunityManage() {
     );
   }
 
-  // Redirect to communities if no access or community not found
-  if (!community || !hasAccess || error) {
-    // Use setTimeout to avoid React state update during render
-    setTimeout(() => {
-      setLocation("/communities");
-      toast({
-        title: "Access Denied",
-        description: "You can only manage communities that you created.",
-        variant: "destructive",
-      });
-    }, 0);
-    
+  // Only redirect if we have data and definitely no access
+  if (community && !hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">You can only manage communities that you created.</p>
+            <Button onClick={() => setLocation("/communities")}>
+              Back to Communities
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state if there was an actual error
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Error Loading Community</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">There was an error loading this community.</p>
+            <Button onClick={() => setLocation("/communities")}>
+              Back to Communities
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show loading if still loading or no community yet
+  if (!community) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to communities...</p>
+          <p className="text-gray-600">Loading community...</p>
         </div>
       </div>
     );
