@@ -4369,6 +4369,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get community meal plans
+  app.get("/api/communities/:id/meal-plans", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Check if user is a member of the community
+      const membership = await communityService.getUserMembership(userId, communityId);
+      if (!membership) {
+        return res.status(403).json({ message: "You must be a member to view meal plans" });
+      }
+
+      const mealPlans = await communityService.getCommunityMealPlans(communityId);
+      res.json(mealPlans);
+    } catch (error) {
+      console.error("Error fetching community meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch meal plans" });
+    }
+  });
+
+  // Create community meal plan (creators only)
+  app.post("/api/communities/:id/meal-plans", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Check if user is creator of the community
+      const community = await communityService.getCommunityDetails(communityId, userId);
+      if (!community || community.creator_id !== userId) {
+        return res.status(403).json({ message: "Only creators can add meal plans" });
+      }
+
+      const { 
+        title, 
+        description, 
+        image_url, 
+        youtube_video_id,
+        ingredients, 
+        instructions, 
+        prep_time, 
+        cook_time, 
+        servings 
+      } = req.body;
+
+      if (!title || !ingredients || !instructions) {
+        return res.status(400).json({ message: "Title, ingredients, and instructions are required" });
+      }
+
+      const mealPlan = await communityService.createCommunityMealPlan(userId, communityId, {
+        title,
+        description,
+        image_url,
+        youtube_video_id,
+        ingredients,
+        instructions,
+        prep_time,
+        cook_time,
+        servings,
+      });
+
+      res.json(mealPlan);
+    } catch (error) {
+      console.error("Error creating community meal plan:", error);
+      res.status(500).json({ message: "Failed to create meal plan" });
+    }
+  });
+
   // ============================================
   // COMMUNITY COMMENTS API ROUTES
   // ============================================

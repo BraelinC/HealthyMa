@@ -684,6 +684,47 @@ export class CommunityService {
       isLiked: likedCommentIds.has(comment.id)
     }));
   }
+
+  // Get user membership for a community
+  async getUserMembership(userId: string, communityId: number) {
+    const [membership] = await db.select()
+      .from(communityMembers)
+      .where(and(
+        eq(communityMembers.user_id, userId),
+        eq(communityMembers.community_id, communityId)
+      ));
+    
+    return membership;
+  }
+
+  // Get community meal plans
+  async getCommunityMealPlans(communityId: number) {
+    // For now, return empty array until we create proper meal plan storage
+    // This will be enhanced with actual meal plan data from the database
+    return [];
+  }
+
+  // Create community meal plan
+  async createCommunityMealPlan(userId: string, communityId: number, mealPlanData: any) {
+    // For now, return mock data until we create proper meal plan storage
+    // This will be enhanced with actual database storage
+    return {
+      id: Date.now(),
+      title: mealPlanData.title,
+      description: mealPlanData.description,
+      image_url: mealPlanData.image_url,
+      youtube_video_id: mealPlanData.youtube_video_id,
+      ingredients: mealPlanData.ingredients,
+      instructions: mealPlanData.instructions,
+      prep_time: mealPlanData.prep_time,
+      cook_time: mealPlanData.cook_time,
+      servings: mealPlanData.servings,
+      creator_name: "Community Creator",
+      created_at: new Date().toISOString(),
+      likes_count: 0,
+      is_liked: false
+    };
+  }
 }
 
 export const communityService = new CommunityService();

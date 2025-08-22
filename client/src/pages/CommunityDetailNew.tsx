@@ -8,10 +8,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { 
   Users, Calendar, MessageSquare, Heart, ChefHat, ArrowLeft, Settings,
   Pin, ThumbsUp, MessageCircle, Share2, Camera, Plus, Search,
-  Clock, TrendingUp, User, MoreHorizontal, Send, Menu
+  Clock, TrendingUp, User, MoreHorizontal, Send, Menu, X
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,422 @@ interface CommunityPost {
   is_pinned: boolean;
   is_liked: boolean;
   created_at: string;
+}
+
+interface MealPlan {
+  id: number;
+  title: string;
+  description: string;
+  image_url?: string;
+  video_url?: string;
+  youtube_video_id?: string;
+  ingredients: string[];
+  instructions: string[];
+  prep_time?: number;
+  cook_time?: number;
+  servings?: number;
+  nutrition?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
+  creator_name: string;
+  created_at: string;
+  likes_count: number;
+  is_liked: boolean;
+}
+
+// Meal Plans Manager Component
+function MealPlansManager({ communityId, isCreator }: { communityId?: string; isCreator: boolean }) {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newMeal, setNewMeal] = useState({
+    title: '',
+    description: '',
+    image_url: '',
+    video_url: '',
+    youtube_video_id: '',
+    ingredients: [''],
+    instructions: [''],
+    prep_time: 0,
+    cook_time: 0,
+    servings: 4
+  });
+  const { toast } = useToast();
+
+  // Fetch community meal plans
+  const { data: mealPlans = [], isLoading: mealsLoading } = useQuery({
+    queryKey: [`/api/communities/${communityId}/meal-plans`],
+    enabled: !!communityId,
+  });
+
+  const addIngredient = () => {
+    setNewMeal(prev => ({
+      ...prev,
+      ingredients: [...prev.ingredients, '']
+    }));
+  };
+
+  const updateIngredient = (index: number, value: string) => {
+    setNewMeal(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.map((item, i) => i === index ? value : item)
+    }));
+  };
+
+  const removeIngredient = (index: number) => {
+    setNewMeal(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addInstruction = () => {
+    setNewMeal(prev => ({
+      ...prev,
+      instructions: [...prev.instructions, '']
+    }));
+  };
+
+  const updateInstruction = (index: number, value: string) => {
+    setNewMeal(prev => ({
+      ...prev,
+      instructions: prev.instructions.map((item, i) => i === index ? value : item)
+    }));
+  };
+
+  const removeInstruction = (index: number) => {
+    setNewMeal(prev => ({
+      ...prev,
+      instructions: prev.instructions.filter((_, i) => i !== index)
+    }));
+  };
+
+  const createMealPlan = useMutation({
+    mutationFn: async (mealData: any) => {
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest(`/api/communities/${communityId}/meal-plans`, {
+        method: "POST",
+        body: JSON.stringify(mealData),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Meal Plan Created",
+        description: "Your meal plan has been shared with the community!",
+      });
+      setShowCreateForm(false);
+      setNewMeal({
+        title: '',
+        description: '',
+        image_url: '',
+        video_url: '',
+        youtube_video_id: '',
+        ingredients: [''],
+        instructions: [''],
+        prep_time: 0,
+        cook_time: 0,
+        servings: 4
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (mealsLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with Create Button (Creator Only) */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-1">Shared Meal Plans</h3>
+          <p className="text-gray-400 text-sm">Discover and share amazing meal plans with the community</p>
+        </div>
+        {isCreator && (
+          <Button 
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Share a Meal Plan
+          </Button>
+        )}
+      </div>
+
+      {/* Create Meal Plan Form (Creator Only) */}
+      {isCreator && showCreateForm && (
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-700 pb-4">
+              <h4 className="text-lg font-semibold text-white">Create New Meal Plan</h4>
+              <Button variant="ghost" size="sm" onClick={() => setShowCreateForm(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-gray-300">Meal Title</Label>
+                <Input
+                  value={newMeal.title}
+                  onChange={(e) => setNewMeal(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g., Healthy Chicken Stir Fry"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">Servings</Label>
+                <Input
+                  type="number"
+                  value={newMeal.servings}
+                  onChange={(e) => setNewMeal(prev => ({ ...prev, servings: parseInt(e.target.value) }))}
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-300">Description</Label>
+              <Textarea
+                value={newMeal.description}
+                onChange={(e) => setNewMeal(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe your meal..."
+                className="bg-gray-700 border-gray-600 text-white"
+                rows={3}
+              />
+            </div>
+
+            {/* Media Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-gray-300">Image URL</Label>
+                <Input
+                  value={newMeal.image_url}
+                  onChange={(e) => setNewMeal(prev => ({ ...prev, image_url: e.target.value }))}
+                  placeholder="https://example.com/image.jpg"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">YouTube Video ID</Label>
+                <Input
+                  value={newMeal.youtube_video_id}
+                  onChange={(e) => setNewMeal(prev => ({ ...prev, youtube_video_id: e.target.value }))}
+                  placeholder="e.g., dQw4w9WgXcQ"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+            </div>
+
+            {/* Timing */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-gray-300">Prep Time (minutes)</Label>
+                <Input
+                  type="number"
+                  value={newMeal.prep_time}
+                  onChange={(e) => setNewMeal(prev => ({ ...prev, prep_time: parseInt(e.target.value) }))}
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">Cook Time (minutes)</Label>
+                <Input
+                  type="number"
+                  value={newMeal.cook_time}
+                  onChange={(e) => setNewMeal(prev => ({ ...prev, cook_time: parseInt(e.target.value) }))}
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+            </div>
+
+            {/* Ingredients Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-gray-300">Ingredients</Label>
+                <Button onClick={addIngredient} variant="outline" size="sm" className="border-gray-600 text-gray-300">
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Ingredient
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {newMeal.ingredients.map((ingredient, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={ingredient}
+                      onChange={(e) => updateIngredient(index, e.target.value)}
+                      placeholder={`Ingredient ${index + 1}`}
+                      className="bg-gray-700 border-gray-600 text-white flex-1"
+                    />
+                    {newMeal.ingredients.length > 1 && (
+                      <Button
+                        onClick={() => removeIngredient(index)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Instructions Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-gray-300">Instructions</Label>
+                <Button onClick={addInstruction} variant="outline" size="sm" className="border-gray-600 text-gray-300">
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Step
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {newMeal.instructions.map((instruction, index) => (
+                  <div key={index} className="flex gap-2">
+                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium mt-1">
+                      {index + 1}
+                    </div>
+                    <Textarea
+                      value={instruction}
+                      onChange={(e) => updateInstruction(index, e.target.value)}
+                      placeholder={`Step ${index + 1} instructions...`}
+                      className="bg-gray-700 border-gray-600 text-white flex-1"
+                      rows={2}
+                    />
+                    {newMeal.instructions.length > 1 && (
+                      <Button
+                        onClick={() => removeInstruction(index)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-400 hover:text-red-300 mt-1"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex gap-3 pt-4">
+              <Button 
+                onClick={() => createMealPlan.mutate(newMeal)}
+                disabled={!newMeal.title.trim() || createMealPlan.isPending}
+                className="bg-purple-600 hover:bg-purple-700 flex-1"
+              >
+                {createMealPlan.isPending ? "Creating..." : "Share Meal Plan"}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCreateForm(false)}
+                className="border-gray-600 text-gray-300"
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Meal Plans Display */}
+      {Array.isArray(mealPlans) && mealPlans.length === 0 && !mealsLoading ? (
+        <div className="text-center py-12">
+          <ChefHat className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">No meal plans yet</h3>
+          <p className="text-gray-400">
+            {isCreator ? "Be the first to share a meal plan with your community!" : "No meal plans have been shared yet."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {Array.isArray(mealPlans) && mealPlans.map((meal: MealPlan) => (
+            <Card key={meal.id} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer">
+              <CardContent className="p-0">
+                {/* Meal Image/Video */}
+                {meal.image_url && (
+                  <div className="aspect-video bg-gray-700 rounded-t-lg overflow-hidden">
+                    <img 
+                      src={meal.image_url} 
+                      alt={meal.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                {meal.youtube_video_id && (
+                  <div className="aspect-video bg-gray-700 rounded-t-lg overflow-hidden relative">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${meal.youtube_video_id}`}
+                      title={meal.title}
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+                
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-white text-lg mb-1">{meal.title}</h4>
+                      <p className="text-sm text-gray-400">by {meal.creator_name}</p>
+                    </div>
+                    <Badge className="bg-emerald-600 text-white">
+                      <Clock className="w-3 h-3 mr-1" />
+                      30 min
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-gray-300 text-sm mb-4 line-clamp-2">{meal.description}</p>
+                  
+                  {/* Nutrition Info */}
+                  {meal.nutrition && (
+                    <div className="flex gap-4 text-xs text-gray-400 mb-4">
+                      <span>{meal.nutrition.calories} cal</span>
+                      <span>{meal.nutrition.protein}g protein</span>
+                      <span>{meal.nutrition.carbs}g carbs</span>
+                      <span>{meal.nutrition.fat}g fat</span>
+                    </div>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300 p-1">
+                        <Heart className="w-4 h-4 mr-1" />
+                        {meal.likes_count}
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1">
+                        <MessageSquare className="w-4 h-4 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1">
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function CommunityDetailNew() {
@@ -107,6 +524,7 @@ export default function CommunityDetailNew() {
     {
       id: 1,
       user_id: "user_123",
+      author_id: "user_123",
       username: "Sarah Chen",
       content: "Just shared my latest 7-day meal prep plan focused on high-protein, budget-friendly meals! Perfect for busy families.",
       post_type: "meal_share",
@@ -122,6 +540,7 @@ export default function CommunityDetailNew() {
     {
       id: 2,
       user_id: "user_456",
+      author_id: "user_456",
       username: "Mike Johnson",
       content: "Welcome to our community! This is the place to share your meal planning wins, ask questions, and discover new recipes. Let's support each other on our healthy eating journey! 🥗",
       post_type: "announcement",
@@ -134,6 +553,7 @@ export default function CommunityDetailNew() {
     {
       id: 3,
       user_id: "user_789",
+      author_id: "user_789",
       username: "Emily Rodriguez",
       content: "Quick question - has anyone tried meal prepping with a toddler around? Looking for tips on how to make it work with little ones 'helping' in the kitchen! 😅",
       post_type: "question",
@@ -547,7 +967,7 @@ export default function CommunityDetailNew() {
                   <div className="flex items-center justify-between pt-3 border-t border-gray-700">
                     <div className="flex items-center gap-4">
                       {/* Only show like button for other users' posts */}
-                      {user?.id !== post.author_id ? (
+                      {(user as any)?.user?.id !== post.author_id && (user as any)?.id !== post.author_id ? (
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -601,15 +1021,7 @@ export default function CommunityDetailNew() {
 
         {/* Meal Plans Tab */}
         <TabsContent value="meals" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900">
-          <div className="text-center py-8">
-            <ChefHat className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">Shared Meal Plans</h3>
-            <p className="text-gray-400 mb-4">Discover and share amazing meal plans with the community</p>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="w-4 h-4 mr-1" />
-              Share a Meal Plan
-            </Button>
-          </div>
+          <MealPlansManager communityId={id} isCreator={isCreator} />
         </TabsContent>
 
         {/* Calendar Tab */}
