@@ -548,6 +548,11 @@ export class CommunityService {
       throw new Error("Comment not found");
     }
 
+    // Prevent users from liking their own comments
+    if (comment.author_id === userId) {
+      throw new Error("Cannot like your own comment");
+    }
+
     // Verify user is a member of the community (through the post)
     const [post] = await db.select()
       .from(communityPosts)

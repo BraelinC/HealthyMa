@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ImageUploader } from '@/components/ImageUploader';
 import { formatDistanceToNow } from 'date-fns';
 import { MessageCircle, ThumbsUp, Reply, Send, MoreHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Comment {
   id: number;
@@ -43,6 +44,10 @@ function CommentItem({ comment, communityId, onReply }: {
   const [showReplies, setShowReplies] = useState(false);
   const hasReplies = comment.children && comment.children.length > 0;
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  // Check if current user is the comment author
+  const isOwnComment = user?.id === comment.author_id;
 
   const commentLikeMutation = useMutation({
     mutationFn: async () => {
@@ -124,22 +129,33 @@ function CommentItem({ comment, communityId, onReply }: {
           
           {/* Comment Actions */}
           <div className="flex items-center gap-4 mt-2 px-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`p-1 h-auto transition-colors ${
-                comment.isLiked 
-                  ? 'text-purple-400 hover:text-purple-300' 
-                  : 'text-gray-400 hover:text-purple-400'
-              }`}
-              onClick={() => commentLikeMutation.mutate()}
-              disabled={commentLikeMutation.isPending}
-            >
-              <ThumbsUp 
-                className={`w-4 h-4 mr-1 ${comment.isLiked ? 'fill-current' : ''}`}
-              />
-              <span className="text-xs">{comment.likes}</span>
-            </Button>
+            {/* Only show like button for comments not made by current user */}
+            {!isOwnComment && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`p-1 h-auto transition-colors ${
+                  comment.isLiked 
+                    ? 'text-purple-400 hover:text-purple-300' 
+                    : 'text-gray-400 hover:text-purple-400'
+                }`}
+                onClick={() => commentLikeMutation.mutate()}
+                disabled={commentLikeMutation.isPending}
+              >
+                <ThumbsUp 
+                  className={`w-4 h-4 mr-1 ${comment.isLiked ? 'fill-current' : ''}`}
+                />
+                <span className="text-xs">{comment.likes}</span>
+              </Button>
+            )}
+            
+            {/* Show likes count without button for own comments */}
+            {isOwnComment && comment.likes > 0 && (
+              <div className="flex items-center text-gray-400 p-1">
+                <ThumbsUp className="w-4 h-4 mr-1" />
+                <span className="text-xs">{comment.likes}</span>
+              </div>
+            )}
             
             <Button
               variant="ghost"
