@@ -491,21 +491,6 @@ export default function CommunityDetailNew() {
                     </Button>
                   </div>
 
-                  {/* Add Comment Button */}
-                  {!expandedComments.has(post.id) && (
-                    <div className="mt-3 pt-3 border-t border-gray-700">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleComments(post.id)}
-                        className="text-gray-400 hover:text-white p-2 h-auto w-full justify-start"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        <span className="text-sm">Add a comment</span>
-                      </Button>
-                    </div>
-                  )}
-
                   {/* Comments Section */}
                   {expandedComments.has(post.id) && (
                     <CommentsSection
