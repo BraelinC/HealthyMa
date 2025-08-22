@@ -114,10 +114,10 @@ function AppTabBar() {
   const [location] = useLocation();
   
   const tabs = [
-    { icon: <Users className="w-5 h-5" />, label: "Communities", path: "/" },
     { icon: <HandPlatter className="w-5 h-5" />, label: "Search", path: "/search" },
-    { icon: <ChefHat className="w-5 h-5" />, label: "Meals", path: "/meal-planner" },
-    { icon: <CalendarDays className="w-5 h-5" />, label: "Planner", path: "/meal-planner-new" },
+    { icon: <ChefHat className="w-5 h-5" />, label: "Home", path: "/" },
+    { icon: <CalendarDays className="w-5 h-5" />, label: "Planner", path: "/meal-planner" },
+    { icon: <Users className="w-5 h-5" />, label: "Communities", path: "/communities" },
   ];
   
   return (
@@ -233,10 +233,9 @@ function Router() {
       <AppHeader />
       <main className="flex-grow pb-16"> {/* Add bottom padding for the tab bar */}
         <Switch>
-          <Route path="/" component={Communities} />
-          <Route path="/meal-planner" component={Home} />
+          <Route path="/" component={Home} />
           <Route path="/search" component={Search} />
-          <Route path="/meal-planner-new" component={MealPlanner} />
+          <Route path="/meal-planner" component={MealPlanner} />
           <Route path="/communities" component={Communities} />
           <Route path="/community/create" component={CreateCommunity} />
           <Route path="/create" component={CreateCommunity} />

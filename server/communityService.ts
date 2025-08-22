@@ -26,7 +26,7 @@ import {
   type InsertCommunityPostComment,
   type InsertCommunityPostLike,
 } from "@shared/schema";
-import { eq, and, desc, sql, gte, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, gte } from "drizzle-orm";
 
 export class CommunityService {
   // Create a new community
@@ -457,37 +457,21 @@ export class CommunityService {
     .limit(limit)
     .offset(offset);
 
-    // Check which posts the user has liked (if userId provided)
-    let userLikes = new Set<number>();
-    if (userId && posts.length > 0) {
-      const postIds = posts.map(({ post }) => post.id);
-      const likes = await db.select()
-        .from(communityPostLikes)
-        .where(
-          and(
-            eq(communityPostLikes.user_id, userId),
-            inArray(communityPostLikes.post_id, postIds)
-          )
-        );
-      userLikes = new Set(likes.map(like => like.post_id!));
-    }
-
     // Return posts with proper formatting for frontend
     return posts.map(({ post, author }) => ({
       ...post,
       images: post.images ? JSON.parse(post.images) : [], // Parse JSON string back to array
       username: author?.full_name || author?.firstName || 'Anonymous',
       likes_count: post.likes,
-      comments_count: post.comments_count || 0, // Ensure comments_count is included
       author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
-      isLiked: userLikes.has(post.id),
-      is_liked: userLikes.has(post.id),
+      isLiked: false,
+      is_liked: false,
       created_at: post.created_at ? new Date(post.created_at).toLocaleString() : new Date().toLocaleString()
     }));
   }
 
-  // Like a community post (no unlike functionality)
-  async likePost(userId: string, postId: number): Promise<{ liked: boolean, likesCount: number }> {
+  // Like/unlike a community post
+  async togglePostLike(userId: string, postId: number): Promise<{ liked: boolean, likesCount: number }> {
     // Check if already liked
     const [existingLike] = await db.select()
       .from(communityPostLikes)
@@ -497,23 +481,33 @@ export class CommunityService {
       ));
 
     if (existingLike) {
-      // Already liked - return current state without changing anything
+      // Unlike - remove like and decrement count
+      await db.delete(communityPostLikes)
+        .where(and(
+          eq(communityPostLikes.post_id, postId),
+          eq(communityPostLikes.user_id, userId)
+        ));
+
+      await db.update(communityPosts)
+        .set({ likes: sql`${communityPosts.likes} - 1` })
+        .where(eq(communityPosts.id, postId));
+
+      const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
+      return { liked: false, likesCount: post.likes || 0 };
+    } else {
+      // Like - add like and increment count
+      await db.insert(communityPostLikes).values({
+        post_id: postId,
+        user_id: userId,
+      });
+
+      await db.update(communityPosts)
+        .set({ likes: sql`${communityPosts.likes} + 1` })
+        .where(eq(communityPosts.id, postId));
+
       const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
       return { liked: true, likesCount: post.likes || 0 };
     }
-
-    // Like - add like and increment count
-    await db.insert(communityPostLikes).values({
-      post_id: postId,
-      user_id: userId,
-    });
-
-    await db.update(communityPosts)
-      .set({ likes: sql`${communityPosts.likes} + 1` })
-      .where(eq(communityPosts.id, postId));
-
-    const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
-    return { liked: true, likesCount: post.likes || 0 };
   }
 
   // Add a comment to a community post

@@ -4326,29 +4326,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Like a community post
-  app.post("/api/communities/:communityId/posts/:postId/like", authenticateToken, async (req: any, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-
-      const postId = Number(req.params.postId);
-      const communityId = Number(req.params.communityId);
-
-      if (!postId || !communityId) {
-        return res.status(400).json({ message: "Invalid post or community ID" });
-      }
-
-      const result = await communityService.likePost(userId, postId);
-      res.json(result);
-    } catch (error) {
-      console.error("Error liking post:", error);
-      res.status(500).json({ message: "Failed to like post" });
-    }
-  });
-
   // ============================================
   // COMMUNITY COMMENTS API ROUTES
   // ============================================
