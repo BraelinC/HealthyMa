@@ -170,6 +170,10 @@ function CommentForm({
       queryClient.invalidateQueries({ 
         queryKey: [`/api/communities/${communityId}/posts/${postId}/comments`] 
       });
+      // Also invalidate community posts to update comment counts on main page
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/communities/${communityId}/posts`] 
+      });
       setContent('');
       setImages([]);
       onSuccess();

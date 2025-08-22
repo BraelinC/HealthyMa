@@ -463,6 +463,7 @@ export class CommunityService {
       images: post.images ? JSON.parse(post.images) : [], // Parse JSON string back to array
       username: author?.full_name || author?.firstName || 'Anonymous',
       likes_count: post.likes,
+      comments_count: post.comments_count || 0, // Ensure comments_count is included
       author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
       isLiked: false,
       is_liked: false,
