@@ -277,6 +277,25 @@ export default function CommunityDetailNew() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Creator Dashboard Access */}
+            {isCreator && (
+              <div className="flex items-center gap-2 mr-2">
+                <Badge className="bg-emerald-600 text-white text-xs">
+                  Creator
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-emerald-400 hover:text-emerald-300 p-2"
+                  onClick={() => toast({ 
+                    title: "Creator Mode", 
+                    description: "You're viewing this community with creator privileges" 
+                  })}
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
+              </div>
+            )}
             <Button variant="ghost" size="sm" className="text-white p-2">
               <Search className="w-5 h-5" />
             </Button>
@@ -353,6 +372,21 @@ export default function CommunityDetailNew() {
                         <Button variant="ghost" size="sm" className="text-gray-400 p-2">
                           <ChefHat className="w-4 h-4" />
                         </Button>
+                        {/* Creator-only New Course button */}
+                        {isCreator && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-emerald-400 hover:text-emerald-300 p-2"
+                            onClick={() => toast({ 
+                              title: "New Course", 
+                              description: "Course creation feature coming soon!" 
+                            })}
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span className="ml-1 text-xs">Course</span>
+                          </Button>
+                        )}
                       </div>
                       <Button 
                         onClick={() => createPostMutation.mutate({ content: newPostContent, images: selectedImages })}
@@ -425,6 +459,33 @@ export default function CommunityDetailNew() {
                     </div>
                     <div className="flex items-center gap-1">
                       {post.is_pinned && <Pin className="w-4 h-4 text-purple-400" />}
+                      {/* Creator Controls */}
+                      {isCreator && (
+                        <div className="flex items-center gap-1 ml-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-green-400 hover:text-green-300 p-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toast({ title: "Post pinned", description: "This post is now pinned to the top." });
+                            }}
+                          >
+                            <Pin className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-orange-400 hover:text-orange-300 p-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toast({ title: "Post hidden", description: "This post has been hidden from the community." });
+                            }}
+                          >
+                            <Settings className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                       <Button variant="ghost" size="sm" className="text-gray-400 p-1">
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>

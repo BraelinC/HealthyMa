@@ -191,75 +191,17 @@ function CommunityContentManager({ communityId }: { communityId?: string }) {
 export default function CommunityManage() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
 
-  // Fetch community details using the correct endpoint
-  const { data: community, isLoading } = useQuery({
-    queryKey: [`/api/communities/${id}`],
-    enabled: !!id,
-  });
-
-  // Fetch community stats
-  const { data: stats } = useQuery({
-    queryKey: [`/api/communities/${id}/stats`],
-    enabled: !!id,
-  });
-
-  // Update community mutation
-  const updateCommunity = useMutation({
-    mutationFn: async (updates: any) => {
-      return await apiRequest(`/api/communities/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Community Updated",
-        description: "Your community has been updated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/communities", id] });
-      setIsEditing(false);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading community...</p>
-        </div>
-      </div>
-    );
+  // Redirect to the regular community detail page with creator view
+  // This will show the dark Skool-style interface with creator privileges
+  if (id) {
+    setLocation(`/communities/${id}/detail`);
+    return null;
   }
 
-  if (!community) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Community Not Found</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">The community you're looking for doesn't exist or you don't have access to it.</p>
-            <Button onClick={() => setLocation("/creator-hub")}>
-              Back to Creator Hub
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Fallback if no ID
+  setLocation("/communities");
+  return null;
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
