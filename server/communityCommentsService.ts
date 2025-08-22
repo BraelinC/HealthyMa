@@ -1,6 +1,6 @@
-import { communityPostComments, communityPosts, users, type CommunityPostComment, type InsertCommunityPostComment } from "@shared/schema";
+import { communityPostComments, communityPosts, communityPostLikes, users, type CommunityPostComment, type InsertCommunityPostComment } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, asc, sql } from "drizzle-orm";
+import { eq, desc, asc, sql, and } from "drizzle-orm";
 
 export class CommunityCommentsService {
   
@@ -161,6 +161,46 @@ export class CommunityCommentsService {
     });
 
     return rootComments;
+  }
+
+  // Like/unlike a comment
+  async toggleCommentLike(userId: string, commentId: number): Promise<{ liked: boolean, likesCount: number }> {
+    // Check if already liked
+    const [existingLike] = await db.select()
+      .from(communityPostLikes)
+      .where(and(
+        eq(communityPostLikes.comment_id, commentId),
+        eq(communityPostLikes.user_id, userId)
+      ));
+
+    if (existingLike) {
+      // Unlike - remove like and decrement count
+      await db.delete(communityPostLikes)
+        .where(and(
+          eq(communityPostLikes.comment_id, commentId),
+          eq(communityPostLikes.user_id, userId)
+        ));
+
+      await db.update(communityPostComments)
+        .set({ likes: sql`${communityPostComments.likes} - 1` })
+        .where(eq(communityPostComments.id, commentId));
+
+      const [comment] = await db.select().from(communityPostComments).where(eq(communityPostComments.id, commentId));
+      return { liked: false, likesCount: comment.likes || 0 };
+    } else {
+      // Like - add like and increment count
+      await db.insert(communityPostLikes).values({
+        comment_id: commentId,
+        user_id: userId,
+      });
+
+      await db.update(communityPostComments)
+        .set({ likes: sql`${communityPostComments.likes} + 1` })
+        .where(eq(communityPostComments.id, commentId));
+
+      const [comment] = await db.select().from(communityPostComments).where(eq(communityPostComments.id, commentId));
+      return { liked: true, likesCount: comment.likes || 0 };
+    }
   }
 }
 

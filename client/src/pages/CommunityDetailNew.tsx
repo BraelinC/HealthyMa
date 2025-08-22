@@ -63,6 +63,50 @@ export default function CommunityDetailNew() {
     setLocation(`/community/${id}/post/${postId}`);
   };
 
+  // Like post mutation
+  const likePostMutation = useMutation({
+    mutationFn: async (postId: number) => {
+      return apiRequest(`/api/communities/${id}/posts/${postId}/like`, {
+        method: 'POST'
+      });
+    },
+    onSuccess: () => {
+      // Refresh posts list
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`] });
+    },
+    onError: (error) => {
+      console.error('Failed to toggle post like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleToggleLike = (postId: number, authorId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to like posts.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (authorId === user?.id) {
+      toast({
+        title: "Cannot like own post",
+        description: "You cannot like your own post.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    likePostMutation.mutate(postId);
+  };
+
 
   // Fetch community details
   const { data: community, isLoading } = useQuery({
@@ -470,6 +514,8 @@ export default function CommunityDetailNew() {
                         className={`text-gray-400 hover:text-white p-1 ${
                           post.is_liked ? 'text-red-400' : ''
                         }`}
+                        onClick={(e) => handleToggleLike(post.id, post.author_id, e)}
+                        disabled={post.author_id === user?.id || likePostMutation.isPending}
                       >
                         <ThumbsUp className="w-4 h-4 mr-1" />
                         {post.likes_count}

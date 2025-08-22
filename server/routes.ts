@@ -4443,6 +4443,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Like/unlike a post
+  app.post("/api/communities/:id/posts/:postId/like", authenticateToken, async (req: any, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const result = await communityService.togglePostLike(userId, postId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling post like:", error);
+      res.status(500).json({ message: "Failed to toggle post like" });
+    }
+  });
+
+  // Like/unlike a comment
+  app.post("/api/communities/:id/posts/:postId/comments/:commentId/like", authenticateToken, async (req: any, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const result = await communityCommentsService.toggleCommentLike(userId, commentId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling comment like:", error);
+      res.status(500).json({ message: "Failed to toggle comment like" });
+    }
+  });
+
   // Get community meal plans
   app.get("/api/communities/:id/meal-plans", async (req: any, res) => {
     try {
