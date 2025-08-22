@@ -12,8 +12,56 @@ build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
 [[ports]]
+localPort = 4983
+externalPort = 6800
+
+[[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5001
+externalPort = 8000
+
+[[ports]]
+localPort = 35199
+externalPort = 3002
+exposeLocalhost = true
+
+[[ports]]
+localPort = 38239
+externalPort = 6000
+exposeLocalhost = true
+
+[[ports]]
+localPort = 40245
+externalPort = 3001
+exposeLocalhost = true
+
+[[ports]]
+localPort = 41599
+externalPort = 5173
+exposeLocalhost = true
+
+[[ports]]
+localPort = 42925
+externalPort = 4200
+exposeLocalhost = true
+
+[[ports]]
+localPort = 43227
+externalPort = 5000
+exposeLocalhost = true
+
+[[ports]]
+localPort = 44399
+externalPort = 3000
+exposeLocalhost = true
+
+[[ports]]
+localPort = 45079
+externalPort = 3003
+exposeLocalhost = true
 
 [workflows]
 runButton = "NutriMa Server"

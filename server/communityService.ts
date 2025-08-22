@@ -457,34 +457,17 @@ export class CommunityService {
     .limit(limit)
     .offset(offset);
 
-    // Get like status for each post if userId is provided
-    const postsWithLikeStatus = await Promise.all(
-      posts.map(async ({ post, author }) => {
-        let isLiked = false;
-        if (userId) {
-          const [like] = await db.select()
-            .from(communityPostLikes)
-            .where(and(
-              eq(communityPostLikes.post_id, post.id),
-              eq(communityPostLikes.user_id, userId)
-            ));
-          isLiked = !!like;
-        }
-
-        return {
-          ...post,
-          images: post.images ? JSON.parse(post.images) : [], // Parse JSON string back to array
-          username: author?.full_name || author?.firstName || 'Anonymous',
-          likes_count: post.likes,
-          author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
-          isLiked,
-          is_liked: isLiked,
-          created_at: post.created_at ? new Date(post.created_at).toLocaleString() : new Date().toLocaleString()
-        };
-      })
-    );
-
-    return postsWithLikeStatus;
+    // Return posts with proper formatting for frontend
+    return posts.map(({ post, author }) => ({
+      ...post,
+      images: post.images ? JSON.parse(post.images) : [], // Parse JSON string back to array
+      username: author?.full_name || author?.firstName || 'Anonymous',
+      likes_count: post.likes,
+      author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+      isLiked: false,
+      is_liked: false,
+      created_at: post.created_at ? new Date(post.created_at).toLocaleString() : new Date().toLocaleString()
+    }));
   }
 
   // Like/unlike a community post
