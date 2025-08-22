@@ -462,10 +462,7 @@ export class CommunityService {
     if (userId) {
       const likedPosts = await db.select({ post_id: communityPostLikes.post_id })
         .from(communityPostLikes)
-        .where(and(
-          eq(communityPostLikes.user_id, userId),
-          isNull(communityPostLikes.comment_id)
-        ));
+        .where(eq(communityPostLikes.user_id, userId));
       userLikedPosts = new Set(likedPosts.map(like => like.post_id).filter((id): id is number => id !== null));
     }
 
@@ -506,8 +503,7 @@ export class CommunityService {
       .from(communityPostLikes)
       .where(and(
         eq(communityPostLikes.post_id, postId),
-        eq(communityPostLikes.user_id, userId),
-        isNull(communityPostLikes.comment_id)
+        eq(communityPostLikes.user_id, userId)
       ));
 
     if (existingLike) {
@@ -515,8 +511,7 @@ export class CommunityService {
       await db.delete(communityPostLikes)
         .where(and(
           eq(communityPostLikes.post_id, postId),
-          eq(communityPostLikes.user_id, userId),
-          isNull(communityPostLikes.comment_id)
+          eq(communityPostLikes.user_id, userId)
         ));
 
       await db.update(communityPosts)
@@ -530,7 +525,6 @@ export class CommunityService {
       await db.insert(communityPostLikes).values({
         post_id: postId,
         user_id: userId,
-        comment_id: null,
       });
 
       await db.update(communityPosts)
