@@ -40,15 +40,15 @@ export default function CommunityManage() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Fetch community details
+  // Fetch community details using the correct endpoint
   const { data: community, isLoading } = useQuery({
-    queryKey: ["/api/communities", id],
+    queryKey: [`/api/communities/${id}`],
     enabled: !!id,
   });
 
   // Fetch community stats
   const { data: stats } = useQuery({
-    queryKey: ["/api/communities", id, "stats"],
+    queryKey: [`/api/communities/${id}/stats`],
     enabled: !!id,
   });
 
