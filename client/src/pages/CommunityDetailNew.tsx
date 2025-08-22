@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +16,6 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUploader } from "@/components/ImageUploader";
-import { CommentsSection } from "@/components/CommentsSection";
 
 interface Community {
   id: number;
@@ -52,23 +51,18 @@ interface CommunityPost {
 
 export default function CommunityDetailNew() {
   const { id } = useParams();
+  const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newPostContent, setNewPostContent] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
 
-  const toggleComments = (postId: number) => {
-    const newExpanded = new Set(expandedComments);
-    if (newExpanded.has(postId)) {
-      newExpanded.delete(postId);
-    } else {
-      newExpanded.add(postId);
-    }
-    setExpandedComments(newExpanded);
+  const navigateToPost = (postId: number) => {
+    setLocation(`/community/${id}/post/${postId}`);
   };
+
 
   // Fetch community details
   const { data: community, isLoading } = useQuery({
@@ -386,7 +380,11 @@ export default function CommunityDetailNew() {
               </Card>
             )}
             {posts.map((post: any) => (
-              <Card key={post.id} className="bg-gray-800 border-gray-700">
+              <Card 
+                key={post.id} 
+                className="bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors"
+                onClick={() => navigateToPost(post.id)}
+              >
                 <CardContent className="p-4">
                   {/* Post Header */}
                   <div className="flex items-start justify-between mb-3">
@@ -480,7 +478,10 @@ export default function CommunityDetailNew() {
                         variant="ghost" 
                         size="sm" 
                         className="text-gray-400 hover:text-white p-1"
-                        onClick={() => toggleComments(post.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateToPost(post.id);
+                        }}
                       >
                         <MessageCircle className="w-4 h-4 mr-1" />
                         {post.comments_count}
@@ -491,16 +492,7 @@ export default function CommunityDetailNew() {
                     </Button>
                   </div>
 
-                  {/* Comments Section */}
-                  {expandedComments.has(post.id) && (
-                    <CommentsSection
-                      postId={post.id}
-                      communityId={parseInt(id!)}
-                      commentsCount={post.comments_count}
-                      isExpanded={true}
-                      onToggle={() => toggleComments(post.id)}
-                    />
-                  )}
+
                 </CardContent>
               </Card>
             ))}

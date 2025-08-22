@@ -24,6 +24,7 @@ import Checkout from "@/pages/Checkout";
 import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
 import CommunityDetailNew from "@/pages/CommunityDetailNew";
+import PostDetail from "@/pages/PostDetail";
 import CreatorHub from "@/pages/CreatorHub";
 import CreateCommunity from "@/pages/CreateCommunity";
 import CommunityManage from "@/pages/CommunityManage";
@@ -240,6 +241,7 @@ function Router() {
           <Route path="/create" component={CreateCommunity} />
           <Route path="/creator-hub" component={CreatorHub} />
           <Route path="/community/:id/manage" component={CommunityManage} />
+          <Route path="/community/:communityId/post/:postId" component={PostDetail} />
           <Route path="/community/:id" component={CommunityDetailNew} />
           <Route path="/profile" component={Profile} />
 
