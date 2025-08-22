@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   ArrowLeft,
   Users,
@@ -192,11 +193,12 @@ export default function CommunityManage() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
   // Fetch community details using the correct endpoint
-  const { data: community, isLoading } = useQuery({
+  const { data: community, isLoading, error } = useQuery({
     queryKey: [`/api/communities/${id}`],
     enabled: !!id,
   });
@@ -232,6 +234,12 @@ export default function CommunityManage() {
     },
   });
 
+  // Check if user has access to manage this community
+  const hasAccess = community && user && (
+    (community as any)?.creator_id === (user as any)?.user?.id || 
+    (community as any)?.creator_id === (user as any)?.id
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
@@ -243,20 +251,19 @@ export default function CommunityManage() {
     );
   }
 
-  if (!community) {
+  // Redirect to home if no access or community not found
+  if (!community || !hasAccess || error) {
+    // Use setTimeout to avoid React state update during render
+    setTimeout(() => {
+      setLocation("/");
+    }, 0);
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Community Not Found</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">The community you're looking for doesn't exist or you don't have access to it.</p>
-            <Button onClick={() => setLocation("/creator-hub")}>
-              Back to Creator Hub
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to home...</p>
+        </div>
       </div>
     );
   }

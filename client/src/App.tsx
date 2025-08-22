@@ -240,7 +240,7 @@ function Router() {
           <Route path="/community/create" component={CreateCommunity} />
           <Route path="/create" component={CreateCommunity} />
           <Route path="/creator-hub" component={CreatorHub} />
-          <Route path="/community/:id/manage" component={CommunityManage} />
+          <Route path="/communities/:id/manage" component={CommunityManage} />
           <Route path="/community/:communityId/post/:postId" component={PostDetail} />
           <Route path="/community/:id" component={CommunityDetailNew} />
           <Route path="/profile" component={Profile} />
