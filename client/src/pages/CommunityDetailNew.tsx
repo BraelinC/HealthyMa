@@ -170,6 +170,26 @@ export default function CommunityDetailNew() {
     },
   });
 
+  const toggleLikeMutation = useMutation({
+    mutationFn: async (postId: number) => {
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest(`/api/communities/${id}/posts/${postId}/like`, {
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`, activeFilter] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to toggle like. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Join community mutation
   const joinCommunityMutation = useMutation({
     mutationFn: async () => {
@@ -467,11 +487,18 @@ export default function CommunityDetailNew() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className={`text-gray-400 hover:text-white p-1 ${
-                          post.is_liked ? 'text-red-400' : ''
+                        className={`p-1 transition-colors ${
+                          post.is_liked 
+                            ? "text-purple-400 hover:text-purple-300" 
+                            : "text-gray-400 hover:text-white"
                         }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLikeMutation.mutate(post.id);
+                        }}
+                        disabled={toggleLikeMutation.isPending}
                       >
-                        <ThumbsUp className="w-4 h-4 mr-1" />
+                        <ThumbsUp className={`w-4 h-4 mr-1 ${post.is_liked ? "fill-purple-400" : ""}`} />
                         {post.likes_count}
                       </Button>
                       <Button 

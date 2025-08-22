@@ -4296,6 +4296,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Toggle like on a community post
+  app.post("/api/communities/:communityId/posts/:postId/like", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.communityId);
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const result = await communityService.togglePostLike(userId, postId, communityId);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error toggling post like:", error);
+      if (error.message === "Post not found" || error.message === "Not a member of this community") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to toggle post like" });
+    }
+  });
+
   // Share a meal plan to community
   app.post("/api/communities/:id/share-meal-plan", authenticateToken, async (req: any, res) => {
     try {

@@ -457,6 +457,15 @@ export class CommunityService {
     .limit(limit)
     .offset(offset);
 
+    // Get user's liked posts if userId provided
+    let userLikedPosts = new Set<number>();
+    if (userId) {
+      const likedPosts = await db.select({ post_id: communityPostLikes.post_id })
+        .from(communityPostLikes)
+        .where(eq(communityPostLikes.user_id, userId));
+      userLikedPosts = new Set(likedPosts.map(like => like.post_id).filter((id): id is number => id !== null));
+    }
+
     // Return posts with proper formatting for frontend
     return posts.map(({ post, author }) => ({
       ...post,
@@ -464,14 +473,31 @@ export class CommunityService {
       username: author?.full_name || author?.firstName || 'Anonymous',
       likes_count: post.likes,
       author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
-      isLiked: false,
-      is_liked: false,
+      isLiked: userLikedPosts.has(post.id),
+      is_liked: userLikedPosts.has(post.id),
       created_at: post.created_at ? new Date(post.created_at).toLocaleString() : new Date().toLocaleString()
     }));
   }
 
   // Like/unlike a community post
-  async togglePostLike(userId: string, postId: number): Promise<{ liked: boolean, likesCount: number }> {
+  async togglePostLike(userId: string, postId: number, communityId?: number): Promise<{ liked: boolean, likesCount: number }> {
+    // Verify post exists and get community info
+    const [post] = await db.select()
+      .from(communityPosts)
+      .where(eq(communityPosts.id, postId));
+
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    // If communityId provided, verify user is member
+    if (communityId && communityId !== post.community_id) {
+      throw new Error("Post not found");
+    }
+
+    // Verify user is a member of the community
+    await this.verifyMembership(userId, post.community_id);
+
     // Check if already liked
     const [existingLike] = await db.select()
       .from(communityPostLikes)
