@@ -692,6 +692,74 @@ export type InsertCommunityMember = typeof communityMembers.$inferInsert;
 export type SharedMealPlan = typeof sharedMealPlans.$inferSelect;
 export type InsertSharedMealPlan = typeof sharedMealPlans.$inferInsert;
 
+// Community Meal Courses table (like Skool's Classroom structure)
+export const communityMealCourses = pgTable("community_meal_courses", {
+  id: serial("id").primaryKey(),
+  community_id: integer("community_id").notNull().references(() => communities.id),
+  creator_id: varchar("creator_id").notNull().references(() => users.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  cover_image: text("cover_image"),
+  category: varchar("category", { length: 100 }), // "beginner", "intermediate", "advanced"
+  lesson_count: integer("lesson_count").default(0),
+  total_duration: integer("total_duration").default(0), // total cook time in minutes
+  is_published: boolean("is_published").default(false),
+  display_order: integer("display_order").default(0),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  communityIdx: index("meal_courses_community_idx").on(table.community_id),
+  creatorIdx: index("meal_courses_creator_idx").on(table.creator_id),
+  publishedIdx: index("meal_courses_published_idx").on(table.is_published),
+}));
+
+// Community Meal Lessons table (individual meal plans within a course)
+export const communityMealLessons = pgTable("community_meal_lessons", {
+  id: serial("id").primaryKey(),
+  course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  ingredients: json("ingredients").notNull().default([]), // Array of ingredient strings
+  instructions: json("instructions").notNull().default([]), // Array of instruction strings
+  image_url: text("image_url"),
+  youtube_video_id: varchar("youtube_video_id", { length: 50 }),
+  prep_time: integer("prep_time").default(0), // minutes
+  cook_time: integer("cook_time").default(0), // minutes
+  servings: integer("servings").default(4),
+  difficulty_level: integer("difficulty_level").default(1), // 1-5
+  nutrition_info: json("nutrition_info").default({}), // {calories, protein, carbs, fat}
+  lesson_order: integer("lesson_order").notNull(),
+  is_published: boolean("is_published").default(false),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  courseIdx: index("meal_lessons_course_idx").on(table.course_id),
+  orderIdx: index("meal_lessons_order_idx").on(table.course_id, table.lesson_order),
+  publishedIdx: index("meal_lessons_published_idx").on(table.is_published),
+}));
+
+// User progress tracking for meal courses
+export const userMealCourseProgress = pgTable("user_meal_course_progress", {
+  id: serial("id").primaryKey(),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+  completed_lessons: json("completed_lessons").default([]), // Array of lesson IDs
+  current_lesson_id: integer("current_lesson_id"),
+  progress_percentage: integer("progress_percentage").default(0), // 0-100
+  started_at: timestamp("started_at").defaultNow(),
+  last_accessed: timestamp("last_accessed").defaultNow(),
+}, (table) => ({
+  userCourseIdx: index("progress_user_course_idx").on(table.user_id, table.course_id),
+  userIdx: index("progress_user_idx").on(table.user_id),
+}));
+
+export type CommunityMealCourse = typeof communityMealCourses.$inferSelect;
+export type InsertCommunityMealCourse = typeof communityMealCourses.$inferInsert;
+export type CommunityMealLesson = typeof communityMealLessons.$inferSelect;
+export type InsertCommunityMealLesson = typeof communityMealLessons.$inferInsert;
+export type UserMealCourseProgress = typeof userMealCourseProgress.$inferSelect;
+export type InsertUserMealCourseProgress = typeof userMealCourseProgress.$inferInsert;
+
 export type MealPlanReview = typeof mealPlanReviews.$inferSelect;
 export type InsertMealPlanReview = typeof mealPlanReviews.$inferInsert;
 

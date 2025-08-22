@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { 
   Users, Calendar, MessageSquare, Heart, ChefHat, ArrowLeft, Settings,
   Pin, ThumbsUp, MessageCircle, Share2, Camera, Plus, Search,
-  Clock, TrendingUp, User, MoreHorizontal, Send, Menu, X
+  Clock, TrendingUp, User, MoreHorizontal, Send, Menu, X,
+  ChevronDown, CheckCircle, Play, BookOpen
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -75,392 +76,287 @@ interface MealPlan {
   is_liked: boolean;
 }
 
-// Meal Plans Manager Component
-function MealPlansManager({ communityId, isCreator }: { communityId?: string; isCreator: boolean }) {
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newMeal, setNewMeal] = useState({
-    title: '',
-    description: '',
-    image_url: '',
-    video_url: '',
-    youtube_video_id: '',
-    ingredients: [''],
-    instructions: [''],
-    prep_time: 0,
-    cook_time: 0,
-    servings: 4
-  });
+// Meal Plans Classroom Component (Skool-style)
+function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; isCreator: boolean }) {
+  const [showCreateCourseForm, setShowCreateCourseForm] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [showLessonView, setShowLessonView] = useState(false);
   const { toast } = useToast();
 
-  // Fetch community meal plans
-  const { data: mealPlans = [], isLoading: mealsLoading } = useQuery({
-    queryKey: [`/api/communities/${communityId}/meal-plans`],
-    enabled: !!communityId,
-  });
-
-  const addIngredient = () => {
-    setNewMeal(prev => ({
-      ...prev,
-      ingredients: [...prev.ingredients, '']
-    }));
-  };
-
-  const updateIngredient = (index: number, value: string) => {
-    setNewMeal(prev => ({
-      ...prev,
-      ingredients: prev.ingredients.map((item, i) => i === index ? value : item)
-    }));
-  };
-
-  const removeIngredient = (index: number) => {
-    setNewMeal(prev => ({
-      ...prev,
-      ingredients: prev.ingredients.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addInstruction = () => {
-    setNewMeal(prev => ({
-      ...prev,
-      instructions: [...prev.instructions, '']
-    }));
-  };
-
-  const updateInstruction = (index: number, value: string) => {
-    setNewMeal(prev => ({
-      ...prev,
-      instructions: prev.instructions.map((item, i) => i === index ? value : item)
-    }));
-  };
-
-  const removeInstruction = (index: number) => {
-    setNewMeal(prev => ({
-      ...prev,
-      instructions: prev.instructions.filter((_, i) => i !== index)
-    }));
-  };
-
-  const createMealPlan = useMutation({
-    mutationFn: async (mealData: any) => {
-      const { apiRequest } = await import("@/lib/queryClient");
-      return await apiRequest(`/api/communities/${communityId}/meal-plans`, {
-        method: "POST",
-        body: JSON.stringify(mealData),
-      });
+  // Mock data representing Skool-style courses/modules with lessons
+  const mockCourses = [
+    {
+      id: 1,
+      title: "Start Here",
+      emoji: "🌟",
+      progress_percentage: 25,
+      isExpanded: false,
+      lessons: [
+        { id: 1, title: "The Mission", emoji: "🚀", completed: false },
+        { id: 2, title: "Introduce Yourself", emoji: "👋", completed: false },
+        { id: 3, title: "Roadmap", emoji: "🗺️", completed: false },
+        { id: 4, title: "All ABOARD", emoji: "📢", completed: false },
+        { id: 5, title: "Rules & Guidelines", emoji: "👮", completed: false },
+        { id: 6, title: "Meet The Team", emoji: "👨‍👩‍👧‍👦", completed: false },
+        { id: 7, title: "Calendar", emoji: "📅", completed: false },
+      ]
     },
-    onSuccess: () => {
-      toast({
-        title: "Meal Plan Created",
-        description: "Your meal plan has been shared with the community!",
-      });
-      setShowCreateForm(false);
-      setNewMeal({
-        title: '',
-        description: '',
-        image_url: '',
-        video_url: '',
-        youtube_video_id: '',
-        ingredients: [''],
-        instructions: [''],
-        prep_time: 0,
-        cook_time: 0,
-        servings: 4
-      });
+    {
+      id: 2,
+      title: "Healthy Family Meal Plans",
+      emoji: "🍽️",
+      progress_percentage: 0,
+      isExpanded: false,
+      lessons: [
+        { id: 8, title: "Meal Planning Basics", emoji: "📋", completed: false },
+        { id: 9, title: "Quick Breakfast Ideas", emoji: "🥞", completed: false },
+        { id: 10, title: "Balanced Lunch Recipes", emoji: "🥗", completed: false },
+        { id: 11, title: "Healthy Dinner Options", emoji: "🍲", completed: false },
+        { id: 12, title: "Kid-Friendly Snacks", emoji: "🍎", completed: false },
+        { id: 13, title: "Weekly Meal Prep", emoji: "📦", completed: false },
+      ]
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+    {
+      id: 3,
+      title: "Budget-Friendly Cooking",
+      emoji: "💰",
+      progress_percentage: 0,
+      isExpanded: false,
+      lessons: [
+        { id: 14, title: "Shopping Smart", emoji: "🛒", completed: false },
+        { id: 15, title: "Pantry Staples", emoji: "🏪", completed: false },
+        { id: 16, title: "Bulk Cooking Strategies", emoji: "👥", completed: false },
+        { id: 17, title: "Leftover Magic", emoji: "✨", completed: false },
+      ]
+    }
+  ];
 
-  if (mealsLoading) {
+  const [expandedCourses, setExpandedCourses] = useState<Set<number>>(new Set([1])); // Start Here expanded by default
+
+  const toggleCourseExpansion = (courseId: number) => {
+    setExpandedCourses(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(courseId)) {
+        newSet.delete(courseId);
+      } else {
+        newSet.add(courseId);
+      }
+      return newSet;
+    });
+  };
+
+  if (showLessonView && selectedLesson) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      <div className="space-y-6">
+        {/* Lesson Header */}
+        <div className="flex items-center gap-4 pb-4 border-b border-gray-700">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowLessonView(false)}
+            className="text-gray-400 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Course
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-white">{selectedLesson.title}</h1>
+            <p className="text-gray-400">{selectedCourse?.title}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+              Previous
+            </Button>
+            <Button className="bg-purple-600 hover:bg-purple-700">
+              Next →
+            </Button>
+          </div>
+        </div>
+
+        {/* Lesson Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Video/Image */}
+            <Card className="bg-gray-800 border-gray-700">
+              <div className="aspect-video bg-gray-700 rounded-t-lg flex items-center justify-center">
+                <div className="text-center">
+                  <Play className="h-12 w-12 text-purple-400 mx-auto mb-2" />
+                  <p className="text-gray-400">Video lesson will appear here</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Description */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-white mb-3">About This Lesson</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  Learn the fundamentals of meal planning that will save you time and money while ensuring your family eats healthy, delicious meals every day.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Ingredients & Instructions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white text-lg">Ingredients</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-gray-300">
+                    <li>• 1 cup rice</li>
+                    <li>• 2 cups water</li>
+                    <li>• 1 tsp salt</li>
+                    <li>• 2 tbsp butter</li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white text-lg">Instructions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ol className="space-y-2 text-gray-300">
+                    <li>1. Rinse rice until water runs clear</li>
+                    <li>2. Bring water and salt to boil</li>
+                    <li>3. Add rice and reduce heat</li>
+                    <li>4. Simmer for 18 minutes</li>
+                  </ol>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-4">
+            {/* Progress */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-300">Your Progress</span>
+                  <span className="text-xs text-gray-400">{selectedCourse?.progress_percentage}%</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-purple-600 h-2 rounded-full" 
+                    style={{ width: `${selectedCourse?.progress_percentage}%` }}
+                  ></div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Course Lessons */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white text-sm">Course Lessons</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-2">
+                {selectedCourse?.lessons?.map((lesson: any, index: number) => (
+                  <div 
+                    key={lesson.id}
+                    className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
+                      lesson.id === selectedLesson.id 
+                        ? 'bg-purple-600/20 border border-purple-600/30' 
+                        : 'hover:bg-gray-700'
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                      lesson.completed 
+                        ? 'bg-green-600 text-white' 
+                        : lesson.id === selectedLesson.id
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-600 text-gray-300'
+                    }`}>
+                      {lesson.completed ? '✓' : index + 1}
+                    </div>
+                    <span className={`text-sm ${
+                      lesson.id === selectedLesson.id ? 'text-purple-400' : 'text-gray-300'
+                    }`}>
+                      {lesson.title}
+                    </span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Create Button (Creator Only) */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-white mb-1">Shared Meal Plans</h3>
-          <p className="text-gray-400 text-sm">Discover and share amazing meal plans with the community</p>
+    <div className="space-y-0">
+      {/* Progress Summary - First Course */}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-white mb-4">{mockCourses[0]?.title}</h2>
+        <div className="w-full bg-gray-700 rounded-full h-3 mb-2">
+          <div 
+            className="bg-purple-600 h-3 rounded-full" 
+            style={{ width: `${mockCourses[0]?.progress_percentage}%` }}
+          ></div>
         </div>
-        {isCreator && (
-          <Button 
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Share a Meal Plan
-          </Button>
-        )}
+        <span className="text-xs text-gray-400">{mockCourses[0]?.progress_percentage}%</span>
       </div>
 
-      {/* Create Meal Plan Form (Creator Only) */}
-      {isCreator && showCreateForm && (
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="p-6 space-y-6">
-            <div className="flex items-center justify-between border-b border-gray-700 pb-4">
-              <h4 className="text-lg font-semibold text-white">Create New Meal Plan</h4>
-              <Button variant="ghost" size="sm" onClick={() => setShowCreateForm(false)}>
-                <X className="w-4 h-4" />
-              </Button>
+      {/* Course/Module List - Skool Style */}
+      <div className="space-y-1">
+        {mockCourses.map((course) => (
+          <div key={course.id}>
+            {/* Course Header */}
+            <div 
+              className="flex items-center justify-between py-4 cursor-pointer hover:bg-gray-800/50 transition-colors"
+              onClick={() => toggleCourseExpansion(course.id)}
+            >
+              <div className="flex items-center gap-3">
+                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${
+                  expandedCourses.has(course.id) ? 'rotate-0' : '-rotate-90'
+                }`} />
+                <span className="text-lg font-semibold text-white">{course.title} {course.emoji}</span>
+              </div>
+              {course.progress_percentage > 0 && (
+                <span className="text-xs text-gray-400">{course.progress_percentage}%</span>
+              )}
             </div>
 
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-gray-300">Meal Title</Label>
-                <Input
-                  value={newMeal.title}
-                  onChange={(e) => setNewMeal(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="e.g., Healthy Chicken Stir Fry"
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-300">Servings</Label>
-                <Input
-                  type="number"
-                  value={newMeal.servings}
-                  onChange={(e) => setNewMeal(prev => ({ ...prev, servings: parseInt(e.target.value) }))}
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-gray-300">Description</Label>
-              <Textarea
-                value={newMeal.description}
-                onChange={(e) => setNewMeal(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe your meal..."
-                className="bg-gray-700 border-gray-600 text-white"
-                rows={3}
-              />
-            </div>
-
-            {/* Media Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-gray-300">Image URL</Label>
-                <Input
-                  value={newMeal.image_url}
-                  onChange={(e) => setNewMeal(prev => ({ ...prev, image_url: e.target.value }))}
-                  placeholder="https://example.com/image.jpg"
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-300">YouTube Video ID</Label>
-                <Input
-                  value={newMeal.youtube_video_id}
-                  onChange={(e) => setNewMeal(prev => ({ ...prev, youtube_video_id: e.target.value }))}
-                  placeholder="e.g., dQw4w9WgXcQ"
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-              </div>
-            </div>
-
-            {/* Timing */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-gray-300">Prep Time (minutes)</Label>
-                <Input
-                  type="number"
-                  value={newMeal.prep_time}
-                  onChange={(e) => setNewMeal(prev => ({ ...prev, prep_time: parseInt(e.target.value) }))}
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-300">Cook Time (minutes)</Label>
-                <Input
-                  type="number"
-                  value={newMeal.cook_time}
-                  onChange={(e) => setNewMeal(prev => ({ ...prev, cook_time: parseInt(e.target.value) }))}
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-              </div>
-            </div>
-
-            {/* Ingredients Section */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-gray-300">Ingredients</Label>
-                <Button onClick={addIngredient} variant="outline" size="sm" className="border-gray-600 text-gray-300">
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add Ingredient
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {newMeal.ingredients.map((ingredient, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      value={ingredient}
-                      onChange={(e) => updateIngredient(index, e.target.value)}
-                      placeholder={`Ingredient ${index + 1}`}
-                      className="bg-gray-700 border-gray-600 text-white flex-1"
-                    />
-                    {newMeal.ingredients.length > 1 && (
-                      <Button
-                        onClick={() => removeIngredient(index)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
+            {/* Lessons List - Only show if expanded */}
+            {expandedCourses.has(course.id) && (
+              <div className="ml-7 space-y-1">
+                {course.lessons.map((lesson, index) => (
+                  <div
+                    key={lesson.id}
+                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-800/30 rounded cursor-pointer transition-colors"
+                    onClick={() => {
+                      setSelectedCourse(course);
+                      setSelectedLesson(lesson);
+                      setShowLessonView(true);
+                    }}
+                  >
+                    <span className="text-lg">{lesson.emoji}</span>
+                    <span className="text-white font-medium">{lesson.title}</span>
+                    {lesson.completed && (
+                      <CheckCircle className="h-4 w-4 text-green-500 ml-auto" />
                     )}
                   </div>
                 ))}
               </div>
-            </div>
+            )}
+          </div>
+        ))}
+      </div>
 
-            {/* Instructions Section */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-gray-300">Instructions</Label>
-                <Button onClick={addInstruction} variant="outline" size="sm" className="border-gray-600 text-gray-300">
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add Step
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {newMeal.instructions.map((instruction, index) => (
-                  <div key={index} className="flex gap-2">
-                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium mt-1">
-                      {index + 1}
-                    </div>
-                    <Textarea
-                      value={instruction}
-                      onChange={(e) => updateInstruction(index, e.target.value)}
-                      placeholder={`Step ${index + 1} instructions...`}
-                      className="bg-gray-700 border-gray-600 text-white flex-1"
-                      rows={2}
-                    />
-                    {newMeal.instructions.length > 1 && (
-                      <Button
-                        onClick={() => removeInstruction(index)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-400 hover:text-red-300 mt-1"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex gap-3 pt-4">
-              <Button 
-                onClick={() => createMealPlan.mutate(newMeal)}
-                disabled={!newMeal.title.trim() || createMealPlan.isPending}
-                className="bg-purple-600 hover:bg-purple-700 flex-1"
-              >
-                {createMealPlan.isPending ? "Creating..." : "Share Meal Plan"}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowCreateForm(false)}
-                className="border-gray-600 text-gray-300"
-              >
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Meal Plans Display */}
-      {Array.isArray(mealPlans) && mealPlans.length === 0 && !mealsLoading ? (
-        <div className="text-center py-12">
-          <ChefHat className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No meal plans yet</h3>
-          <p className="text-gray-400">
-            {isCreator ? "Be the first to share a meal plan with your community!" : "No meal plans have been shared yet."}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Array.isArray(mealPlans) && mealPlans.map((meal: MealPlan) => (
-            <Card key={meal.id} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer">
-              <CardContent className="p-0">
-                {/* Meal Image/Video */}
-                {meal.image_url && (
-                  <div className="aspect-video bg-gray-700 rounded-t-lg overflow-hidden">
-                    <img 
-                      src={meal.image_url} 
-                      alt={meal.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                {meal.youtube_video_id && (
-                  <div className="aspect-video bg-gray-700 rounded-t-lg overflow-hidden relative">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${meal.youtube_video_id}`}
-                      title={meal.title}
-                      className="w-full h-full"
-                      allowFullScreen
-                    />
-                  </div>
-                )}
-                
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-white text-lg mb-1">{meal.title}</h4>
-                      <p className="text-sm text-gray-400">by {meal.creator_name}</p>
-                    </div>
-                    <Badge className="bg-emerald-600 text-white">
-                      <Clock className="w-3 h-3 mr-1" />
-                      30 min
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-gray-300 text-sm mb-4 line-clamp-2">{meal.description}</p>
-                  
-                  {/* Nutrition Info */}
-                  {meal.nutrition && (
-                    <div className="flex gap-4 text-xs text-gray-400 mb-4">
-                      <span>{meal.nutrition.calories} cal</span>
-                      <span>{meal.nutrition.protein}g protein</span>
-                      <span>{meal.nutrition.carbs}g carbs</span>
-                      <span>{meal.nutrition.fat}g fat</span>
-                    </div>
-                  )}
-                  
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300 p-1">
-                        <Heart className="w-4 h-4 mr-1" />
-                        {meal.likes_count}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1">
-                        <MessageSquare className="w-4 h-4 mr-1" />
-                        View Details
-                      </Button>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1">
-                      <Share2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      {/* Creator Controls */}
+      {isCreator && (
+        <div className="mt-8 pt-6 border-t border-gray-700">
+          <Button
+            onClick={() => setShowCreateCourseForm(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add New Course
+          </Button>
         </div>
       )}
     </div>
@@ -1019,9 +915,9 @@ export default function CommunityDetailNew() {
           </div>
         </TabsContent>
 
-        {/* Meal Plans Tab */}
+        {/* Meal Plans Tab - Classroom Style */}
         <TabsContent value="meals" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900">
-          <MealPlansManager communityId={id} isCreator={isCreator} />
+          <MealPlansClassroom communityId={id} isCreator={isCreator} />
         </TabsContent>
 
         {/* Calendar Tab */}
