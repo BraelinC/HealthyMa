@@ -235,10 +235,18 @@ export default function CommunityManage() {
   });
 
   // Check if user has access to manage this community
-  const hasAccess = community && user && (
-    (community as any)?.creator_id === (user as any)?.user?.id || 
-    (community as any)?.creator_id === (user as any)?.id
-  );
+  const currentUserId = (user as any)?.user?.id || (user as any)?.id;
+  const communityCreatorId = (community as any)?.creator_id;
+  const hasAccess = community && user && currentUserId === communityCreatorId;
+
+  // Debug logging
+  console.log("🔐 Community Management Access Check:", {
+    communityId: id,
+    currentUserId,
+    communityCreatorId,
+    hasAccess,
+    userRole: (community as any)?.memberInfo?.role
+  });
 
   if (isLoading) {
     return (
@@ -251,18 +259,23 @@ export default function CommunityManage() {
     );
   }
 
-  // Redirect to home if no access or community not found
+  // Redirect to communities if no access or community not found
   if (!community || !hasAccess || error) {
     // Use setTimeout to avoid React state update during render
     setTimeout(() => {
-      setLocation("/");
+      setLocation("/communities");
+      toast({
+        title: "Access Denied",
+        description: "You can only manage communities that you created.",
+        variant: "destructive",
+      });
     }, 0);
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to home...</p>
+          <p className="text-gray-600">Redirecting to communities...</p>
         </div>
       </div>
     );
