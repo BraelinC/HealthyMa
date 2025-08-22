@@ -26,7 +26,7 @@ import {
   type InsertCommunityPostComment,
   type InsertCommunityPostLike,
 } from "@shared/schema";
-import { eq, and, desc, sql, gte } from "drizzle-orm";
+import { eq, and, desc, sql, gte, isNull } from "drizzle-orm";
 
 export class CommunityService {
   // Create a new community
@@ -462,7 +462,10 @@ export class CommunityService {
     if (userId) {
       const likedPosts = await db.select({ post_id: communityPostLikes.post_id })
         .from(communityPostLikes)
-        .where(eq(communityPostLikes.user_id, userId));
+        .where(and(
+          eq(communityPostLikes.user_id, userId),
+          isNull(communityPostLikes.comment_id)
+        ));
       userLikedPosts = new Set(likedPosts.map(like => like.post_id).filter((id): id is number => id !== null));
     }
 
@@ -503,7 +506,8 @@ export class CommunityService {
       .from(communityPostLikes)
       .where(and(
         eq(communityPostLikes.post_id, postId),
-        eq(communityPostLikes.user_id, userId)
+        eq(communityPostLikes.user_id, userId),
+        isNull(communityPostLikes.comment_id)
       ));
 
     if (existingLike) {
@@ -511,7 +515,8 @@ export class CommunityService {
       await db.delete(communityPostLikes)
         .where(and(
           eq(communityPostLikes.post_id, postId),
-          eq(communityPostLikes.user_id, userId)
+          eq(communityPostLikes.user_id, userId),
+          isNull(communityPostLikes.comment_id)
         ));
 
       await db.update(communityPosts)
@@ -525,6 +530,7 @@ export class CommunityService {
       await db.insert(communityPostLikes).values({
         post_id: postId,
         user_id: userId,
+        comment_id: null,
       });
 
       await db.update(communityPosts)
