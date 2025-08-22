@@ -261,9 +261,7 @@ export function CommentsSection({
         className="text-gray-400 hover:text-white p-2 h-auto w-full justify-start"
       >
         <MessageCircle className="w-4 h-4 mr-2" />
-        <span className="text-sm">
-          {commentsCount === 0 ? 'Add a comment' : `${commentsCount} ${commentsCount === 1 ? 'comment' : 'comments'}`}
-        </span>
+        <span className="text-sm">Add a comment</span>
       </Button>
     );
   }
