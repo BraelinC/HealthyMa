@@ -666,12 +666,10 @@ export const communityPostComments = pgTable("community_post_comments", {
 export const communityPostLikes = pgTable("community_post_likes", {
   id: serial("id").primaryKey(),
   post_id: integer("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
-  comment_id: integer("comment_id").references(() => communityPostComments.id, { onDelete: "cascade" }),
   user_id: varchar("user_id").notNull().references(() => users.id),
   created_at: timestamp("created_at").defaultNow(),
 }, (table) => ({
   postUserIdx: index("post_likes_post_user_idx").on(table.post_id, table.user_id),
-  commentUserIdx: index("post_likes_comment_user_idx").on(table.comment_id, table.user_id),
 }));
 
 // Type exports for community tables
