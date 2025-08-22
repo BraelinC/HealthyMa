@@ -33,6 +33,161 @@ import {
   Activity
 } from "lucide-react";
 
+// Community Content Manager Component for Creator Dashboard
+function CommunityContentManager({ communityId }: { communityId?: string }) {
+  const [showNewCourse, setShowNewCourse] = useState(false);
+  
+  // Fetch community posts
+  const { data: posts, isLoading: postsLoading } = useQuery({
+    queryKey: [`/api/communities/${communityId}/posts`],
+    enabled: !!communityId,
+  });
+
+  if (postsLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Creator Content Controls */}
+      <Card className="bg-white border shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold text-gray-900">Content Management</CardTitle>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowNewCourse(!showNewCourse)}
+                className="bg-purple-600 hover:bg-purple-700"
+                size="sm"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                New Course
+              </Button>
+              <Button variant="outline" size="sm">
+                <Edit3 className="w-4 h-4 mr-2" />
+                Moderate Posts
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* New Course Creation (similar to Skool's course creation) */}
+      {showNewCourse && (
+        <Card className="bg-white border shadow-sm border-purple-200">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-900">Create Recipe Course</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="course-title">Course Title</Label>
+              <Input id="course-title" placeholder="e.g., 30-Day Healthy Meal Prep Challenge" />
+            </div>
+            <div>
+              <Label htmlFor="course-description">Description</Label>
+              <Textarea id="course-description" placeholder="Describe what members will learn..." />
+            </div>
+            <div className="flex gap-2">
+              <Button className="bg-purple-600 hover:bg-purple-700">
+                <Save className="w-4 h-4 mr-2" />
+                Create Course
+              </Button>
+              <Button variant="outline" onClick={() => setShowNewCourse(false)}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Community Posts Display (Creator View) */}
+      <Card className="bg-white border shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Community Posts</CardTitle>
+          <p className="text-sm text-gray-600">Manage and moderate community discussions</p>
+        </CardHeader>
+        <CardContent>
+          {posts && Array.isArray(posts) && posts.length > 0 ? (
+            <div className="space-y-4">
+              {posts.map((post: any) => (
+                <div key={post.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-purple-700">
+                          {post.author_name ? post.author_name.charAt(0).toUpperCase() : 'U'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{post.author_name || 'Unknown User'}</p>
+                        <p className="text-xs text-gray-500">
+                          {post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Recently'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={post.type === 'meal_share' ? 'default' : 'secondary'}>
+                        {post.type === 'meal_share' ? '🍽️ Meal Share' : '💬 Discussion'}
+                      </Badge>
+                      <Button variant="ghost" size="sm">
+                        <Edit3 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <p className="text-gray-800 mb-2">{post.content}</p>
+                    {post.images && post.images.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {post.images.slice(0, 2).map((image: string, idx: number) => (
+                          <div key={idx} className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
+                            <span className="text-gray-500 text-sm">📷 Image</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <button className="flex items-center gap-1 text-gray-600 hover:text-purple-600 text-sm">
+                        <Heart className="w-4 h-4" />
+                        {post.likes || 0}
+                      </button>
+                      <button className="flex items-center gap-1 text-gray-600 hover:text-purple-600 text-sm">
+                        <MessageSquare className="w-4 h-4" />
+                        {post.comments_count || 0}
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
+                        Pin
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                        Hide
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm">No posts yet in this community</p>
+              <p className="text-xs text-gray-400 mt-1">Members will be able to share meals and discussions here</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function CommunityManage() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
@@ -325,18 +480,7 @@ export default function CommunityManage() {
 
           {/* Content Tab */}
           <TabsContent value="content" className="space-y-6">
-            <Card className="bg-white border shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-900">Community Posts</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="text-center py-8 text-gray-500">
-                  <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm">Content management coming soon</p>
-                  <p className="text-xs text-gray-400 mt-1">Manage community posts, comments, and content moderation</p>
-                </div>
-              </CardContent>
-            </Card>
+            <CommunityContentManager communityId={id} />
           </TabsContent>
 
           {/* Monetization Tab */}
