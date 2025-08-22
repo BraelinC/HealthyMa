@@ -63,6 +63,23 @@ export default function CommunityDetailNew() {
     setLocation(`/community/${id}/post/${postId}`);
   };
 
+  const likePostMutation = useMutation({
+    mutationFn: async (postId: number) => {
+      return apiRequest(`/api/communities/${id}/posts/${postId}/like`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/communities/${id}/posts`] 
+      });
+    },
+  });
+
+  const handleLikePost = (postId: number) => {
+    likePostMutation.mutate(postId);
+  };
+
 
   // Fetch community details
   const { data: community, isLoading } = useQuery({
@@ -470,6 +487,10 @@ export default function CommunityDetailNew() {
                         className={`text-gray-400 hover:text-white p-1 ${
                           post.is_liked ? 'text-red-400' : ''
                         }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLikePost(post.id);
+                        }}
                       >
                         <ThumbsUp className="w-4 h-4 mr-1" />
                         {post.likes_count}

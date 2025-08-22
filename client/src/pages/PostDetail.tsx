@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { CommentsSection } from "@/components/CommentsSection";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface CommunityPost {
   id: number;
@@ -46,6 +47,8 @@ export default function PostDetail() {
   const { communityId, postId } = useParams();
   const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch community details
   const { data: community } = useQuery({
@@ -89,6 +92,23 @@ export default function PostDetail() {
 
   const handleBackNavigation = () => {
     setLocation(`/community/${communityId}`);
+  };
+
+  const likePostMutation = useMutation({
+    mutationFn: async (postId: number) => {
+      return apiRequest(`/api/communities/${communityId}/posts/${postId}/like`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/communities/${communityId}/posts`] 
+      });
+    },
+  });
+
+  const handleLikePost = (postId: number) => {
+    likePostMutation.mutate(postId);
   };
 
   if (isLoading || !post) {
@@ -230,6 +250,7 @@ export default function PostDetail() {
                   className={`text-gray-400 hover:text-white p-1 ${
                     post.is_liked ? 'text-red-400' : ''
                   }`}
+                  onClick={() => handleLikePost(post.id)}
                 >
                   <ThumbsUp className="w-5 h-5 mr-2" />
                   <span className="text-sm">Like</span>
