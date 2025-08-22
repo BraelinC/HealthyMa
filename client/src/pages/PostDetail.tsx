@@ -15,6 +15,7 @@ import { apiRequest } from "@/lib/queryClient";
 interface CommunityPost {
   id: number;
   user_id: string;
+  author_id: string; // Add author_id for checking post ownership
   username: string;
   user_avatar?: string;
   content: string;
@@ -224,17 +225,28 @@ export default function PostDetail() {
             {/* Post Actions */}
             <div className="flex items-center justify-between pt-4 border-t border-gray-700">
               <div className="flex items-center gap-6">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className={`text-gray-400 hover:text-white p-1 ${
-                    post.is_liked ? 'text-red-400' : ''
-                  }`}
-                >
-                  <ThumbsUp className="w-5 h-5 mr-2" />
-                  <span className="text-sm">Like</span>
-                  <span className="ml-1 text-sm">{post.likes_count}</span>
-                </Button>
+                {/* Only show like button for other users' posts */}
+                {user?.id !== post.author_id ? (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`text-gray-400 hover:text-white p-1 ${
+                      post.is_liked ? 'text-purple-400' : ''
+                    }`}
+                  >
+                    <ThumbsUp className="w-5 h-5 mr-2" />
+                    <span className="text-sm">Like</span>
+                    <span className="ml-1 text-sm">{post.likes_count}</span>
+                  </Button>
+                ) : (
+                  // Show likes count only for own posts (if > 0)
+                  post.likes_count > 0 && (
+                    <div className="text-gray-400 text-sm flex items-center">
+                      <ThumbsUp className="w-5 h-5 mr-2" />
+                      <span className="text-sm">{post.likes_count} likes</span>
+                    </div>
+                  )
+                )}
                 
                 <span className="text-gray-400 text-sm">
                   {post.comments_count} {post.comments_count === 1 ? 'comment' : 'comments'}

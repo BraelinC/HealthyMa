@@ -491,6 +491,11 @@ export class CommunityService {
       throw new Error("Post not found");
     }
 
+    // Prevent users from liking their own posts
+    if (post.author_id === userId) {
+      throw new Error("Cannot like your own post");
+    }
+
     // If communityId provided, verify user is member
     if (communityId && communityId !== post.community_id) {
       throw new Error("Post not found");

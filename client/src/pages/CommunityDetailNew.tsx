@@ -34,6 +34,7 @@ interface Community {
 interface CommunityPost {
   id: number;
   user_id: string;
+  author_id: string; // Add author_id for checking post ownership
   username: string;
   user_avatar?: string;
   content: string;
@@ -484,23 +485,34 @@ export default function CommunityDetailNew() {
                   {/* Post Actions */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-700">
                     <div className="flex items-center gap-4">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className={`p-1 transition-colors ${
-                          post.is_liked 
-                            ? "text-purple-400 hover:text-purple-300" 
-                            : "text-gray-400 hover:text-white"
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleLikeMutation.mutate(post.id);
-                        }}
-                        disabled={toggleLikeMutation.isPending}
-                      >
-                        <ThumbsUp className={`w-4 h-4 mr-1 ${post.is_liked ? "fill-purple-400" : ""}`} />
-                        {post.likes_count}
-                      </Button>
+                      {/* Only show like button for other users' posts */}
+                      {user?.id !== post.author_id ? (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`p-1 transition-colors ${
+                            post.is_liked 
+                              ? "text-purple-400 hover:text-purple-300" 
+                              : "text-gray-400 hover:text-white"
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleLikeMutation.mutate(post.id);
+                          }}
+                          disabled={toggleLikeMutation.isPending}
+                        >
+                          <ThumbsUp className={`w-4 h-4 mr-1 ${post.is_liked ? "fill-purple-400" : ""}`} />
+                          {post.likes_count}
+                        </Button>
+                      ) : (
+                        // Show likes count only for own posts (if > 0)
+                        post.likes_count > 0 && (
+                          <div className="text-gray-400 text-sm flex items-center p-1">
+                            <ThumbsUp className="w-4 h-4 mr-1" />
+                            {post.likes_count}
+                          </div>
+                        )
+                      )}
                       <Button 
                         variant="ghost" 
                         size="sm" 
