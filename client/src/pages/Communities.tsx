@@ -81,8 +81,10 @@ export default function Communities() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
-  // Use actual creator status from user account
-  const isCreator = user?.is_creator;
+  // Use actual creator status from user account - fix nested user object
+  const isCreator = user?.user?.is_creator || user?.is_creator;
+  
+
 
   // Fetch communities - only when authenticated
   const { data: communities = [], isLoading: loadingCommunities } = useQuery({
@@ -232,7 +234,7 @@ export default function Communities() {
                   <Card key={community.id} className="hover:shadow-lg transition-shadow">
                     <div className="cursor-pointer" onClick={() => {
                       // Only navigate if not clicking on buttons
-                      if (!community.creator_id === (user as any)?.id && !community.isMember) {
+                      if (!community.creator_id === ((user as any)?.user?.id || (user as any)?.id) && !community.isMember) {
                         window.location.href = `/community/${community.id}`;
                       }
                     }}>
@@ -261,7 +263,7 @@ export default function Communities() {
                         </CardDescription>
                         {isAuthenticated && (
                           // Show different buttons based on membership and creator status
-                          community.creator_id === (user as any)?.id ? (
+                          community.creator_id === ((user as any)?.user?.id || (user as any)?.id) ? (
                             <Link href={`/community/${community.id}/manage`}>
                               <Button variant="secondary" size="sm" className="w-full">
                                 Manage Community

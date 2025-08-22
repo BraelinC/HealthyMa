@@ -100,7 +100,7 @@ export default function CommunityDetailNew() {
 
   // Check if user is already a member based on memberInfo existence
   const isMember = community?.memberInfo || community?.isMember;
-  const isCreator = community?.memberInfo?.role === 'creator' || community?.creator_id === (user as any)?.id;
+  const isCreator = community?.memberInfo?.role === 'creator' || community?.creator_id === (user as any)?.user?.id || community?.creator_id === (user as any)?.id;
 
   // Mock posts data (replace with real API call later)
   const mockPosts: CommunityPost[] = [
