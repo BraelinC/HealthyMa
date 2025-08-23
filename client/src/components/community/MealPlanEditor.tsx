@@ -848,7 +848,15 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             communityId={communityId}
             onUpdate={(data) => updateCourseMutation.mutate({ courseId: selectedCourse.id, data })}
             onDelete={() => deleteCourseMutation.mutate(selectedCourse.id)}
-            onSelectLesson={() => {}}
+            onSelectLesson={(lesson) => {
+              // Close meal plan editor and open lesson editor
+              setLessonEditorData({ 
+                lesson: lesson, 
+                communityId, 
+                courseId: selectedCourse.id 
+              });
+              onClose(); // Close the meal plan editor tab
+            }}
             onCreateModule={() => setIsCreatingModule(true)}
             onCreateLesson={handleCreateLesson}
             onEditModule={setEditingModule}
