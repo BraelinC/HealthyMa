@@ -10,6 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 23, 2025**: Implemented User View toggle for creators on main Meal Plans page
+- Added User View toggle button for creators to preview how courses appear to regular users
+- Toggle filters courses to show only published content when activated
+- Hidden creator-specific elements (status badges, create buttons) in User View mode
+- Added blue indicator banner explaining User View functionality
+- Updated empty state messages to guide creators between view modes
+- Simplified Quick Content Templates in lesson editor to match Skool's clean, mobile-first design
+- Replaced complex grid layout with streamlined horizontal buttons (Key Points, Steps, Tip)
+- Made content insertion more efficient with Skool-style minimal interface
+
 **August 23, 2025**: Enhanced lesson editor with Skool-style content creation interface
 - Enhanced lesson content area with expandable text editor (8 rows minimum) for comprehensive content creation
 - Added quick content template buttons for easy insertion of formatted sections (Key Points, Step Lists, Pro Tips, Section Breaks)

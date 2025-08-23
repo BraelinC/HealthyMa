@@ -462,13 +462,13 @@ export default function InlineLessonEditor({
                       />
                       <p className="text-xs text-gray-400 mt-1">Tip: Use clear headings, bullet points, and step-by-step instructions</p>
                       
-                      {/* Quick Content Templates */}
-                      <div className="mt-4">
-                        <Label className="text-gray-300 mb-3 block">Quick Content Templates</Label>
-                        <div className="grid grid-cols-2 gap-3">
+                      {/* Quick Add Content */}
+                      <div className="mt-3 pt-3 border-t border-gray-700">
+                        <div className="flex flex-wrap gap-2">
                           <Button
-                            variant="outline"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 justify-start h-auto p-3"
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-1"
                             onClick={() => {
                               const currentContent = lessonData.description;
                               setLessonData({
@@ -477,70 +477,38 @@ export default function InlineLessonEditor({
                               });
                             }}
                           >
-                            <div className="text-left">
-                              <div className="flex items-center">
-                                <Target className="w-4 h-4 mr-2" />
-                                Key Points
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">Add bullet points</p>
-                            </div>
+                            <Target className="w-3 h-3 mr-1" />
+                            Key Points
                           </Button>
                           <Button
-                            variant="outline"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 justify-start h-auto p-3"
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-1"
                             onClick={() => {
                               const currentContent = lessonData.description;
                               setLessonData({
                                 ...lessonData,
-                                description: currentContent + "\n\n## Steps to Follow\n1. \n2. \n3. \n"
+                                description: currentContent + "\n\n## Steps\n1. \n2. \n3. \n"
                               });
                             }}
                           >
-                            <div className="text-left">
-                              <div className="flex items-center">
-                                <ListChecks className="w-4 h-4 mr-2" />
-                                Step List
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">Numbered steps</p>
-                            </div>
+                            <ListChecks className="w-3 h-3 mr-1" />
+                            Steps
                           </Button>
                           <Button
-                            variant="outline"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 justify-start h-auto p-3"
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-1"
                             onClick={() => {
                               const currentContent = lessonData.description;
                               setLessonData({
                                 ...lessonData,
-                                description: currentContent + "\n\n## 💡 Pro Tip\n\n"
+                                description: currentContent + "\n\n💡 **Pro Tip:** \n\n"
                               });
                             }}
                           >
-                            <div className="text-left">
-                              <div className="flex items-center">
-                                <Info className="w-4 h-4 mr-2" />
-                                Pro Tip
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">Important note</p>
-                            </div>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 justify-start h-auto p-3"
-                            onClick={() => {
-                              const currentContent = lessonData.description;
-                              setLessonData({
-                                ...lessonData,
-                                description: currentContent + "\n\n---\n\n## Next Section\n\n"
-                              });
-                            }}
-                          >
-                            <div className="text-left">
-                              <div className="flex items-center">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Section Break
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">Add separator</p>
-                            </div>
+                            <Info className="w-3 h-3 mr-1" />
+                            Tip
                           </Button>
                         </div>
                       </div>
