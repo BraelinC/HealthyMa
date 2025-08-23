@@ -27,10 +27,19 @@ import {
   communities,
   communityMembers,
   sharedMealPlans,
-  creatorFollowers
+  creatorFollowers,
+  communityMealCourses,
+  communityMealCourseModules,
+  communityMealLessons,
+  communityMealLessonSections,
+  userMealCourseProgress,
+  type InsertCommunityMealCourse,
+  type InsertCommunityMealCourseModule,
+  type InsertCommunityMealLesson,
+  type InsertCommunityMealLessonSection
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 // YouTube API utilities
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -4883,6 +4892,462 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching creator stats:", error);
       res.status(500).json({ message: "Failed to fetch creator stats" });
+    }
+  });
+
+  // ==================== COMMUNITY MEAL COURSES (CREATOR ONLY) ====================
+  
+  // Get all courses for a community
+  app.get("/api/communities/:id/courses", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      console.log(`[COURSES API] Fetching courses for community ${communityId}, user: ${userId}`);
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Get courses with modules and lessons
+      const courses = await db.select()
+        .from(communityMealCourses)
+        .where(eq(communityMealCourses.community_id, communityId))
+        .orderBy(communityMealCourses.display_order);
+      
+      console.log(`[COURSES API] Found ${courses.length} courses`);
+      
+      // If no courses exist and user is creator, create default courses
+      if (courses.length === 0) {
+        // Check if user is creator of this community
+        const [member] = await db.select()
+          .from(communityMembers)
+          .where(and(
+            eq(communityMembers.community_id, communityId),
+            eq(communityMembers.user_id, userId),
+            eq(communityMembers.role, "creator")
+          ));
+        
+        if (member) {
+          console.log(`[COURSES API] Creator detected, creating default courses`);
+          
+          // Create default courses
+          const defaultCourses = [
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Start Here",
+              emoji: "🌟",
+              description: "Essential information to get started with our meal planning community",
+              category: "beginner",
+              is_published: true,
+              display_order: 0,
+              lesson_count: 4,
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "30-Day Meal Transformation",
+              emoji: "🔥",
+              description: "Transform your eating habits with our comprehensive 30-day program",
+              category: "intermediate",
+              is_published: true,
+              display_order: 1,
+              lesson_count: 5,
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Budget Nutrition Secrets",
+              emoji: "💰",
+              description: "Learn how to eat healthy on a budget with smart shopping strategies",
+              category: "beginner",
+              is_published: true,
+              display_order: 2,
+              lesson_count: 4,
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Recipe Vault",
+              emoji: "📚",
+              description: "Access our collection of quick, healthy, and delicious recipes",
+              category: "beginner",
+              is_published: true,
+              display_order: 3,
+              lesson_count: 4,
+            },
+          ];
+          
+          const insertedCourses = await db.insert(communityMealCourses)
+            .values(defaultCourses)
+            .returning();
+          
+          console.log(`[COURSES API] Created ${insertedCourses.length} default courses`);
+          
+          // Return the newly created courses
+          const newCourses = await db.select()
+            .from(communityMealCourses)
+            .where(eq(communityMealCourses.community_id, communityId))
+            .orderBy(communityMealCourses.display_order);
+          
+          return res.json(newCourses);
+        }
+      }
+
+      // Get modules for each course
+      const coursesWithModules = await Promise.all(
+        courses.map(async (course) => {
+          const modules = await db.select()
+            .from(communityMealCourseModules)
+            .where(eq(communityMealCourseModules.course_id, course.id))
+            .orderBy(communityMealCourseModules.module_order);
+
+          // Get lessons for each module
+          const modulesWithLessons = await Promise.all(
+            modules.map(async (module) => {
+              const lessons = await db.select()
+                .from(communityMealLessons)
+                .where(eq(communityMealLessons.module_id, module.id))
+                .orderBy(communityMealLessons.lesson_order);
+              return { ...module, lessons };
+            })
+          );
+
+          // Also get lessons without modules
+          const standaloneLessons = await db.select()
+            .from(communityMealLessons)
+            .where(and(
+              eq(communityMealLessons.course_id, course.id),
+              isNull(communityMealLessons.module_id)
+            ))
+            .orderBy(communityMealLessons.lesson_order);
+
+          return { ...course, modules: modulesWithLessons, lessons: standaloneLessons };
+        })
+      );
+
+      // If still no courses after all processing, return empty array
+      res.json(coursesWithModules || []);
+    } catch (error) {
+      console.error("[COURSES API] Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Create a new course (creator only)
+  app.post("/api/communities/:id/courses", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the community
+      const [member] = await db.select()
+        .from(communityMembers)
+        .where(and(
+          eq(communityMembers.community_id, communityId),
+          eq(communityMembers.user_id, userId),
+          eq(communityMembers.role, "creator")
+        ));
+
+      if (!member) {
+        return res.status(403).json({ message: "Only creators can create courses" });
+      }
+
+      const courseData: InsertCommunityMealCourse = {
+        community_id: communityId,
+        creator_id: userId,
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        category: req.body.category,
+        is_published: false,
+        display_order: req.body.display_order || 0,
+        drip_enabled: req.body.drip_enabled || false,
+        drip_days: req.body.drip_days || [],
+      };
+
+      const [newCourse] = await db.insert(communityMealCourses)
+        .values(courseData)
+        .returning();
+
+      res.json(newCourse);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Failed to create course" });
+    }
+  });
+
+  // Update a course (creator only)
+  app.put("/api/communities/:id/courses/:courseId", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can update this course" });
+      }
+
+      const [updatedCourse] = await db.update(communityMealCourses)
+        .set({
+          title: req.body.title || course.title,
+          emoji: req.body.emoji || course.emoji,
+          description: req.body.description || course.description,
+          category: req.body.category || course.category,
+          is_published: req.body.is_published ?? course.is_published,
+          display_order: req.body.display_order ?? course.display_order,
+          drip_enabled: req.body.drip_enabled ?? course.drip_enabled,
+          drip_days: req.body.drip_days || course.drip_days,
+          updated_at: new Date(),
+        })
+        .where(eq(communityMealCourses.id, courseId))
+        .returning();
+
+      res.json(updatedCourse);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Failed to update course" });
+    }
+  });
+
+  // Delete a course (creator only)
+  app.delete("/api/communities/:id/courses/:courseId", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can delete this course" });
+      }
+
+      await db.delete(communityMealCourses)
+        .where(eq(communityMealCourses.id, courseId));
+
+      res.json({ message: "Course deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+
+  // Create a lesson (creator only)
+  app.post("/api/communities/:id/courses/:courseId/lessons", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the course
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can add lessons to this course" });
+      }
+
+      const lessonData: InsertCommunityMealLesson = {
+        course_id: courseId,
+        module_id: req.body.module_id,
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        video_url: req.body.video_url,
+        youtube_video_id: req.body.youtube_video_id,
+        image_url: req.body.image_url,
+        ingredients: req.body.ingredients || [],
+        instructions: req.body.instructions || [],
+        prep_time: req.body.prep_time || 0,
+        cook_time: req.body.cook_time || 0,
+        servings: req.body.servings || 4,
+        difficulty_level: req.body.difficulty_level || 1,
+        nutrition_info: req.body.nutrition_info || {},
+        lesson_order: req.body.lesson_order || 0,
+        is_published: false,
+      };
+
+      const [newLesson] = await db.insert(communityMealLessons)
+        .values(lessonData)
+        .returning();
+
+      // Create default sections if provided
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        const sections = req.body.sections.map((section: any, index: number) => ({
+          lesson_id: newLesson.id,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index,
+          is_visible: section.is_visible ?? true,
+        }));
+
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+
+      // Update course lesson count
+      await db.update(communityMealCourses)
+        .set({ 
+          lesson_count: course.lesson_count + 1,
+          updated_at: new Date()
+        })
+        .where(eq(communityMealCourses.id, courseId));
+
+      res.json(newLesson);
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res.status(500).json({ message: "Failed to create lesson" });
+    }
+  });
+
+  // Update a lesson (creator only)
+  app.put("/api/communities/:id/lessons/:lessonId", authenticateToken, async (req: any, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator by checking the course
+      const [lesson] = await db.select({
+        lesson: communityMealLessons,
+        course: communityMealCourses,
+      })
+        .from(communityMealLessons)
+        .innerJoin(communityMealCourses, eq(communityMealLessons.course_id, communityMealCourses.id))
+        .where(eq(communityMealLessons.id, lessonId));
+
+      if (!lesson || lesson.course.creator_id !== userId) {
+        return res.status(403).json({ message: "Only the creator can update this lesson" });
+      }
+
+      // Update lesson
+      const [updatedLesson] = await db.update(communityMealLessons)
+        .set({
+          title: req.body.title || lesson.lesson.title,
+          emoji: req.body.emoji || lesson.lesson.emoji,
+          description: req.body.description || lesson.lesson.description,
+          video_url: req.body.video_url || lesson.lesson.video_url,
+          youtube_video_id: req.body.youtube_video_id || lesson.lesson.youtube_video_id,
+          image_url: req.body.image_url || lesson.lesson.image_url,
+          ingredients: req.body.ingredients || lesson.lesson.ingredients,
+          instructions: req.body.instructions || lesson.lesson.instructions,
+          prep_time: req.body.prep_time ?? lesson.lesson.prep_time,
+          cook_time: req.body.cook_time ?? lesson.lesson.cook_time,
+          servings: req.body.servings ?? lesson.lesson.servings,
+          difficulty_level: req.body.difficulty_level ?? lesson.lesson.difficulty_level,
+          nutrition_info: req.body.nutrition_info || lesson.lesson.nutrition_info,
+          is_published: req.body.is_published ?? lesson.lesson.is_published,
+          updated_at: new Date(),
+        })
+        .where(eq(communityMealLessons.id, lessonId))
+        .returning();
+
+      // Update sections if provided
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        // Delete existing sections
+        await db.delete(communityMealLessonSections)
+          .where(eq(communityMealLessonSections.lesson_id, lessonId));
+
+        // Insert new sections
+        const sections = req.body.sections.map((section: any, index: number) => ({
+          lesson_id: lessonId,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index,
+          is_visible: section.is_visible ?? true,
+        }));
+
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+
+      res.json(updatedLesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Failed to update lesson" });
+    }
+  });
+
+  // Get lesson details with sections
+  app.get("/api/communities/:id/lessons/:lessonId", authenticateToken, async (req: any, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const userId = req.user?.id;
+
+      // Get lesson with course info
+      const [lesson] = await db.select()
+        .from(communityMealLessons)
+        .where(eq(communityMealLessons.id, lessonId));
+
+      if (!lesson) {
+        return res.status(404).json({ message: "Lesson not found" });
+      }
+
+      // Get sections
+      const sections = await db.select()
+        .from(communityMealLessonSections)
+        .where(eq(communityMealLessonSections.lesson_id, lessonId))
+        .orderBy(communityMealLessonSections.display_order);
+
+      // Get user progress if authenticated
+      let userProgress = null;
+      if (userId) {
+        const [progress] = await db.select()
+          .from(userMealCourseProgress)
+          .where(and(
+            eq(userMealCourseProgress.user_id, userId),
+            eq(userMealCourseProgress.course_id, lesson.course_id)
+          ));
+        userProgress = progress;
+      }
+
+      res.json({
+        ...lesson,
+        sections,
+        userProgress,
+      });
+    } catch (error) {
+      console.error("Error fetching lesson:", error);
+      res.status(500).json({ message: "Failed to fetch lesson" });
     }
   });
 

@@ -698,6 +698,7 @@ export const communityMealCourses = pgTable("community_meal_courses", {
   community_id: integer("community_id").notNull().references(() => communities.id),
   creator_id: varchar("creator_id").notNull().references(() => users.id),
   title: varchar("title", { length: 255 }).notNull(),
+  emoji: varchar("emoji", { length: 10 }), // Optional emoji for the course
   description: text("description"),
   cover_image: text("cover_image"),
   category: varchar("category", { length: 100 }), // "beginner", "intermediate", "advanced"
@@ -705,6 +706,8 @@ export const communityMealCourses = pgTable("community_meal_courses", {
   total_duration: integer("total_duration").default(0), // total cook time in minutes
   is_published: boolean("is_published").default(false),
   display_order: integer("display_order").default(0),
+  drip_enabled: boolean("drip_enabled").default(false), // Enable drip content
+  drip_days: json("drip_days").default([]), // Days after enrollment when lessons unlock
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 }, (table) => ({
@@ -717,8 +720,11 @@ export const communityMealCourses = pgTable("community_meal_courses", {
 export const communityMealLessons = pgTable("community_meal_lessons", {
   id: serial("id").primaryKey(),
   course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+  module_id: integer("module_id").references(() => communityMealCourseModules.id, { onDelete: "set null" }), // Optional module grouping
   title: varchar("title", { length: 255 }).notNull(),
+  emoji: varchar("emoji", { length: 10 }), // Optional emoji for the lesson
   description: text("description"),
+  video_url: text("video_url"), // Direct video URL for lesson
   ingredients: json("ingredients").notNull().default([]), // Array of ingredient strings
   instructions: json("instructions").notNull().default([]), // Array of instruction strings
   image_url: text("image_url"),
@@ -738,6 +744,39 @@ export const communityMealLessons = pgTable("community_meal_lessons", {
   publishedIdx: index("meal_lessons_published_idx").on(table.is_published),
 }));
 
+// Community Meal Course Modules (Sets/Sections within a course)
+export const communityMealCourseModules = pgTable("community_meal_course_modules", {
+  id: serial("id").primaryKey(),
+  course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  emoji: varchar("emoji", { length: 10 }), // Optional emoji for the module
+  description: text("description"),
+  module_order: integer("module_order").notNull(),
+  is_expanded: boolean("is_expanded").default(false), // Whether module is expanded by default
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  courseIdx: index("meal_modules_course_idx").on(table.course_id),
+  orderIdx: index("meal_modules_order_idx").on(table.course_id, table.module_order),
+}));
+
+// Lesson Sections table (About This Lesson, Key Takeaways, etc.)
+export const communityMealLessonSections = pgTable("community_meal_lesson_sections", {
+  id: serial("id").primaryKey(),
+  lesson_id: integer("lesson_id").notNull().references(() => communityMealLessons.id, { onDelete: "cascade" }),
+  section_type: varchar("section_type", { length: 50 }).notNull(), // "about", "key_takeaways", "action_steps", "custom"
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  template_id: varchar("template_id", { length: 50 }), // "meal_prep", "shopping_guide", "techniques", "nutrition", "time_management", "cultural"
+  display_order: integer("display_order").notNull(),
+  is_visible: boolean("is_visible").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  lessonIdx: index("lesson_sections_lesson_idx").on(table.lesson_id),
+  orderIdx: index("lesson_sections_order_idx").on(table.lesson_id, table.display_order),
+}));
+
 // User progress tracking for meal courses
 export const userMealCourseProgress = pgTable("user_meal_course_progress", {
   id: serial("id").primaryKey(),
@@ -755,8 +794,12 @@ export const userMealCourseProgress = pgTable("user_meal_course_progress", {
 
 export type CommunityMealCourse = typeof communityMealCourses.$inferSelect;
 export type InsertCommunityMealCourse = typeof communityMealCourses.$inferInsert;
+export type CommunityMealCourseModule = typeof communityMealCourseModules.$inferSelect;
+export type InsertCommunityMealCourseModule = typeof communityMealCourseModules.$inferInsert;
 export type CommunityMealLesson = typeof communityMealLessons.$inferSelect;
 export type InsertCommunityMealLesson = typeof communityMealLessons.$inferInsert;
+export type CommunityMealLessonSection = typeof communityMealLessonSections.$inferSelect;
+export type InsertCommunityMealLessonSection = typeof communityMealLessonSections.$inferInsert;
 export type UserMealCourseProgress = typeof userMealCourseProgress.$inferSelect;
 export type InsertUserMealCourseProgress = typeof userMealCourseProgress.$inferInsert;
 

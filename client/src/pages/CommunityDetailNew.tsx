@@ -18,6 +18,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUploader } from "@/components/ImageUploader";
+import { MealPlanEditor } from "@/components/community/MealPlanEditor";
+import { LessonEditor } from "@/components/community/LessonEditor";
 
 interface Community {
   id: number;
@@ -82,7 +84,9 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [showLessonView, setShowLessonView] = useState(false);
+  const [showMealPlanEditor, setShowMealPlanEditor] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Mock data representing Tyler's community courses
   const mockCourses = [
@@ -403,14 +407,35 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
       {/* Creator Controls */}
       {isCreator && (
         <div className="mt-8 pt-6 border-t border-gray-700">
-          <Button
-            onClick={() => setShowCreateCourseForm(true)}
-            className="bg-purple-600 hover:bg-purple-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add New Course
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setShowMealPlanEditor(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Edit Courses
+            </Button>
+            <Button
+              onClick={() => setShowMealPlanEditor(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Quick Add Course
+            </Button>
+          </div>
         </div>
+      )}
+
+      {/* Meal Plan Editor Modal for Creators */}
+      {showMealPlanEditor && isCreator && (
+        <MealPlanEditor 
+          communityId={communityId || ''} 
+          onClose={() => {
+            setShowMealPlanEditor(false);
+            // Refresh the courses list
+            queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
+          }}
+        />
       )}
     </div>
   );
@@ -425,6 +450,7 @@ export default function CommunityDetailNew() {
   const [newPostContent, setNewPostContent] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [showMealPlanEditorMain, setShowMealPlanEditorMain] = useState(false);
 
   const navigateToPost = (postId: number) => {
     setLocation(`/community/${id}/post/${postId}`);
@@ -747,10 +773,7 @@ export default function CommunityDetailNew() {
                             variant="ghost" 
                             size="sm" 
                             className="text-emerald-400 hover:text-emerald-300 p-2"
-                            onClick={() => toast({ 
-                              title: "New Course", 
-                              description: "Course creation feature coming soon!" 
-                            })}
+                            onClick={() => setShowMealPlanEditorMain(true)}
                           >
                             <Plus className="w-4 h-4" />
                             <span className="ml-1 text-xs">Course</span>
@@ -1028,6 +1051,18 @@ export default function CommunityDetailNew() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Global Meal Plan Editor Modal for Creators */}
+      {showMealPlanEditorMain && isCreator && (
+        <MealPlanEditor 
+          communityId={id || ''} 
+          onClose={() => {
+            setShowMealPlanEditorMain(false);
+            // Refresh the courses list
+            queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/courses`] });
+          }}
+        />
+      )}
     </div>
   );
 }

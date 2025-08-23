@@ -234,3 +234,34 @@ button[role="gridcell"]:hover:not([aria-selected="true"]):not([disabled]) {
 .animate-float {
   animation: float linear infinite;
 }
+
+/* Meal Plan Editor Mobile Collapse Styles */
+[data-meal-plan-editor].minimized {
+  --editor-transform: translateY(80%);
+}
+
+[data-meal-plan-editor].minimized .bg-gray-900 {
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
+}
+
+[data-meal-plan-editor].minimized button[title="Minimize editor"] {
+  transform: rotate(180deg);
+}
+
+/* Mobile responsiveness for meal plan editor */
+@media (max-width: 768px) {
+  [data-meal-plan-editor] .w-80 {
+    width: 100%;
+    max-width: 320px;
+  }
+  
+  [data-meal-plan-editor].minimized {
+    --editor-transform: translateY(85%);
+  }
+  
+  [data-meal-plan-editor].minimized .w-80 {
+    height: 120px;
+    overflow: hidden;
+  }
+}

@@ -9,11 +9,11 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc5) => {
+var __copyProps = (to, from, except, desc6) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc5 = __getOwnPropDesc(from, key)) || desc5.enumerable });
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc6 = __getOwnPropDesc(from, key)) || desc6.enumerable });
   }
   return to;
 };
@@ -24,8 +24,16 @@ var schema_exports = {};
 __export(schema_exports, {
   communities: () => communities,
   communityChallenges: () => communityChallenges,
+  communityCommentLikes: () => communityCommentLikes,
   communityDiscussions: () => communityDiscussions,
+  communityMealCourseModules: () => communityMealCourseModules,
+  communityMealCourses: () => communityMealCourses,
+  communityMealLessonSections: () => communityMealLessonSections,
+  communityMealLessons: () => communityMealLessons,
   communityMembers: () => communityMembers,
+  communityPostComments: () => communityPostComments,
+  communityPostLikes: () => communityPostLikes,
+  communityPosts: () => communityPosts,
   creatorFollowers: () => creatorFollowers,
   creatorProfiles: () => creatorProfiles,
   culturalCuisineCache: () => culturalCuisineCache,
@@ -55,6 +63,7 @@ __export(schema_exports, {
   sharedMealPlans: () => sharedMealPlans,
   simplifiedUserProfileSchema: () => simplifiedUserProfileSchema,
   userAchievements: () => userAchievements,
+  userMealCourseProgress: () => userMealCourseProgress,
   userSavedCulturalMeals: () => userSavedCulturalMeals,
   users: () => users,
   weightBasedMealSchema: () => weightBasedMealSchema
@@ -93,7 +102,7 @@ function mergeFamilyDietaryRestrictions(members) {
   console.log("\u{1F517} Final merged restrictions:", finalRestrictions);
   return finalRestrictions;
 }
-var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema, groceryListCache, insertGroceryListCacheSchema, foodLogs, insertFoodLogSchema, foodDatabase, insertFoodDatabaseSchema, communities, communityMembers, sharedMealPlans, mealPlanReviews, mealPlanRemixes, communityDiscussions, creatorProfiles, creatorFollowers, communityChallenges;
+var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema, groceryListCache, insertGroceryListCacheSchema, foodLogs, insertFoodLogSchema, foodDatabase, insertFoodDatabaseSchema, communities, communityMembers, sharedMealPlans, mealPlanReviews, mealPlanRemixes, communityDiscussions, creatorProfiles, creatorFollowers, communityChallenges, communityPosts, communityPostComments, communityPostLikes, communityCommentLikes, communityMealCourses, communityMealLessons, communityMealCourseModules, communityMealLessonSections, userMealCourseProgress;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -624,6 +633,171 @@ var init_schema = __esm({
     }, (table) => ({
       communityIdx: index("challenges_community_idx").on(table.community_id),
       dateIdx: index("challenges_date_idx").on(table.start_date, table.end_date)
+    }));
+    communityPosts = pgTable("community_posts", {
+      id: serial("id").primaryKey(),
+      community_id: integer("community_id").notNull().references(() => communities.id),
+      author_id: varchar("author_id").notNull().references(() => users.id),
+      content: text("content").notNull(),
+      post_type: text("post_type").notNull().default("discussion"),
+      // "discussion", "question", "announcement", "meal_share"
+      meal_plan_id: integer("meal_plan_id").references(() => mealPlans.id),
+      // For meal share posts
+      images: text("images"),
+      // JSON string of image URLs
+      likes: integer("likes").default(0),
+      comments_count: integer("comments_count").default(0),
+      is_pinned: boolean("is_pinned").default(false),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      communityIdx: index("community_posts_community_idx").on(table.community_id),
+      authorIdx: index("community_posts_author_idx").on(table.author_id),
+      typeIdx: index("community_posts_type_idx").on(table.post_type),
+      createdIdx: index("community_posts_created_idx").on(table.created_at)
+    }));
+    communityPostComments = pgTable("community_post_comments", {
+      id: serial("id").primaryKey(),
+      post_id: integer("post_id").notNull().references(() => communityPosts.id, { onDelete: "cascade" }),
+      author_id: varchar("author_id").notNull().references(() => users.id),
+      content: text("content").notNull(),
+      parent_id: integer("parent_id"),
+      // For nested replies
+      images: text("images"),
+      // JSON string of image URLs (same as posts)
+      likes: integer("likes").default(0),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      postIdx: index("post_comments_post_idx").on(table.post_id),
+      authorIdx: index("post_comments_author_idx").on(table.author_id),
+      parentIdx: index("post_comments_parent_idx").on(table.parent_id)
+    }));
+    communityPostLikes = pgTable("community_post_likes", {
+      id: serial("id").primaryKey(),
+      post_id: integer("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      postUserIdx: index("post_likes_post_user_idx").on(table.post_id, table.user_id)
+    }));
+    communityCommentLikes = pgTable("community_comment_likes", {
+      id: serial("id").primaryKey(),
+      comment_id: integer("comment_id").notNull().references(() => communityPostComments.id, { onDelete: "cascade" }),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      commentUserIdx: index("comment_likes_comment_user_idx").on(table.comment_id, table.user_id)
+    }));
+    communityMealCourses = pgTable("community_meal_courses", {
+      id: serial("id").primaryKey(),
+      community_id: integer("community_id").notNull().references(() => communities.id),
+      creator_id: varchar("creator_id").notNull().references(() => users.id),
+      title: varchar("title", { length: 255 }).notNull(),
+      emoji: varchar("emoji", { length: 10 }),
+      // Optional emoji for the course
+      description: text("description"),
+      cover_image: text("cover_image"),
+      category: varchar("category", { length: 100 }),
+      // "beginner", "intermediate", "advanced"
+      lesson_count: integer("lesson_count").default(0),
+      total_duration: integer("total_duration").default(0),
+      // total cook time in minutes
+      is_published: boolean("is_published").default(false),
+      display_order: integer("display_order").default(0),
+      drip_enabled: boolean("drip_enabled").default(false),
+      // Enable drip content
+      drip_days: json("drip_days").default([]),
+      // Days after enrollment when lessons unlock
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      communityIdx: index("meal_courses_community_idx").on(table.community_id),
+      creatorIdx: index("meal_courses_creator_idx").on(table.creator_id),
+      publishedIdx: index("meal_courses_published_idx").on(table.is_published)
+    }));
+    communityMealLessons = pgTable("community_meal_lessons", {
+      id: serial("id").primaryKey(),
+      course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+      module_id: integer("module_id").references(() => communityMealCourseModules.id, { onDelete: "set null" }),
+      // Optional module grouping
+      title: varchar("title", { length: 255 }).notNull(),
+      emoji: varchar("emoji", { length: 10 }),
+      // Optional emoji for the lesson
+      description: text("description"),
+      video_url: text("video_url"),
+      // Direct video URL for lesson
+      ingredients: json("ingredients").notNull().default([]),
+      // Array of ingredient strings
+      instructions: json("instructions").notNull().default([]),
+      // Array of instruction strings
+      image_url: text("image_url"),
+      youtube_video_id: varchar("youtube_video_id", { length: 50 }),
+      prep_time: integer("prep_time").default(0),
+      // minutes
+      cook_time: integer("cook_time").default(0),
+      // minutes
+      servings: integer("servings").default(4),
+      difficulty_level: integer("difficulty_level").default(1),
+      // 1-5
+      nutrition_info: json("nutrition_info").default({}),
+      // {calories, protein, carbs, fat}
+      lesson_order: integer("lesson_order").notNull(),
+      is_published: boolean("is_published").default(false),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      courseIdx: index("meal_lessons_course_idx").on(table.course_id),
+      orderIdx: index("meal_lessons_order_idx").on(table.course_id, table.lesson_order),
+      publishedIdx: index("meal_lessons_published_idx").on(table.is_published)
+    }));
+    communityMealCourseModules = pgTable("community_meal_course_modules", {
+      id: serial("id").primaryKey(),
+      course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+      title: varchar("title", { length: 255 }).notNull(),
+      emoji: varchar("emoji", { length: 10 }),
+      // Optional emoji for the module
+      description: text("description"),
+      module_order: integer("module_order").notNull(),
+      is_expanded: boolean("is_expanded").default(false),
+      // Whether module is expanded by default
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      courseIdx: index("meal_modules_course_idx").on(table.course_id),
+      orderIdx: index("meal_modules_order_idx").on(table.course_id, table.module_order)
+    }));
+    communityMealLessonSections = pgTable("community_meal_lesson_sections", {
+      id: serial("id").primaryKey(),
+      lesson_id: integer("lesson_id").notNull().references(() => communityMealLessons.id, { onDelete: "cascade" }),
+      section_type: varchar("section_type", { length: 50 }).notNull(),
+      // "about", "key_takeaways", "action_steps", "custom"
+      title: varchar("title", { length: 255 }).notNull(),
+      content: text("content").notNull(),
+      template_id: varchar("template_id", { length: 50 }),
+      // "meal_prep", "shopping_guide", "techniques", "nutrition", "time_management", "cultural"
+      display_order: integer("display_order").notNull(),
+      is_visible: boolean("is_visible").default(true),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      lessonIdx: index("lesson_sections_lesson_idx").on(table.lesson_id),
+      orderIdx: index("lesson_sections_order_idx").on(table.lesson_id, table.display_order)
+    }));
+    userMealCourseProgress = pgTable("user_meal_course_progress", {
+      id: serial("id").primaryKey(),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+      completed_lessons: json("completed_lessons").default([]),
+      // Array of lesson IDs
+      current_lesson_id: integer("current_lesson_id"),
+      progress_percentage: integer("progress_percentage").default(0),
+      // 0-100
+      started_at: timestamp("started_at").defaultNow(),
+      last_accessed: timestamp("last_accessed").defaultNow()
+    }, (table) => ({
+      userCourseIdx: index("progress_user_course_idx").on(table.user_id, table.course_id),
+      userIdx: index("progress_user_idx").on(table.user_id)
     }));
   }
 });
@@ -2670,9 +2844,12 @@ function generateToken(userId, isCreator = false) {
 function verifyToken(token) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log(`\u2705 [AUTH DEBUG] Token verified with current secret for:`, decoded.userId);
     return decoded;
   } catch (error) {
+    console.log(`\u26A0\uFE0F [AUTH DEBUG] Token verification failed with current secret:`, error.name, error.message);
     if (error.name !== "JsonWebTokenError" || error.message !== "invalid signature") {
+      console.log(`\u274C [AUTH DEBUG] Non-signature error, token is invalid`);
       return null;
     }
     for (const oldSecret of OLD_JWT_SECRETS) {
@@ -2688,13 +2865,19 @@ function verifyToken(token) {
 async function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
+  console.log(`\u{1F50D} [AUTH DEBUG] Authorization header:`, authHeader ? "Present" : "Missing");
   if (!token) {
+    console.log(`\u274C [AUTH DEBUG] No token found`);
     return res.status(401).json({ message: "Access token required" });
   }
+  console.log(`\u{1F50D} [AUTH DEBUG] Token length:`, token.length);
+  console.log(`\u{1F50D} [AUTH DEBUG] Token preview:`, token.substring(0, 20) + "...");
   const decoded = verifyToken(token);
   if (!decoded) {
+    console.log(`\u274C [AUTH DEBUG] Token verification failed`);
     return res.status(403).json({ message: "Invalid token" });
   }
+  console.log(`\u2705 [AUTH DEBUG] Token verified for user:`, decoded.userId);
   try {
     const user = await storage.getUser(decoded.userId);
     if (!user) {
@@ -4609,7 +4792,7 @@ __export(cultureCacheManager_exports, {
   refreshUserCulturalData: () => refreshUserCulturalData,
   startCacheMaintenanceScheduler: () => startCacheMaintenanceScheduler
 });
-import { eq as eq5 } from "drizzle-orm";
+import { eq as eq6 } from "drizzle-orm";
 async function getGlobalCacheStats() {
   try {
     const result = await db.select({
@@ -4643,7 +4826,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
   try {
     if (!options.forceRefresh) {
       console.log(`\u{1F50D} Looking for cached data for: "${normalizedCuisine}"`);
-      const cachedEntries = await db.select().from(culturalCuisineCache).where(eq5(culturalCuisineCache.cuisine_name, normalizedCuisine)).limit(1);
+      const cachedEntries = await db.select().from(culturalCuisineCache).where(eq6(culturalCuisineCache.cuisine_name, normalizedCuisine)).limit(1);
       console.log(`\u{1F50D} Database query returned ${cachedEntries.length} results`);
       const cachedEntry = cachedEntries[0];
       if (cachedEntry) {
@@ -4653,7 +4836,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
           await db.update(culturalCuisineCache).set({
             access_count: cachedEntry.access_count + 1,
             last_accessed: /* @__PURE__ */ new Date()
-          }).where(eq5(culturalCuisineCache.id, cachedEntry.id));
+          }).where(eq6(culturalCuisineCache.id, cachedEntry.id));
           cache_metrics.hits++;
           const cachedResult = {
             meals: cachedEntry.meals_data,
@@ -4682,7 +4865,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
           return cachedResult;
         } else {
           console.log(`\u23F0 Global cache expired for ${normalizedCuisine}, age: ${ageHours.toFixed(1)}h`);
-          await db.delete(culturalCuisineCache).where(eq5(culturalCuisineCache.id, cachedEntry.id));
+          await db.delete(culturalCuisineCache).where(eq6(culturalCuisineCache.id, cachedEntry.id));
         }
       }
     }
@@ -5969,9 +6152,9 @@ var init_recipeComplexityCalculator = __esm({
        */
       extractEquipmentFromInstructions(instructionText) {
         const equipment = [];
-        Object.keys(EQUIPMENT_COMPLEXITY).forEach((eq8) => {
-          if (instructionText.includes(eq8.replace("_", " "))) {
-            equipment.push(eq8);
+        Object.keys(EQUIPMENT_COMPLEXITY).forEach((eq9) => {
+          if (instructionText.includes(eq9.replace("_", " "))) {
+            equipment.push(eq9);
           }
         });
         if (instructionText.includes("oven") || instructionText.includes("bake")) equipment.push("oven");
@@ -10715,7 +10898,7 @@ var save_cultural_meals_exports = {};
 __export(save_cultural_meals_exports, {
   saveCulturalMeals: () => saveCulturalMeals
 });
-import { eq as eq6, and as and5 } from "drizzle-orm";
+import { eq as eq7, and as and5 } from "drizzle-orm";
 async function saveCulturalMeals(req, res) {
   try {
     const userId = 9;
@@ -10728,8 +10911,8 @@ async function saveCulturalMeals(req, res) {
     }
     const existingSave = await db.select().from(userSavedCulturalMeals).where(
       and5(
-        eq6(userSavedCulturalMeals.user_id, userId),
-        eq6(userSavedCulturalMeals.cuisine_name, cuisine_name.toLowerCase())
+        eq7(userSavedCulturalMeals.user_id, userId),
+        eq7(userSavedCulturalMeals.cuisine_name, cuisine_name.toLowerCase())
       )
     ).limit(1);
     if (existingSave.length > 0) {
@@ -10739,7 +10922,7 @@ async function saveCulturalMeals(req, res) {
         custom_name: custom_name || `${cuisine_name} Meal Collection`,
         notes,
         updated_at: /* @__PURE__ */ new Date()
-      }).where(eq6(userSavedCulturalMeals.id, existingSave[0].id)).returning();
+      }).where(eq7(userSavedCulturalMeals.id, existingSave[0].id)).returning();
       console.log(`\u2705 Updated saved meals for user ${userId}, cuisine: ${cuisine_name}`);
       return res.json({
         success: true,
@@ -13162,11 +13345,11 @@ var CommunityService = class {
   }
   // Get all communities with optional filtering
   async getCommunities(category, userId) {
-    let query = db.select().from(communities);
+    let whereConditions = [];
     if (category) {
-      query = query.where(eq2(communities.category, category));
+      whereConditions.push(eq2(communities.category, category));
     }
-    const allCommunities = await query.orderBy(desc2(communities.member_count));
+    const allCommunities = await db.select().from(communities).where(whereConditions.length > 0 ? and2(...whereConditions) : void 0).orderBy(desc2(communities.member_count));
     if (userId) {
       const userMemberships = await db.select().from(communityMembers).where(eq2(communityMembers.user_id, userId));
       const membershipMap = new Set(userMemberships.map((m) => m.community_id));
@@ -13255,11 +13438,11 @@ var CommunityService = class {
   }
   // Get shared meal plans for a community
   async getCommunityMealPlans(communityId, filter) {
-    let query = db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.community_id, communityId));
+    let whereConditions = [eq2(sharedMealPlans.community_id, communityId)];
     if (filter?.featured) {
-      query = query.where(eq2(sharedMealPlans.is_featured, true));
+      whereConditions.push(eq2(sharedMealPlans.is_featured, true));
     }
-    const plans = await query.orderBy(desc2(sharedMealPlans.created_at));
+    const plans = await db.select().from(sharedMealPlans).where(and2(...whereConditions)).orderBy(desc2(sharedMealPlans.created_at));
     if (filter?.tags && filter.tags.length > 0) {
       return plans.filter((plan) => {
         const planTags = plan.tags;
@@ -13347,22 +13530,342 @@ var CommunityService = class {
       await db.update(sharedMealPlans).set({ success_rate: successRate }).where(eq2(sharedMealPlans.id, sharedPlanId));
     }
   }
+  // ============================================
+  // COMMUNITY POSTS METHODS
+  // ============================================
+  // Create a new community post
+  async createCommunityPost(userId, communityId, data) {
+    await this.verifyMembership(userId, communityId);
+    console.log("Creating post with data:", JSON.stringify(data, null, 2));
+    let imagesForDB = null;
+    if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+      imagesForDB = JSON.stringify(data.images);
+    }
+    console.log("Images for DB (JSON string):", imagesForDB);
+    const [post] = await db.insert(communityPosts).values({
+      content: data.content,
+      post_type: data.post_type || "discussion",
+      meal_plan_id: data.meal_plan_id || null,
+      images: imagesForDB,
+      author_id: userId,
+      community_id: communityId
+    }).returning();
+    const [author] = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      full_name: users.full_name
+    }).from(users).where(eq2(users.id, userId));
+    await this.awardPoints(userId, communityId, 10, "created_post");
+    return {
+      ...post,
+      images: post.images ? JSON.parse(post.images) : [],
+      // Parse JSON string back to array
+      author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+    };
+  }
+  // Get community posts with pagination and filtering
+  async getCommunityPosts(communityId, options = {}) {
+    const { limit = 20, offset = 0, type, userId } = options;
+    let whereConditions = [eq2(communityPosts.community_id, communityId)];
+    if (type) {
+      whereConditions.push(eq2(communityPosts.post_type, type));
+    }
+    const posts = await db.select({
+      post: communityPosts,
+      author: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        full_name: users.full_name
+      }
+    }).from(communityPosts).leftJoin(users, eq2(communityPosts.author_id, users.id)).where(and2(...whereConditions)).orderBy(desc2(communityPosts.is_pinned), desc2(communityPosts.created_at)).limit(limit).offset(offset);
+    let userLikedPosts = /* @__PURE__ */ new Set();
+    if (userId) {
+      const likedPosts = await db.select({ post_id: communityPostLikes.post_id }).from(communityPostLikes).where(eq2(communityPostLikes.user_id, userId));
+      userLikedPosts = new Set(likedPosts.map((like2) => like2.post_id).filter((id) => id !== null));
+    }
+    return posts.map(({ post, author }) => ({
+      ...post,
+      images: post.images ? JSON.parse(post.images) : [],
+      // Parse JSON string back to array
+      username: author?.full_name || author?.firstName || "Anonymous",
+      likes_count: post.likes,
+      author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+      isLiked: userLikedPosts.has(post.id),
+      is_liked: userLikedPosts.has(post.id),
+      created_at: post.created_at ? new Date(post.created_at).toLocaleString() : (/* @__PURE__ */ new Date()).toLocaleString()
+    }));
+  }
+  // Like/unlike a community post
+  async togglePostLike(userId, postId, communityId) {
+    const [post] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
+    if (!post) {
+      throw new Error("Post not found");
+    }
+    if (post.author_id === userId) {
+      throw new Error("Cannot like your own post");
+    }
+    if (communityId && communityId !== post.community_id) {
+      throw new Error("Post not found");
+    }
+    await this.verifyMembership(userId, post.community_id);
+    const [existingLike] = await db.select().from(communityPostLikes).where(and2(
+      eq2(communityPostLikes.post_id, postId),
+      eq2(communityPostLikes.user_id, userId)
+    ));
+    if (existingLike) {
+      await db.delete(communityPostLikes).where(and2(
+        eq2(communityPostLikes.post_id, postId),
+        eq2(communityPostLikes.user_id, userId)
+      ));
+      await db.update(communityPosts).set({ likes: sql3`${communityPosts.likes} - 1` }).where(eq2(communityPosts.id, postId));
+      const [post2] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
+      return { liked: false, likesCount: post2.likes || 0 };
+    } else {
+      await db.insert(communityPostLikes).values({
+        post_id: postId,
+        user_id: userId
+      });
+      await db.update(communityPosts).set({ likes: sql3`${communityPosts.likes} + 1` }).where(eq2(communityPosts.id, postId));
+      const [post2] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
+      return { liked: true, likesCount: post2.likes || 0 };
+    }
+  }
+  // Like/unlike a community comment
+  async toggleCommentLike(userId, commentId) {
+    const [comment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
+    if (!comment) {
+      throw new Error("Comment not found");
+    }
+    if (comment.author_id === userId) {
+      throw new Error("Cannot like your own comment");
+    }
+    const [post] = await db.select().from(communityPosts).where(eq2(communityPosts.id, comment.post_id));
+    if (!post) {
+      throw new Error("Post not found");
+    }
+    await this.verifyMembership(userId, post.community_id);
+    const [existingLike] = await db.select().from(communityCommentLikes).where(and2(
+      eq2(communityCommentLikes.comment_id, commentId),
+      eq2(communityCommentLikes.user_id, userId)
+    ));
+    if (existingLike) {
+      await db.delete(communityCommentLikes).where(and2(
+        eq2(communityCommentLikes.comment_id, commentId),
+        eq2(communityCommentLikes.user_id, userId)
+      ));
+      await db.update(communityPostComments).set({ likes: sql3`${communityPostComments.likes} - 1` }).where(eq2(communityPostComments.id, commentId));
+      const [updatedComment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
+      return { liked: false, likesCount: updatedComment.likes || 0 };
+    } else {
+      await db.insert(communityCommentLikes).values({
+        comment_id: commentId,
+        user_id: userId
+      });
+      await db.update(communityPostComments).set({ likes: sql3`${communityPostComments.likes} + 1` }).where(eq2(communityPostComments.id, commentId));
+      const [updatedComment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
+      return { liked: true, likesCount: updatedComment.likes || 0 };
+    }
+  }
+  // Add a comment to a community post
+  async addPostComment(userId, postId, content, parentId) {
+    const [comment] = await db.insert(communityPostComments).values({
+      post_id: postId,
+      author_id: userId,
+      content,
+      parent_id: parentId
+    }).returning();
+    await db.update(communityPosts).set({ comments_count: sql3`${communityPosts.comments_count} + 1` }).where(eq2(communityPosts.id, postId));
+    const [author] = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      full_name: users.full_name
+    }).from(users).where(eq2(users.id, userId));
+    return {
+      ...comment,
+      author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+    };
+  }
+  // Get comments for a post
+  async getPostComments(postId, userId) {
+    const comments = await db.select({
+      comment: communityPostComments,
+      author: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        full_name: users.full_name
+      }
+    }).from(communityPostComments).leftJoin(users, eq2(communityPostComments.author_id, users.id)).where(eq2(communityPostComments.post_id, postId)).orderBy(communityPostComments.created_at);
+    if (!userId) {
+      return comments.map(({ comment, author }) => ({
+        ...comment,
+        author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+        isLiked: false
+      }));
+    }
+    const commentIds = comments.map(({ comment }) => comment.id);
+    const userLikes = commentIds.length > 0 ? await db.select().from(communityCommentLikes).where(and2(
+      eq2(communityCommentLikes.user_id, userId),
+      sql3`${communityCommentLikes.comment_id} IN (${sql3.join(commentIds.map((id) => sql3`${id}`), sql3`, `)})`
+    )) : [];
+    const likedCommentIds = new Set(userLikes.map((like2) => like2.comment_id));
+    return comments.map(({ comment, author }) => ({
+      ...comment,
+      author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+      isLiked: likedCommentIds.has(comment.id)
+    }));
+  }
+  // Get user membership for a community
+  async getUserMembership(userId, communityId) {
+    const [membership] = await db.select().from(communityMembers).where(and2(
+      eq2(communityMembers.user_id, userId),
+      eq2(communityMembers.community_id, communityId)
+    ));
+    return membership;
+  }
+  // Get community meal plans
+  async getCommunityMealPlans(communityId) {
+    return [];
+  }
+  // Create community meal plan
+  async createCommunityMealPlan(userId, communityId, mealPlanData) {
+    return {
+      id: Date.now(),
+      title: mealPlanData.title,
+      description: mealPlanData.description,
+      image_url: mealPlanData.image_url,
+      youtube_video_id: mealPlanData.youtube_video_id,
+      ingredients: mealPlanData.ingredients,
+      instructions: mealPlanData.instructions,
+      prep_time: mealPlanData.prep_time,
+      cook_time: mealPlanData.cook_time,
+      servings: mealPlanData.servings,
+      creator_name: "Community Creator",
+      created_at: (/* @__PURE__ */ new Date()).toISOString(),
+      likes_count: 0,
+      is_liked: false
+    };
+  }
 };
 var communityService = new CommunityService();
+
+// server/communityCommentsService.ts
+init_schema();
+init_db();
+import { eq as eq3, asc, sql as sql4 } from "drizzle-orm";
+var CommunityCommentsService = class {
+  // Get all comments for a specific post
+  async getPostComments(postId) {
+    const comments = await db.select({
+      id: communityPostComments.id,
+      post_id: communityPostComments.post_id,
+      author_id: communityPostComments.author_id,
+      content: communityPostComments.content,
+      parent_id: communityPostComments.parent_id,
+      images: communityPostComments.images,
+      likes: communityPostComments.likes,
+      created_at: communityPostComments.created_at,
+      updated_at: communityPostComments.updated_at,
+      author: {
+        firstName: users.firstName,
+        lastName: users.lastName
+      }
+    }).from(communityPostComments).leftJoin(users, eq3(communityPostComments.author_id, users.id)).where(eq3(communityPostComments.post_id, postId)).orderBy(asc(communityPostComments.created_at));
+    return comments.map((comment) => ({
+      ...comment,
+      images: comment.images ? JSON.parse(comment.images) : []
+    }));
+  }
+  // Create a new comment
+  async createComment(commentData) {
+    const imagesString = commentData.images && commentData.images.length > 0 ? JSON.stringify(commentData.images) : null;
+    const [comment] = await db.insert(communityPostComments).values({
+      post_id: commentData.post_id,
+      author_id: commentData.author_id,
+      content: commentData.content,
+      parent_id: commentData.parent_id || null,
+      images: imagesString
+    }).returning();
+    await this.updatePostCommentsCount(commentData.post_id);
+    return {
+      ...comment,
+      images: comment.images ? JSON.parse(comment.images) : []
+    };
+  }
+  // Update comment content
+  async updateComment(commentId, userId, data) {
+    const imagesString = data.images && data.images.length > 0 ? JSON.stringify(data.images) : null;
+    const [comment] = await db.update(communityPostComments).set({
+      content: data.content,
+      images: imagesString,
+      updated_at: /* @__PURE__ */ new Date()
+    }).where(eq3(communityPostComments.id, commentId)).returning();
+    if (!comment) return null;
+    return {
+      ...comment,
+      images: comment.images ? JSON.parse(comment.images) : []
+    };
+  }
+  // Delete a comment
+  async deleteComment(commentId, userId) {
+    const [comment] = await db.select({ post_id: communityPostComments.post_id }).from(communityPostComments).where(eq3(communityPostComments.id, commentId));
+    if (!comment) return false;
+    const result = await db.delete(communityPostComments).where(eq3(communityPostComments.id, commentId));
+    if (result.rowCount && result.rowCount > 0) {
+      await this.updatePostCommentsCount(comment.post_id);
+      return true;
+    }
+    return false;
+  }
+  // Helper: Update comments count on a post
+  async updatePostCommentsCount(postId) {
+    const [{ count }] = await db.select({ count: sql4`count(*)` }).from(communityPostComments).where(eq3(communityPostComments.post_id, postId));
+    await db.update(communityPosts).set({ comments_count: count }).where(eq3(communityPosts.id, postId));
+  }
+  // Get nested comment structure (for threaded comments)
+  async getNestedComments(postId) {
+    const allComments = await this.getPostComments(postId);
+    const commentMap = /* @__PURE__ */ new Map();
+    const rootComments = [];
+    allComments.forEach((comment) => {
+      commentMap.set(comment.id, { ...comment, children: [] });
+    });
+    allComments.forEach((comment) => {
+      const commentWithChildren = commentMap.get(comment.id);
+      if (comment.parent_id) {
+        const parent = commentMap.get(comment.parent_id);
+        if (parent) {
+          parent.children.push(commentWithChildren);
+        }
+      } else {
+        rootComments.push(commentWithChildren);
+      }
+    });
+    return rootComments;
+  }
+};
+var communityCommentsService = new CommunityCommentsService();
 
 // server/creatorService.ts
 init_db();
 init_schema();
-import { eq as eq3, and as and3, desc as desc3, sql as sql4, inArray } from "drizzle-orm";
+import { eq as eq4, and as and3, desc as desc4, sql as sql5, inArray } from "drizzle-orm";
 var CreatorService = class {
   // Create or update creator profile
   async upsertCreatorProfile(userId, data) {
-    const existing = await db.select().from(creatorProfiles).where(eq3(creatorProfiles.user_id, userId));
+    const existing = await db.select().from(creatorProfiles).where(eq4(creatorProfiles.user_id, userId));
     if (existing.length > 0) {
       const [updated] = await db.update(creatorProfiles).set({
         ...data,
         updated_at: /* @__PURE__ */ new Date()
-      }).where(eq3(creatorProfiles.user_id, userId)).returning();
+      }).where(eq4(creatorProfiles.user_id, userId)).returning();
       return updated;
     } else {
       const [created] = await db.insert(creatorProfiles).values({
@@ -13374,24 +13877,24 @@ var CreatorService = class {
   }
   // Get creator profile with stats
   async getCreatorProfile(creatorId, viewerId) {
-    const [profile] = await db.select().from(creatorProfiles).where(eq3(creatorProfiles.user_id, creatorId));
+    const [profile] = await db.select().from(creatorProfiles).where(eq4(creatorProfiles.user_id, creatorId));
     if (!profile) {
       return null;
     }
-    const [user] = await db.select().from(users).where(eq3(users.id, creatorId));
+    const [user] = await db.select().from(users).where(eq4(users.id, creatorId));
     let isFollowing = false;
     if (viewerId) {
       const follow = await db.select().from(creatorFollowers).where(and3(
-        eq3(creatorFollowers.creator_id, creatorId),
-        eq3(creatorFollowers.follower_id, viewerId)
+        eq4(creatorFollowers.creator_id, creatorId),
+        eq4(creatorFollowers.follower_id, viewerId)
       ));
       isFollowing = follow.length > 0;
     }
-    const recentPlans = await db.select().from(sharedMealPlans).where(eq3(sharedMealPlans.sharer_id, creatorId)).orderBy(desc3(sharedMealPlans.created_at)).limit(6);
+    const recentPlans = await db.select().from(sharedMealPlans).where(eq4(sharedMealPlans.sharer_id, creatorId)).orderBy(desc4(sharedMealPlans.created_at)).limit(6);
     const reviews = await db.select().from(mealPlanReviews).innerJoin(
       sharedMealPlans,
-      eq3(mealPlanReviews.shared_plan_id, sharedMealPlans.id)
-    ).where(eq3(sharedMealPlans.sharer_id, creatorId));
+      eq4(mealPlanReviews.shared_plan_id, sharedMealPlans.id)
+    ).where(eq4(sharedMealPlans.sharer_id, creatorId));
     let averageRating = 0;
     if (reviews.length > 0) {
       const totalRating = reviews.reduce((sum, r) => sum + r.meal_plan_reviews.rating, 0);
@@ -13414,8 +13917,8 @@ var CreatorService = class {
   // Follow a creator
   async followCreator(followerId, creatorId) {
     const existing = await db.select().from(creatorFollowers).where(and3(
-      eq3(creatorFollowers.creator_id, creatorId),
-      eq3(creatorFollowers.follower_id, followerId)
+      eq4(creatorFollowers.creator_id, creatorId),
+      eq4(creatorFollowers.follower_id, followerId)
     ));
     if (existing.length > 0) {
       throw new Error("Already following this creator");
@@ -13425,34 +13928,34 @@ var CreatorService = class {
       follower_id: followerId
     }).returning();
     await db.update(creatorProfiles).set({
-      follower_count: sql4`${creatorProfiles.follower_count} + 1`,
+      follower_count: sql5`${creatorProfiles.follower_count} + 1`,
       updated_at: /* @__PURE__ */ new Date()
-    }).where(eq3(creatorProfiles.user_id, creatorId));
+    }).where(eq4(creatorProfiles.user_id, creatorId));
     return follower;
   }
   // Unfollow a creator
   async unfollowCreator(followerId, creatorId) {
     const result = await db.delete(creatorFollowers).where(and3(
-      eq3(creatorFollowers.creator_id, creatorId),
-      eq3(creatorFollowers.follower_id, followerId)
+      eq4(creatorFollowers.creator_id, creatorId),
+      eq4(creatorFollowers.follower_id, followerId)
     ));
     if (result.rowCount === 0) {
       throw new Error("Not following this creator");
     }
     await db.update(creatorProfiles).set({
-      follower_count: sql4`${creatorProfiles.follower_count} - 1`,
+      follower_count: sql5`${creatorProfiles.follower_count} - 1`,
       updated_at: /* @__PURE__ */ new Date()
-    }).where(eq3(creatorProfiles.user_id, creatorId));
+    }).where(eq4(creatorProfiles.user_id, creatorId));
   }
   // Get creators followed by a user
   async getFollowedCreators(userId) {
     const follows = await db.select().from(creatorFollowers).innerJoin(
       creatorProfiles,
-      eq3(creatorFollowers.creator_id, creatorProfiles.user_id)
+      eq4(creatorFollowers.creator_id, creatorProfiles.user_id)
     ).innerJoin(
       users,
-      eq3(creatorProfiles.user_id, users.id)
-    ).where(eq3(creatorFollowers.follower_id, userId)).orderBy(desc3(creatorFollowers.followed_at));
+      eq4(creatorProfiles.user_id, users.id)
+    ).where(eq4(creatorFollowers.follower_id, userId)).orderBy(desc4(creatorFollowers.followed_at));
     return follows.map((f) => ({
       profile: f.creator_profiles,
       user: {
@@ -13466,12 +13969,12 @@ var CreatorService = class {
   }
   // Get meal plans from followed creators
   async getFollowedCreatorsMealPlans(userId, limit = 20) {
-    const follows = await db.select().from(creatorFollowers).where(eq3(creatorFollowers.follower_id, userId));
+    const follows = await db.select().from(creatorFollowers).where(eq4(creatorFollowers.follower_id, userId));
     if (follows.length === 0) {
       return [];
     }
     const creatorIds = follows.map((f) => f.creator_id);
-    const plans = await db.select().from(sharedMealPlans).innerJoin(users, eq3(sharedMealPlans.sharer_id, users.id)).where(inArray(sharedMealPlans.sharer_id, creatorIds)).orderBy(desc3(sharedMealPlans.created_at)).limit(limit);
+    const plans = await db.select().from(sharedMealPlans).innerJoin(users, eq4(sharedMealPlans.sharer_id, users.id)).where(inArray(sharedMealPlans.sharer_id, creatorIds)).orderBy(desc4(sharedMealPlans.created_at)).limit(limit);
     return plans.map((p) => ({
       ...p.shared_meal_plans,
       creator: {
@@ -13483,19 +13986,28 @@ var CreatorService = class {
   }
   // Get top creators by various metrics
   async getTopCreators(metric = "followers", limit = 10) {
-    let query = db.select().from(creatorProfiles).innerJoin(users, eq3(creatorProfiles.user_id, users.id));
+    console.log(`\u{1F50D} [DEBUG] Getting top creators by ${metric}, limit: ${limit}`);
+    const allProfiles = await db.select().from(creatorProfiles);
+    console.log(`\u{1F4CA} [DEBUG] Total creator profiles in database: ${allProfiles.length}`);
+    if (allProfiles.length === 0) {
+      console.log(`\u26A0\uFE0F [DEBUG] No creator profiles found, returning empty array`);
+      return [];
+    }
+    let creators;
     switch (metric) {
       case "followers":
-        query = query.orderBy(desc3(creatorProfiles.follower_count));
+        creators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id)).orderBy(desc4(creatorProfiles.follower_count)).limit(limit);
         break;
       case "plans":
-        query = query.orderBy(desc3(creatorProfiles.total_plans_shared));
+        creators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id)).orderBy(desc4(creatorProfiles.total_plans_shared)).limit(limit);
         break;
       case "rating":
-        query = query.orderBy(desc3(creatorProfiles.average_rating));
+        creators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id)).orderBy(desc4(creatorProfiles.average_rating)).limit(limit);
         break;
+      default:
+        creators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id)).orderBy(desc4(creatorProfiles.follower_count)).limit(limit);
     }
-    const creators = await query.limit(limit);
+    console.log(`\u2705 [DEBUG] Found ${creators.length} creators for metric: ${metric}`);
     return creators.map((c) => ({
       profile: c.creator_profiles,
       user: {
@@ -13508,11 +14020,11 @@ var CreatorService = class {
   }
   // Update creator stats after sharing a meal plan
   async updateCreatorStats(creatorId) {
-    const plans = await db.select().from(sharedMealPlans).where(eq3(sharedMealPlans.sharer_id, creatorId));
+    const plans = await db.select().from(sharedMealPlans).where(eq4(sharedMealPlans.sharer_id, creatorId));
     const reviews = await db.select().from(mealPlanReviews).innerJoin(
       sharedMealPlans,
-      eq3(mealPlanReviews.shared_plan_id, sharedMealPlans.id)
-    ).where(eq3(sharedMealPlans.sharer_id, creatorId));
+      eq4(mealPlanReviews.shared_plan_id, sharedMealPlans.id)
+    ).where(eq4(sharedMealPlans.sharer_id, creatorId));
     let averageRating = null;
     if (reviews.length > 0) {
       const totalRating = reviews.reduce((sum, r) => sum + r.meal_plan_reviews.rating, 0);
@@ -13522,11 +14034,11 @@ var CreatorService = class {
       total_plans_shared: plans.length,
       average_rating: averageRating,
       updated_at: /* @__PURE__ */ new Date()
-    }).where(eq3(creatorProfiles.user_id, creatorId));
+    }).where(eq4(creatorProfiles.user_id, creatorId));
   }
   // Search creators by specialty
   async searchCreators(query, specialties) {
-    const allCreators = await db.select().from(creatorProfiles).innerJoin(users, eq3(creatorProfiles.user_id, users.id));
+    const allCreators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id));
     let filtered = allCreators;
     if (query) {
       filtered = allCreators.filter((c) => {
@@ -13557,13 +14069,13 @@ var creatorService = new CreatorService();
 // server/mealPlanSharingService.ts
 init_db();
 init_schema();
-import { eq as eq4, and as and4, desc as desc4, sql as sql5, gte as gte3 } from "drizzle-orm";
+import { eq as eq5, and as and4, desc as desc5, sql as sql6, gte as gte3 } from "drizzle-orm";
 var MealPlanSharingService = class {
   // Prepare a meal plan for sharing (remove personal data, calculate metrics)
   async prepareMealPlanForSharing(mealPlanId, userId) {
     const [plan] = await db.select().from(mealPlans).where(and4(
-      eq4(mealPlans.id, mealPlanId),
-      eq4(mealPlans.userId, userId)
+      eq5(mealPlans.id, mealPlanId),
+      eq5(mealPlans.userId, userId)
     ));
     if (!plan) {
       throw new Error("Meal plan not found or you don't have permission");
@@ -13639,7 +14151,7 @@ var MealPlanSharingService = class {
   }
   // Remix a shared meal plan
   async remixMealPlan(userId, originalPlanId, remixedMealPlanId, changes, communityId) {
-    const [original] = await db.select().from(sharedMealPlans).where(eq4(sharedMealPlans.id, originalPlanId));
+    const [original] = await db.select().from(sharedMealPlans).where(eq5(sharedMealPlans.id, originalPlanId));
     if (!original) {
       throw new Error("Original shared plan not found");
     }
@@ -13654,11 +14166,11 @@ var MealPlanSharingService = class {
   }
   // Get personalized meal plan recommendations
   async getRecommendedMealPlans(userId, limit = 10) {
-    const [profile] = await db.select().from(profiles).where(eq4(profiles.user_id, userId));
+    const [profile] = await db.select().from(profiles).where(eq5(profiles.user_id, userId));
     if (!profile) {
       return this.getTrendingMealPlans(limit);
     }
-    const allPlans = await db.select().from(sharedMealPlans).orderBy(desc4(sharedMealPlans.created_at)).limit(limit * 3);
+    const allPlans = await db.select().from(sharedMealPlans).orderBy(desc5(sharedMealPlans.created_at)).limit(limit * 3);
     const scoredPlans = allPlans.map((plan) => {
       let score = 0;
       const cultural = profile.cultural_background || [];
@@ -13681,19 +14193,19 @@ var MealPlanSharingService = class {
     const threeDaysAgo = /* @__PURE__ */ new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
     const trending = await db.select().from(sharedMealPlans).where(gte3(sharedMealPlans.created_at, threeDaysAgo)).orderBy(
-      desc4(sql5`${sharedMealPlans.likes} * 2 + ${sharedMealPlans.tries} * 3`)
+      desc5(sql6`${sharedMealPlans.likes} * 2 + ${sharedMealPlans.tries} * 3`)
     ).limit(limit);
     return trending;
   }
   // Like a meal plan
   async likeMealPlan(sharedPlanId) {
     await db.update(sharedMealPlans).set({
-      likes: sql5`${sharedMealPlans.likes} + 1`
-    }).where(eq4(sharedMealPlans.id, sharedPlanId));
+      likes: sql6`${sharedMealPlans.likes} + 1`
+    }).where(eq5(sharedMealPlans.id, sharedPlanId));
   }
   // Get meal plan with creator info
   async getMealPlanWithCreator(sharedPlanId) {
-    const [plan] = await db.select().from(sharedMealPlans).innerJoin(users, eq4(sharedMealPlans.sharer_id, users.id)).where(eq4(sharedMealPlans.id, sharedPlanId));
+    const [plan] = await db.select().from(sharedMealPlans).innerJoin(users, eq5(sharedMealPlans.sharer_id, users.id)).where(eq5(sharedMealPlans.id, sharedPlanId));
     if (!plan) return null;
     return {
       ...plan.shared_meal_plans,
@@ -13707,7 +14219,7 @@ var MealPlanSharingService = class {
   }
   // Search meal plans
   async searchMealPlans(query, filters) {
-    let plans = await db.select().from(sharedMealPlans).orderBy(desc4(sharedMealPlans.created_at));
+    let plans = await db.select().from(sharedMealPlans).orderBy(desc5(sharedMealPlans.created_at));
     if (query) {
       plans = plans.filter(
         (p) => p.title.toLowerCase().includes(query.toLowerCase()) || p.description && p.description.toLowerCase().includes(query.toLowerCase())
@@ -13742,7 +14254,7 @@ var MealPlanSharingService = class {
   }
   // Get meal plans by creator
   async getCreatorMealPlans(creatorId, limit = 20) {
-    const plans = await db.select().from(sharedMealPlans).where(eq4(sharedMealPlans.sharer_id, creatorId)).orderBy(desc4(sharedMealPlans.created_at)).limit(limit);
+    const plans = await db.select().from(sharedMealPlans).where(eq5(sharedMealPlans.sharer_id, creatorId)).orderBy(desc5(sharedMealPlans.created_at)).limit(limit);
     return plans;
   }
   // Private helper methods
@@ -14479,11 +14991,222 @@ var RecipeNutritionCalculator = class {
 };
 var recipeNutritionCalculator = new RecipeNutritionCalculator();
 
+// server/objectStorage.ts
+import { Storage } from "@google-cloud/storage";
+import { randomUUID } from "crypto";
+var REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+var objectStorageClient = new Storage({
+  credentials: {
+    audience: "replit",
+    subject_token_type: "access_token",
+    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+    type: "external_account",
+    credential_source: {
+      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+      format: {
+        type: "json",
+        subject_token_field_name: "access_token"
+      }
+    },
+    universe_domain: "googleapis.com"
+  },
+  projectId: ""
+});
+var ObjectNotFoundError = class _ObjectNotFoundError extends Error {
+  constructor() {
+    super("Object not found");
+    this.name = "ObjectNotFoundError";
+    Object.setPrototypeOf(this, _ObjectNotFoundError.prototype);
+  }
+};
+var ObjectStorageService = class {
+  constructor() {
+  }
+  // Gets the public object search paths.
+  getPublicObjectSearchPaths() {
+    const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
+    const paths = Array.from(
+      new Set(
+        pathsStr.split(",").map((path11) => path11.trim()).filter((path11) => path11.length > 0)
+      )
+    );
+    if (paths.length === 0) {
+      throw new Error(
+        "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
+      );
+    }
+    return paths;
+  }
+  // Gets the private object directory.
+  getPrivateObjectDir() {
+    const dir = process.env.PRIVATE_OBJECT_DIR || "";
+    if (!dir) {
+      throw new Error(
+        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
+      );
+    }
+    return dir;
+  }
+  // Search for a public object from the search paths.
+  async searchPublicObject(filePath) {
+    for (const searchPath of this.getPublicObjectSearchPaths()) {
+      const fullPath = `${searchPath}/${filePath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      const [exists] = await file.exists();
+      if (exists) {
+        return file;
+      }
+    }
+    return null;
+  }
+  // Downloads an object to the response.
+  async downloadObject(file, res, cacheTtlSec = 3600) {
+    try {
+      const [metadata] = await file.getMetadata();
+      res.set({
+        "Content-Type": metadata.contentType || "application/octet-stream",
+        "Content-Length": metadata.size,
+        "Cache-Control": `public, max-age=${cacheTtlSec}`
+      });
+      const stream = file.createReadStream();
+      stream.on("error", (err) => {
+        console.error("Stream error:", err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Error streaming file" });
+        }
+      });
+      stream.pipe(res);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Error downloading file" });
+      }
+    }
+  }
+  // Gets the upload URL for an object entity.
+  async getObjectEntityUploadURL() {
+    const privateObjectDir = this.getPrivateObjectDir();
+    if (!privateObjectDir) {
+      throw new Error(
+        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
+      );
+    }
+    const objectId = randomUUID();
+    const fullPath = `${privateObjectDir}/uploads/${objectId}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    return signObjectURL({
+      bucketName,
+      objectName,
+      method: "PUT",
+      ttlSec: 900
+    });
+  }
+  // Gets the object entity file from the object path.
+  async getObjectEntityFile(objectPath) {
+    if (!objectPath.startsWith("/objects/")) {
+      throw new ObjectNotFoundError();
+    }
+    const parts = objectPath.slice(1).split("/");
+    if (parts.length < 2) {
+      throw new ObjectNotFoundError();
+    }
+    const entityId = parts.slice(1).join("/");
+    let entityDir = this.getPrivateObjectDir();
+    if (!entityDir.endsWith("/")) {
+      entityDir = `${entityDir}/`;
+    }
+    const objectEntityPath = `${entityDir}${entityId}`;
+    const { bucketName, objectName } = parseObjectPath(objectEntityPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const objectFile = bucket.file(objectName);
+    const [exists] = await objectFile.exists();
+    if (!exists) {
+      throw new ObjectNotFoundError();
+    }
+    return objectFile;
+  }
+  normalizeObjectEntityPath(rawPath) {
+    if (!rawPath.startsWith("https://storage.googleapis.com/")) {
+      return rawPath;
+    }
+    const url = new URL(rawPath);
+    const rawObjectPath = url.pathname;
+    let objectEntityDir = this.getPrivateObjectDir();
+    if (!objectEntityDir.endsWith("/")) {
+      objectEntityDir = `${objectEntityDir}/`;
+    }
+    if (!rawObjectPath.startsWith(objectEntityDir)) {
+      return rawObjectPath;
+    }
+    const entityId = rawObjectPath.slice(objectEntityDir.length);
+    return `/objects/${entityId}`;
+  }
+  // Helper method to get the object entity path from upload URL
+  getObjectEntityPathFromUploadURL(uploadURL) {
+    try {
+      const url = new URL(uploadURL);
+      const pathParts = url.pathname.split("/");
+      const objectName = pathParts[pathParts.length - 1].split("?")[0];
+      return `/objects/uploads/${objectName}`;
+    } catch (error) {
+      console.error("Error parsing upload URL:", error);
+      return uploadURL;
+    }
+  }
+};
+function parseObjectPath(path11) {
+  if (!path11.startsWith("/")) {
+    path11 = `/${path11}`;
+  }
+  const pathParts = path11.split("/");
+  if (pathParts.length < 3) {
+    throw new Error("Invalid path: must contain at least a bucket name");
+  }
+  const bucketName = pathParts[1];
+  const objectName = pathParts.slice(2).join("/");
+  return {
+    bucketName,
+    objectName
+  };
+}
+async function signObjectURL({
+  bucketName,
+  objectName,
+  method,
+  ttlSec
+}) {
+  const request = {
+    bucket_name: bucketName,
+    object_name: objectName,
+    method,
+    expires_at: new Date(Date.now() + ttlSec * 1e3).toISOString()
+  };
+  const response = await fetch(
+    `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(request)
+    }
+  );
+  if (!response.ok) {
+    throw new Error(
+      `Failed to sign object URL, errorcode: ${response.status}, make sure you're running on Replit`
+    );
+  }
+  const { signed_url: signedURL } = await response.json();
+  return signedURL;
+}
+
 // server/routes.ts
 init_schema();
 init_db();
 import Stripe from "stripe";
-import { eq as eq7 } from "drizzle-orm";
+import { eq as eq8, and as and6, isNull as isNull2 } from "drizzle-orm";
 var YOUTUBE_API_KEY2 = process.env.YOUTUBE_API_KEY;
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
@@ -14505,8 +15228,12 @@ async function registerRoutes(app2) {
   app2.get("/api/auth/user", authenticateToken2, getCurrentUser2);
   app2.post("/api/user/toggle-creator", authenticateToken2, async (req, res) => {
     try {
+      console.log(`\u{1F50D} [DEBUG] toggle-creator called`);
+      console.log(`\u{1F50D} [DEBUG] Request headers:`, req.headers.authorization ? "Auth header present" : "No auth header");
+      console.log(`\u{1F50D} [DEBUG] req.user:`, req.user);
       const userId = req.user?.id;
       if (!userId) {
+        console.log(`\u274C [DEBUG] No user ID in toggle-creator request`);
         return res.status(401).json({ message: "User not authenticated" });
       }
       const user = await storage.getUser(userId);
@@ -14517,7 +15244,7 @@ async function registerRoutes(app2) {
       await db.update(users).set({
         is_creator: newCreatorStatus,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq7(users.id, userId));
+      }).where(eq8(users.id, userId));
       const { generateToken: generateToken2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
       const newToken = generateToken2(userId, newCreatorStatus);
       res.json({
@@ -17299,7 +18026,7 @@ async function registerRoutes(app2) {
     try {
       const userId = 9;
       const { userSavedCulturalMeals: userSavedCulturalMeals2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq8 } = await import("drizzle-orm");
+      const { eq: eq9 } = await import("drizzle-orm");
       const savedMeals = [];
       res.json({
         success: true,
@@ -17593,7 +18320,30 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.get("/api/communities", async (req, res) => {
+  app2.post("/api/objects/upload", authenticateToken2, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+  app2.get("/objects/:objectPath(*)", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error serving object:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+  app2.get("/api/communities", authenticateToken2, async (req, res) => {
     try {
       const category = req.query.category;
       const userId = req.user?.id;
@@ -17604,7 +18354,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch communities" });
     }
   });
-  app2.get("/api/communities/:id", async (req, res) => {
+  app2.get("/api/communities/:id", authenticateToken2, async (req, res) => {
     try {
       const communityId = Number(req.params.id);
       const userId = req.user?.id;
@@ -17613,6 +18363,23 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error fetching community details:", error);
       res.status(500).json({ message: "Failed to fetch community details" });
+    }
+  });
+  app2.get("/api/communities/:id/stats", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      const stats = {
+        newMembersThisWeek: 0,
+        engagementRate: 85,
+        activeToday: 0,
+        totalPosts: 0,
+        totalComments: 0
+      };
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching community stats:", error);
+      res.status(500).json({ message: "Failed to fetch community stats" });
     }
   });
   app2.post("/api/communities", authenticateToken2, async (req, res) => {
@@ -17671,6 +18438,89 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to leave community" });
     }
   });
+  app2.get("/api/communities/:id/posts", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      const limit = parseInt(req.query.limit) || 20;
+      const offset = parseInt(req.query.offset) || 0;
+      const type = req.query.type;
+      const posts = await communityService.getCommunityPosts(communityId, {
+        limit,
+        offset,
+        type,
+        userId
+      });
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching community posts:", error);
+      res.status(500).json({ message: "Failed to fetch community posts" });
+    }
+  });
+  app2.post("/api/communities/:id/posts", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { content, post_type = "discussion", meal_plan_id, images } = req.body;
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Post content is required" });
+      }
+      if (content.length > 5e3) {
+        return res.status(400).json({ message: "Post content is too long (max 5000 characters)" });
+      }
+      const post = await communityService.createCommunityPost(userId, communityId, {
+        content: content.trim(),
+        post_type,
+        meal_plan_id,
+        images: images && Array.isArray(images) && images.length > 0 ? images : null
+      });
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating community post:", error);
+      if (error.message === "You must be a member to perform this action") {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to create community post" });
+    }
+  });
+  app2.post("/api/communities/:communityId/posts/:postId/like", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.communityId);
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const result = await communityService.togglePostLike(userId, postId, communityId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling post like:", error);
+      if (error.message === "Post not found" || error.message === "Not a member of this community") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to toggle post like" });
+    }
+  });
+  app2.post("/api/communities/:communityId/posts/:postId/comments/:commentId/like", authenticateToken2, async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const result = await communityService.toggleCommentLike(userId, commentId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling comment like:", error);
+      if (error.message === "Comment not found" || error.message === "Post not found" || error.message === "You must be a member to perform this action") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to toggle comment like" });
+    }
+  });
   app2.post("/api/communities/:id/share-meal-plan", authenticateToken2, async (req, res) => {
     try {
       const userId = req.user?.id;
@@ -17693,6 +18543,154 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error sharing meal plan:", error);
       res.status(500).json({ message: "Failed to share meal plan" });
+    }
+  });
+  app2.get("/api/communities/:id/meal-plans", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const membership = await communityService.getUserMembership(userId, communityId);
+      if (!membership) {
+        return res.status(403).json({ message: "You must be a member to view meal plans" });
+      }
+      const mealPlans2 = await communityService.getCommunityMealPlans(communityId);
+      res.json(mealPlans2);
+    } catch (error) {
+      console.error("Error fetching community meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch meal plans" });
+    }
+  });
+  app2.post("/api/communities/:id/meal-plans", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const community = await communityService.getCommunityDetails(communityId, userId);
+      if (!community || community.creator_id !== userId) {
+        return res.status(403).json({ message: "Only creators can add meal plans" });
+      }
+      const {
+        title,
+        description,
+        image_url,
+        youtube_video_id,
+        ingredients,
+        instructions,
+        prep_time,
+        cook_time,
+        servings
+      } = req.body;
+      if (!title || !ingredients || !instructions) {
+        return res.status(400).json({ message: "Title, ingredients, and instructions are required" });
+      }
+      const mealPlan = await communityService.createCommunityMealPlan(userId, communityId, {
+        title,
+        description,
+        image_url,
+        youtube_video_id,
+        ingredients,
+        instructions,
+        prep_time,
+        cook_time,
+        servings
+      });
+      res.json(mealPlan);
+    } catch (error) {
+      console.error("Error creating community meal plan:", error);
+      res.status(500).json({ message: "Failed to create meal plan" });
+    }
+  });
+  app2.get("/api/communities/:id/posts/:postId/comments", authenticateToken2, async (req, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const nested = req.query.nested === "true";
+      const userId = req.user?.id;
+      if (nested) {
+        const comments = await communityCommentsService.getNestedComments(postId, userId);
+        res.json(comments);
+      } else {
+        const comments = await communityService.getPostComments(postId, userId);
+        res.json(comments);
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+  app2.post("/api/communities/:id/posts/:postId/comments", authenticateToken2, async (req, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { content, parent_id, images } = req.body;
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+      if (content.length > 2e3) {
+        return res.status(400).json({ message: "Comment is too long (max 2000 characters)" });
+      }
+      const comment = await communityCommentsService.createComment({
+        post_id: postId,
+        author_id: userId,
+        content: content.trim(),
+        parent_id: parent_id || null,
+        images: images && Array.isArray(images) && images.length > 0 ? images : null
+      });
+      res.json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+  app2.put("/api/communities/:id/posts/:postId/comments/:commentId", authenticateToken2, async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { content, images } = req.body;
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+      if (content.length > 2e3) {
+        return res.status(400).json({ message: "Comment is too long (max 2000 characters)" });
+      }
+      const comment = await communityCommentsService.updateComment(commentId, userId, {
+        content: content.trim(),
+        images: images && Array.isArray(images) && images.length > 0 ? images : null
+      });
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      res.json(comment);
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      res.status(500).json({ message: "Failed to update comment" });
+    }
+  });
+  app2.delete("/api/communities/:id/posts/:postId/comments/:commentId", authenticateToken2, async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const success = await communityCommentsService.deleteComment(commentId, userId);
+      if (!success) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      res.json({ message: "Comment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
     }
   });
   app2.get("/api/communities/:id/meal-plans", async (req, res) => {
@@ -17799,6 +18797,21 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to search meal plans" });
     }
   });
+  app2.get("/api/creators/top", async (req, res) => {
+    console.log("\u{1F680} TOP CREATORS ENDPOINT HIT - DEBUG!");
+    try {
+      console.log(`\u{1F50D} [DEBUG] /api/creators/top called with query:`, req.query);
+      const metric = req.query.metric || "followers";
+      const limit = parseInt(req.query.limit) || 10;
+      console.log(`\u{1F4CA} [DEBUG] About to call getTopCreators with metric: ${metric}, limit: ${limit}`);
+      const creators = await creatorService.getTopCreators(metric, limit);
+      console.log(`\u2705 [DEBUG] getTopCreators returned ${creators?.length || 0} creators`);
+      res.json(creators);
+    } catch (error) {
+      console.error("\u274C [DEBUG] Error fetching top creators:", error);
+      res.status(500).json({ message: "Failed to fetch top creators" });
+    }
+  });
   app2.get("/api/creators/:id", async (req, res) => {
     try {
       const creatorId = req.params.id;
@@ -17890,17 +18903,6 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch followed creators meal plans" });
     }
   });
-  app2.get("/api/creators/top", async (req, res) => {
-    try {
-      const metric = req.query.metric || "followers";
-      const limit = parseInt(req.query.limit) || 10;
-      const creators = await creatorService.getTopCreators(metric, limit);
-      res.json(creators);
-    } catch (error) {
-      console.error("Error fetching top creators:", error);
-      res.status(500).json({ message: "Failed to fetch top creators" });
-    }
-  });
   app2.get("/api/creators/:id/meal-plans", async (req, res) => {
     try {
       const creatorId = req.params.id;
@@ -17914,13 +18916,18 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/creator/stats", authenticateToken2, async (req, res) => {
     try {
-      const userId = req.user.id;
-      const followers = await db.select().from(creatorFollowers).where(eq7(creatorFollowers.creator_id, userId));
-      const communities2 = await db.select().from(communities2).where(eq7(communities2.creator_id, userId));
-      const sharedPlans = await db.select().from(sharedMealPlans).where(eq7(sharedMealPlans.sharer_id, userId));
+      console.log(`\u{1F50D} [DEBUG] /api/creator/stats called for user:`, req.user?.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`\u274C [DEBUG] No user ID found in request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const followers = await db.select().from(creatorFollowers).where(eq8(creatorFollowers.creator_id, userId));
+      const userCommunities = await db.select().from(communities).where(eq8(communities.creator_id, userId));
+      const sharedPlans = await db.select().from(sharedMealPlans).where(eq8(sharedMealPlans.sharer_id, userId));
       const stats = {
         totalFollowers: followers.length,
-        totalCommunities: communities2.length,
+        totalCommunities: userCommunities.length,
         totalSharedPlans: sharedPlans.length,
         totalEarnings: 0,
         // Will implement with Stripe
@@ -17939,13 +18946,268 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch creator stats" });
     }
   });
+  app2.get("/api/communities/:id/courses", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const courses = await db.select().from(communityMealCourses).where(eq8(communityMealCourses.community_id, communityId)).orderBy(communityMealCourses.display_order);
+      const coursesWithModules = await Promise.all(
+        courses.map(async (course) => {
+          const modules = await db.select().from(communityMealCourseModules).where(eq8(communityMealCourseModules.course_id, course.id)).orderBy(communityMealCourseModules.module_order);
+          const modulesWithLessons = await Promise.all(
+            modules.map(async (module) => {
+              const lessons = await db.select().from(communityMealLessons).where(eq8(communityMealLessons.module_id, module.id)).orderBy(communityMealLessons.lesson_order);
+              return { ...module, lessons };
+            })
+          );
+          const standaloneLessons = await db.select().from(communityMealLessons).where(and6(
+            eq8(communityMealLessons.course_id, course.id),
+            isNull2(communityMealLessons.module_id)
+          )).orderBy(communityMealLessons.lesson_order);
+          return { ...course, modules: modulesWithLessons, lessons: standaloneLessons };
+        })
+      );
+      res.json(coursesWithModules);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+  app2.post("/api/communities/:id/courses", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [member] = await db.select().from(communityMembers).where(and6(
+        eq8(communityMembers.community_id, communityId),
+        eq8(communityMembers.user_id, userId),
+        eq8(communityMembers.role, "creator")
+      ));
+      if (!member) {
+        return res.status(403).json({ message: "Only creators can create courses" });
+      }
+      const courseData = {
+        community_id: communityId,
+        creator_id: userId,
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        category: req.body.category,
+        is_published: false,
+        display_order: req.body.display_order || 0,
+        drip_enabled: req.body.drip_enabled || false,
+        drip_days: req.body.drip_days || []
+      };
+      const [newCourse] = await db.insert(communityMealCourses).values(courseData).returning();
+      res.json(newCourse);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Failed to create course" });
+    }
+  });
+  app2.put("/api/communities/:id/courses/:courseId", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can update this course" });
+      }
+      const [updatedCourse] = await db.update(communityMealCourses).set({
+        title: req.body.title || course.title,
+        emoji: req.body.emoji || course.emoji,
+        description: req.body.description || course.description,
+        category: req.body.category || course.category,
+        is_published: req.body.is_published ?? course.is_published,
+        display_order: req.body.display_order ?? course.display_order,
+        drip_enabled: req.body.drip_enabled ?? course.drip_enabled,
+        drip_days: req.body.drip_days || course.drip_days,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealCourses.id, courseId)).returning();
+      res.json(updatedCourse);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Failed to update course" });
+    }
+  });
+  app2.delete("/api/communities/:id/courses/:courseId", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can delete this course" });
+      }
+      await db.delete(communityMealCourses).where(eq8(communityMealCourses.id, courseId));
+      res.json({ message: "Course deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+  app2.post("/api/communities/:id/courses/:courseId/lessons", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can add lessons to this course" });
+      }
+      const lessonData = {
+        course_id: courseId,
+        module_id: req.body.module_id,
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        video_url: req.body.video_url,
+        youtube_video_id: req.body.youtube_video_id,
+        image_url: req.body.image_url,
+        ingredients: req.body.ingredients || [],
+        instructions: req.body.instructions || [],
+        prep_time: req.body.prep_time || 0,
+        cook_time: req.body.cook_time || 0,
+        servings: req.body.servings || 4,
+        difficulty_level: req.body.difficulty_level || 1,
+        nutrition_info: req.body.nutrition_info || {},
+        lesson_order: req.body.lesson_order || 0,
+        is_published: false
+      };
+      const [newLesson] = await db.insert(communityMealLessons).values(lessonData).returning();
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        const sections = req.body.sections.map((section, index2) => ({
+          lesson_id: newLesson.id,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index2,
+          is_visible: section.is_visible ?? true
+        }));
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+      await db.update(communityMealCourses).set({
+        lesson_count: course.lesson_count + 1,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealCourses.id, courseId));
+      res.json(newLesson);
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res.status(500).json({ message: "Failed to create lesson" });
+    }
+  });
+  app2.put("/api/communities/:id/lessons/:lessonId", authenticateToken2, async (req, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [lesson] = await db.select({
+        lesson: communityMealLessons,
+        course: communityMealCourses
+      }).from(communityMealLessons).innerJoin(communityMealCourses, eq8(communityMealLessons.course_id, communityMealCourses.id)).where(eq8(communityMealLessons.id, lessonId));
+      if (!lesson || lesson.course.creator_id !== userId) {
+        return res.status(403).json({ message: "Only the creator can update this lesson" });
+      }
+      const [updatedLesson] = await db.update(communityMealLessons).set({
+        title: req.body.title || lesson.lesson.title,
+        emoji: req.body.emoji || lesson.lesson.emoji,
+        description: req.body.description || lesson.lesson.description,
+        video_url: req.body.video_url || lesson.lesson.video_url,
+        youtube_video_id: req.body.youtube_video_id || lesson.lesson.youtube_video_id,
+        image_url: req.body.image_url || lesson.lesson.image_url,
+        ingredients: req.body.ingredients || lesson.lesson.ingredients,
+        instructions: req.body.instructions || lesson.lesson.instructions,
+        prep_time: req.body.prep_time ?? lesson.lesson.prep_time,
+        cook_time: req.body.cook_time ?? lesson.lesson.cook_time,
+        servings: req.body.servings ?? lesson.lesson.servings,
+        difficulty_level: req.body.difficulty_level ?? lesson.lesson.difficulty_level,
+        nutrition_info: req.body.nutrition_info || lesson.lesson.nutrition_info,
+        is_published: req.body.is_published ?? lesson.lesson.is_published,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealLessons.id, lessonId)).returning();
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        await db.delete(communityMealLessonSections).where(eq8(communityMealLessonSections.lesson_id, lessonId));
+        const sections = req.body.sections.map((section, index2) => ({
+          lesson_id: lessonId,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index2,
+          is_visible: section.is_visible ?? true
+        }));
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+      res.json(updatedLesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Failed to update lesson" });
+    }
+  });
+  app2.get("/api/communities/:id/lessons/:lessonId", authenticateToken2, async (req, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const userId = req.user?.id;
+      const [lesson] = await db.select().from(communityMealLessons).where(eq8(communityMealLessons.id, lessonId));
+      if (!lesson) {
+        return res.status(404).json({ message: "Lesson not found" });
+      }
+      const sections = await db.select().from(communityMealLessonSections).where(eq8(communityMealLessonSections.lesson_id, lessonId)).orderBy(communityMealLessonSections.display_order);
+      let userProgress = null;
+      if (userId) {
+        const [progress] = await db.select().from(userMealCourseProgress).where(and6(
+          eq8(userMealCourseProgress.user_id, userId),
+          eq8(userMealCourseProgress.course_id, lesson.course_id)
+        ));
+        userProgress = progress;
+      }
+      res.json({
+        ...lesson,
+        sections,
+        userProgress
+      });
+    } catch (error) {
+      console.error("Error fetching lesson:", error);
+      res.status(500).json({ message: "Failed to fetch lesson" });
+    }
+  });
   app2.get("/api/creator/communities", authenticateToken2, async (req, res) => {
     try {
-      const userId = req.user.id;
-      const creatorCommunities = await db.select().from(communities).where(eq7(communities.creator_id, userId));
+      console.log(`\u{1F50D} [DEBUG] /api/creator/communities called for user:`, req.user?.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`\u274C [DEBUG] No user ID in creator/communities request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const creatorCommunities = await db.select().from(communities).where(eq8(communities.creator_id, userId));
       const communitiesWithStats = await Promise.all(
         creatorCommunities.map(async (community) => {
-          const members = await db.select().from(communityMembers).where(eq7(communityMembers.community_id, community.id));
+          const members = await db.select().from(communityMembers).where(eq8(communityMembers.community_id, community.id));
           return {
             ...community,
             memberCount: members.length,
@@ -18000,6 +19262,8 @@ var vite_config_default = defineConfig({
     emptyOutDir: true
   },
   server: {
+    host: "0.0.0.0",
+    port: 5173,
     proxy: {
       "/api": {
         target: "http://localhost:5000",
