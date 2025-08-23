@@ -43,6 +43,8 @@ import {
   ListChecks,
   Info,
   X,
+  Menu,
+  ChevronLeft,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
@@ -280,10 +282,16 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-[10000]" data-meal-plan-editor>
-      <div className="fixed inset-0 bg-gray-900 flex transition-transform duration-300 ease-in-out"
-           style={{
-             transform: 'var(--editor-transform, translateY(0))'
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[10000] sidebar-collapsed" data-meal-plan-editor>
+      <div className="fixed inset-0 bg-gray-900 flex relative"
+           onClick={(e) => {
+             // Close sidebar when clicking on overlay area (only on mobile)
+             if (window.innerWidth <= 768 && e.target === e.currentTarget) {
+               const editor = document.querySelector('[data-meal-plan-editor]');
+               if (editor && !editor.classList.contains('sidebar-collapsed')) {
+                 editor.classList.add('sidebar-collapsed');
+               }
+             }
            }}>
         {/* Left Sidebar - Course List */}
         <div className="w-80 bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
@@ -392,24 +400,24 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
         )}
       </div>
 
-        {/* Collapse Button */}
+        {/* Toggle Sidebar Button */}
         <Button
           onClick={() => {
-            // Instead of closing completely, just minimize the interface on mobile
+            // Toggle sidebar collapse state
             const editor = document.querySelector('[data-meal-plan-editor]');
             if (editor) {
-              editor.classList.toggle('minimized');
+              editor.classList.toggle('sidebar-collapsed');
             }
-            // Only close on desktop or when explicitly requested
+            // Only close on desktop when explicitly requested
             if (window.innerWidth >= 768 && onClose) {
               onClose();
             }
           }}
-          className="absolute top-4 right-4 z-10 bg-gray-700 hover:bg-gray-600 text-white"
+          className="absolute top-4 left-4 z-30 bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
           size="sm"
-          title="Minimize editor"
+          title="Toggle course list"
         >
-          <ChevronDown className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" />
         </Button>
 
         {/* Create Course Dialog */}

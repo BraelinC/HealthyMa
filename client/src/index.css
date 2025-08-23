@@ -235,33 +235,55 @@ button[role="gridcell"]:hover:not([aria-selected="true"]):not([disabled]) {
   animation: float linear infinite;
 }
 
-/* Meal Plan Editor Mobile Collapse Styles */
-[data-meal-plan-editor].minimized {
-  --editor-transform: translateY(80%);
+/* Meal Plan Editor Sidebar Collapse Styles */
+[data-meal-plan-editor] .w-80 {
+  transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 
-[data-meal-plan-editor].minimized .bg-gray-900 {
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
+[data-meal-plan-editor].sidebar-collapsed .w-80 {
+  transform: translateX(-100%);
 }
 
-[data-meal-plan-editor].minimized button[title="Minimize editor"] {
+[data-meal-plan-editor].sidebar-collapsed .flex-1 {
+  margin-left: 0;
+}
+
+/* Button animation when sidebar collapses */
+[data-meal-plan-editor].sidebar-collapsed button[title="Toggle course list"] {
   transform: rotate(180deg);
 }
 
 /* Mobile responsiveness for meal plan editor */
 @media (max-width: 768px) {
   [data-meal-plan-editor] .w-80 {
-    width: 100%;
+    width: 320px;
     max-width: 320px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 20;
   }
   
-  [data-meal-plan-editor].minimized {
-    --editor-transform: translateY(85%);
+  [data-meal-plan-editor] .flex-1 {
+    margin-left: 0;
+    width: 100%;
   }
   
-  [data-meal-plan-editor].minimized .w-80 {
-    height: 120px;
-    overflow: hidden;
+  [data-meal-plan-editor].sidebar-collapsed .w-80 {
+    transform: translateX(-100%);
+  }
+  
+  /* Add overlay when sidebar is open on mobile */
+  [data-meal-plan-editor]:not(.sidebar-collapsed)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 320px;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    pointer-events: auto;
   }
 }
