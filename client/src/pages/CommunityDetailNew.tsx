@@ -13,7 +13,7 @@ import {
   Users, Calendar, MessageSquare, Heart, ChefHat, ArrowLeft, Settings,
   Pin, ThumbsUp, MessageCircle, Share2, Camera, Plus, Search,
   Clock, TrendingUp, User, MoreHorizontal, Send, Menu, X,
-  ChevronDown, CheckCircle, Play, BookOpen, Share
+  ChevronDown, CheckCircle, Play, BookOpen, Share, Eye
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -86,6 +86,7 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [showLessonView, setShowLessonView] = useState(false);
+  const [isStudentViewMode, setIsStudentViewMode] = useState(false);
   const [showMealPlanEditor, setShowMealPlanEditor] = useState(false);
   const [expandedCourses, setExpandedCourses] = useState<number[]>([]);
   const { toast } = useToast();
@@ -93,7 +94,7 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
 
   // Fetch courses from API
   const { data: courses = [], isLoading: coursesLoading } = useQuery({
-    queryKey: [`/api/communities/${communityId}/courses`],
+    queryKey: [`/api/communities/${communityId}/courses`, isStudentViewMode],
     queryFn: async () => {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/communities/${communityId}/courses`, {
@@ -105,12 +106,12 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
       if (!response.ok) throw new Error('Failed to fetch courses');
       const data = await response.json();
       
-      // Filter courses based on user role
-      if (isCreator) {
-        // Creators see all courses
+      // Filter courses based on user role and view mode
+      if (isCreator && !isStudentViewMode) {
+        // Creators in normal mode see all courses (published and drafts)
         return data;
       } else {
-        // Regular users only see published courses
+        // Regular users and creators in student view only see published courses
         return data.filter((course: any) => course.is_published);
       }
     },
@@ -152,16 +153,39 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
 
   return (
     <div className="space-y-3">
-      {/* Creator Course Management Button */}
+      {/* Creator Course Management and Student View Toggle */}
       {isCreator && (
-        <div className="flex justify-center -mt-2">
+        <div className="flex items-center justify-between -mt-2 gap-4">
+          <div className="flex justify-center flex-1">
+            <Button
+              onClick={() => setShowMealPlanEditor(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Courses
+            </Button>
+          </div>
+          
+          {/* Student View Toggle */}
           <Button
-            onClick={() => setShowMealPlanEditor(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2"
+            onClick={() => setIsStudentViewMode(!isStudentViewMode)}
+            variant={isStudentViewMode ? "secondary" : "outline"}
+            className={isStudentViewMode ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" : "border-gray-600 text-gray-300 hover:bg-gray-700"}
+            size="sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Courses
+            <Eye className="w-4 h-4 mr-2" />
+            {isStudentViewMode ? "Exit Student View" : "Student View"}
           </Button>
+        </div>
+      )}
+
+      {/* Student View Indicator */}
+      {isCreator && isStudentViewMode && (
+        <div className="bg-blue-600/10 border border-blue-600/30 rounded-lg p-3 -mt-1">
+          <p className="text-sm text-blue-400 flex items-center gap-2">
+            <Eye className="w-4 h-4" />
+            Student View Mode - Showing only published courses visible to students
+          </p>
         </div>
       )}
 
@@ -169,15 +193,17 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
         <div className="text-center py-12">
           <BookOpen className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">
-            {isCreator ? "No Courses Created Yet" : "No Published Courses Available"}
+            {isCreator && !isStudentViewMode ? "No Courses Created Yet" : "No Published Courses Available"}
           </h3>
           <p className="text-gray-400 mb-6">
-            {isCreator 
+            {isCreator && !isStudentViewMode
               ? "Create your first course to get started with meal planning!" 
+              : isCreator && isStudentViewMode
+              ? "No published courses visible to students yet. Exit Student View to see drafts."
               : "The creator hasn't published any courses yet. Check back soon!"
             }
           </p>
-          {isCreator && (
+          {isCreator && !isStudentViewMode && (
             <Button
               onClick={() => setShowMealPlanEditor(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white"
@@ -210,18 +236,20 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
                   </div>
                 )}
                 
-                {/* Status Badge */}
-                <div className="absolute top-3 right-3">
-                  {course.is_published ? (
-                    <Badge className="bg-green-600/90 text-white text-xs backdrop-blur-sm">
-                      Published
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-yellow-600/90 text-white text-xs backdrop-blur-sm">
-                      Draft
-                    </Badge>
-                  )}
-                </div>
+                {/* Status Badge - Only show for creators not in student view */}
+                {!isStudentViewMode && (
+                  <div className="absolute top-3 right-3">
+                    {course.is_published ? (
+                      <Badge className="bg-green-600/90 text-white text-xs backdrop-blur-sm">
+                        Published
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-yellow-600/90 text-white text-xs backdrop-blur-sm">
+                        Draft
+                      </Badge>
+                    )}
+                  </div>
+                )}
 
                 {/* Progress Bar - Bottom of Image */}
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
