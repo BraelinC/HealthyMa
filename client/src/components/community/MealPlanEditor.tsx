@@ -374,6 +374,10 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   const [isCreatingModule, setIsCreatingModule] = useState(false);
   const [isCreatingLesson, setIsCreatingLesson] = useState(false);
   const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<number | null>(null);
+  
+  // Edit states
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [editingModule, setEditingModule] = useState<Module | null>(null);
 
   console.log('MealPlanEditor mounted with communityId:', communityId);
 
@@ -627,6 +631,28 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
       toast({ title: "Course updated", description: "Your course has been updated successfully." });
+      setEditingCourse(null);
+    },
+  });
+
+  // Update module mutation
+  const updateModuleMutation = useMutation({
+    mutationFn: async ({ courseId, moduleId, data }: { courseId: number; moduleId: number; data: Partial<Module> }) => {
+      const response = await fetch(`/api/communities/${communityId}/courses/${courseId}/modules/${moduleId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update module');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
+      toast({ title: "Module updated", description: "Your module has been updated successfully." });
+      setEditingModule(null);
     },
   });
 
@@ -760,15 +786,28 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
                                   <p className="text-xs text-gray-400">{course.lesson_count} lessons</p>
                                 </div>
                               </div>
-                              <Badge
-                                className={`text-xs ${
-                                  course.is_published
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-gray-600 text-gray-300'
-                                }`}
-                              >
-                                {course.is_published ? 'Published' : 'Draft'}
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingCourse(course);
+                                  }}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Badge
+                                  className={`text-xs ${
+                                    course.is_published
+                                      ? 'bg-green-600 text-white'
+                                      : 'bg-gray-600 text-gray-300'
+                                  }`}
+                                >
+                                  {course.is_published ? 'Published' : 'Draft'}
+                                </Badge>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
@@ -804,6 +843,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             onSelectLesson={setSelectedLesson}
             onCreateModule={() => setIsCreatingModule(true)}
             onCreateLesson={handleCreateLesson}
+            onEditModule={setEditingModule}
             selectedCourse={selectedCourse}
           />
         ) : (
@@ -915,6 +955,55 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
           </DialogContent>
         </Dialog>
 
+        {/* Edit Course Dialog */}
+        <Dialog open={!!editingCourse} onOpenChange={(open) => !open && setEditingCourse(null)}>
+          <DialogContent className="bg-gray-800 text-white border-gray-700 z-[10001]">
+            <DialogHeader>
+              <DialogTitle>Edit Course</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Update the course information
+              </DialogDescription>
+            </DialogHeader>
+            {editingCourse && (
+              <CourseForm
+                initialData={editingCourse}
+                onSubmit={(data) => {
+                  updateCourseMutation.mutate({
+                    courseId: editingCourse.id,
+                    data,
+                  });
+                }}
+                onCancel={() => setEditingCourse(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Module Dialog */}
+        <Dialog open={!!editingModule} onOpenChange={(open) => !open && setEditingModule(null)}>
+          <DialogContent className="bg-gray-800 text-white border-gray-700 z-[10001]">
+            <DialogHeader>
+              <DialogTitle>Edit Module</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Update the module information
+              </DialogDescription>
+            </DialogHeader>
+            {editingModule && selectedCourse && (
+              <ModuleForm
+                initialData={editingModule}
+                onSubmit={(data) => {
+                  updateModuleMutation.mutate({
+                    courseId: selectedCourse.id,
+                    moduleId: editingModule.id,
+                    data,
+                  });
+                }}
+                onCancel={() => setEditingModule(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Lesson Editor Modal */}
         {selectedLesson && (
           <LessonEditor
@@ -938,6 +1027,7 @@ function CourseEditor({
   onSelectLesson,
   onCreateModule,
   onCreateLesson,
+  onEditModule,
   selectedCourse,
 }: {
   course: Course;
@@ -947,6 +1037,7 @@ function CourseEditor({
   onSelectLesson: (lesson: Lesson) => void;
   onCreateModule: () => void;
   onCreateLesson: (moduleId?: number) => void;
+  onEditModule: (module: Module) => void;
   selectedCourse: Course;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -1094,8 +1185,16 @@ function CourseEditor({
                       <Plus className="h-3 w-3 mr-1" />
                       <span className="text-xs">Add Lesson</span>
                     </Button>
-                    <Button size="sm" variant="ghost" className="text-gray-400">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="text-gray-400 hover:text-white hover:bg-gray-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditModule(module);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -1205,16 +1304,18 @@ function CourseEditor({
 function CourseForm({
   onSubmit,
   onCancel,
+  initialData,
 }: {
   onSubmit: (data: Partial<Course>) => void;
   onCancel: () => void;
+  initialData?: Course;
 }) {
   const [formData, setFormData] = useState<Partial<Course>>({
-    title: '',
-    description: '',
-    emoji: '📚',
-    category: 'beginner',
-    cover_image: '',
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    emoji: initialData?.emoji || '📚',
+    category: initialData?.category || 'beginner',
+    cover_image: initialData?.cover_image || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1337,7 +1438,7 @@ function CourseForm({
           className="bg-purple-600 hover:bg-purple-700 text-white"
           disabled={!formData.title}
         >
-          Create Course
+          {initialData ? 'Update Course' : 'Create Course'}
         </Button>
       </div>
     </form>
@@ -1348,15 +1449,17 @@ function CourseForm({
 function ModuleForm({
   onSubmit,
   onCancel,
+  initialData,
 }: {
   onSubmit: (data: { title: string; emoji?: string; description?: string; cover_image?: string }) => void;
   onCancel: () => void;
+  initialData?: Module;
 }) {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    emoji: '📁',
-    cover_image: '',
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    emoji: initialData?.emoji || '📁',
+    cover_image: initialData?.cover_image || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1462,7 +1565,7 @@ function ModuleForm({
           className="bg-blue-600 hover:bg-blue-700 text-white"
           disabled={!formData.title}
         >
-          Create Module
+          {initialData ? 'Update Module' : 'Create Module'}
         </Button>
       </div>
     </form>
