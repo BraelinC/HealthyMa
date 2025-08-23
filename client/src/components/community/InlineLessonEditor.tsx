@@ -139,6 +139,16 @@ export default function InlineLessonEditor({
     youtube_video_id: lesson?.youtube_video_id || "",
   });
 
+  // Interactive feature toggles
+  const [interactiveFeatures, setInteractiveFeatures] = useState({
+    comments_enabled: lesson?.comments_enabled || false,
+    poll_enabled: lesson?.poll_enabled || false,
+    notes_enabled: lesson?.notes_enabled || false,
+    timer_enabled: lesson?.timer_enabled || false,
+    image_enabled: lesson?.image_enabled || false,
+    video_enabled: lesson?.video_enabled || false,
+  });
+
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -186,7 +196,11 @@ export default function InlineLessonEditor({
   });
 
   const handleSave = () => {
-    saveLessonMutation.mutate(lessonData);
+    const dataToSave = {
+      ...lessonData,
+      ...interactiveFeatures
+    };
+    saveLessonMutation.mutate(dataToSave);
   };
 
   return (
@@ -350,92 +364,110 @@ export default function InlineLessonEditor({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          className={`px-3 py-2 ${
+                            interactiveFeatures.comments_enabled 
+                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                              : "text-gray-400 hover:text-white hover:bg-gray-700"
+                          }`}
                           onClick={() => {
-                            const currentContent = lessonData.description;
-                            setLessonData({
-                              ...lessonData,
-                              description: currentContent + "\n\n## Discussion\n💬 What are your thoughts on this lesson?\n\n"
+                            setInteractiveFeatures({
+                              ...interactiveFeatures,
+                              comments_enabled: !interactiveFeatures.comments_enabled
                             });
                           }}
                         >
                           <MessageCircle className="w-3 h-3 mr-1" />
-                          Comments
+                          Comments {interactiveFeatures.comments_enabled && "✓"}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          className={`px-3 py-2 ${
+                            interactiveFeatures.poll_enabled 
+                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                              : "text-gray-400 hover:text-white hover:bg-gray-700"
+                          }`}
                           onClick={() => {
-                            const currentContent = lessonData.description;
-                            setLessonData({
-                              ...lessonData,
-                              description: currentContent + "\n\n## Quick Poll\n📊 Which option do you prefer?\n• Option A\n• Option B\n• Option C\n\n"
+                            setInteractiveFeatures({
+                              ...interactiveFeatures,
+                              poll_enabled: !interactiveFeatures.poll_enabled
                             });
                           }}
                         >
                           <BarChart3 className="w-3 h-3 mr-1" />
-                          Poll
+                          Poll {interactiveFeatures.poll_enabled && "✓"}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          className={`px-3 py-2 ${
+                            interactiveFeatures.notes_enabled 
+                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                              : "text-gray-400 hover:text-white hover:bg-gray-700"
+                          }`}
                           onClick={() => {
-                            const currentContent = lessonData.description;
-                            setLessonData({
-                              ...lessonData,
-                              description: currentContent + "\n\n## Notes\n📝 Important reminders:\n• \n• \n\n"
+                            setInteractiveFeatures({
+                              ...interactiveFeatures,
+                              notes_enabled: !interactiveFeatures.notes_enabled
                             });
                           }}
                         >
                           <FileText className="w-3 h-3 mr-1" />
-                          Notes
+                          Notes {interactiveFeatures.notes_enabled && "✓"}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          className={`px-3 py-2 ${
+                            interactiveFeatures.timer_enabled 
+                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                              : "text-gray-400 hover:text-white hover:bg-gray-700"
+                          }`}
                           onClick={() => {
-                            const currentContent = lessonData.description;
-                            setLessonData({
-                              ...lessonData,
-                              description: currentContent + "\n\n## Timer\n⏰ Set a timer for: ___ minutes\n\n"
+                            setInteractiveFeatures({
+                              ...interactiveFeatures,
+                              timer_enabled: !interactiveFeatures.timer_enabled
                             });
                           }}
                         >
                           <Clock className="w-3 h-3 mr-1" />
-                          Timer
+                          Timer {interactiveFeatures.timer_enabled && "✓"}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          className={`px-3 py-2 ${
+                            interactiveFeatures.image_enabled 
+                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                              : "text-gray-400 hover:text-white hover:bg-gray-700"
+                          }`}
                           onClick={() => {
-                            const currentContent = lessonData.description;
-                            setLessonData({
-                              ...lessonData,
-                              description: currentContent + "\n\n## Image Placeholder\n🖼️ [Add image here]\n\n"
+                            setInteractiveFeatures({
+                              ...interactiveFeatures,
+                              image_enabled: !interactiveFeatures.image_enabled
                             });
                           }}
                         >
                           <Image className="w-3 h-3 mr-1" />
-                          Image
+                          Image {interactiveFeatures.image_enabled && "✓"}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          className={`px-3 py-2 ${
+                            interactiveFeatures.video_enabled 
+                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                              : "text-gray-400 hover:text-white hover:bg-gray-700"
+                          }`}
                           onClick={() => {
-                            const currentContent = lessonData.description;
-                            setLessonData({
-                              ...lessonData,
-                              description: currentContent + "\n\n## Video\n🎥 [Video URL: ]\n\n"
+                            setInteractiveFeatures({
+                              ...interactiveFeatures,
+                              video_enabled: !interactiveFeatures.video_enabled
                             });
                           }}
                         >
                           <Video className="w-3 h-3 mr-1" />
-                          Video
+                          Video {interactiveFeatures.video_enabled && "✓"}
                         </Button>
                       </div>
                     </CardContent>
@@ -500,6 +532,69 @@ export default function InlineLessonEditor({
                     </div>
                   </div>
                 )}
+
+                {/* Interactive Features Section */}
+                <div className="mt-6 space-y-4">
+                  {interactiveFeatures.comments_enabled && (
+                    <div className="bg-gray-700 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <MessageCircle className="w-4 h-4 text-purple-400" />
+                        <h4 className="text-white font-medium">Discussion</h4>
+                      </div>
+                      <p className="text-gray-300 text-sm">Comments are enabled for this lesson. Students can share their thoughts and ask questions.</p>
+                    </div>
+                  )}
+                  
+                  {interactiveFeatures.poll_enabled && (
+                    <div className="bg-gray-700 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <BarChart3 className="w-4 h-4 text-purple-400" />
+                        <h4 className="text-white font-medium">Poll</h4>
+                      </div>
+                      <p className="text-gray-300 text-sm">Interactive poll is available for student engagement.</p>
+                    </div>
+                  )}
+                  
+                  {interactiveFeatures.notes_enabled && (
+                    <div className="bg-gray-700 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileText className="w-4 h-4 text-purple-400" />
+                        <h4 className="text-white font-medium">Notes</h4>
+                      </div>
+                      <p className="text-gray-300 text-sm">Students can take and save notes for this lesson.</p>
+                    </div>
+                  )}
+                  
+                  {interactiveFeatures.timer_enabled && (
+                    <div className="bg-gray-700 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Clock className="w-4 h-4 text-purple-400" />
+                        <h4 className="text-white font-medium">Timer</h4>
+                      </div>
+                      <p className="text-gray-300 text-sm">Built-in timer functionality is available for timed activities.</p>
+                    </div>
+                  )}
+                  
+                  {interactiveFeatures.image_enabled && (
+                    <div className="bg-gray-700 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Image className="w-4 h-4 text-purple-400" />
+                        <h4 className="text-white font-medium">Image Upload</h4>
+                      </div>
+                      <p className="text-gray-300 text-sm">Students can upload and share images related to this lesson.</p>
+                    </div>
+                  )}
+                  
+                  {interactiveFeatures.video_enabled && (
+                    <div className="bg-gray-700 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Video className="w-4 h-4 text-purple-400" />
+                        <h4 className="text-white font-medium">Video Content</h4>
+                      </div>
+                      <p className="text-gray-300 text-sm">Video sharing and discussion features are enabled for this lesson.</p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
