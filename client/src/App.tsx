@@ -244,6 +244,13 @@ function Router() {
           <Route path="/community/:communityId/post/:postId" component={PostDetail} />
           <Route path="/community/:id" component={CommunityDetailNew} />
           <Route path="/profile" component={Profile} />
+          <Route path="/landingpage" component={() => (
+            <LandingPage 
+              onGetStarted={() => {}} 
+              onStartPayment={() => {}} 
+              onTestLogin={() => {}} 
+            />
+          )} />
 
           <Route path="/icons" component={IconShowcase} />
           <Route component={NotFound} />
