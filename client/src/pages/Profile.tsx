@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe, LogOut, CheckCircle } from 'lucide-react';
+import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe, LogOut, CheckCircle, HandPlatter, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Profile, FamilyMember } from '@shared/schema';
 import CulturalCuisineDropdown from '@/components/CulturalCuisineDropdown';
@@ -1623,6 +1623,32 @@ export default function Profile() {
                   <Save className="h-4 w-4 mr-2" />
                   {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save Profile'}
                 </Button>
+              </div>
+            )}
+
+            {/* Creator Flyer Section - Only show for creators */}
+            {(user as any)?.is_creator && (
+              <div className="mt-8">
+                <Card className="bg-gradient-to-r from-purple-50 to-emerald-50 border-2 border-purple-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-gradient-to-br from-purple-500 to-emerald-500 rounded-full">
+                        <HandPlatter className="text-white h-6 w-6" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">Creator Marketing Tools</h3>
+                        <p className="text-gray-600 text-sm">Generate beautiful flyers to attract new creators to your community</p>
+                      </div>
+                      <Button
+                        onClick={() => window.open('/creator-flyer', '_blank')}
+                        className="bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white"
+                      >
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Create Flyer
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
