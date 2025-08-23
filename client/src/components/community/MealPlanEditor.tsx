@@ -375,7 +375,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   const [isCreatingLesson, setIsCreatingLesson] = useState(false);
   const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<number | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [lessonEditorData, setLessonEditorData] = useState<{lessonId: number, communityId: string} | null>(null);
+  const [lessonEditorData, setLessonEditorData] = useState<{lesson: any, communityId: string, courseId: number} | null>(null);
   
   // Edit states
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -593,9 +593,9 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
       
       toast({ title: "✅ Lesson created", description: "Your new lesson has been created successfully." });
       
-      // Reset loading state and open lesson editor modal
+      // Reset loading state and open lesson editor modal with full lesson data
       setIsNavigating(false);
-      setLessonEditorData({ lessonId: data.id, communityId });
+      setLessonEditorData({ lesson: data, communityId, courseId: data.course_id });
     },
     onError: (error) => {
       console.error('Error creating lesson:', error);
@@ -1014,14 +1014,14 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
 
         {/* Lesson Editor Modal */}
         {lessonEditorData && (
-          <div className="fixed inset-0 bg-gray-900 z-[10003] flex items-center justify-center">
-            <div className="w-full h-full">
-              <InlineLessonEditor
-                lessonId={lessonEditorData.lessonId}
-                communityId={lessonEditorData.communityId}
-                onClose={() => setLessonEditorData(null)}
-              />
-            </div>
+          <div className="fixed inset-0 bg-gray-900 z-[10003]">
+            <InlineLessonEditor
+              lesson={lessonEditorData.lesson}
+              communityId={lessonEditorData.communityId}
+              courseId={lessonEditorData.courseId}
+              isCreator={true}
+              onClose={() => setLessonEditorData(null)}
+            />
           </div>
         )}
 
