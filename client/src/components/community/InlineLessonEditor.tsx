@@ -391,24 +391,27 @@ export default function InlineLessonEditor({
             
             {/* 1. Image Import at Top */}
             <Card className="bg-gray-800 border-gray-700 relative">
-              {/* Toggle button in corner */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`absolute top-2 right-2 z-10 p-2 ${
-                  sectionToggles.image_enabled 
-                    ? "text-purple-400 bg-purple-900/50" 
-                    : "text-gray-400 bg-gray-700/50"
-                }`}
-                onClick={() => {
-                  setSectionToggles({
-                    ...sectionToggles,
-                    image_enabled: !sectionToggles.image_enabled
-                  });
-                }}
-              >
-                <Image className="w-4 h-4" />
-              </Button>
+              {/* Toggle switch in corner */}
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                <Image className="w-3 h-3 text-gray-400" />
+                <div
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
+                    sectionToggles.image_enabled ? 'bg-purple-600' : 'bg-gray-600'
+                  }`}
+                  onClick={() => {
+                    setSectionToggles({
+                      ...sectionToggles,
+                      image_enabled: !sectionToggles.image_enabled
+                    });
+                  }}
+                >
+                  <div
+                    className={`transform transition-transform duration-200 ease-in-out h-4 w-4 rounded-full bg-white shadow ${
+                      sectionToggles.image_enabled ? 'translate-x-4' : 'translate-x-0.5'
+                    }`}
+                  />
+                </div>
+              </div>
               <CardContent className={`p-6 transition-opacity duration-200 ${
                 sectionToggles.image_enabled ? 'opacity-100' : 'opacity-30'
               }`}>
@@ -464,24 +467,27 @@ export default function InlineLessonEditor({
 
             {/* 2. YouTube Video Section */}
             <Card className="bg-gray-800 border-gray-700 relative">
-              {/* Toggle button in corner */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`absolute top-2 right-2 z-10 p-2 ${
-                  sectionToggles.video_enabled 
-                    ? "text-purple-400 bg-purple-900/50" 
-                    : "text-gray-400 bg-gray-700/50"
-                }`}
-                onClick={() => {
-                  setSectionToggles({
-                    ...sectionToggles,
-                    video_enabled: !sectionToggles.video_enabled
-                  });
-                }}
-              >
-                <Video className="w-4 h-4" />
-              </Button>
+              {/* Toggle switch in corner */}
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                <Video className="w-3 h-3 text-gray-400" />
+                <div
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
+                    sectionToggles.video_enabled ? 'bg-purple-600' : 'bg-gray-600'
+                  }`}
+                  onClick={() => {
+                    setSectionToggles({
+                      ...sectionToggles,
+                      video_enabled: !sectionToggles.video_enabled
+                    });
+                  }}
+                >
+                  <div
+                    className={`transform transition-transform duration-200 ease-in-out h-4 w-4 rounded-full bg-white shadow ${
+                      sectionToggles.video_enabled ? 'translate-x-4' : 'translate-x-0.5'
+                    }`}
+                  />
+                </div>
+              </div>
               <CardContent className={`p-6 space-y-4 transition-opacity duration-200 ${
                 sectionToggles.video_enabled ? 'opacity-100' : 'opacity-30'
               }`}>
@@ -515,24 +521,27 @@ export default function InlineLessonEditor({
 
             {/* 3. Simple Content Box */}
             <Card className="bg-gray-800 border-gray-700 relative">
-              {/* Toggle button in corner */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`absolute top-2 right-2 z-10 p-2 ${
-                  sectionToggles.content_enabled 
-                    ? "text-purple-400 bg-purple-900/50" 
-                    : "text-gray-400 bg-gray-700/50"
-                }`}
-                onClick={() => {
-                  setSectionToggles({
-                    ...sectionToggles,
-                    content_enabled: !sectionToggles.content_enabled
-                  });
-                }}
-              >
-                <FileText className="w-4 h-4" />
-              </Button>
+              {/* Toggle switch in corner */}
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                <FileText className="w-3 h-3 text-gray-400" />
+                <div
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
+                    sectionToggles.content_enabled ? 'bg-purple-600' : 'bg-gray-600'
+                  }`}
+                  onClick={() => {
+                    setSectionToggles({
+                      ...sectionToggles,
+                      content_enabled: !sectionToggles.content_enabled
+                    });
+                  }}
+                >
+                  <div
+                    className={`transform transition-transform duration-200 ease-in-out h-4 w-4 rounded-full bg-white shadow ${
+                      sectionToggles.content_enabled ? 'translate-x-4' : 'translate-x-0.5'
+                    }`}
+                  />
+                </div>
+              </div>
               <CardContent className={`p-6 space-y-4 transition-opacity duration-200 ${
                 sectionToggles.content_enabled ? 'opacity-100' : 'opacity-30'
               }`}>
