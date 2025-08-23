@@ -52,7 +52,7 @@ import {
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { SingleImageUploader } from "@/components/SingleImageUploader";
-import EnhancedLessonEditor from "@/components/community/EnhancedLessonEditor";
+import InlineLessonEditor from "@/components/community/InlineLessonEditor";
 
 interface Course {
   id: number;
@@ -1020,10 +1020,11 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
 
         {/* Lesson Editor Modal */}
         {selectedLesson && (
-          <EnhancedLessonEditor
+          <InlineLessonEditor
             lesson={selectedLesson}
             communityId={communityId}
             courseId={selectedCourse?.id || 0}
+            isCreator={true}
             onClose={() => setSelectedLesson(null)}
           />
         )}
