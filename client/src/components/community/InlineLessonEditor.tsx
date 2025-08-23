@@ -388,72 +388,30 @@ export default function InlineLessonEditor({
           /* Simplified Creator Editing with Section Toggles */
           <div className="max-w-2xl mx-auto space-y-6">
             
-            {/* Section Toggle Controls */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-center gap-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`px-4 py-2 ${
-                      sectionToggles.image_enabled 
-                        ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
-                        : "text-gray-400 hover:text-white hover:bg-gray-700"
-                    }`}
-                    onClick={() => {
-                      setSectionToggles({
-                        ...sectionToggles,
-                        image_enabled: !sectionToggles.image_enabled
-                      });
-                    }}
-                  >
-                    <Image className="w-4 h-4 mr-2" />
-                    Image {sectionToggles.image_enabled && "✓"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`px-4 py-2 ${
-                      sectionToggles.video_enabled 
-                        ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
-                        : "text-gray-400 hover:text-white hover:bg-gray-700"
-                    }`}
-                    onClick={() => {
-                      setSectionToggles({
-                        ...sectionToggles,
-                        video_enabled: !sectionToggles.video_enabled
-                      });
-                    }}
-                  >
-                    <Video className="w-4 h-4 mr-2" />
-                    Video {sectionToggles.video_enabled && "✓"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`px-4 py-2 ${
-                      sectionToggles.content_enabled 
-                        ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
-                        : "text-gray-400 hover:text-white hover:bg-gray-700"
-                    }`}
-                    onClick={() => {
-                      setSectionToggles({
-                        ...sectionToggles,
-                        content_enabled: !sectionToggles.content_enabled
-                      });
-                    }}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Content {sectionToggles.content_enabled && "✓"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
             
             {/* 1. Image Import at Top */}
-            {sectionToggles.image_enabled && (
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6">
+            <Card className="bg-gray-800 border-gray-700 relative">
+              {/* Toggle button in corner */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`absolute top-2 right-2 z-10 p-2 ${
+                  sectionToggles.image_enabled 
+                    ? "text-purple-400 bg-purple-900/50" 
+                    : "text-gray-400 bg-gray-700/50"
+                }`}
+                onClick={() => {
+                  setSectionToggles({
+                    ...sectionToggles,
+                    image_enabled: !sectionToggles.image_enabled
+                  });
+                }}
+              >
+                <Image className="w-4 h-4" />
+              </Button>
+              <CardContent className={`p-6 transition-opacity duration-200 ${
+                sectionToggles.image_enabled ? 'opacity-100' : 'opacity-30'
+              }`}>
                 <div className="text-center space-y-4">
                   {lessonData.image_url ? (
                     <div className="relative w-full h-48 bg-gray-700 rounded-lg overflow-hidden">
@@ -503,12 +461,30 @@ export default function InlineLessonEditor({
                 </div>
               </CardContent>
             </Card>
-            )}
 
             {/* 2. YouTube Video Section */}
-            {sectionToggles.video_enabled && (
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6 space-y-4">
+            <Card className="bg-gray-800 border-gray-700 relative">
+              {/* Toggle button in corner */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`absolute top-2 right-2 z-10 p-2 ${
+                  sectionToggles.video_enabled 
+                    ? "text-purple-400 bg-purple-900/50" 
+                    : "text-gray-400 bg-gray-700/50"
+                }`}
+                onClick={() => {
+                  setSectionToggles({
+                    ...sectionToggles,
+                    video_enabled: !sectionToggles.video_enabled
+                  });
+                }}
+              >
+                <Video className="w-4 h-4" />
+              </Button>
+              <CardContent className={`p-6 space-y-4 transition-opacity duration-200 ${
+                sectionToggles.video_enabled ? 'opacity-100' : 'opacity-30'
+              }`}>
                 {/* YouTube URL */}
                 <input
                   type="text"
@@ -536,12 +512,30 @@ export default function InlineLessonEditor({
                 )}
               </CardContent>
             </Card>
-            )}
 
             {/* 3. Simple Content Box */}
-            {sectionToggles.content_enabled && (
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6 space-y-4">
+            <Card className="bg-gray-800 border-gray-700 relative">
+              {/* Toggle button in corner */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`absolute top-2 right-2 z-10 p-2 ${
+                  sectionToggles.content_enabled 
+                    ? "text-purple-400 bg-purple-900/50" 
+                    : "text-gray-400 bg-gray-700/50"
+                }`}
+                onClick={() => {
+                  setSectionToggles({
+                    ...sectionToggles,
+                    content_enabled: !sectionToggles.content_enabled
+                  });
+                }}
+              >
+                <FileText className="w-4 h-4" />
+              </Button>
+              <CardContent className={`p-6 space-y-4 transition-opacity duration-200 ${
+                sectionToggles.content_enabled ? 'opacity-100' : 'opacity-30'
+              }`}>
                 {/* Title */}
                 <input
                   type="text"
@@ -561,7 +555,6 @@ export default function InlineLessonEditor({
                 />
               </CardContent>
             </Card>
-            )}
 
           </div>
         ) : (
