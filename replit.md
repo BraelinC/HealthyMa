@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 23, 2025**: Enhanced lesson editor with Skool-style content creation interface
+- Enhanced lesson content area with expandable text editor (8 rows minimum) for comprehensive content creation
+- Added quick content template buttons for easy insertion of formatted sections (Key Points, Step Lists, Pro Tips, Section Breaks)
+- Improved live preview panel with real-time content formatting including proper rendering of headings, bullet points, numbered lists, and separators
+- Fixed lesson saving functionality by adding missing API endpoint `/api/communities/:id/courses/:courseId/lessons/:lessonId`
+- Enhanced preview to show exactly how students will see lessons with feature badges for interactive elements
+- Content templates now clickable buttons that automatically insert formatted markdown content for streamlined lesson building
+
 **August 23, 2025**: Successfully implemented cover image upload functionality for course and module creation
 - Added SingleImageUploader component for seamless image upload integration
 - Updated both course and module forms with cover image upload fields and previews

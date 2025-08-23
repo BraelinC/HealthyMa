@@ -5370,6 +5370,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update a lesson (creator only) - Alternative route that includes courseId
+  app.put("/api/communities/:id/courses/:courseId/lessons/:lessonId", authenticateToken, async (req: any, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator by checking the course
+      const [lesson] = await db.select({
+        lesson: communityMealLessons,
+        course: communityMealCourses,
+      })
+        .from(communityMealLessons)
+        .innerJoin(communityMealCourses, eq(communityMealLessons.course_id, communityMealCourses.id))
+        .where(and(
+          eq(communityMealLessons.id, lessonId),
+          eq(communityMealLessons.course_id, courseId)
+        ));
+
+      if (!lesson || lesson.course.creator_id !== userId) {
+        return res.status(403).json({ message: "Only the creator can update this lesson" });
+      }
+
+      // Update lesson
+      const [updatedLesson] = await db.update(communityMealLessons)
+        .set({
+          title: req.body.title || lesson.lesson.title,
+          emoji: req.body.emoji || lesson.lesson.emoji,
+          description: req.body.description || lesson.lesson.description,
+          video_url: req.body.video_url || lesson.lesson.video_url,
+          youtube_video_id: req.body.youtube_video_id || lesson.lesson.youtube_video_id,
+          image_url: req.body.image_url || lesson.lesson.image_url,
+          ingredients: req.body.ingredients || lesson.lesson.ingredients,
+          instructions: req.body.instructions || lesson.lesson.instructions,
+          prep_time: req.body.prep_time || lesson.lesson.prep_time,
+          cook_time: req.body.cook_time || lesson.lesson.cook_time,
+          servings: req.body.servings || lesson.lesson.servings,
+          difficulty_level: req.body.difficulty_level || lesson.lesson.difficulty_level,
+          is_published: req.body.is_published !== undefined ? req.body.is_published : lesson.lesson.is_published,
+          lesson_order: req.body.lesson_order || lesson.lesson.lesson_order,
+          updated_at: new Date(),
+        })
+        .where(eq(communityMealLessons.id, lessonId))
+        .returning();
+
+      // Update sections if provided
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        // Delete existing sections
+        await db.delete(communityMealLessonSections)
+          .where(eq(communityMealLessonSections.lesson_id, lessonId));
+
+        // Insert new sections
+        const sections = req.body.sections.map((section: any, index: number) => ({
+          lesson_id: lessonId,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index,
+          is_visible: section.is_visible ?? true,
+        }));
+
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+
+      res.json(updatedLesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Failed to update lesson" });
+    }
+  });
+
   // Update a lesson (creator only)
   app.put("/api/communities/:id/lessons/:lessonId", authenticateToken, async (req: any, res) => {
     try {
