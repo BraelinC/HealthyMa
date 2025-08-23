@@ -323,6 +323,19 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
 
   return (
     <div className="space-y-6">
+      {/* Creator Course Management Button */}
+      {isCreator && (
+        <div className="flex justify-end">
+          <Button
+            onClick={() => setShowMealPlanEditor(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Courses
+          </Button>
+        </div>
+      )}
+
       {courses.length === 0 ? (
         <div className="text-center py-12">
           <BookOpen className="w-16 h-16 text-gray-600 mx-auto mb-4" />
@@ -515,36 +528,7 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
         </div>
       )}
 
-      {/* Creator Controls */}
-      {isCreator && (
-        <div className="mt-8 pt-6 border-t border-gray-700">
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => setShowMealPlanEditor(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Edit Courses
-            </Button>
-            <Button
-              onClick={() => {
-                setShowMealPlanEditor(true);
-                // Auto-open sidebar for quick add flow
-                setTimeout(() => {
-                  const editor = document.querySelector('[data-meal-plan-editor]');
-                  if (editor) {
-                    editor.classList.remove('sidebar-collapsed');
-                  }
-                }, 100);
-              }}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Quick Add Course
-            </Button>
-          </div>
-        </div>
-      )}
+
 
       {/* Meal Plan Editor Modal for Creators */}
       {showMealPlanEditor && isCreator && (
