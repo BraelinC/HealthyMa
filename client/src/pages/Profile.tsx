@@ -1606,28 +1606,8 @@ export default function Profile() {
               familyMembers={members}
             />
 
-            {isEditing && (
-              <div className="flex gap-4 justify-end">
-                <Button onClick={() => setIsEditing(false)} variant="outline">
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleSubmit} 
-                  disabled={saveStatus === 'saving'} 
-                  className={`text-white border-0 transition-all duration-300 ${
-                    saveStatus === 'saved' 
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' 
-                      : 'bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600'
-                  }`}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save Profile'}
-                </Button>
-              </div>
-            )}
-
             {/* Creator Flyer Section - Only show for creators */}
-            {(user as any)?.is_creator && (
+            {(user as any)?.is_creator && !isEditing && (
               <div className="mt-8">
                 <Card className="bg-gradient-to-r from-purple-50 to-emerald-50 border-2 border-purple-200">
                   <CardContent className="p-6">
@@ -1649,6 +1629,26 @@ export default function Profile() {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+            )}
+
+            {isEditing && (
+              <div className="flex gap-4 justify-end">
+                <Button onClick={() => setIsEditing(false)} variant="outline">
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={saveStatus === 'saving'} 
+                  className={`text-white border-0 transition-all duration-300 ${
+                    saveStatus === 'saved' 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' 
+                      : 'bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600'
+                  }`}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save Profile'}
+                </Button>
               </div>
             )}
 
