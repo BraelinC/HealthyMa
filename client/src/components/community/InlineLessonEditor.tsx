@@ -83,10 +83,10 @@ export default function InlineLessonEditor({
                 </div>
               </div>
 
-              {lesson?.lesson_image_url && (
+              {lesson?.image_url && (
                 <div className="mb-6">
                   <img 
-                    src={lesson.lesson_image_url} 
+                    src={lesson.image_url} 
                     alt="Lesson" 
                     className="w-full h-48 object-cover rounded-lg border border-gray-600"
                   />
@@ -149,7 +149,7 @@ export default function InlineLessonEditor({
     servings: lesson?.servings || 4,
     difficulty_level: lesson?.difficulty_level || 1,
     youtube_video_id: lesson?.youtube_video_id || "",
-    lesson_image_url: lesson?.lesson_image_url || "",
+    image_url: lesson?.image_url || "",
   });
 
   // Image upload state
@@ -259,7 +259,7 @@ export default function InlineLessonEditor({
 
     try {
       const imageUrl = await uploadImage(file);
-      setLessonData({ ...lessonData, lesson_image_url: imageUrl });
+      setLessonData({ ...lessonData, image_url: imageUrl });
       
       toast({
         title: "Image uploaded",
@@ -281,7 +281,7 @@ export default function InlineLessonEditor({
   };
 
   const removeImage = () => {
-    setLessonData({ ...lessonData, lesson_image_url: "" });
+    setLessonData({ ...lessonData, image_url: "" });
   };
 
   // Save lesson mutation
@@ -389,10 +389,10 @@ export default function InlineLessonEditor({
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-6">
                 <div className="text-center space-y-4">
-                  {lessonData.lesson_image_url ? (
+                  {lessonData.image_url ? (
                     <div className="relative w-full h-48 bg-gray-700 rounded-lg overflow-hidden">
                       <img 
-                        src={lessonData.lesson_image_url} 
+                        src={lessonData.image_url} 
                         alt="Lesson" 
                         className="w-full h-full object-cover"
                       />
@@ -595,10 +595,10 @@ export default function InlineLessonEditor({
                   </div>
                 </div>
 
-                {lessonData.lesson_image_url && (
+                {lessonData.image_url && (
                   <div className="mb-6">
                     <img 
-                      src={lessonData.lesson_image_url} 
+                      src={lessonData.image_url} 
                       alt="Lesson" 
                       className="w-full h-48 object-cover rounded-lg border border-gray-600"
                     />
