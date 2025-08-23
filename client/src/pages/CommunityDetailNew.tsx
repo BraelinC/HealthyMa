@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ImageUploader } from "@/components/ImageUploader";
 import { MealPlanEditor } from "@/components/community/MealPlanEditor";
 import { LessonEditor } from "@/components/community/LessonEditor";
+import EnhancedLessonEditor from "@/components/community/EnhancedLessonEditor";
 
 interface Community {
   id: number;
@@ -138,186 +139,12 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
 
   if (showLessonView && selectedLesson) {
     return (
-      <div className="space-y-6">
-        {/* Lesson Header */}
-        <div className="flex items-center gap-4 pb-4 border-b border-gray-700">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowLessonView(false)}
-            className="text-gray-400 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Course
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{selectedLesson.title}</h1>
-            <p className="text-gray-400">{selectedCourse?.title}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              Previous
-            </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              Next →
-            </Button>
-          </div>
-        </div>
-
-        {/* Lesson Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Video/Image */}
-            <Card className="bg-gray-800 border-gray-700">
-              <div className="aspect-video bg-gray-700 rounded-t-lg flex items-center justify-center">
-                <div className="text-center">
-                  <Play className="h-12 w-12 text-purple-400 mx-auto mb-2" />
-                  <p className="text-gray-400">Video lesson will appear here</p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Description */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-3">About This Lesson</h3>
-                <p className="text-gray-300 leading-relaxed mb-4">
-                  {selectedLesson.description || "Learn practical nutrition strategies that busy families can implement immediately."}
-                </p>
-                <div className="space-y-3 text-gray-300">
-                  <p>In this lesson, you'll discover:</p>
-                  <ul className="list-disc ml-6 space-y-1">
-                    <li>Tyler's proven framework for sustainable meal planning</li>
-                    <li>How to save 5+ hours per week on meal prep</li>
-                    <li>Budget-friendly strategies that don't compromise nutrition</li>
-                    <li>Real-world examples from Tyler's family kitchen</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Key Takeaways & Action Steps */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-gray-800 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-white text-lg">Key Takeaways</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-gray-300">
-                    <li>✓ Plan meals around your family's schedule</li>
-                    <li>✓ Focus on 5-7 core ingredients each week</li>
-                    <li>✓ Prep vegetables on Sunday, proteins on Wednesday</li>
-                    <li>✓ Keep emergency backup meals ready</li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-800 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-white text-lg">Action Steps</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ol className="space-y-2 text-gray-300">
-                    <li>1. Download Tyler's meal planning template</li>
-                    <li>2. Audit your current pantry staples</li>
-                    <li>3. Choose 3 go-to recipes for this week</li>
-                    <li>4. Set up your meal prep zone</li>
-                  </ol>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Community Discussion */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">Discussion & Questions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="bg-gray-700/50 p-4 rounded-lg">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>SL</AvatarFallback>
-                      </Avatar>
-                      <span className="text-white font-medium">Sarah L.</span>
-                      <span className="text-gray-400 text-sm">2 hours ago</span>
-                    </div>
-                    <p className="text-gray-300">This meal prep strategy is a game changer! Cut my prep time in half.</p>
-                  </div>
-                  <div className="bg-gray-700/50 p-4 rounded-lg">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>MJ</AvatarFallback>
-                      </Avatar>
-                      <span className="text-white font-medium">Mike J.</span>
-                      <span className="text-gray-400 text-sm">5 hours ago</span>
-                    </div>
-                    <p className="text-gray-300">Question: How do you handle picky eaters with this system?</p>
-                    <div className="ml-11 mt-2 p-2 bg-purple-600/20 rounded border-l-2 border-purple-600">
-                      <span className="text-purple-400 font-medium">Tyler:</span>
-                      <span className="text-gray-300 ml-2">Great question! I cover this in Week 2 - the key is involving kids in the planning process.</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-4">
-            {/* Progress */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-300">Your Progress</span>
-                  <span className="text-xs text-gray-400">{selectedCourse?.progress_percentage}%</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="bg-purple-600 h-2 rounded-full" 
-                    style={{ width: `${selectedCourse?.progress_percentage}%` }}
-                  ></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Course Lessons */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white text-sm">Course Lessons</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-2">
-                {selectedCourse?.lessons?.map((lesson: any, index: number) => (
-                  <div 
-                    key={lesson.id}
-                    className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${
-                      lesson.id === selectedLesson.id 
-                        ? 'bg-purple-600/20 border border-purple-600/30' 
-                        : 'hover:bg-gray-700'
-                    }`}
-                  >
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                      lesson.completed 
-                        ? 'bg-green-600 text-white' 
-                        : lesson.id === selectedLesson.id
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-600 text-gray-300'
-                    }`}>
-                      {lesson.completed ? '✓' : index + 1}
-                    </div>
-                    <span className={`text-sm ${
-                      lesson.id === selectedLesson.id ? 'text-purple-400' : 'text-gray-300'
-                    }`}>
-                      {lesson.title}
-                    </span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+      <EnhancedLessonEditor
+        lesson={selectedLesson}
+        communityId={communityId || ''}
+        courseId={selectedCourse?.id || 0}
+        onClose={() => setShowLessonView(false)}
+      />
     );
   }
 
