@@ -134,7 +134,7 @@ export class CommunityCommentsService {
   // Get nested comment structure (for threaded comments)
   async getNestedComments(postId: number, userId?: string): Promise<any[]> {
     // Import communityService here to avoid circular imports
-    const { communityService } = require('./communityService');
+    const { communityService } = await import('./communityService');
     const allComments = await communityService.getPostComments(postId, userId);
     
     // Build nested structure
