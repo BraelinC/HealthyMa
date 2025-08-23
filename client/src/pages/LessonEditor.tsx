@@ -8,7 +8,7 @@ export default function LessonEditor() {
   const [, setLocation] = useLocation();
 
   // Fetch the specific lesson data
-  const { data: courses } = useQuery({
+  const { data: courses, isLoading } = useQuery({
     queryKey: [`/api/communities/${communityId}/courses`],
   });
 
@@ -19,7 +19,8 @@ export default function LessonEditor() {
       ).find((l: any) => l.id === parseInt(lessonId || '0'))
     : null;
 
-  if (!lesson) {
+  // Always show loading state first, then transition to editor
+  if (isLoading || !courses || !lesson) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
