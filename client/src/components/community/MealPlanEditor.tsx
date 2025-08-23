@@ -780,7 +780,16 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
                       >
                         <Card
                           className="bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors"
-                          onClick={() => setSelectedCourse(course)}
+                          onClick={() => {
+                            setSelectedCourse(course);
+                            // Auto-close sidebar on mobile after selecting course
+                            if (window.innerWidth <= 768) {
+                              const editor = document.querySelector('[data-meal-plan-editor]');
+                              if (editor) {
+                                editor.classList.add('sidebar-collapsed');
+                              }
+                            }
+                          }}
                         >
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between">
@@ -848,15 +857,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             communityId={communityId}
             onUpdate={(data) => updateCourseMutation.mutate({ courseId: selectedCourse.id, data })}
             onDelete={() => deleteCourseMutation.mutate(selectedCourse.id)}
-            onSelectLesson={(lesson) => {
-              // Close meal plan editor and open lesson editor
-              setLessonEditorData({ 
-                lesson: lesson, 
-                communityId, 
-                courseId: selectedCourse.id 
-              });
-              onClose(); // Close the meal plan editor tab
-            }}
+            onSelectLesson={() => {}}
             onCreateModule={() => setIsCreatingModule(true)}
             onCreateLesson={handleCreateLesson}
             onEditModule={setEditingModule}
