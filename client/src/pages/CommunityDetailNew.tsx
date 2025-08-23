@@ -166,7 +166,7 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
             </Button>
           </div>
           
-          {/* Student View Toggle */}
+          {/* User View Toggle */}
           <Button
             onClick={() => setIsStudentViewMode(!isStudentViewMode)}
             variant={isStudentViewMode ? "secondary" : "outline"}
@@ -174,17 +174,17 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
             size="sm"
           >
             <Eye className="w-4 h-4 mr-2" />
-            {isStudentViewMode ? "Exit Student View" : "Student View"}
+            {isStudentViewMode ? "Exit User View" : "User View"}
           </Button>
         </div>
       )}
 
-      {/* Student View Indicator */}
+      {/* User View Indicator */}
       {isCreator && isStudentViewMode && (
         <div className="bg-blue-600/10 border border-blue-600/30 rounded-lg p-3 -mt-1">
           <p className="text-sm text-blue-400 flex items-center gap-2">
             <Eye className="w-4 h-4" />
-            Student View Mode - Showing only published courses visible to students
+            User View Mode - Showing only published courses visible to users
           </p>
         </div>
       )}
@@ -199,7 +199,7 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
             {isCreator && !isStudentViewMode
               ? "Create your first course to get started with meal planning!" 
               : isCreator && isStudentViewMode
-              ? "No published courses visible to students yet. Exit Student View to see drafts."
+              ? "No published courses visible to users yet. Exit User View to see drafts."
               : "The creator hasn't published any courses yet. Check back soon!"
             }
           </p>
