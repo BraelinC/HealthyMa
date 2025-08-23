@@ -454,6 +454,32 @@ export default function InlineLessonEditor({
                   className="w-full bg-gray-700 text-white rounded-lg px-4 py-4 border border-gray-600 focus:border-purple-500 focus:outline-none resize-none placeholder-gray-400"
                   rows={12}
                 />
+                
+                {/* YouTube URL */}
+                <input
+                  type="text"
+                  placeholder="YouTube URL (optional) - https://www.youtube.com/watch?v=..."
+                  value={youtubeUrl}
+                  onChange={(e) => handleYouTubeUrl(e.target.value)}
+                  className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:border-purple-500 focus:outline-none placeholder-gray-400"
+                />
+                
+                {/* YouTube Video Preview */}
+                {lessonData.youtube_video_id && (
+                  <div className="space-y-2">
+                    <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-600">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${lessonData.youtube_video_id}`}
+                        title="YouTube video preview"
+                        className="w-full h-full"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400">Video will be embedded in your lesson</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
