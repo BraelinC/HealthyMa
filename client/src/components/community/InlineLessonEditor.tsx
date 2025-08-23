@@ -14,6 +14,12 @@ import {
   ListChecks,
   Info,
   Play,
+  MessageCircle,
+  BarChart3,
+  FileText,
+  Image,
+  Video,
+  Clock,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -340,6 +346,96 @@ export default function InlineLessonEditor({
                         >
                           <Info className="w-3 h-3 mr-1" />
                           Tip
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n## Discussion\n💬 What are your thoughts on this lesson?\n\n"
+                            });
+                          }}
+                        >
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          Comments
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n## Quick Poll\n📊 Which option do you prefer?\n• Option A\n• Option B\n• Option C\n\n"
+                            });
+                          }}
+                        >
+                          <BarChart3 className="w-3 h-3 mr-1" />
+                          Poll
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n## Notes\n📝 Important reminders:\n• \n• \n\n"
+                            });
+                          }}
+                        >
+                          <FileText className="w-3 h-3 mr-1" />
+                          Notes
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n## Timer\n⏰ Set a timer for: ___ minutes\n\n"
+                            });
+                          }}
+                        >
+                          <Clock className="w-3 h-3 mr-1" />
+                          Timer
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n## Image Placeholder\n🖼️ [Add image here]\n\n"
+                            });
+                          }}
+                        >
+                          <Image className="w-3 h-3 mr-1" />
+                          Image
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n## Video\n🎥 [Video URL: ]\n\n"
+                            });
+                          }}
+                        >
+                          <Video className="w-3 h-3 mr-1" />
+                          Video
                         </Button>
                       </div>
                     </CardContent>
