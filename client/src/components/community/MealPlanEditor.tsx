@@ -445,6 +445,8 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             onUpdate={(data) => updateCourseMutation.mutate({ courseId: selectedCourse.id, data })}
             onDelete={() => deleteCourseMutation.mutate(selectedCourse.id)}
             onSelectLesson={setSelectedLesson}
+            onCreateModule={() => setIsCreatingModule(true)}
+            selectedCourse={selectedCourse}
           />
         ) : (
           <div className="flex items-center justify-center min-h-screen">
@@ -541,12 +543,16 @@ function CourseEditor({
   onUpdate,
   onDelete,
   onSelectLesson,
+  onCreateModule,
+  selectedCourse,
 }: {
   course: Course;
   communityId: string;
   onUpdate: (data: Partial<Course>) => void;
   onDelete: () => void;
   onSelectLesson: (lesson: Lesson) => void;
+  onCreateModule: () => void;
+  selectedCourse: Course;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(course);
@@ -657,7 +663,7 @@ function CourseEditor({
             <Button
               size="sm"
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => setIsCreatingModule(true)}
+              onClick={onCreateModule}
               disabled={!selectedCourse}
             >
               <FolderPlus className="h-4 w-4 mr-1" />
