@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { SingleImageUploader } from "@/components/SingleImageUploader";
+import EnhancedLessonEditor from "@/components/community/EnhancedLessonEditor";
 
 interface Course {
   id: number;
@@ -1006,7 +1007,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
 
         {/* Lesson Editor Modal */}
         {selectedLesson && (
-          <LessonEditor
+          <EnhancedLessonEditor
             lesson={selectedLesson}
             communityId={communityId}
             courseId={selectedCourse?.id || 0}
@@ -1218,19 +1219,15 @@ function CourseEditor({
                           <h4 className="font-medium text-white group-hover:text-purple-400">{lesson.title}</h4>
                           <Badge 
                             variant="outline" 
-                            className={`text-xs ${
-                              lesson.lesson_type === 'video' ? 'border-red-500 text-red-400' :
-                              lesson.lesson_type === 'lesson' ? 'border-blue-500 text-blue-400' :
-                              'border-green-500 text-green-400'
-                            }`}
+                            className="text-xs border-blue-500 text-blue-400"
                           >
-                            {lesson.lesson_type || 'lesson'}
+                            lesson
                           </Badge>
                         </div>
                         <p className="text-sm text-gray-400">{lesson.description || 'No description'}</p>
                       </div>
                       <div className="text-xs text-gray-400">
-                        {lesson.duration || 0} min
+                        {(lesson as any).prep_time + (lesson as any).cook_time || 0} min
                       </div>
                     </div>
                   </div>
@@ -1459,7 +1456,7 @@ function ModuleForm({
     title: initialData?.title || '',
     description: initialData?.description || '',
     emoji: initialData?.emoji || '📁',
-    cover_image: initialData?.cover_image || '',
+    cover_image: (initialData as any)?.cover_image || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1572,29 +1569,4 @@ function ModuleForm({
   );
 }
 
-// Lesson Editor Component (placeholder - will be implemented in separate file)
-function LessonEditor({
-  lesson,
-  communityId,
-  courseId,
-  onClose,
-}: {
-  lesson: Lesson;
-  communityId: string;
-  courseId: number;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white">Edit Lesson: {lesson.title}</h2>
-          <Button onClick={onClose} variant="ghost" className="text-gray-400">
-            ✕
-          </Button>
-        </div>
-        <p className="text-gray-400">Lesson editor will be implemented here...</p>
-      </div>
-    </div>
-  );
-}
+// Lesson Editor is now implemented in EnhancedLessonEditor.tsx
