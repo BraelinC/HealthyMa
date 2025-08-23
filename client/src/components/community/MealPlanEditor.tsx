@@ -214,6 +214,61 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
     },
   });
 
+  // Create module mutation
+  const createModuleMutation = useMutation({
+    mutationFn: async (data: { courseId: number; title: string; emoji?: string; description?: string }) => {
+      console.log('Sending create module request:', data);
+      const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/communities/${communityId}/courses/${data.courseId}/modules`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: data.title,
+          emoji: data.emoji,
+          description: data.description,
+        }),
+      });
+      
+      const responseText = await response.text();
+      console.log('Create module response:', response.status, responseText);
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to create module';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = responseText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      return JSON.parse(responseText);
+    },
+    onSuccess: (data) => {
+      console.log('Module created successfully:', data);
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
+      toast({ title: "Module created", description: "Your new module has been created successfully." });
+      setIsCreatingModule(false);
+    },
+    onError: (error) => {
+      console.error('Error creating module:', error);
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : "Failed to create module",
+        variant: "destructive" 
+      });
+    },
+  });
+
   // Update course mutation
   const updateCourseMutation = useMutation({
     mutationFn: async ({ courseId, data }: { courseId: number; data: Partial<Course> }) => {
@@ -441,6 +496,30 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
           </DialogContent>
         </Dialog>
 
+        {/* Create Module Dialog */}
+        <Dialog open={isCreatingModule} onOpenChange={setIsCreatingModule}>
+          <DialogContent className="bg-gray-800 text-white border-gray-700 z-[10001]">
+            <DialogHeader>
+              <DialogTitle>Add Module to {selectedCourse?.title}</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Create a new module (section) to organize lessons within this course
+              </DialogDescription>
+            </DialogHeader>
+            <ModuleForm
+              onSubmit={(data) => {
+                if (selectedCourse) {
+                  console.log('Creating module with data:', data);
+                  createModuleMutation.mutate({ 
+                    courseId: selectedCourse.id, 
+                    ...data 
+                  });
+                }
+              }}
+              onCancel={() => setIsCreatingModule(false)}
+            />
+          </DialogContent>
+        </Dialog>
+
         {/* Lesson Editor Modal */}
         {selectedLesson && (
           <LessonEditor
@@ -578,6 +657,8 @@ function CourseEditor({
             <Button
               size="sm"
               className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => setIsCreatingModule(true)}
+              disabled={!selectedCourse}
             >
               <FolderPlus className="h-4 w-4 mr-1" />
               Add Module
@@ -918,6 +999,94 @@ function CourseForm({
           disabled={!formData.title}
         >
           Create Course
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// Module Form Component
+function ModuleForm({
+  onSubmit,
+  onCancel,
+}: {
+  onSubmit: (data: { title: string; emoji?: string; description?: string }) => void;
+  onCancel: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    emoji: '📁',
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Module form submitted with data:', formData);
+    if (!formData.title) {
+      console.error('Module title is required');
+      return;
+    }
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Module Title</label>
+          <Input
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            placeholder="e.g., Week 1: Foundation"
+            className="bg-gray-700 border-gray-600 text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Emoji</label>
+          <Select
+            value={formData.emoji}
+            onValueChange={(value) => setFormData({ ...formData, emoji: value })}
+          >
+            <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-700 border-gray-600">
+              {EMOJI_OPTIONS.map((emoji) => (
+                <SelectItem key={emoji} value={emoji} className="text-white">
+                  {emoji}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+        <Textarea
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="Describe what this module covers..."
+          className="bg-gray-700 border-gray-600 text-white"
+          rows={3}
+        />
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          onClick={onCancel}
+          variant="outline"
+          className="border-gray-600 text-gray-300"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          disabled={!formData.title}
+        >
+          Create Module
         </Button>
       </div>
     </form>

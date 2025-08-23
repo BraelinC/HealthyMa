@@ -5159,6 +5159,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== MODULE ENDPOINTS ====================
+
+  // Create a module for a course (creator only)
+  app.post("/api/communities/:id/courses/:courseId/modules", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the course
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can add modules to this course" });
+      }
+
+      // Get the next module order
+      const modules = await db.select()
+        .from(communityMealCourseModules)
+        .where(eq(communityMealCourseModules.course_id, courseId))
+        .orderBy(desc(communityMealCourseModules.module_order));
+      
+      const nextOrder = modules.length > 0 ? modules[0].module_order + 1 : 0;
+
+      const moduleData = {
+        course_id: courseId,
+        title: req.body.title || "New Module",
+        emoji: req.body.emoji || "📁",
+        description: req.body.description || "",
+        module_order: req.body.module_order ?? nextOrder,
+        is_expanded: req.body.is_expanded ?? false,
+      };
+
+      const [newModule] = await db.insert(communityMealCourseModules)
+        .values(moduleData)
+        .returning();
+
+      res.json(newModule);
+    } catch (error) {
+      console.error("Error creating module:", error);
+      res.status(500).json({ message: "Failed to create module" });
+    }
+  });
+
+  // Update a module (creator only)
+  app.put("/api/communities/:id/courses/:courseId/modules/:moduleId", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const moduleId = Number(req.params.moduleId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the course
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can update modules in this course" });
+      }
+
+      const [updatedModule] = await db.update(communityMealCourseModules)
+        .set({
+          title: req.body.title,
+          emoji: req.body.emoji,
+          description: req.body.description,
+          module_order: req.body.module_order,
+          is_expanded: req.body.is_expanded,
+          updated_at: new Date(),
+        })
+        .where(eq(communityMealCourseModules.id, moduleId))
+        .returning();
+
+      res.json(updatedModule);
+    } catch (error) {
+      console.error("Error updating module:", error);
+      res.status(500).json({ message: "Failed to update module" });
+    }
+  });
+
+  // Delete a module (creator only)
+  app.delete("/api/communities/:id/courses/:courseId/modules/:moduleId", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const moduleId = Number(req.params.moduleId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the course
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can delete modules from this course" });
+      }
+
+      // Move lessons in this module to standalone (null module_id)
+      await db.update(communityMealLessons)
+        .set({ module_id: null })
+        .where(eq(communityMealLessons.module_id, moduleId));
+
+      // Delete the module
+      await db.delete(communityMealCourseModules)
+        .where(eq(communityMealCourseModules.id, moduleId));
+
+      res.json({ message: "Module deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting module:", error);
+      res.status(500).json({ message: "Failed to delete module" });
+    }
+  });
+
   // Create a lesson (creator only)
   app.post("/api/communities/:id/courses/:courseId/lessons", authenticateToken, async (req: any, res) => {
     try {
