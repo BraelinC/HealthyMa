@@ -1096,7 +1096,7 @@ export default function CommunityDetailNew() {
         </TabsContent>
 
         {/* Meal Plans Tab - Classroom Style */}
-        <TabsContent value="meals" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900">
+        <TabsContent value="meals" className="p-4 space-y-4 mt-2 pt-2 bg-gray-900">
           <MealPlansClassroom communityId={id} isCreator={isCreator} />
         </TabsContent>
 
