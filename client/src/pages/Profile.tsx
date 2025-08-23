@@ -1607,7 +1607,7 @@ export default function Profile() {
             />
 
             {/* Creator Flyer Section - Only show for creators */}
-            {(user as any)?.is_creator && !isEditing && (
+            {(user as any)?.is_creator && (
               <div className="mt-8">
                 <Card className="bg-gradient-to-r from-purple-50 to-emerald-50 border-2 border-purple-200">
                   <CardContent className="p-6">
