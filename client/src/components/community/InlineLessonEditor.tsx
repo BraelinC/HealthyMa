@@ -577,7 +577,7 @@ export default function InlineLessonEditor({
                   </div>
                 </div>
 
-                {lessonData.image_url && (
+                {lessonData.image_url && sectionToggles.image_enabled && (
                   <div className="mb-6">
                     <img 
                       src={lessonData.image_url} 
@@ -587,7 +587,7 @@ export default function InlineLessonEditor({
                   </div>
                 )}
 
-                {lessonData.youtube_video_id && (
+                {lessonData.youtube_video_id && sectionToggles.video_enabled && (
                   <div className="mb-6">
                     <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-600">
                       <iframe
@@ -601,7 +601,7 @@ export default function InlineLessonEditor({
                   </div>
                 )}
 
-                {lessonData.description && (
+                {lessonData.description && sectionToggles.content_enabled && (
                   <div className="prose prose-sm prose-invert max-w-none">
                     <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
                       {lessonData.description.split('\n').map((line: string, index: number) => {
