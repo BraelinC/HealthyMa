@@ -700,7 +700,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
       // Show loading overlay immediately to avoid white screen
       setIsNavigating(true);
       
-      // Create a new lesson and navigate to lesson editor
+      // Create the lesson first
       createLessonMutation.mutate({
         courseId: selectedCourse.id,
         moduleId: moduleId,
@@ -714,6 +714,11 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
         servings: 4,
         difficulty_level: 1
       });
+      
+      // Add 2-second delay to ensure loading overlay is visible
+      setTimeout(() => {
+        setIsNavigating(false);
+      }, 2000);
     }
   };
 
