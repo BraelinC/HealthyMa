@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,8 @@ import {
   Clock,
   Upload,
   X,
+  ChefHat,
+  Plus,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -147,6 +150,9 @@ export default function InlineLessonEditor({
     difficulty_level: lesson?.difficulty_level || 1,
     youtube_video_id: lesson?.youtube_video_id || "",
     image_url: lesson?.image_url || "",
+    ingredients: lesson?.ingredients || [],
+    instructions: lesson?.instructions || [],
+    nutrition_info: lesson?.nutrition_info || {},
   });
 
   // Image upload state
@@ -158,6 +164,7 @@ export default function InlineLessonEditor({
     image_enabled: !!(lesson?.image_url),
     video_enabled: !!(lesson?.youtube_video_id),
     content_enabled: true, // Always start with content enabled
+    recipe_enabled: !!(lesson?.ingredients?.length || lesson?.instructions?.length),
   });
 
   // Interactive feature toggles
@@ -565,6 +572,206 @@ export default function InlineLessonEditor({
               </CardContent>
             </Card>
 
+            {/* 4. Recipe Data Section */}
+            <Card className="bg-gray-800 border-gray-700 relative">
+              {/* Toggle switch in corner */}
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                <ChefHat className="w-3 h-3 text-gray-400" />
+                <div
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
+                    sectionToggles.recipe_enabled ? 'bg-purple-600' : 'bg-gray-600'
+                  }`}
+                  onClick={() => {
+                    setSectionToggles({
+                      ...sectionToggles,
+                      recipe_enabled: !sectionToggles.recipe_enabled
+                    });
+                  }}
+                >
+                  <div
+                    className={`transform transition-transform duration-200 ease-in-out h-4 w-4 rounded-full bg-white shadow ${
+                      sectionToggles.recipe_enabled ? 'translate-x-4' : 'translate-x-0.5'
+                    }`}
+                  />
+                </div>
+              </div>
+              <CardContent className={`p-6 transition-opacity duration-200 ${
+                sectionToggles.recipe_enabled ? 'opacity-100' : 'opacity-30'
+              }`}>
+                <Tabs defaultValue="ingredients" className="w-full">
+                  <TabsList className="w-full grid grid-cols-3 h-10 bg-gray-700 rounded-lg">
+                    <TabsTrigger value="ingredients" className="text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300">Ingredients</TabsTrigger>
+                    <TabsTrigger value="instructions" className="text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300">Instructions</TabsTrigger>
+                    <TabsTrigger value="nutrition" className="text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300">Nutrition</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="ingredients" className="p-4 pt-3">
+                    <div className="space-y-3">
+                      {lessonData.ingredients.map((ingredient, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={ingredient}
+                            onChange={(e) => {
+                              const newIngredients = [...lessonData.ingredients];
+                              newIngredients[index] = e.target.value;
+                              setLessonData({...lessonData, ingredients: newIngredients});
+                            }}
+                            className="flex-1 bg-gray-700 text-white rounded px-3 py-2 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none"
+                            placeholder="Enter ingredient..."
+                          />
+                          <Button
+                            onClick={() => {
+                              const newIngredients = lessonData.ingredients.filter((_, i) => i !== index);
+                              setLessonData({...lessonData, ingredients: newIngredients});
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20 p-2"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        onClick={() => {
+                          setLessonData({...lessonData, ingredients: [...lessonData.ingredients, ""]});
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Ingredient
+                      </Button>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="instructions" className="p-4 pt-3">
+                    <div className="space-y-3">
+                      {lessonData.instructions.map((instruction, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <span className="flex-shrink-0 w-6 h-6 bg-purple-600 rounded-full text-white flex items-center justify-center text-xs mt-1">
+                            {index + 1}
+                          </span>
+                          <textarea
+                            value={instruction}
+                            onChange={(e) => {
+                              const newInstructions = [...lessonData.instructions];
+                              newInstructions[index] = e.target.value;
+                              setLessonData({...lessonData, instructions: newInstructions});
+                            }}
+                            className="flex-1 bg-gray-700 text-white rounded px-3 py-2 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none resize-none"
+                            placeholder="Enter instruction step..."
+                            rows={2}
+                          />
+                          <Button
+                            onClick={() => {
+                              const newInstructions = lessonData.instructions.filter((_, i) => i !== index);
+                              setLessonData({...lessonData, instructions: newInstructions});
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20 p-2 mt-1"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        onClick={() => {
+                          setLessonData({...lessonData, instructions: [...lessonData.instructions, ""]});
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Step
+                      </Button>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="nutrition" className="p-4 pt-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Calories</label>
+                        <input
+                          type="number"
+                          value={lessonData.nutrition_info.calories || ''}
+                          onChange={(e) => {
+                            setLessonData({
+                              ...lessonData, 
+                              nutrition_info: {
+                                ...lessonData.nutrition_info,
+                                calories: parseInt(e.target.value) || 0
+                              }
+                            });
+                          }}
+                          className="w-full bg-gray-700 text-white rounded px-3 py-2 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Protein (g)</label>
+                        <input
+                          type="number"
+                          value={lessonData.nutrition_info.protein_g || ''}
+                          onChange={(e) => {
+                            setLessonData({
+                              ...lessonData, 
+                              nutrition_info: {
+                                ...lessonData.nutrition_info,
+                                protein_g: parseInt(e.target.value) || 0
+                              }
+                            });
+                          }}
+                          className="w-full bg-gray-700 text-white rounded px-3 py-2 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Carbs (g)</label>
+                        <input
+                          type="number"
+                          value={lessonData.nutrition_info.carbs_g || ''}
+                          onChange={(e) => {
+                            setLessonData({
+                              ...lessonData, 
+                              nutrition_info: {
+                                ...lessonData.nutrition_info,
+                                carbs_g: parseInt(e.target.value) || 0
+                              }
+                            });
+                          }}
+                          className="w-full bg-gray-700 text-white rounded px-3 py-2 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Fat (g)</label>
+                        <input
+                          type="number"
+                          value={lessonData.nutrition_info.fat_g || ''}
+                          onChange={(e) => {
+                            setLessonData({
+                              ...lessonData, 
+                              nutrition_info: {
+                                ...lessonData.nutrition_info,
+                                fat_g: parseInt(e.target.value) || 0
+                              }
+                            });
+                          }}
+                          className="w-full bg-gray-700 text-white rounded px-3 py-2 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
           </div>
         ) : (
           /* Student View Layout */
@@ -623,6 +830,76 @@ export default function InlineLessonEditor({
                         return <br key={index} />;
                       })}
                     </div>
+                  </div>
+                )}
+
+                {/* Recipe Data Display */}
+                {sectionToggles.recipe_enabled && (
+                  <div className="mt-6">
+                    <Tabs defaultValue="ingredients" className="w-full">
+                      <TabsList className="w-full grid grid-cols-3 h-10 bg-gray-700 rounded-lg">
+                        <TabsTrigger value="ingredients" className="text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300">Ingredients</TabsTrigger>
+                        <TabsTrigger value="instructions" className="text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300">Instructions</TabsTrigger>
+                        <TabsTrigger value="nutrition" className="text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300">Nutrition</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="ingredients" className="p-4 pt-3">
+                        {lessonData.ingredients.length > 0 ? (
+                          <ul className="space-y-2">
+                            {lessonData.ingredients.map((ingredient, index) => (
+                              <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
+                                <span className="text-purple-400">•</span>
+                                {ingredient}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-gray-500 text-sm text-center py-4">No ingredients added yet</p>
+                        )}
+                      </TabsContent>
+
+                      <TabsContent value="instructions" className="p-4 pt-3">
+                        {lessonData.instructions.length > 0 ? (
+                          <ol className="space-y-3">
+                            {lessonData.instructions.map((step, index) => (
+                              <li key={index} className="flex gap-2 text-sm">
+                                <span className="flex-shrink-0 w-5 h-5 bg-purple-600 rounded-full text-white flex items-center justify-center text-xs">
+                                  {index + 1}
+                                </span>
+                                <span className="text-gray-300">{step}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <p className="text-gray-500 text-sm text-center py-4">No instructions added yet</p>
+                        )}
+                      </TabsContent>
+
+                      <TabsContent value="nutrition" className="p-4 pt-3">
+                        {lessonData.nutrition_info && Object.keys(lessonData.nutrition_info).length > 0 ? (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-3 bg-gray-700 rounded-lg">
+                              <div className="text-lg font-semibold text-white">{lessonData.nutrition_info.calories || 0}</div>
+                              <div className="text-sm text-gray-400">Calories</div>
+                            </div>
+                            <div className="text-center p-3 bg-gray-700 rounded-lg">
+                              <div className="text-lg font-semibold text-white">{lessonData.nutrition_info.protein_g || 0}g</div>
+                              <div className="text-sm text-gray-400">Protein</div>
+                            </div>
+                            <div className="text-center p-3 bg-gray-700 rounded-lg">
+                              <div className="text-lg font-semibold text-white">{lessonData.nutrition_info.carbs_g || 0}g</div>
+                              <div className="text-sm text-gray-400">Carbs</div>
+                            </div>
+                            <div className="text-center p-3 bg-gray-700 rounded-lg">
+                              <div className="text-lg font-semibold text-white">{lessonData.nutrition_info.fat_g || 0}g</div>
+                              <div className="text-sm text-gray-400">Fat</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-sm text-center py-4">No nutrition information added yet</p>
+                        )}
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 )}
 
