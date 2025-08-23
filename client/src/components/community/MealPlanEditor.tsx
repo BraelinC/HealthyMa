@@ -589,6 +589,9 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
     },
     onSuccess: async (data) => {
       console.log('Lesson created successfully:', data);
+      // Open the newly created lesson in the editor immediately
+      setSelectedLesson(data);
+      
       // Invalidate and refetch courses
       await queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
       
@@ -601,9 +604,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
         }
       }
       
-      toast({ title: "Lesson created", description: "Your new lesson has been created successfully." });
-      setIsCreatingLesson(false);
-      setSelectedModuleForLesson(null);
+      toast({ title: "✅ Lesson created", description: "Your new lesson has been created successfully." });
     },
     onError: (error) => {
       console.error('Error creating lesson:', error);
@@ -708,8 +709,20 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
 
   const handleCreateLesson = (moduleId?: number) => {
     if (selectedCourse) {
-      setSelectedModuleForLesson(moduleId || null);
-      setIsCreatingLesson(true);
+      // Create a new lesson with basic data and immediately open the editor
+      createLessonMutation.mutate({
+        courseId: selectedCourse.id,
+        moduleId: moduleId,
+        title: "New Lesson",
+        emoji: "📝",
+        description: "Add your lesson content here...",
+        ingredients: [],
+        instructions: [],
+        prep_time: 0,
+        cook_time: 0,
+        servings: 4,
+        difficulty_level: 1
+      });
     }
   };
 
