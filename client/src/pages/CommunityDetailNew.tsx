@@ -85,79 +85,56 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [showLessonView, setShowLessonView] = useState(false);
   const [showMealPlanEditor, setShowMealPlanEditor] = useState(false);
+  const [expandedCourses, setExpandedCourses] = useState<number[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Mock data representing Tyler's community courses
-  const mockCourses = [
-    {
-      id: 1,
-      title: "Start Here",
-      emoji: "🌟", 
-      progress_percentage: 50,
-      isExpanded: false,
-      lessons: [
-        { id: 1, title: "Welcome to Tyler's Community", emoji: "👋", completed: true, description: "Meet Tyler and learn about this nutrition community" },
-        { id: 2, title: "Community Guidelines", emoji: "📋", completed: true, description: "Essential rules for a healthy community environment" },
-        { id: 3, title: "Introduce Yourself", emoji: "💬", completed: false, description: "Share your nutrition goals with the community" },
-        { id: 4, title: "Getting the Most Out of This Community", emoji: "🎯", completed: false, description: "Tips for maximizing your learning experience" },
-      ]
-    },
-    {
-      id: 2,
-      title: "Tyler's 30-Day Meal Transformation",
-      emoji: "🔥",
-      progress_percentage: 15,
-      isExpanded: false,
-      lessons: [
-        { id: 5, title: "Week 1: Foundation Building", emoji: "🏗️", completed: true, description: "Setting up your kitchen and mindset for success" },
-        { id: 6, title: "Meal Prep Mastery", emoji: "📦", completed: false, description: "Tyler's proven meal prep system for busy families" },
-        { id: 7, title: "Macro Balance Made Simple", emoji: "⚖️", completed: false, description: "Understanding protein, carbs, and fats without complexity" },
-        { id: 8, title: "Emergency Meal Solutions", emoji: "🚨", completed: false, description: "Quick healthy options when life gets chaotic" },
-        { id: 9, title: "Week 2-4: Advanced Strategies", emoji: "🎓", completed: false, description: "Building sustainable long-term habits" },
-      ]
-    },
-    {
-      id: 3,
-      title: "Budget Nutrition Secrets",
-      emoji: "💰",
-      progress_percentage: 0,
-      isExpanded: false,
-      lessons: [
-        { id: 10, title: "Shopping Like a Pro", emoji: "🛒", completed: false, description: "Tyler's shopping strategies to cut costs by 40%" },
-        { id: 11, title: "Pantry Power Foods", emoji: "🏪", completed: false, description: "Essential ingredients that maximize nutrition per dollar" },
-        { id: 12, title: "Batch Cooking for Families", emoji: "👨‍👩‍👧‍👦", completed: false, description: "Feed your family healthy meals on $50/week" },
-        { id: 13, title: "Seasonal Eating Guide", emoji: "🍂", completed: false, description: "Save money by eating with the seasons" },
-      ]
-    },
-    {
-      id: 4,
-      title: "Tyler's Recipe Vault",
-      emoji: "📚",
-      progress_percentage: 0,
-      isExpanded: false,
-      lessons: [
-        { id: 14, title: "5-Minute Breakfast Recipes", emoji: "🥞", completed: false, description: "Start your day right with these quick options" },
-        { id: 15, title: "Lunchbox Heroes", emoji: "🍱", completed: false, description: "Packed lunches that kids actually eat" },
-        { id: 16, title: "Dinner Winners", emoji: "🍽️", completed: false, description: "Family-tested dinner recipes under 30 minutes" },
-        { id: 17, title: "Healthy Desserts & Snacks", emoji: "🍓", completed: false, description: "Satisfy cravings without derailing progress" },
-      ]
-    }
-  ];
-
-  const [expandedCourses, setExpandedCourses] = useState<Set<number>>(new Set([1])); // Start Here expanded by default
-
-  const toggleCourseExpansion = (courseId: number) => {
-    setExpandedCourses(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(courseId)) {
-        newSet.delete(courseId);
+  // Fetch courses from API
+  const { data: courses = [], isLoading: coursesLoading } = useQuery({
+    queryKey: [`/api/communities/${communityId}/courses`],
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/communities/${communityId}/courses`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch courses');
+      const data = await response.json();
+      
+      // Filter courses based on user role
+      if (isCreator) {
+        // Creators see all courses
+        return data;
       } else {
-        newSet.add(courseId);
+        // Regular users only see published courses
+        return data.filter((course: any) => course.is_published);
       }
-      return newSet;
-    });
+    },
+    enabled: !!communityId,
+  });
+
+  // Toggle course expansion
+  const toggleCourseExpansion = (courseId: number) => {
+    setExpandedCourses(prev => 
+      prev.includes(courseId) 
+        ? prev.filter(id => id !== courseId)
+        : [...prev, courseId]
+    );
   };
+
+  // Loading state
+  if (coursesLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading courses...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (showLessonView && selectedLesson) {
     return (
@@ -346,62 +323,119 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
 
   return (
     <div className="space-y-0">
-      {/* Progress Summary - First Course */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-4">{mockCourses[0]?.title}</h2>
-        <div className="w-full bg-gray-700 rounded-full h-3 mb-2">
-          <div 
-            className="bg-purple-600 h-3 rounded-full" 
-            style={{ width: `${mockCourses[0]?.progress_percentage}%` }}
-          ></div>
-        </div>
-        <span className="text-xs text-gray-400">{mockCourses[0]?.progress_percentage}%</span>
-      </div>
-
-      {/* Course/Module List - Skool Style */}
+      {/* Course/Module List - Skool Style with Real Data */}
       <div className="space-y-1">
-        {mockCourses.map((course) => (
-          <div key={course.id}>
-            {/* Course Header */}
-            <div 
-              className="flex items-center justify-between py-4 cursor-pointer hover:bg-gray-800/50 transition-colors"
-              onClick={() => toggleCourseExpansion(course.id)}
-            >
-              <div className="flex items-center gap-3">
-                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${
-                  expandedCourses.has(course.id) ? 'rotate-0' : '-rotate-90'
-                }`} />
-                <span className="text-lg font-semibold text-white">{course.title} {course.emoji}</span>
-              </div>
-              {course.progress_percentage > 0 && (
-                <span className="text-xs text-gray-400">{course.progress_percentage}%</span>
-              )}
-            </div>
-
-            {/* Lessons List - Only show if expanded */}
-            {expandedCourses.has(course.id) && (
-              <div className="ml-7 space-y-1">
-                {course.lessons.map((lesson, index) => (
-                  <div
-                    key={lesson.id}
-                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-800/30 rounded cursor-pointer transition-colors"
-                    onClick={() => {
-                      setSelectedCourse(course);
-                      setSelectedLesson(lesson);
-                      setShowLessonView(true);
-                    }}
-                  >
-                    <span className="text-lg">{lesson.emoji}</span>
-                    <span className="text-white font-medium">{lesson.title}</span>
-                    {lesson.completed && (
-                      <CheckCircle className="h-4 w-4 text-green-500 ml-auto" />
-                    )}
-                  </div>
-                ))}
-              </div>
+        {courses.length === 0 ? (
+          <div className="text-center py-8">
+            <BookOpen className="w-16 w-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">
+              {isCreator ? "No Courses Created Yet" : "No Published Courses Available"}
+            </h3>
+            <p className="text-gray-400">
+              {isCreator 
+                ? "Create your first course to get started with meal planning!" 
+                : "The creator hasn't published any courses yet. Check back soon!"
+              }
+            </p>
+            {isCreator && (
+              <Button
+                onClick={() => setShowMealPlanEditor(true)}
+                className="bg-purple-600 hover:bg-purple-700 text-white mt-4"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Course
+              </Button>
             )}
           </div>
-        ))}
+        ) : (
+          courses.map((course: any) => (
+            <div key={course.id}>
+              {/* Course Header */}
+              <div 
+                className="flex items-center justify-between py-4 cursor-pointer hover:bg-gray-800/50 transition-colors"
+                onClick={() => toggleCourseExpansion(course.id)}
+              >
+                <div className="flex items-center gap-3">
+                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${
+                    expandedCourses.includes(course.id) ? 'rotate-0' : '-rotate-90'
+                  }`} />
+                  <span className="text-lg font-semibold text-white">{course.title} {course.emoji || '📚'}</span>
+                  {!isCreator && !course.is_published && (
+                    <Badge className="bg-yellow-600 text-white text-xs">Draft</Badge>
+                  )}
+                  {course.is_published && (
+                    <Badge className="bg-green-600 text-white text-xs">Published</Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">{course.lesson_count} lessons</span>
+                </div>
+              </div>
+
+              {/* Modules and Lessons List - Only show if expanded */}
+              {expandedCourses.includes(course.id) && (
+                <div className="ml-7 space-y-1">
+                  {/* Show modules and their lessons */}
+                  {course.modules?.map((module: any) => (
+                    <div key={module.id} className="mb-4">
+                      <div className="flex items-center gap-2 py-2 px-4 bg-gray-800/50 rounded">
+                        <BookOpen className="h-4 w-4 text-purple-400" />
+                        <span className="text-purple-300 font-medium">{module.title}</span>
+                        <span className="text-xs text-gray-400">({module.lessons?.length || 0} lessons)</span>
+                      </div>
+                      {module.lessons?.map((lesson: any) => (
+                        <div
+                          key={lesson.id}
+                          className="flex items-center gap-3 py-3 px-8 hover:bg-gray-800/30 rounded cursor-pointer transition-colors ml-4"
+                          onClick={() => {
+                            setSelectedCourse(course);
+                            setSelectedLesson(lesson);
+                            setShowLessonView(true);
+                          }}
+                        >
+                          <span className="text-lg">🍽️</span>
+                          <span className="text-white font-medium">{lesson.title}</span>
+                          <div className="ml-auto flex items-center gap-2">
+                            {lesson.prep_time && (
+                              <span className="text-xs text-gray-400 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {lesson.prep_time + (lesson.cook_time || 0)}min
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                  
+                  {/* Show lessons not in modules */}
+                  {course.lessons?.filter((lesson: any) => !lesson.module_id).map((lesson: any) => (
+                    <div
+                      key={lesson.id}
+                      className="flex items-center gap-3 py-3 px-4 hover:bg-gray-800/30 rounded cursor-pointer transition-colors"
+                      onClick={() => {
+                        setSelectedCourse(course);
+                        setSelectedLesson(lesson);
+                        setShowLessonView(true);
+                      }}
+                    >
+                      <span className="text-lg">🍽️</span>
+                      <span className="text-white font-medium">{lesson.title}</span>
+                      <div className="ml-auto flex items-center gap-2">
+                        {lesson.prep_time && (
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {lesson.prep_time + (lesson.cook_time || 0)}min
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
 
       {/* Creator Controls */}
