@@ -143,9 +143,6 @@ export default function InlineLessonEditor({
   const [lessonData, setLessonData] = useState({
     title: lesson?.title || "",
     description: lesson?.description || "",
-    emoji: lesson?.emoji || "📝",
-    prep_time: lesson?.prep_time || 0,
-    cook_time: lesson?.cook_time || 0,
     servings: lesson?.servings || 4,
     difficulty_level: lesson?.difficulty_level || 1,
     youtube_video_id: lesson?.youtube_video_id || "",
@@ -333,7 +330,6 @@ export default function InlineLessonEditor({
               <ChevronLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-3">
-              <span className="text-3xl">{lessonData.emoji}</span>
               <div>
                 <h1 className="text-xl font-bold text-white">{lessonData.title || "Untitled Lesson"}</h1>
                 <p className="text-sm text-gray-400">
@@ -583,15 +579,8 @@ export default function InlineLessonEditor({
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-4">
-                  <span className="text-4xl">{lessonData.emoji}</span>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-white">{lessonData.title}</h2>
-                    <p className="text-gray-400 text-sm mt-1">
-                      {lessonData.prep_time && lessonData.cook_time
-                        ? `${lessonData.prep_time + lessonData.cook_time} minutes`
-                        : 'Quick lesson'
-                      }
-                    </p>
                   </div>
                 </div>
 
