@@ -448,27 +448,30 @@ export default function InlineLessonEditor({
                   </div>
                 )}
 
-                {/* Content Section */}
-                <div className="space-y-4">
-                  {isEditing ? (
-                    <div>
-                      <Label className="text-gray-300 mb-2 block">Lesson Content</Label>
-                      <Textarea
-                        value={lessonData.description}
-                        onChange={(e) => setLessonData({ ...lessonData, description: e.target.value })}
-                        placeholder="Write your lesson content here... Add instructions, key points, explanations, etc."
-                        className="bg-gray-700 border-gray-600 text-white min-h-[200px]"
-                        rows={8}
-                      />
-                      <p className="text-xs text-gray-400 mt-1">Tip: Use clear headings, bullet points, and step-by-step instructions</p>
-                      
-                      {/* Quick Add Content */}
-                      <div className="mt-3 pt-3 border-t border-gray-700">
+                {/* Content Section - Box 1: Simple Content Area */}
+                {isEditing ? (
+                  <div className="space-y-4">
+                    {/* Box 1: Content Input */}
+                    <Card className="bg-gray-800 border-gray-700">
+                      <CardContent className="p-4">
+                        <Textarea
+                          value={lessonData.description}
+                          onChange={(e) => setLessonData({ ...lessonData, description: e.target.value })}
+                          placeholder="Write your lesson content here..."
+                          className="bg-gray-700 border-gray-600 text-white min-h-[200px] resize-none"
+                          rows={8}
+                        />
+                      </CardContent>
+                    </Card>
+
+                    {/* Box 2: Quick Add Buttons */}
+                    <Card className="bg-gray-800 border-gray-700">
+                      <CardContent className="p-4">
                         <div className="flex flex-wrap gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-1"
+                            className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
                             onClick={() => {
                               const currentContent = lessonData.description;
                               setLessonData({
@@ -483,7 +486,7 @@ export default function InlineLessonEditor({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-1"
+                            className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
                             onClick={() => {
                               const currentContent = lessonData.description;
                               setLessonData({
@@ -498,7 +501,7 @@ export default function InlineLessonEditor({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-1"
+                            className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
                             onClick={() => {
                               const currentContent = lessonData.description;
                               setLessonData({
@@ -511,35 +514,39 @@ export default function InlineLessonEditor({
                             Tip
                           </Button>
                         </div>
-                      </div>
-                    </div>
-                  ) : (
-                    lessonData.description && (
-                      <div className="prose prose-sm prose-invert max-w-none">
-                        <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-                          {lessonData.description.split('\n').map((line: string, index: number) => {
-                            if (line.startsWith('##')) {
-                              return <h3 key={index} className="text-white font-semibold mt-4 mb-2 text-lg">{line.replace('##', '').trim()}</h3>;
-                            }
-                            if (line.startsWith('•')) {
-                              return <li key={index} className="ml-4 list-disc text-sm">{line.replace('•', '').trim()}</li>;
-                            }
-                            if (line.match(/^\d+\./)) {
-                              return <li key={index} className="ml-4 list-decimal text-sm">{line.replace(/^\d+\./, '').trim()}</li>;
-                            }
-                            if (line.startsWith('---')) {
-                              return <hr key={index} className="my-4 border-gray-600" />;
-                            }
-                            if (line.trim()) {
-                              return <p key={index} className="mb-2 text-sm">{line}</p>;
-                            }
-                            return <br key={index} />;
-                          })}
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  lessonData.description && (
+                    <Card className="bg-gray-800 border-gray-700">
+                      <CardContent className="p-4">
+                        <div className="prose prose-sm prose-invert max-w-none">
+                          <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                            {lessonData.description.split('\n').map((line: string, index: number) => {
+                              if (line.startsWith('##')) {
+                                return <h3 key={index} className="text-white font-semibold mt-4 mb-2 text-lg">{line.replace('##', '').trim()}</h3>;
+                              }
+                              if (line.startsWith('•')) {
+                                return <li key={index} className="ml-4 list-disc text-sm">{line.replace('•', '').trim()}</li>;
+                              }
+                              if (line.match(/^\d+\./)) {
+                                return <li key={index} className="ml-4 list-decimal text-sm">{line.replace(/^\d+\./, '').trim()}</li>;
+                              }
+                              if (line.startsWith('---')) {
+                                return <hr key={index} className="my-4 border-gray-600" />;
+                              }
+                              if (line.trim()) {
+                                return <p key={index} className="mb-2 text-sm">{line}</p>;
+                              }
+                              return <br key={index} />;
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  )}
-                </div>
+                      </CardContent>
+                    </Card>
+                  )
+                )}
 
                 {/* YouTube URL Input for Editing */}
                 {isEditing && (
