@@ -434,27 +434,9 @@ export default function InlineLessonEditor({
               </CardContent>
             </Card>
 
-            {/* 2. Simple Content Box */}
+            {/* 2. YouTube Video Section */}
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-6 space-y-4">
-                {/* Title */}
-                <input
-                  type="text"
-                  placeholder="Lesson Title"
-                  value={lessonData.title}
-                  onChange={(e) => setLessonData({...lessonData, title: e.target.value})}
-                  className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:border-purple-500 focus:outline-none text-xl font-medium placeholder-gray-400"
-                />
-                
-                {/* Content */}
-                <textarea
-                  placeholder="Write your lesson content here..."
-                  value={lessonData.description}
-                  onChange={(e) => setLessonData({...lessonData, description: e.target.value})}
-                  className="w-full bg-gray-700 text-white rounded-lg px-4 py-4 border border-gray-600 focus:border-purple-500 focus:outline-none resize-none placeholder-gray-400"
-                  rows={12}
-                />
-                
                 {/* YouTube URL */}
                 <input
                   type="text"
@@ -483,7 +465,30 @@ export default function InlineLessonEditor({
               </CardContent>
             </Card>
 
-            {/* 3. Extra Features (Clean Toggle Row) */}
+            {/* 3. Simple Content Box */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-6 space-y-4">
+                {/* Title */}
+                <input
+                  type="text"
+                  placeholder="Lesson Title"
+                  value={lessonData.title}
+                  onChange={(e) => setLessonData({...lessonData, title: e.target.value})}
+                  className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:border-purple-500 focus:outline-none text-xl font-medium placeholder-gray-400"
+                />
+                
+                {/* Content */}
+                <textarea
+                  placeholder="Write your lesson content here..."
+                  value={lessonData.description}
+                  onChange={(e) => setLessonData({...lessonData, description: e.target.value})}
+                  className="w-full bg-gray-700 text-white rounded-lg px-4 py-4 border border-gray-600 focus:border-purple-500 focus:outline-none resize-none placeholder-gray-400"
+                  rows={12}
+                />
+              </CardContent>
+            </Card>
+
+            {/* 4. Extra Features (Clean Toggle Row) */}
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-4">
                 <div className="flex flex-wrap gap-2 justify-center">
