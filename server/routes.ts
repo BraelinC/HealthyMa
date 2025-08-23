@@ -39,7 +39,7 @@ import {
   type InsertCommunityMealLessonSection
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, desc } from "drizzle-orm";
 
 // YouTube API utilities
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
