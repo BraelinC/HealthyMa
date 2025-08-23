@@ -20,6 +20,7 @@ import {
   Image,
   Video,
   Clock,
+  Upload,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -266,259 +267,166 @@ export default function InlineLessonEditor({
       {/* Content */}
       <div className="max-w-6xl mx-auto p-6">
         {isEditing ? (
-          /* Creator Editing Layout */
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Lesson Details */}
+          /* Simplified Creator Editing - 3 Simple Boxes */
+          <div className="max-w-2xl mx-auto space-y-6">
+            
+            {/* 1. Image Import at Top */}
             <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  📝 Lesson Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-gray-300">Lesson Title</Label>
-                    <Input
-                      value={lessonData.title}
-                      onChange={(e) => setLessonData({ ...lessonData, title: e.target.value })}
-                      placeholder="Enter lesson title"
-                      className="bg-gray-700 border-gray-600 text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-gray-300">Emoji</Label>
-                    <Input
-                      value={lessonData.emoji}
-                      onChange={(e) => setLessonData({ ...lessonData, emoji: e.target.value })}
-                      placeholder="📝"
-                      className="bg-gray-700 border-gray-600 text-white"
-                    />
+              <CardContent className="p-6">
+                <div className="text-center space-y-4">
+                  <div className="w-full h-48 bg-gray-700 rounded-lg border-2 border-dashed border-gray-600 flex items-center justify-center hover:border-gray-500 transition-colors">
+                    <div className="text-center">
+                      <Image className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400 mb-3 text-sm">Import lesson image</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="bg-gray-600 border-gray-500 hover:bg-gray-500 text-white"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload Image
+                      </Button>
+                    </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                {/* Content Section - Box 1: Simple Content Area */}
-                <div className="space-y-4">
-                  {/* Box 1: Content Input */}
-                  <Card className="bg-gray-800 border-gray-700">
-                    <CardContent className="p-4">
-                      <Textarea
-                        value={lessonData.description}
-                        onChange={(e) => setLessonData({ ...lessonData, description: e.target.value })}
-                        placeholder="Write your lesson content here..."
-                        className="bg-gray-700 border-gray-600 text-white min-h-[200px] resize-none"
-                        rows={8}
-                      />
-                    </CardContent>
-                  </Card>
+            {/* 2. Simple Content Box */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-6 space-y-4">
+                {/* Title */}
+                <input
+                  type="text"
+                  placeholder="Lesson Title"
+                  value={lessonData.title}
+                  onChange={(e) => setLessonData({...lessonData, title: e.target.value})}
+                  className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:border-purple-500 focus:outline-none text-xl font-medium placeholder-gray-400"
+                />
+                
+                {/* Content */}
+                <textarea
+                  placeholder="Write your lesson content here..."
+                  value={lessonData.description}
+                  onChange={(e) => setLessonData({...lessonData, description: e.target.value})}
+                  className="w-full bg-gray-700 text-white rounded-lg px-4 py-4 border border-gray-600 focus:border-purple-500 focus:outline-none resize-none placeholder-gray-400"
+                  rows={12}
+                />
+              </CardContent>
+            </Card>
 
-                  {/* Box 2: Quick Add Buttons */}
-                  <Card className="bg-gray-800 border-gray-700">
-                    <CardContent className="p-4">
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
-                          onClick={() => {
-                            const currentContent = lessonData.description;
-                            setLessonData({
-                              ...lessonData,
-                              description: currentContent + "\n\n## Key Points\n• \n• \n• \n"
-                            });
-                          }}
-                        >
-                          <Target className="w-3 h-3 mr-1" />
-                          Key Points
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
-                          onClick={() => {
-                            const currentContent = lessonData.description;
-                            setLessonData({
-                              ...lessonData,
-                              description: currentContent + "\n\n## Steps\n1. \n2. \n3. \n"
-                            });
-                          }}
-                        >
-                          <ListChecks className="w-3 h-3 mr-1" />
-                          Steps
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2"
-                          onClick={() => {
-                            const currentContent = lessonData.description;
-                            setLessonData({
-                              ...lessonData,
-                              description: currentContent + "\n\n💡 **Pro Tip:** \n\n"
-                            });
-                          }}
-                        >
-                          <Info className="w-3 h-3 mr-1" />
-                          Tip
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`px-3 py-2 ${
-                            interactiveFeatures.comments_enabled 
-                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
-                              : "text-gray-400 hover:text-white hover:bg-gray-700"
-                          }`}
-                          onClick={() => {
-                            setInteractiveFeatures({
-                              ...interactiveFeatures,
-                              comments_enabled: !interactiveFeatures.comments_enabled
-                            });
-                          }}
-                        >
-                          <MessageCircle className="w-3 h-3 mr-1" />
-                          Comments {interactiveFeatures.comments_enabled && "✓"}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`px-3 py-2 ${
-                            interactiveFeatures.poll_enabled 
-                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
-                              : "text-gray-400 hover:text-white hover:bg-gray-700"
-                          }`}
-                          onClick={() => {
-                            setInteractiveFeatures({
-                              ...interactiveFeatures,
-                              poll_enabled: !interactiveFeatures.poll_enabled
-                            });
-                          }}
-                        >
-                          <BarChart3 className="w-3 h-3 mr-1" />
-                          Poll {interactiveFeatures.poll_enabled && "✓"}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`px-3 py-2 ${
-                            interactiveFeatures.notes_enabled 
-                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
-                              : "text-gray-400 hover:text-white hover:bg-gray-700"
-                          }`}
-                          onClick={() => {
-                            setInteractiveFeatures({
-                              ...interactiveFeatures,
-                              notes_enabled: !interactiveFeatures.notes_enabled
-                            });
-                          }}
-                        >
-                          <FileText className="w-3 h-3 mr-1" />
-                          Notes {interactiveFeatures.notes_enabled && "✓"}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`px-3 py-2 ${
-                            interactiveFeatures.timer_enabled 
-                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
-                              : "text-gray-400 hover:text-white hover:bg-gray-700"
-                          }`}
-                          onClick={() => {
-                            setInteractiveFeatures({
-                              ...interactiveFeatures,
-                              timer_enabled: !interactiveFeatures.timer_enabled
-                            });
-                          }}
-                        >
-                          <Clock className="w-3 h-3 mr-1" />
-                          Timer {interactiveFeatures.timer_enabled && "✓"}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`px-3 py-2 ${
-                            interactiveFeatures.image_enabled 
-                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
-                              : "text-gray-400 hover:text-white hover:bg-gray-700"
-                          }`}
-                          onClick={() => {
-                            setInteractiveFeatures({
-                              ...interactiveFeatures,
-                              image_enabled: !interactiveFeatures.image_enabled
-                            });
-                          }}
-                        >
-                          <Image className="w-3 h-3 mr-1" />
-                          Image {interactiveFeatures.image_enabled && "✓"}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`px-3 py-2 ${
-                            interactiveFeatures.video_enabled 
-                              ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
-                              : "text-gray-400 hover:text-white hover:bg-gray-700"
-                          }`}
-                          onClick={() => {
-                            setInteractiveFeatures({
-                              ...interactiveFeatures,
-                              video_enabled: !interactiveFeatures.video_enabled
-                            });
-                          }}
-                        >
-                          <Video className="w-3 h-3 mr-1" />
-                          Video {interactiveFeatures.video_enabled && "✓"}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Preview of Enabled Features */}
-                  {(interactiveFeatures.comments_enabled || interactiveFeatures.poll_enabled || interactiveFeatures.notes_enabled || interactiveFeatures.timer_enabled || interactiveFeatures.image_enabled || interactiveFeatures.video_enabled) && (
-                    <Card className="bg-gray-800 border-gray-700">
-                      <CardContent className="p-4">
-                        <h4 className="text-white font-medium mb-3">Enabled Interactive Features:</h4>
-                        <div className="space-y-2">
-                          {interactiveFeatures.comments_enabled && (
-                            <div className="flex items-center gap-2 text-sm text-purple-300">
-                              <MessageCircle className="w-3 h-3" />
-                              <span>Comments & Discussion</span>
-                            </div>
-                          )}
-                          {interactiveFeatures.poll_enabled && (
-                            <div className="flex items-center gap-2 text-sm text-purple-300">
-                              <BarChart3 className="w-3 h-3" />
-                              <span>Interactive Polls</span>
-                            </div>
-                          )}
-                          {interactiveFeatures.notes_enabled && (
-                            <div className="flex items-center gap-2 text-sm text-purple-300">
-                              <FileText className="w-3 h-3" />
-                              <span>Student Notes</span>
-                            </div>
-                          )}
-                          {interactiveFeatures.timer_enabled && (
-                            <div className="flex items-center gap-2 text-sm text-purple-300">
-                              <Clock className="w-3 h-3" />
-                              <span>Timer Activities</span>
-                            </div>
-                          )}
-                          {interactiveFeatures.image_enabled && (
-                            <div className="flex items-center gap-2 text-sm text-purple-300">
-                              <Image className="w-3 h-3" />
-                              <span>Image Sharing</span>
-                            </div>
-                          )}
-                          {interactiveFeatures.video_enabled && (
-                            <div className="flex items-center gap-2 text-sm text-purple-300">
-                              <Video className="w-3 h-3" />
-                              <span>Video Content</span>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
+            {/* 3. Extra Features (Clean Toggle Row) */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`px-4 py-2 ${
+                      interactiveFeatures.comments_enabled 
+                        ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                        : "text-gray-400 hover:text-white hover:bg-gray-700"
+                    }`}
+                    onClick={() => {
+                      setInteractiveFeatures({
+                        ...interactiveFeatures,
+                        comments_enabled: !interactiveFeatures.comments_enabled
+                      });
+                    }}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-1" />
+                    Comments {interactiveFeatures.comments_enabled && "✓"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`px-4 py-2 ${
+                      interactiveFeatures.poll_enabled 
+                        ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                        : "text-gray-400 hover:text-white hover:bg-gray-700"
+                    }`}
+                    onClick={() => {
+                      setInteractiveFeatures({
+                        ...interactiveFeatures,
+                        poll_enabled: !interactiveFeatures.poll_enabled
+                      });
+                    }}
+                  >
+                    <BarChart3 className="w-4 h-4 mr-1" />
+                    Poll {interactiveFeatures.poll_enabled && "✓"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`px-4 py-2 ${
+                      interactiveFeatures.notes_enabled 
+                        ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                        : "text-gray-400 hover:text-white hover:bg-gray-700"
+                    }`}
+                    onClick={() => {
+                      setInteractiveFeatures({
+                        ...interactiveFeatures,
+                        notes_enabled: !interactiveFeatures.notes_enabled
+                      });
+                    }}
+                  >
+                    <FileText className="w-4 h-4 mr-1" />
+                    Notes {interactiveFeatures.notes_enabled && "✓"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`px-4 py-2 ${
+                      interactiveFeatures.timer_enabled 
+                        ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                        : "text-gray-400 hover:text-white hover:bg-gray-700"
+                    }`}
+                    onClick={() => {
+                      setInteractiveFeatures({
+                        ...interactiveFeatures,
+                        timer_enabled: !interactiveFeatures.timer_enabled
+                      });
+                    }}
+                  >
+                    <Clock className="w-4 h-4 mr-1" />
+                    Timer {interactiveFeatures.timer_enabled && "✓"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`px-4 py-2 ${
+                      interactiveFeatures.image_enabled 
+                        ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                        : "text-gray-400 hover:text-white hover:bg-gray-700"
+                    }`}
+                    onClick={() => {
+                      setInteractiveFeatures({
+                        ...interactiveFeatures,
+                        image_enabled: !interactiveFeatures.image_enabled
+                      });
+                    }}
+                  >
+                    <Image className="w-4 h-4 mr-1" />
+                    Image {interactiveFeatures.image_enabled && "✓"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`px-4 py-2 ${
+                      interactiveFeatures.video_enabled 
+                        ? "text-purple-400 bg-purple-900/30 border border-purple-500/50" 
+                        : "text-gray-400 hover:text-white hover:bg-gray-700"
+                    }`}
+                    onClick={() => {
+                      setInteractiveFeatures({
+                        ...interactiveFeatures,
+                        video_enabled: !interactiveFeatures.video_enabled
+                      });
+                    }}
+                  >
+                    <Video className="w-4 h-4 mr-1" />
+                    Video {interactiveFeatures.video_enabled && "✓"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
