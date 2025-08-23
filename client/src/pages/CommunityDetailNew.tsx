@@ -214,106 +214,54 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
           )}
         </div>
       ) : (
-        // Course Cards Grid - Skool Style
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        // Skool-Style Vertical Course Layout
+        <div className="space-y-3">
           {courses.map((course: any) => (
-            <Card 
-              key={course.id}
-              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-200 cursor-pointer group overflow-hidden"
-              onClick={() => toggleCourseExpansion(course.id)}
-            >
-              {/* Course Cover Image */}
-              <div className="relative h-32 bg-gradient-to-br from-purple-600 via-blue-600 to-emerald-600 overflow-hidden">
-                {course.cover_image ? (
-                  <img 
-                    src={course.cover_image} 
-                    alt={course.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-6xl opacity-80">{course.emoji || '📚'}</span>
+            <div key={course.id} className="space-y-2">
+              {/* Course Header */}
+              <div className="bg-gray-800 rounded-lg border border-gray-700">
+                {/* Course Title Bar */}
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors"
+                      onClick={() => toggleCourseExpansion(course.id)}
+                    >
+                      {expandedCourses.includes(course.id) ? (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <div className="w-0 h-0 border-l-4 border-l-gray-400 border-y-2 border-y-transparent" />
+                      )}
+                    </div>
+                    <h2 className="text-white font-semibold text-lg">{course.title}</h2>
                   </div>
-                )}
-                
-                {/* Status Badge - Only show for creators not in student view */}
-                {!isStudentViewMode && (
-                  <div className="absolute top-3 right-3">
-                    {course.is_published ? (
-                      <Badge className="bg-green-600/90 text-white text-xs backdrop-blur-sm">
-                        Published
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-yellow-600/90 text-white text-xs backdrop-blur-sm">
-                        Draft
+                  
+                  <div className="flex items-center gap-2">
+                    {!isStudentViewMode && (
+                      <Badge 
+                        className={course.is_published 
+                          ? "bg-green-600 text-white" 
+                          : "bg-yellow-600 text-white"
+                        }
+                      >
+                        {course.is_published ? "Published" : "Draft"}
                       </Badge>
                     )}
                   </div>
-                )}
+                </div>
 
-                {/* Progress Bar - Bottom of Image */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
-                  <div 
-                    className="h-full bg-white/80 transition-all duration-300"
-                    style={{ width: '0%' }} // TODO: Calculate actual progress
-                  />
+                {/* Course Progress Bar */}
+                <div className="px-4 pb-4">
+                  <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                    <span>0%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="bg-gray-500 h-2 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
                 </div>
               </div>
 
-              {/* Course Content */}
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  {/* Title and Stats */}
-                  <div>
-                    <h3 className="font-semibold text-white text-lg leading-tight group-hover:text-purple-300 transition-colors">
-                      {course.title}
-                    </h3>
-                    <p className="text-gray-400 text-sm mt-1 line-clamp-2">
-                      {course.description || "Comprehensive meal planning course with practical lessons"}
-                    </p>
-                  </div>
-
-                  {/* Course Stats */}
-                  <div className="flex items-center justify-between text-xs text-gray-400">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <BookOpen className="h-3 w-3" />
-                        {course.lesson_count} lessons
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        0 enrolled
-                      </span>
-                    </div>
-                    <span className="font-medium">0%</span>
-                  </div>
-
-                  {/* Action Button */}
-                  <div className="pt-2">
-                    <Button 
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm h-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleCourseExpansion(course.id);
-                      }}
-                    >
-                      {expandedCourses.includes(course.id) ? (
-                        <>
-                          <ChevronDown className="h-3 w-3 mr-1" />
-                          Hide Lessons
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-3 w-3 mr-1" />
-                          View Lessons
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-
-              {/* Expanded Lessons - Mobile Friendly */}
+              {/* Expanded Course Content - Lessons List */}
               {expandedCourses.includes(course.id) && (
                 <div className="border-t border-gray-700 bg-gray-800/50">
                   <div className="p-4 space-y-3">
@@ -380,7 +328,7 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
                   </div>
                 </div>
               )}
-            </Card>
+            </div>
           ))}
         </div>
       )}
