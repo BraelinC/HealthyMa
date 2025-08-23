@@ -21,11 +21,8 @@ export default function LessonEditor() {
 
   if (!lesson) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Lesson not found</h2>
-          <p className="text-gray-400">The lesson you're looking for doesn't exist.</p>
-        </div>
+      <div className="min-h-screen bg-gray-900">
+        {/* Just show empty screen while loading */}
       </div>
     );
   }
