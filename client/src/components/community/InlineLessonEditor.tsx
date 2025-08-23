@@ -154,6 +154,7 @@ export default function InlineLessonEditor({
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [activeTab, setActiveTab] = useState('content');
   const [isEditing, setIsEditing] = useState(false);
+  const [isStudentView, setIsStudentView] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -244,28 +245,42 @@ export default function InlineLessonEditor({
           <div className="flex items-center gap-2">
             {isCreator && (
               <>
-                {isEditing ? (
+                {/* Student View Toggle */}
+                <Button
+                  onClick={() => setIsStudentView(!isStudentView)}
+                  variant={isStudentView ? "secondary" : "outline"}
+                  className={isStudentView ? "bg-blue-600 hover:bg-blue-700 text-white" : "border-gray-600 text-gray-300"}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  {isStudentView ? "Exit Student View" : "Student View"}
+                </Button>
+                
+                {!isStudentView && (
                   <>
-                    <Button
-                      onClick={handleSave}
-                      disabled={saveLessonMutation.isPending}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {saveLessonMutation.isPending ? "Saving..." : "Save Changes"}
-                    </Button>
-                    <Button onClick={() => setIsEditing(false)} variant="ghost" className="text-gray-400">
-                      Cancel
-                    </Button>
+                    {isEditing ? (
+                      <>
+                        <Button
+                          onClick={handleSave}
+                          disabled={saveLessonMutation.isPending}
+                          className="bg-purple-600 hover:bg-purple-700"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          {saveLessonMutation.isPending ? "Saving..." : "Save Changes"}
+                        </Button>
+                        <Button onClick={() => setIsEditing(false)} variant="ghost" className="text-gray-400">
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        onClick={() => setIsEditing(true)}
+                        variant="outline"
+                        className="border-gray-600 text-gray-300"
+                      >
+                        Edit Lesson
+                      </Button>
+                    )}
                   </>
-                ) : (
-                  <Button
-                    onClick={() => setIsEditing(true)}
-                    variant="outline"
-                    className="border-gray-600 text-gray-300"
-                  >
-                    Edit Lesson
-                  </Button>
                 )}
               </>
             )}
@@ -274,20 +289,118 @@ export default function InlineLessonEditor({
       </div>
 
       {/* Creator Mode Indicator */}
-      <div className="bg-purple-600/10 border-b border-purple-600/30 px-6 py-2">
-        <div className="max-w-6xl mx-auto">
-          <p className="text-sm text-purple-400 flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            Creator Mode - Advanced Lesson Editor
-          </p>
+      {!isStudentView && (
+        <div className="bg-purple-600/10 border-b border-purple-600/30 px-6 py-2">
+          <div className="max-w-6xl mx-auto">
+            <p className="text-sm text-purple-400 flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Creator Mode - Advanced Lesson Editor
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Student View Indicator */}
+      {isStudentView && (
+        <div className="bg-blue-600/10 border-b border-blue-600/30 px-6 py-2">
+          <div className="max-w-6xl mx-auto">
+            <p className="text-sm text-blue-400 flex items-center gap-2">
+              <Eye className="w-4 h-4" />
+              Student View - Preview Mode
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+        {isStudentView ? (
+          /* Student View Layout */
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <span className="text-4xl">{lessonData.emoji}</span>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-white">{lessonData.title}</h2>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {lessonData.prep_time + lessonData.cook_time} min
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        {lessonData.servings} servings
+                      </span>
+                      <Badge className={lessonData.is_published ? "bg-green-600" : "bg-gray-600"}>
+                        {lessonData.is_published ? "Published" : "Draft"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Video Section */}
+                {lessonData.youtube_video_id && (
+                  <div className="mb-6">
+                    <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-600">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${lessonData.youtube_video_id}`}
+                        title="Lesson video"
+                        className="w-full h-full"
+                        frameBorder="0"
+                        allowFullScreen
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Lesson Content */}
+                {lessonData.description && (
+                  <div className="prose prose-lg prose-invert max-w-none mb-6">
+                    <div className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                      {lessonData.description.split('\n').map((line: string, index: number) => {
+                        if (line.startsWith('##')) {
+                          return <h3 key={index} className="text-white font-semibold mt-6 mb-3 text-xl">{line.replace('##', '').trim()}</h3>;
+                        }
+                        if (line.startsWith('•')) {
+                          return <li key={index} className="ml-6 list-disc text-base mb-1">{line.replace('•', '').trim()}</li>;
+                        }
+                        if (line.match(/^\d+\./)) {
+                          return <li key={index} className="ml-6 list-decimal text-base mb-1">{line.replace(/^\d+\./, '').trim()}</li>;
+                        }
+                        if (line.startsWith('---')) {
+                          return <hr key={index} className="my-6 border-gray-600" />;
+                        }
+                        if (line.trim()) {
+                          return <p key={index} className="mb-3 text-base">{line}</p>;
+                        }
+                        return <br key={index} />;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Student Engagement Section */}
+                <div className="pt-6 border-t border-gray-700">
+                  <div className="flex items-center gap-4">
+                    <Button className="bg-purple-600 hover:bg-purple-700">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Start Discussion
+                    </Button>
+                    <Button variant="outline" className="border-gray-600 text-gray-300">
+                      <Heart className="w-4 h-4 mr-2" />
+                      Mark Complete
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          /* Creator Editing Layout */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Main Content */}
+            <div className="lg:col-span-2 space-y-6">
             {/* Lesson Header */}
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-6">
@@ -660,8 +773,9 @@ export default function InlineLessonEditor({
                 </CardContent>
               </Card>
             )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
