@@ -238,6 +238,13 @@ function Router() {
             onTestLogin={() => {}} 
           />
         )} />
+        <Route path="/logo" component={() => (
+          <div className="min-h-screen bg-white flex items-center justify-center">
+            <div className="p-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full shadow-2xl">
+              <HandPlatter className="text-white h-32 w-32" />
+            </div>
+          </div>
+        )} />
         <Route component={() => (
           <>
             <AppHeader />
