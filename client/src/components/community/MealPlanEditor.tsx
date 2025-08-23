@@ -373,6 +373,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   const [isCreatingModule, setIsCreatingModule] = useState(false);
   const [isCreatingLesson, setIsCreatingLesson] = useState(false);
   const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<number | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
   
   // Edit states
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -696,7 +697,10 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
 
   const handleCreateLesson = (moduleId?: number) => {
     if (selectedCourse) {
-      // Create a new lesson and navigate to community page
+      // Show loading overlay immediately to avoid white screen
+      setIsNavigating(true);
+      
+      // Create a new lesson and navigate to lesson editor
       createLessonMutation.mutate({
         courseId: selectedCourse.id,
         moduleId: moduleId,
@@ -1006,6 +1010,16 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
         </Dialog>
 
       </div>
+      
+      {/* Navigation Loading Overlay */}
+      {isNavigating && (
+        <div className="fixed inset-0 bg-gray-900 z-[10002] flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+            <p className="mt-2 text-gray-400 text-sm">Creating lesson...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
