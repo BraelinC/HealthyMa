@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -924,6 +925,7 @@ function CourseEditor({
   onDelete,
   onSelectLesson,
   onCreateModule,
+  onCreateLesson,
   selectedCourse,
 }: {
   course: Course;
@@ -1049,15 +1051,6 @@ function CourseEditor({
             >
               <FolderPlus className="h-4 w-4 mr-1" />
               Add Module
-            </Button>
-            <Button
-              size="sm"
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-              onClick={() => onCreateLesson()}
-              disabled={!selectedCourse}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Lesson to Course
             </Button>
           </div>
         </div>
