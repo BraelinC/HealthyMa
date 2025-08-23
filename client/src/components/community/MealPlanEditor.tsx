@@ -590,8 +590,8 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
       
       toast({ title: "✅ Lesson created", description: "Your new lesson has been created successfully." });
       
-      // Navigate to community page
-      window.location.href = `/community/${communityId}`;
+      // Navigate to the specific lesson editor page
+      window.location.href = `/community/${communityId}/lesson/${data.id}`;
     },
     onError: (error) => {
       console.error('Error creating lesson:', error);

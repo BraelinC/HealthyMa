@@ -28,6 +28,7 @@ import PostDetail from "@/pages/PostDetail";
 import CreatorHub from "@/pages/CreatorHub";
 import CreateCommunity from "@/pages/CreateCommunity";
 import CommunityManage from "@/pages/CommunityManage";
+import LessonEditor from "@/pages/LessonEditor";
 
 // ========== LANDING PAGE TOGGLE ==========
 // Set this to false to skip the landing page and go directly to login
@@ -259,6 +260,7 @@ function Router() {
                 <Route path="/creator-hub" component={CreatorHub} />
                 <Route path="/community/:id/manage" component={CommunityManage} />
                 <Route path="/community/:communityId/post/:postId" component={PostDetail} />
+                <Route path="/community/:communityId/lesson/:lessonId" component={LessonEditor} />
                 <Route path="/community/:id" component={CommunityDetailNew} />
                 <Route path="/profile" component={Profile} />
                 <Route path="/icons" component={IconShowcase} />
