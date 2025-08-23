@@ -21,6 +21,7 @@ import { ImageUploader } from "@/components/ImageUploader";
 import { MealPlanEditor } from "@/components/community/MealPlanEditor";
 import { LessonEditor } from "@/components/community/LessonEditor";
 import EnhancedLessonEditor from "@/components/community/EnhancedLessonEditor";
+import InlineLessonEditor from "@/components/community/InlineLessonEditor";
 
 interface Community {
   id: number;
@@ -139,10 +140,11 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
 
   if (showLessonView && selectedLesson) {
     return (
-      <EnhancedLessonEditor
+      <InlineLessonEditor
         lesson={selectedLesson}
         communityId={communityId || ''}
         courseId={selectedCourse?.id || 0}
+        isCreator={isCreator}
         onClose={() => setShowLessonView(false)}
       />
     );
