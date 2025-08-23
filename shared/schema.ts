@@ -751,6 +751,7 @@ export const communityMealCourseModules = pgTable("community_meal_course_modules
   title: varchar("title", { length: 255 }).notNull(),
   emoji: varchar("emoji", { length: 10 }), // Optional emoji for the module
   description: text("description"),
+  cover_image: text("cover_image"), // Optional cover image URL for the module
   module_order: integer("module_order").notNull(),
   is_expanded: boolean("is_expanded").default(false), // Whether module is expanded by default
   created_at: timestamp("created_at").defaultNow(),

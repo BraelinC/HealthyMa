@@ -5197,6 +5197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: req.body.title || "New Module",
         emoji: req.body.emoji || "📁",
         description: req.body.description || "",
+        cover_image: req.body.cover_image || null,
         module_order: req.body.module_order ?? nextOrder,
         is_expanded: req.body.is_expanded ?? false,
       };

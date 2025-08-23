@@ -51,7 +51,7 @@ import {
   Camera,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { ImageUploader } from "@/components/ImageUploader";
+import { SingleImageUploader } from "@/components/SingleImageUploader";
 
 interface Course {
   id: number;
@@ -1290,7 +1290,7 @@ function CourseForm({
               </div>
             </div>
           )}
-          <ImageUploader
+          <SingleImageUploader
             onImageUploaded={(url) => setFormData({ ...formData, cover_image: url })}
             className="w-full"
           />
@@ -1340,13 +1340,14 @@ function ModuleForm({
   onSubmit,
   onCancel,
 }: {
-  onSubmit: (data: { title: string; emoji?: string; description?: string }) => void;
+  onSubmit: (data: { title: string; emoji?: string; description?: string; cover_image?: string }) => void;
   onCancel: () => void;
 }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     emoji: '📁',
+    cover_image: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1400,6 +1401,42 @@ function ModuleForm({
           className="bg-gray-700 border-gray-600 text-white"
           rows={3}
         />
+      </div>
+
+      {/* Module Cover Image Upload */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Module Cover Image</label>
+        <div className="space-y-3">
+          {formData.cover_image ? (
+            <div className="relative">
+              <img 
+                src={formData.cover_image} 
+                alt="Module cover" 
+                className="w-full h-24 object-cover rounded-lg border border-gray-600"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+                onClick={() => setFormData({ ...formData, cover_image: '' })}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="w-full h-24 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center bg-gray-800">
+              <div className="text-center">
+                <Camera className="h-4 w-4 text-gray-400 mx-auto mb-1" />
+                <p className="text-xs text-gray-400">Upload module cover</p>
+              </div>
+            </div>
+          )}
+          <SingleImageUploader
+            onImageUploaded={(url) => setFormData({ ...formData, cover_image: url })}
+            className="w-full"
+          />
+        </div>
       </div>
 
       <div className="flex justify-end gap-2">

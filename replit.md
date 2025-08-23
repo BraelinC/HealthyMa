@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 23, 2025**: Successfully implemented cover image upload functionality for course and module creation
+- Added SingleImageUploader component for seamless image upload integration
+- Updated both course and module forms with cover image upload fields and previews
+- Enhanced backend API endpoints to support cover_image field for courses and modules
+- Created beautiful Skool-style card layout displaying cover images prominently
+- Made design fully mobile-responsive with proper grid layout and hover effects
+- Images are stored using existing object storage infrastructure with proper authentication
+
 **August 22, 2025**: Created new creator account with full community management permissions
 - Successfully set up creator account: `creator@nutrima.com` / `Creator123!`
 - Account has proper creator status and can create/manage communities
