@@ -253,9 +253,20 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
       
       return JSON.parse(responseText);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('Module created successfully:', data);
-      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
+      // Invalidate and refetch courses
+      await queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
+      
+      // Update selectedCourse to include the new module
+      if (selectedCourse) {
+        const updatedCourses = queryClient.getQueryData([`/api/communities/${communityId}/courses`]) as Course[];
+        const updatedSelectedCourse = updatedCourses?.find(c => c.id === selectedCourse.id);
+        if (updatedSelectedCourse) {
+          setSelectedCourse(updatedSelectedCourse);
+        }
+      }
+      
       toast({ title: "Module created", description: "Your new module has been created successfully." });
       setIsCreatingModule(false);
     },
