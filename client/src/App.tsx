@@ -230,34 +230,39 @@ function Router() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <AppHeader />
-      <main className="flex-grow pb-16"> {/* Add bottom padding for the tab bar */}
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/search" component={Search} />
-          <Route path="/meal-planner" component={MealPlanner} />
-          <Route path="/communities" component={Communities} />
-          <Route path="/community/create" component={CreateCommunity} />
-          <Route path="/create" component={CreateCommunity} />
-          <Route path="/creator-hub" component={CreatorHub} />
-          <Route path="/community/:id/manage" component={CommunityManage} />
-          <Route path="/community/:communityId/post/:postId" component={PostDetail} />
-          <Route path="/community/:id" component={CommunityDetailNew} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/landingpage" component={() => (
-            <LandingPage 
-              onGetStarted={() => {}} 
-              onStartPayment={() => {}} 
-              onTestLogin={() => {}} 
-            />
-          )} />
-
-          <Route path="/icons" component={IconShowcase} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-      <AppTabBar />
-      <AchievementNotification />
+      <Switch>
+        <Route path="/landingpage" component={() => (
+          <LandingPage 
+            onGetStarted={() => {}} 
+            onStartPayment={() => {}} 
+            onTestLogin={() => {}} 
+          />
+        )} />
+        <Route component={() => (
+          <>
+            <AppHeader />
+            <main className="flex-grow pb-16"> {/* Add bottom padding for the tab bar */}
+              <Switch>
+                <Route path="/" component={Home} />
+                <Route path="/search" component={Search} />
+                <Route path="/meal-planner" component={MealPlanner} />
+                <Route path="/communities" component={Communities} />
+                <Route path="/community/create" component={CreateCommunity} />
+                <Route path="/create" component={CreateCommunity} />
+                <Route path="/creator-hub" component={CreatorHub} />
+                <Route path="/community/:id/manage" component={CommunityManage} />
+                <Route path="/community/:communityId/post/:postId" component={PostDetail} />
+                <Route path="/community/:id" component={CommunityDetailNew} />
+                <Route path="/profile" component={Profile} />
+                <Route path="/icons" component={IconShowcase} />
+                <Route component={NotFound} />
+              </Switch>
+            </main>
+            <AppTabBar />
+            <AchievementNotification />
+          </>
+        )} />
+      </Switch>
     </div>
   );
 }
