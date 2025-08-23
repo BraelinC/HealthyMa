@@ -45,6 +45,8 @@ import {
   X,
   Menu,
   ChevronLeft,
+  FolderPlus,
+  MoreHorizontal,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
@@ -575,9 +577,9 @@ function CourseEditor({
           <div className="flex gap-2">
             <Button
               size="sm"
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              <Plus className="h-4 w-4 mr-1" />
+              <FolderPlus className="h-4 w-4 mr-1" />
               Add Module
             </Button>
             <Button
@@ -590,34 +592,183 @@ function CourseEditor({
           </div>
         </div>
 
-        {/* Sample lessons for demonstration */}
-        <div className="space-y-3">
-          {[
-            { 
-              id: 1, 
-              title: "Introduction to Meal Planning", 
-              emoji: "👋", 
-              duration: 15,
-              description: "Essential foundations for successful family meal planning",
-              type: "video"
-            },
-            { 
-              id: 2, 
-              title: "Budget-Friendly Shopping", 
-              emoji: "💰", 
-              duration: 30,
-              description: "Save money while maintaining nutrition quality",
-              type: "lesson"
-            },
-            { 
-              id: 3, 
-              title: "Meal Prep Basics", 
-              emoji: "📦", 
-              duration: 45,
-              description: "Efficient preparation strategies for busy families",
-              type: "guide"
-            },
-          ].map((lesson) => (
+        {/* Course Structure with Modules and Lessons */}
+        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+          {/* Module 1 Example */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg">
+            <div className="p-4 border-b border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">M1</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-white">Week 1: Foundation</h3>
+                  <p className="text-sm text-gray-400">3 lessons • 45 min total</p>
+                </div>
+                <Button size="sm" variant="ghost" className="text-gray-400">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Lessons within Module */}
+            <div className="space-y-0">
+              {[
+                { 
+                  id: 1, 
+                  title: "Introduction to Meal Planning", 
+                  emoji: "👋", 
+                  duration: 15,
+                  description: "Essential foundations for successful family meal planning",
+                  type: "video"
+                },
+                { 
+                  id: 2, 
+                  title: "Kitchen Setup Essentials", 
+                  emoji: "🔧", 
+                  duration: 20,
+                  description: "Organize your kitchen for maximum efficiency",
+                  type: "lesson"
+                },
+                { 
+                  id: 3, 
+                  title: "Your First Meal Prep", 
+                  emoji: "📦", 
+                  duration: 10,
+                  description: "Hands-on practice with simple meal preparation",
+                  type: "guide"
+                },
+              ].map((lesson, index) => (
+                <div
+                  key={lesson.id}
+                  className="p-4 border-b border-gray-700 last:border-b-0 cursor-pointer hover:bg-gray-750 transition-colors group"
+                  onClick={() => onSelectLesson(lesson as any)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-300">
+                      {index + 1}
+                    </div>
+                    <span className="text-lg">{lesson.emoji}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-white group-hover:text-purple-400">{lesson.title}</h4>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${
+                            lesson.type === 'video' ? 'border-red-500 text-red-400' :
+                            lesson.type === 'lesson' ? 'border-blue-500 text-blue-400' :
+                            'border-green-500 text-green-400'
+                          }`}
+                        >
+                          {lesson.type}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-400">{lesson.description}</p>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {lesson.duration} min
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Module 2 Example */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg">
+            <div className="p-4 border-b border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">M2</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-white">Week 2: Building Habits</h3>
+                  <p className="text-sm text-gray-400">2 lessons • 50 min total</p>
+                </div>
+                <Button size="sm" variant="ghost" className="text-gray-400">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Lessons within Module */}
+            <div className="space-y-0">
+              {[
+                { 
+                  id: 4, 
+                  title: "Shopping Strategies", 
+                  emoji: "🛒", 
+                  duration: 25,
+                  description: "Smart shopping techniques for healthy eating",
+                  type: "lesson"
+                },
+                { 
+                  id: 5, 
+                  title: "Batch Cooking Basics", 
+                  emoji: "👩‍🍳", 
+                  duration: 25,
+                  description: "Cook multiple meals efficiently",
+                  type: "video"
+                },
+              ].map((lesson, index) => (
+                <div
+                  key={lesson.id}
+                  className="p-4 border-b border-gray-700 last:border-b-0 cursor-pointer hover:bg-gray-750 transition-colors group"
+                  onClick={() => onSelectLesson(lesson as any)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-300">
+                      {index + 1}
+                    </div>
+                    <span className="text-lg">{lesson.emoji}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-white group-hover:text-purple-400">{lesson.title}</h4>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${
+                            lesson.type === 'video' ? 'border-red-500 text-red-400' :
+                            lesson.type === 'lesson' ? 'border-blue-500 text-blue-400' :
+                            'border-green-500 text-green-400'
+                          }`}
+                        >
+                          {lesson.type}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-400">{lesson.description}</p>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {lesson.duration} min
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Standalone Lesson Example */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-750 transition-colors group">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">📋</span>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium text-white group-hover:text-purple-400">Quick Reference Guide</h4>
+                  <Badge variant="outline" className="text-xs border-green-500 text-green-400">
+                    guide
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-400">Downloadable cheat sheet for meal planning</p>
+              </div>
+              <div className="text-xs text-gray-400">
+                5 min
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Legacy lesson structure for demonstration */}
+        <div className="hidden space-y-3">
+          {[].map((lesson: any) => (
             <Card
               key={lesson.id}
               className="bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors group"
