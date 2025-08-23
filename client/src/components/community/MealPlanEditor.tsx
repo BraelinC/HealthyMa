@@ -784,6 +784,15 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
         )}
       </div>
 
+        {/* Exit Button */}
+        <Button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-30 bg-gray-700 hover:bg-gray-600 text-white shadow-lg"
+          size="sm"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+
         {/* Main Content Area */}
         <div className="flex-1 min-h-screen p-6 overflow-y-auto bg-gray-900">
         {selectedCourse ? (
