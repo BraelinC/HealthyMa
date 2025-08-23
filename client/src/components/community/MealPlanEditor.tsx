@@ -294,7 +294,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
              }
            }}>
         {/* Left Sidebar - Course List */}
-        <div className="w-80 bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
+        <div className="w-80 min-h-screen bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-white mb-4">Meal Plan Courses</h2>
           <Button
@@ -380,7 +380,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
       </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 p-6 overflow-y-auto bg-gray-900">
+        <div className="flex-1 min-h-screen p-6 overflow-y-auto bg-gray-900">
         {selectedCourse ? (
           <CourseEditor
             course={selectedCourse}
@@ -390,7 +390,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             onSelectLesson={setSelectedLesson}
           />
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
               <ChefHat className="h-16 w-16 text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-white mb-2">Select a Course</h3>

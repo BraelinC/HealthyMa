@@ -278,12 +278,30 @@ button[role="gridcell"]:hover:not([aria-selected="true"]):not([disabled]) {
     margin-left: 0;
     width: 100%;
   }
-  
-  [data-meal-plan-editor].sidebar-collapsed .w-80 {
-    transform: translateX(-100%);
+}
+
+/* Desktop responsiveness */
+@media (min-width: 769px) {
+  [data-meal-plan-editor] .w-80 {
+    width: 320px;
+    max-width: 320px;
+    position: relative;
+    z-index: 20;
   }
   
-  /* Add overlay when sidebar is open on mobile */
+  [data-meal-plan-editor] .flex-1 {
+    margin-left: 0;
+    width: calc(100% - 320px);
+  }
+  
+  [data-meal-plan-editor]:not(.sidebar-collapsed) .flex-1 {
+    margin-left: 320px;
+    width: calc(100% - 320px);
+  }
+}
+
+/* Add overlay when sidebar is open on mobile */
+@media (max-width: 768px) {
   [data-meal-plan-editor]:not(.sidebar-collapsed)::before {
     content: '';
     position: absolute;
