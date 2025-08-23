@@ -5,7 +5,7 @@ import { eq, desc, asc, sql } from "drizzle-orm";
 export class CommunityCommentsService {
   
   // Get all comments for a specific post
-  async getPostComments(postId: number): Promise<Array<CommunityPostComment & { author: { firstName: string | null, lastName: string | null } }>> {
+  async getPostComments(postId: number): Promise<Array<CommunityPostComment & { author: { firstName: string | null, lastName: string | null } | null }>> {
     const comments = await db
       .select({
         id: communityPostComments.id,
@@ -132,20 +132,22 @@ export class CommunityCommentsService {
   }
 
   // Get nested comment structure (for threaded comments)
-  async getNestedComments(postId: number): Promise<any[]> {
-    const allComments = await this.getPostComments(postId);
+  async getNestedComments(postId: number, userId?: string): Promise<any[]> {
+    // Import communityService here to avoid circular imports
+    const { communityService } = require('./communityService');
+    const allComments = await communityService.getPostComments(postId, userId);
     
     // Build nested structure
     const commentMap = new Map();
     const rootComments: any[] = [];
 
     // First pass: create comment objects with children arrays
-    allComments.forEach(comment => {
+    allComments.forEach((comment: any) => {
       commentMap.set(comment.id, { ...comment, children: [] });
     });
 
     // Second pass: build the nested structure
-    allComments.forEach(comment => {
+    allComments.forEach((comment: any) => {
       const commentWithChildren = commentMap.get(comment.id);
       
       if (comment.parent_id) {
