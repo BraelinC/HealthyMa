@@ -121,6 +121,245 @@ const SECTION_TEMPLATES = [
 // Emoji options for courses and lessons
 const EMOJI_OPTIONS = ["🌟", "🔥", "💰", "📚", "🥗", "🍽️", "👨‍🍳", "🎯", "💪", "🏆", "🚀", "✨", "🌮", "🍝", "🍜", "🍱"];
 
+// Lesson Form Component
+function LessonForm({
+  onSubmit,
+  onCancel,
+}: {
+  onSubmit: (data: {
+    title: string;
+    emoji?: string;
+    description?: string;
+    ingredients?: string[];
+    instructions?: string[];
+    prep_time?: number;
+    cook_time?: number;
+    servings?: number;
+    difficulty_level?: number;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [emoji, setEmoji] = useState('📝');
+  const [description, setDescription] = useState('');
+  const [ingredients, setIngredients] = useState<string[]>(['']);
+  const [instructions, setInstructions] = useState<string[]>(['']);
+  const [prepTime, setPrepTime] = useState(10);
+  const [cookTime, setCookTime] = useState(20);
+  const [servings, setServings] = useState(4);
+  const [difficultyLevel, setDifficultyLevel] = useState(2);
+
+  const addIngredient = () => {
+    setIngredients([...ingredients, '']);
+  };
+
+  const removeIngredient = (index: number) => {
+    setIngredients(ingredients.filter((_, i) => i !== index));
+  };
+
+  const updateIngredient = (index: number, value: string) => {
+    const newIngredients = [...ingredients];
+    newIngredients[index] = value;
+    setIngredients(newIngredients);
+  };
+
+  const addInstruction = () => {
+    setInstructions([...instructions, '']);
+  };
+
+  const removeInstruction = (index: number) => {
+    setInstructions(instructions.filter((_, i) => i !== index));
+  };
+
+  const updateInstruction = (index: number, value: string) => {
+    const newInstructions = [...instructions];
+    newInstructions[index] = value;
+    setInstructions(newInstructions);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    onSubmit({
+      title: title.trim(),
+      emoji,
+      description: description.trim(),
+      ingredients: ingredients.filter(ing => ing.trim()),
+      instructions: instructions.filter(inst => inst.trim()),
+      prep_time: prepTime,
+      cook_time: cookTime,
+      servings,
+      difficulty_level: difficultyLevel,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto">
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-2">
+          <Label htmlFor="emoji">Emoji</Label>
+          <Input
+            id="emoji"
+            value={emoji}
+            onChange={(e) => setEmoji(e.target.value)}
+            className="bg-gray-700 border-gray-600 text-white text-center text-lg"
+            maxLength={2}
+          />
+        </div>
+        <div className="col-span-10">
+          <Label htmlFor="title">Lesson Title *</Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g., Perfect Pasta Technique"
+            className="bg-gray-700 border-gray-600 text-white"
+            required
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Brief lesson description..."
+          className="bg-gray-700 border-gray-600 text-white"
+          rows={2}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="prep-time">Prep Time (minutes)</Label>
+          <Input
+            id="prep-time"
+            type="number"
+            value={prepTime}
+            onChange={(e) => setPrepTime(Number(e.target.value))}
+            className="bg-gray-700 border-gray-600 text-white"
+            min="0"
+          />
+        </div>
+        <div>
+          <Label htmlFor="cook-time">Cook Time (minutes)</Label>
+          <Input
+            id="cook-time"
+            type="number"
+            value={cookTime}
+            onChange={(e) => setCookTime(Number(e.target.value))}
+            className="bg-gray-700 border-gray-600 text-white"
+            min="0"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="servings">Servings</Label>
+          <Input
+            id="servings"
+            type="number"
+            value={servings}
+            onChange={(e) => setServings(Number(e.target.value))}
+            className="bg-gray-700 border-gray-600 text-white"
+            min="1"
+          />
+        </div>
+        <div>
+          <Label htmlFor="difficulty">Difficulty (1-5)</Label>
+          <Input
+            id="difficulty"
+            type="number"
+            value={difficultyLevel}
+            onChange={(e) => setDifficultyLevel(Number(e.target.value))}
+            className="bg-gray-700 border-gray-600 text-white"
+            min="1"
+            max="5"
+          />
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <Label>Ingredients</Label>
+          <Button type="button" onClick={addIngredient} size="sm" variant="outline" className="border-gray-600 text-gray-300">
+            <Plus className="h-3 w-3 mr-1" />
+            Add
+          </Button>
+        </div>
+        <div className="space-y-2 max-h-32 overflow-y-auto">
+          {ingredients.map((ingredient, index) => (
+            <div key={index} className="flex gap-2">
+              <Input
+                value={ingredient}
+                onChange={(e) => updateIngredient(index, e.target.value)}
+                placeholder={`Ingredient ${index + 1}`}
+                className="bg-gray-700 border-gray-600 text-white flex-1"
+              />
+              {ingredients.length > 1 && (
+                <Button
+                  type="button"
+                  onClick={() => removeIngredient(index)}
+                  size="sm"
+                  variant="destructive"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <Label>Instructions</Label>
+          <Button type="button" onClick={addInstruction} size="sm" variant="outline" className="border-gray-600 text-gray-300">
+            <Plus className="h-3 w-3 mr-1" />
+            Add
+          </Button>
+        </div>
+        <div className="space-y-2 max-h-32 overflow-y-auto">
+          {instructions.map((instruction, index) => (
+            <div key={index} className="flex gap-2">
+              <Textarea
+                value={instruction}
+                onChange={(e) => updateInstruction(index, e.target.value)}
+                placeholder={`Step ${index + 1}`}
+                className="bg-gray-700 border-gray-600 text-white flex-1"
+                rows={2}
+              />
+              {instructions.length > 1 && (
+                <Button
+                  type="button"
+                  onClick={() => removeInstruction(index)}
+                  size="sm"
+                  variant="destructive"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
+        <Button type="button" onClick={onCancel} variant="outline" className="border-gray-600 text-gray-300">
+          Cancel
+        </Button>
+        <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
+          Create Lesson
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -130,6 +369,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [isCreatingModule, setIsCreatingModule] = useState(false);
   const [isCreatingLesson, setIsCreatingLesson] = useState(false);
+  const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<number | null>(null);
 
   console.log('MealPlanEditor mounted with communityId:', communityId);
 
@@ -280,6 +520,92 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
     },
   });
 
+  // Create lesson mutation
+  const createLessonMutation = useMutation({
+    mutationFn: async (data: { 
+      courseId: number; 
+      moduleId?: number; 
+      title: string; 
+      emoji?: string; 
+      description?: string;
+      ingredients?: string[];
+      instructions?: string[];
+      prep_time?: number;
+      cook_time?: number;
+      servings?: number;
+      difficulty_level?: number;
+    }) => {
+      console.log('Sending create lesson request:', data);
+      const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/communities/${communityId}/courses/${data.courseId}/lessons`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          module_id: data.moduleId,
+          title: data.title,
+          emoji: data.emoji,
+          description: data.description,
+          ingredients: data.ingredients,
+          instructions: data.instructions,
+          prep_time: data.prep_time,
+          cook_time: data.cook_time,
+          servings: data.servings,
+          difficulty_level: data.difficulty_level,
+        }),
+      });
+      
+      const responseText = await response.text();
+      console.log('Create lesson response:', response.status, responseText);
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to create lesson';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = responseText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      return JSON.parse(responseText);
+    },
+    onSuccess: async (data) => {
+      console.log('Lesson created successfully:', data);
+      // Invalidate and refetch courses
+      await queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
+      
+      // Update selectedCourse to include the new lesson
+      if (selectedCourse) {
+        const updatedCourses = queryClient.getQueryData([`/api/communities/${communityId}/courses`]) as Course[];
+        const updatedSelectedCourse = updatedCourses?.find(c => c.id === selectedCourse.id);
+        if (updatedSelectedCourse) {
+          setSelectedCourse(updatedSelectedCourse);
+        }
+      }
+      
+      toast({ title: "Lesson created", description: "Your new lesson has been created successfully." });
+      setIsCreatingLesson(false);
+      setSelectedModuleForLesson(null);
+    },
+    onError: (error) => {
+      console.error('Error creating lesson:', error);
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : "Failed to create lesson",
+        variant: "destructive" 
+      });
+    },
+  });
+
   // Update course mutation
   const updateCourseMutation = useMutation({
     mutationFn: async ({ courseId, data }: { courseId: number; data: Partial<Course> }) => {
@@ -347,6 +673,13 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
       }
       return newSet;
     });
+  };
+
+  const handleCreateLesson = (moduleId?: number) => {
+    if (selectedCourse) {
+      setSelectedModuleForLesson(moduleId || null);
+      setIsCreatingLesson(true);
+    }
   };
 
   return (
@@ -457,6 +790,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             onDelete={() => deleteCourseMutation.mutate(selectedCourse.id)}
             onSelectLesson={setSelectedLesson}
             onCreateModule={() => setIsCreatingModule(true)}
+            onCreateLesson={handleCreateLesson}
             selectedCourse={selectedCourse}
           />
         ) : (
@@ -533,6 +867,41 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
           </DialogContent>
         </Dialog>
 
+        {/* Create Lesson Dialog */}
+        <Dialog open={isCreatingLesson} onOpenChange={setIsCreatingLesson}>
+          <DialogContent className="bg-gray-800 text-white border-gray-700 z-[10001] max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                Add Lesson to {selectedCourse?.title}
+                {selectedModuleForLesson && (
+                  <span className="text-sm text-gray-400 block">
+                    Module: {selectedCourse?.modules?.find(m => m.id === selectedModuleForLesson)?.title}
+                  </span>
+                )}
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Create a new lesson with instructions, ingredients, and video content
+              </DialogDescription>
+            </DialogHeader>
+            <LessonForm
+              onSubmit={(data) => {
+                if (selectedCourse) {
+                  console.log('Creating lesson with data:', data);
+                  createLessonMutation.mutate({ 
+                    courseId: selectedCourse.id,
+                    moduleId: selectedModuleForLesson || undefined,
+                    ...data 
+                  });
+                }
+              }}
+              onCancel={() => {
+                setIsCreatingLesson(false);
+                setSelectedModuleForLesson(null);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+
         {/* Lesson Editor Modal */}
         {selectedLesson && (
           <LessonEditor
@@ -563,6 +932,7 @@ function CourseEditor({
   onDelete: () => void;
   onSelectLesson: (lesson: Lesson) => void;
   onCreateModule: () => void;
+  onCreateLesson: (moduleId?: number) => void;
   selectedCourse: Course;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -683,9 +1053,11 @@ function CourseEditor({
             <Button
               size="sm"
               className="bg-purple-600 hover:bg-purple-700 text-white"
+              onClick={() => onCreateLesson()}
+              disabled={!selectedCourse}
             >
               <Plus className="h-4 w-4 mr-1" />
-              Add Lesson
+              Add Lesson to Course
             </Button>
           </div>
         </div>
@@ -704,9 +1076,23 @@ function CourseEditor({
                     <h3 className="font-semibold text-white">{module.title}</h3>
                     <p className="text-sm text-gray-400">{module.description || 'No description'}</p>
                   </div>
-                  <Button size="sm" variant="ghost" className="text-gray-400">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCreateLesson(module.id);
+                      }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      <span className="text-xs">Add Lesson</span>
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-gray-400">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
               
