@@ -282,7 +282,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-[10000] sidebar-collapsed" data-meal-plan-editor>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[10000]" data-meal-plan-editor>
       <div className="fixed inset-0 bg-gray-900 flex relative"
            onClick={(e) => {
              // Close sidebar when clicking on overlay area (only on mobile)
@@ -590,32 +590,70 @@ function CourseEditor({
           </div>
         </div>
 
-        {/* Mock lessons for demonstration */}
-        <div className="space-y-2">
+        {/* Sample lessons for demonstration */}
+        <div className="space-y-3">
           {[
-            { id: 1, title: "Introduction to Meal Planning", emoji: "👋", duration: 15 },
-            { id: 2, title: "Budget-Friendly Shopping", emoji: "💰", duration: 30 },
-            { id: 3, title: "Meal Prep Basics", emoji: "📦", duration: 45 },
+            { 
+              id: 1, 
+              title: "Introduction to Meal Planning", 
+              emoji: "👋", 
+              duration: 15,
+              description: "Essential foundations for successful family meal planning",
+              type: "video"
+            },
+            { 
+              id: 2, 
+              title: "Budget-Friendly Shopping", 
+              emoji: "💰", 
+              duration: 30,
+              description: "Save money while maintaining nutrition quality",
+              type: "lesson"
+            },
+            { 
+              id: 3, 
+              title: "Meal Prep Basics", 
+              emoji: "📦", 
+              duration: 45,
+              description: "Efficient preparation strategies for busy families",
+              type: "guide"
+            },
           ].map((lesson) => (
             <Card
               key={lesson.id}
-              className="bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors"
+              className="bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors group"
               onClick={() => onSelectLesson(lesson as any)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{lesson.emoji}</span>
-                    <div>
-                      <h3 className="font-medium text-white">{lesson.title}</h3>
-                      <p className="text-sm text-gray-400">{lesson.duration} minutes</p>
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="flex items-center justify-center w-12 h-12 bg-gray-700 rounded-lg group-hover:bg-gray-600 transition-colors">
+                      <span className="text-xl">{lesson.emoji}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-white text-base">{lesson.title}</h3>
+                        <Badge variant="secondary" className="text-xs bg-purple-600/20 text-purple-300 border-purple-600/30">
+                          {lesson.type}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-400 mb-2">{lesson.description}</p>
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {lesson.duration} min
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Play className="w-3 h-3" />
+                          Video lesson
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="text-gray-400">
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white h-8 w-8 p-0">
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-gray-400">
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-red-400 h-8 w-8 p-0">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

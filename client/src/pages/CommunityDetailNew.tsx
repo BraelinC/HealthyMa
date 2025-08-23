@@ -416,7 +416,16 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
               Edit Courses
             </Button>
             <Button
-              onClick={() => setShowMealPlanEditor(true)}
+              onClick={() => {
+                setShowMealPlanEditor(true);
+                // Auto-open sidebar for quick add flow
+                setTimeout(() => {
+                  const editor = document.querySelector('[data-meal-plan-editor]');
+                  if (editor) {
+                    editor.classList.remove('sidebar-collapsed');
+                  }
+                }, 100);
+              }}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />

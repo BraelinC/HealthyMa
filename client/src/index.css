@@ -238,6 +238,11 @@ button[role="gridcell"]:hover:not([aria-selected="true"]):not([disabled]) {
 /* Meal Plan Editor Sidebar Collapse Styles */
 [data-meal-plan-editor] .w-80 {
   transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+  transform: translateX(-100%); /* Start collapsed */
+}
+
+[data-meal-plan-editor]:not(.sidebar-collapsed) .w-80 {
+  transform: translateX(0); /* Show when not collapsed */
 }
 
 [data-meal-plan-editor].sidebar-collapsed .w-80 {
@@ -249,7 +254,11 @@ button[role="gridcell"]:hover:not([aria-selected="true"]):not([disabled]) {
 }
 
 /* Button animation when sidebar collapses */
-[data-meal-plan-editor].sidebar-collapsed button[title="Toggle course list"] {
+[data-meal-plan-editor] button[title="Toggle course list"] {
+  transition: transform 0.3s ease-in-out;
+}
+
+[data-meal-plan-editor]:not(.sidebar-collapsed) button[title="Toggle course list"] {
   transform: rotate(180deg);
 }
 
@@ -285,5 +294,14 @@ button[role="gridcell"]:hover:not([aria-selected="true"]):not([disabled]) {
     background: rgba(0, 0, 0, 0.3);
     z-index: 10;
     pointer-events: auto;
+  }
+  
+  /* Initially hide overlay since sidebar starts collapsed */
+  [data-meal-plan-editor]::before {
+    display: none;
+  }
+  
+  [data-meal-plan-editor]:not(.sidebar-collapsed)::before {
+    display: block;
   }
 }
