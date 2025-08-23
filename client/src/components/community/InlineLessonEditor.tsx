@@ -46,6 +46,96 @@ export default function InlineLessonEditor({
   isCreator, 
   onClose 
 }: InlineLessonEditorProps) {
+  // If not a creator, show simple student view
+  if (!isCreator) {
+    return (
+      <div className="bg-gray-900 min-h-screen">
+        {/* Simple Student Header */}
+        <div className="bg-gray-800 border-b border-gray-700 p-4">
+          <div className="flex items-center justify-between max-w-4xl mx-auto">
+            <div className="flex items-center gap-4">
+              <Button 
+                onClick={onClose}
+                variant="ghost" 
+                className="text-gray-400 hover:text-white p-2"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{lesson?.emoji || '📝'}</span>
+                <div>
+                  <h1 className="text-xl font-bold text-white">{lesson?.title || "Lesson"}</h1>
+                  <p className="text-sm text-gray-400">Course Lesson</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Student Lesson Content */}
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-6">
+              {/* Video Section */}
+              {lesson?.youtube_video_id && (
+                <div className="mb-6">
+                  <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-600">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${lesson.youtube_video_id}`}
+                      title="Lesson video"
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Lesson Content */}
+              {lesson?.description && (
+                <div className="prose prose-lg prose-invert max-w-none">
+                  <div className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                    {lesson.description.split('\n').map((line: string, index: number) => {
+                      if (line.startsWith('##')) {
+                        return <h3 key={index} className="text-white font-semibold mt-6 mb-3 text-xl">{line.replace('##', '').trim()}</h3>;
+                      }
+                      if (line.startsWith('•')) {
+                        return <li key={index} className="ml-6 list-disc text-base mb-1">{line.replace('•', '').trim()}</li>;
+                      }
+                      if (line.match(/^\d+\./)) {
+                        return <li key={index} className="ml-6 list-decimal text-base mb-1">{line.replace(/^\d+\./, '').trim()}</li>;
+                      }
+                      if (line.startsWith('---')) {
+                        return <hr key={index} className="my-6 border-gray-600" />;
+                      }
+                      if (line.trim()) {
+                        return <p key={index} className="mb-3 text-base">{line}</p>;
+                      }
+                      return <br key={index} />;
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Student Engagement Section */}
+              <div className="mt-8 pt-6 border-t border-gray-700">
+                <div className="flex items-center gap-4">
+                  <Button className="bg-purple-600 hover:bg-purple-700">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Start Discussion
+                  </Button>
+                  <Button variant="outline" className="border-gray-600 text-gray-300">
+                    <Heart className="w-4 h-4 mr-2" />
+                    Mark Complete
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
   const [lessonData, setLessonData] = useState({
     title: lesson?.title || '',
     emoji: lesson?.emoji || '🍳',
@@ -180,6 +270,16 @@ export default function InlineLessonEditor({
               </>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Creator Mode Indicator */}
+      <div className="bg-purple-600/10 border-b border-purple-600/30 px-6 py-2">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-sm text-purple-400 flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Creator Mode - Advanced Lesson Editor
+          </p>
         </div>
       </div>
 
@@ -379,8 +479,8 @@ export default function InlineLessonEditor({
             </Card>
           </div>
 
-          {/* Right Column - Settings & Features */}
-          <div className="space-y-6">
+          {/* Right Column - Advanced Creator Controls */}
+          <div className="space-y-4">
             {/* Live Preview */}
             <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
@@ -413,33 +513,130 @@ export default function InlineLessonEditor({
               </CardContent>
             </Card>
 
-            {/* Content Features */}
+            {/* Advanced Lesson Settings */}
             {isEditing && (
-              <Card className="bg-gray-800 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Settings className="w-5 h-5" />
-                    Lesson Features
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {contentToggles.map((toggle) => (
-                    <div key={toggle.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <toggle.icon className="w-4 h-4 text-purple-400" />
-                        <div>
-                          <Label className="text-white font-medium text-sm">{toggle.label}</Label>
-                          <p className="text-xs text-gray-400">{toggle.description}</p>
+              <>
+                <Card className="bg-gray-800 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4" />
+                      Lesson Timing
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-gray-300 text-xs">Prep Time (min)</Label>
+                        <Input
+                          type="number"
+                          value={lessonData.prep_time}
+                          onChange={(e) => setLessonData({ ...lessonData, prep_time: parseInt(e.target.value) || 0 })}
+                          className="bg-gray-700 border-gray-600 text-white h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-gray-300 text-xs">Cook Time (min)</Label>
+                        <Input
+                          type="number"
+                          value={lessonData.cook_time}
+                          onChange={(e) => setLessonData({ ...lessonData, cook_time: parseInt(e.target.value) || 0 })}
+                          className="bg-gray-700 border-gray-600 text-white h-8"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-gray-300 text-xs">Servings</Label>
+                        <Input
+                          type="number"
+                          value={lessonData.servings}
+                          onChange={(e) => setLessonData({ ...lessonData, servings: parseInt(e.target.value) || 1 })}
+                          className="bg-gray-700 border-gray-600 text-white h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-gray-300 text-xs">Difficulty (1-5)</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="5"
+                          value={lessonData.difficulty_level}
+                          onChange={(e) => setLessonData({ ...lessonData, difficulty_level: parseInt(e.target.value) || 1 })}
+                          className="bg-gray-700 border-gray-600 text-white h-8"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gray-800 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2 text-sm">
+                      <Settings className="w-4 h-4" />
+                      Interactive Features
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {contentToggles.map((toggle) => (
+                      <div key={toggle.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <toggle.icon className="w-3 h-3 text-purple-400" />
+                          <div>
+                            <Label className="text-white font-medium text-xs">{toggle.label}</Label>
+                            <p className="text-xs text-gray-500">{toggle.description}</p>
+                          </div>
                         </div>
+                        <Switch
+                          checked={toggle.enabled}
+                          onCheckedChange={() => toggleContent(toggle.id)}
+                          className="scale-75"
+                        />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gray-800 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2 text-sm">
+                      <Eye className="w-4 h-4" />
+                      Publishing Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-white font-medium text-xs">Published Status</Label>
+                        <p className="text-xs text-gray-500">Make visible to students</p>
                       </div>
                       <Switch
-                        checked={toggle.enabled}
-                        onCheckedChange={() => toggleContent(toggle.id)}
+                        checked={lessonData.is_published}
+                        onCheckedChange={(checked) => setLessonData({ ...lessonData, is_published: checked })}
+                        className="scale-75"
                       />
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
+                    <div>
+                      <Label className="text-gray-300 text-xs">Lesson Order</Label>
+                      <Input
+                        type="number"
+                        value={lessonData.lesson_order}
+                        onChange={(e) => setLessonData({ ...lessonData, lesson_order: parseInt(e.target.value) || 1 })}
+                        className="bg-gray-700 border-gray-600 text-white h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-gray-300 text-xs">Emoji</Label>
+                      <Input
+                        value={lessonData.emoji}
+                        onChange={(e) => setLessonData({ ...lessonData, emoji: e.target.value })}
+                        placeholder="🍳"
+                        className="bg-gray-700 border-gray-600 text-white h-8"
+                        maxLength={2}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
             )}
 
             {/* Active Features Display */}
