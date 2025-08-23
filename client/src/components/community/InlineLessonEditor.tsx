@@ -22,6 +22,7 @@ import {
   Clock,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { SkoolStyleLesson } from "./SkoolStyleLesson";
 
 interface InlineLessonEditorProps {
   lesson: any;
@@ -38,96 +39,20 @@ export default function InlineLessonEditor({
   isCreator, 
   onClose 
 }: InlineLessonEditorProps) {
-  // If not a creator, show simple student view
+  // If not a creator, show Skool-style lesson view
   if (!isCreator) {
     return (
-      <div className="bg-gray-900 min-h-screen">
-        {/* Simple Student Header */}
-        <div className="bg-gray-800 border-b border-gray-700 p-4">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
-            <div className="flex items-center gap-4">
-              <Button 
-                onClick={onClose}
-                variant="ghost" 
-                className="text-gray-400 hover:text-white p-2"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{lesson?.emoji || '📝'}</span>
-                <div>
-                  <h1 className="text-xl font-bold text-white">{lesson?.title || "Lesson"}</h1>
-                  <p className="text-sm text-gray-400">Course Lesson</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Student Lesson Content */}
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-4xl">{lesson?.emoji || '📝'}</span>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white">{lesson?.title || "Lesson"}</h2>
-                  <p className="text-gray-400 text-sm mt-1">
-                    {lesson?.prep_time && lesson?.cook_time
-                      ? `${lesson.prep_time + lesson.cook_time} minutes`
-                      : 'Quick lesson'
-                    }
-                  </p>
-                </div>
-              </div>
-
-              {lesson?.youtube_video_id && (
-                <div className="mb-6">
-                  <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-600">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${lesson.youtube_video_id}`}
-                      title="Lesson video"
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-              )}
-
-              {lesson?.description && (
-                <div className="prose prose-sm prose-invert max-w-none">
-                  <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                    {lesson.description.split('\n').map((line: string, index: number) => {
-                      if (line.startsWith('##')) {
-                        return <h3 key={index} className="text-white font-semibold mt-6 mb-3 text-xl">{line.replace('##', '').trim()}</h3>;
-                      }
-                      if (line.startsWith('•')) {
-                        return <li key={index} className="ml-6 list-disc mb-1">{line.replace('•', '').trim()}</li>;
-                      }
-                      if (line.match(/^\d+\./)) {
-                        return <li key={index} className="ml-6 list-decimal mb-1">{line.replace(/^\d+\./, '').trim()}</li>;
-                      }
-                      if (line.startsWith('---')) {
-                        return <hr key={index} className="my-6 border-gray-600" />;
-                      }
-                      if (line.trim()) {
-                        return <p key={index} className="mb-3">{line}</p>;
-                      }
-                      return <br key={index} />;
-                    })}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <SkoolStyleLesson 
+        lesson={lesson}
+        onBack={onClose}
+        onNext={() => {}} // TODO: Implement next lesson navigation
+      />
     );
   }
 
   // Creator editing state
   const [isEditing, setIsEditing] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [lessonData, setLessonData] = useState({
     title: lesson?.title || "",
     description: lesson?.description || "",
@@ -252,12 +177,25 @@ export default function InlineLessonEditor({
                 </Button>
               </>
             ) : (
-              <Button 
-                onClick={() => setIsEditing(true)}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                Edit Lesson
-              </Button>
+              <>
+                <Button 
+                  onClick={() => setIsPreviewMode(!isPreviewMode)}
+                  variant={isPreviewMode ? "default" : "outline"}
+                  className={isPreviewMode 
+                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                    : "border-gray-600 text-gray-300 hover:bg-gray-700"
+                  }
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  {isPreviewMode ? "Exit Preview" : "Student View"}
+                </Button>
+                <Button 
+                  onClick={() => setIsEditing(true)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Edit Lesson
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -265,7 +203,19 @@ export default function InlineLessonEditor({
 
       {/* Content */}
       <div className="max-w-6xl mx-auto p-6">
-        {isEditing ? (
+        {isPreviewMode ? (
+          /* Skool-Style Student Preview */
+          <div className="border-2 border-blue-500 rounded-lg overflow-hidden">
+            <div className="bg-blue-600 text-white p-2 text-center text-sm font-medium">
+              Student View Preview
+            </div>
+            <SkoolStyleLesson 
+              lesson={{...lessonData, ...interactiveFeatures, id: lesson?.id}}
+              onBack={() => setIsPreviewMode(false)}
+              onNext={() => {}}
+            />
+          </div>
+        ) : isEditing ? (
           /* Creator Editing Layout */
           <div className="max-w-4xl mx-auto space-y-6">
             {/* Lesson Details */}
