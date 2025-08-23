@@ -472,6 +472,53 @@ export default function InlineLessonEditor({
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Preview of Enabled Features */}
+                  {(interactiveFeatures.comments_enabled || interactiveFeatures.poll_enabled || interactiveFeatures.notes_enabled || interactiveFeatures.timer_enabled || interactiveFeatures.image_enabled || interactiveFeatures.video_enabled) && (
+                    <Card className="bg-gray-800 border-gray-700">
+                      <CardContent className="p-4">
+                        <h4 className="text-white font-medium mb-3">Enabled Interactive Features:</h4>
+                        <div className="space-y-2">
+                          {interactiveFeatures.comments_enabled && (
+                            <div className="flex items-center gap-2 text-sm text-purple-300">
+                              <MessageCircle className="w-3 h-3" />
+                              <span>Comments & Discussion</span>
+                            </div>
+                          )}
+                          {interactiveFeatures.poll_enabled && (
+                            <div className="flex items-center gap-2 text-sm text-purple-300">
+                              <BarChart3 className="w-3 h-3" />
+                              <span>Interactive Polls</span>
+                            </div>
+                          )}
+                          {interactiveFeatures.notes_enabled && (
+                            <div className="flex items-center gap-2 text-sm text-purple-300">
+                              <FileText className="w-3 h-3" />
+                              <span>Student Notes</span>
+                            </div>
+                          )}
+                          {interactiveFeatures.timer_enabled && (
+                            <div className="flex items-center gap-2 text-sm text-purple-300">
+                              <Clock className="w-3 h-3" />
+                              <span>Timer Activities</span>
+                            </div>
+                          )}
+                          {interactiveFeatures.image_enabled && (
+                            <div className="flex items-center gap-2 text-sm text-purple-300">
+                              <Image className="w-3 h-3" />
+                              <span>Image Sharing</span>
+                            </div>
+                          )}
+                          {interactiveFeatures.video_enabled && (
+                            <div className="flex items-center gap-2 text-sm text-purple-300">
+                              <Video className="w-3 h-3" />
+                              <span>Video Content</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </CardContent>
             </Card>
