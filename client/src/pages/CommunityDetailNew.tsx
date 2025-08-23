@@ -328,7 +328,7 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
         <div className="flex justify-center -mt-2">
           <Button
             onClick={() => setShowMealPlanEditor(true)}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2"
           >
             <Plus className="h-4 w-4 mr-2" />
             Create Courses
