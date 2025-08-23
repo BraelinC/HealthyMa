@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
   Video,
   Clock,
   Upload,
+  X,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -82,6 +83,16 @@ export default function InlineLessonEditor({
                 </div>
               </div>
 
+              {lesson?.lesson_image_url && (
+                <div className="mb-6">
+                  <img 
+                    src={lesson.lesson_image_url} 
+                    alt="Lesson" 
+                    className="w-full h-48 object-cover rounded-lg border border-gray-600"
+                  />
+                </div>
+              )}
+
               {lesson?.youtube_video_id && (
                 <div className="mb-6">
                   <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-600">
@@ -138,7 +149,12 @@ export default function InlineLessonEditor({
     servings: lesson?.servings || 4,
     difficulty_level: lesson?.difficulty_level || 1,
     youtube_video_id: lesson?.youtube_video_id || "",
+    lesson_image_url: lesson?.lesson_image_url || "",
   });
+
+  // Image upload state
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Interactive feature toggles
   const [interactiveFeatures, setInteractiveFeatures] = useState({
@@ -167,6 +183,105 @@ export default function InlineLessonEditor({
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
+  };
+
+  // Image upload functionality
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      // Get upload URL from backend
+      const response = await fetch('/api/objects/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const { uploadURL } = await response.json();
+
+      // Upload file directly to object storage
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      // Return the object path that can be accessed via our server
+      const url = new URL(uploadURL);
+      const objectPath = url.pathname;
+      const objectId = objectPath.split('/').pop()?.split('?')[0];
+      
+      const serverPath = `/objects/uploads/${objectId}`;
+      console.log('Upload successful. Server path:', serverPath);
+      return serverPath;
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
+  };
+
+  const handleFileSelect = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    
+    const file = files[0]; // Only take the first file for lesson image
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select only image files.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select images smaller than 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const imageUrl = await uploadImage(file);
+      setLessonData({ ...lessonData, lesson_image_url: imageUrl });
+      
+      toast({
+        title: "Image uploaded",
+        description: "Lesson image uploaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openFileSelector = () => {
+    fileInputRef.current?.click();
+  };
+
+  const removeImage = () => {
+    setLessonData({ ...lessonData, lesson_image_url: "" });
   };
 
   // Save lesson mutation
@@ -274,20 +389,51 @@ export default function InlineLessonEditor({
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-6">
                 <div className="text-center space-y-4">
-                  <div className="w-full h-48 bg-gray-700 rounded-lg border-2 border-dashed border-gray-600 flex items-center justify-center hover:border-gray-500 transition-colors">
-                    <div className="text-center">
-                      <Image className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-400 mb-3 text-sm">Import lesson image</p>
+                  {lessonData.lesson_image_url ? (
+                    <div className="relative w-full h-48 bg-gray-700 rounded-lg overflow-hidden">
+                      <img 
+                        src={lessonData.lesson_image_url} 
+                        alt="Lesson" 
+                        className="w-full h-full object-cover"
+                      />
                       <Button 
-                        variant="outline" 
+                        variant="destructive"
                         size="sm"
-                        className="bg-gray-600 border-gray-500 hover:bg-gray-500 text-white"
+                        onClick={removeImage}
+                        className="absolute top-2 right-2"
                       >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload Image
+                        <X className="w-4 h-4" />
                       </Button>
                     </div>
-                  </div>
+                  ) : (
+                    <div 
+                      className="w-full h-48 bg-gray-700 rounded-lg border-2 border-dashed border-gray-600 flex items-center justify-center hover:border-gray-500 transition-colors cursor-pointer"
+                      onClick={openFileSelector}
+                    >
+                      <div className="text-center">
+                        <Image className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-400 mb-3 text-sm">Import lesson image</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          disabled={uploading}
+                          className="bg-gray-600 border-gray-500 hover:bg-gray-500 text-white"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          {uploading ? "Uploading..." : "Upload Image"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileSelect(e.target.files)}
+                    className="hidden"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -448,6 +594,16 @@ export default function InlineLessonEditor({
                     </p>
                   </div>
                 </div>
+
+                {lessonData.lesson_image_url && (
+                  <div className="mb-6">
+                    <img 
+                      src={lessonData.lesson_image_url} 
+                      alt="Lesson" 
+                      className="w-full h-48 object-cover rounded-lg border border-gray-600"
+                    />
+                  </div>
+                )}
 
                 {lessonData.youtube_video_id && (
                   <div className="mb-6">
