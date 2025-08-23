@@ -401,14 +401,98 @@ export default function EnhancedLessonEditor({
                       </div>
                     </div>
                     <div>
-                      <Label className="text-gray-300">Description</Label>
+                      <Label className="text-gray-300">Lesson Content</Label>
                       <Textarea
                         value={lessonData.description}
                         onChange={(e) => setLessonData({ ...lessonData, description: e.target.value })}
-                        placeholder="Describe what students will learn in this lesson..."
-                        className="bg-gray-700 border-gray-600 text-white"
-                        rows={3}
+                        placeholder="Write your lesson content here... Add instructions, key points, explanations, etc."
+                        className="bg-gray-700 border-gray-600 text-white min-h-[200px]"
+                        rows={8}
                       />
+                      <p className="text-xs text-gray-400 mt-1">Tip: Use clear headings, bullet points, and step-by-step instructions</p>
+                    </div>
+
+                    {/* Quick Content Templates */}
+                    <div>
+                      <Label className="text-gray-300 mb-3 block">Quick Content Templates</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          variant="outline"
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700 justify-start h-auto p-3"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n## Key Points\n• \n• \n• \n"
+                            });
+                          }}
+                        >
+                          <div className="text-left">
+                            <div className="flex items-center">
+                              <Target className="w-4 h-4 mr-2" />
+                              Key Points
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">Add bullet points</p>
+                          </div>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700 justify-start h-auto p-3"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n## Steps to Follow\n1. \n2. \n3. \n"
+                            });
+                          }}
+                        >
+                          <div className="text-left">
+                            <div className="flex items-center">
+                              <ListChecks className="w-4 h-4 mr-2" />
+                              Step List
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">Numbered steps</p>
+                          </div>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700 justify-start h-auto p-3"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n## 💡 Pro Tip\n\n"
+                            });
+                          }}
+                        >
+                          <div className="text-left">
+                            <div className="flex items-center">
+                              <Info className="w-4 h-4 mr-2" />
+                              Pro Tip
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">Important note</p>
+                          </div>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700 justify-start h-auto p-3"
+                          onClick={() => {
+                            const currentContent = lessonData.description;
+                            setLessonData({
+                              ...lessonData,
+                              description: currentContent + "\n\n---\n\n## Next Section\n\n"
+                            });
+                          }}
+                        >
+                          <div className="text-left">
+                            <div className="flex items-center">
+                              <Plus className="w-4 h-4 mr-2" />
+                              Section Break
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">Add separator</p>
+                          </div>
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -720,18 +804,44 @@ export default function EnhancedLessonEditor({
                   )}
 
                   {lessonData.description && (
-                    <p className="text-sm text-gray-300">{lessonData.description}</p>
+                    <div className="prose prose-sm prose-invert max-w-none">
+                      <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                        {lessonData.description.split('\n').map((line, index) => {
+                          if (line.startsWith('##')) {
+                            return <h3 key={index} className="text-white font-semibold mt-3 mb-2 text-base">{line.replace('##', '').trim()}</h3>;
+                          }
+                          if (line.startsWith('•')) {
+                            return <li key={index} className="ml-4 list-disc text-sm">{line.replace('•', '').trim()}</li>;
+                          }
+                          if (line.match(/^\d+\./)) {
+                            return <li key={index} className="ml-4 list-decimal text-sm">{line.replace(/^\d+\./, '').trim()}</li>;
+                          }
+                          if (line.startsWith('---')) {
+                            return <hr key={index} className="my-3 border-gray-600" />;
+                          }
+                          if (line.trim()) {
+                            return <p key={index} className="mb-2 text-sm">{line}</p>;
+                          }
+                          return <br key={index} />;
+                        })}
+                      </div>
+                    </div>
                   )}
 
                   {/* Content Features Preview */}
-                  <div className="space-y-2">
-                    {contentToggles.filter(t => t.enabled).map((toggle) => (
-                      <div key={toggle.id} className="flex items-center gap-2 text-xs text-gray-400">
-                        <toggle.icon className="w-3 h-3" />
-                        <span>{toggle.label} enabled</span>
+                  {contentToggles.some(t => t.enabled) && (
+                    <div className="pt-3 border-t border-gray-700">
+                      <h5 className="text-xs font-semibold text-gray-400 mb-2">Available Features</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {contentToggles.filter(t => t.enabled).map((toggle) => (
+                          <div key={toggle.id} className="flex items-center gap-1 bg-purple-600/20 px-2 py-1 rounded text-xs text-purple-400">
+                            <toggle.icon className="w-3 h-3" />
+                            <span>{toggle.label}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
