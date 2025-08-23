@@ -28,7 +28,6 @@ import PostDetail from "@/pages/PostDetail";
 import CreatorHub from "@/pages/CreatorHub";
 import CreateCommunity from "@/pages/CreateCommunity";
 import CommunityManage from "@/pages/CommunityManage";
-import CreatorFlyer from "@/components/CreatorFlyer";
 
 // ========== LANDING PAGE TOGGLE ==========
 // Set this to false to skip the landing page and go directly to login
@@ -245,7 +244,6 @@ function Router() {
           <Route path="/community/:communityId/post/:postId" component={PostDetail} />
           <Route path="/community/:id" component={CommunityDetailNew} />
           <Route path="/profile" component={Profile} />
-          <Route path="/creator-flyer" component={CreatorFlyer} />
 
           <Route path="/icons" component={IconShowcase} />
           <Route component={NotFound} />
