@@ -52,7 +52,6 @@ import {
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { SingleImageUploader } from "@/components/SingleImageUploader";
-import InlineLessonEditor from "@/components/community/InlineLessonEditor";
 
 interface Course {
   id: number;
@@ -369,7 +368,6 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [isCreatingModule, setIsCreatingModule] = useState(false);
@@ -589,22 +587,11 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
     },
     onSuccess: async (data) => {
       console.log('Lesson created successfully:', data);
-      // Open the newly created lesson in the editor immediately
-      setSelectedLesson(data);
-      
-      // Invalidate and refetch courses
-      await queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
-      
-      // Update selectedCourse to include the new lesson
-      if (selectedCourse) {
-        const updatedCourses = queryClient.getQueryData([`/api/communities/${communityId}/courses`]) as Course[];
-        const updatedSelectedCourse = updatedCourses?.find(c => c.id === selectedCourse.id);
-        if (updatedSelectedCourse) {
-          setSelectedCourse(updatedSelectedCourse);
-        }
-      }
       
       toast({ title: "✅ Lesson created", description: "Your new lesson has been created successfully." });
+      
+      // Navigate to community page
+      window.location.href = `/community/${communityId}`;
     },
     onError: (error) => {
       console.error('Error creating lesson:', error);
@@ -709,7 +696,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
 
   const handleCreateLesson = (moduleId?: number) => {
     if (selectedCourse) {
-      // Create a new lesson with basic data and immediately open the editor
+      // Create a new lesson and navigate to community page
       createLessonMutation.mutate({
         courseId: selectedCourse.id,
         moduleId: moduleId,
@@ -854,7 +841,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             communityId={communityId}
             onUpdate={(data) => updateCourseMutation.mutate({ courseId: selectedCourse.id, data })}
             onDelete={() => deleteCourseMutation.mutate(selectedCourse.id)}
-            onSelectLesson={setSelectedLesson}
+            onSelectLesson={() => {}}
             onCreateModule={() => setIsCreatingModule(true)}
             onCreateLesson={handleCreateLesson}
             onEditModule={setEditingModule}
@@ -1018,16 +1005,6 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
           </DialogContent>
         </Dialog>
 
-        {/* Lesson Editor Modal */}
-        {selectedLesson && (
-          <InlineLessonEditor
-            lesson={selectedLesson}
-            communityId={communityId}
-            courseId={selectedCourse?.id || 0}
-            isCreator={true}
-            onClose={() => setSelectedLesson(null)}
-          />
-        )}
       </div>
     </div>
   );
