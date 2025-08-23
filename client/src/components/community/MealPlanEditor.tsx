@@ -48,6 +48,7 @@ import {
   ChevronLeft,
   FolderPlus,
   MoreHorizontal,
+  Upload,
   Camera,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
@@ -1148,102 +1149,38 @@ function CourseEditor({
           <div className="flex gap-2">
             <Button
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-purple-600 hover:bg-purple-700 text-white"
               onClick={onCreateModule}
               disabled={!selectedCourse}
             >
-              <FolderPlus className="h-4 w-4 mr-1" />
-              Add Module
+              <Plus className="h-4 w-4 mr-1" />
+              Add Content Box
+            </Button>
+            <Button
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => onCreateLesson()}
+              disabled={!selectedCourse}
+            >
+              <Upload className="h-4 w-4 mr-1" />
+              Upload Meal
             </Button>
           </div>
         </div>
 
-        {/* Course Structure with Modules and Lessons */}
+        {/* Simple Content Boxes */}
         <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-          {/* Render actual modules from database */}
-          {course.modules?.map((module, moduleIndex) => (
-            <div key={module.id} className="bg-gray-800 border border-gray-700 rounded-lg">
-              <div className="p-4 border-b border-gray-700">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">M{moduleIndex + 1}</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-white">{module.title}</h3>
-                    <p className="text-sm text-gray-400">{module.description || 'No description'}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCreateLesson(module.id);
-                      }}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      <span className="text-xs">Add Lesson</span>
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="text-gray-400 hover:text-white hover:bg-gray-600"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditModule(module);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Lessons within Module */}
-              <div className="space-y-0">
-                {module.lessons?.map((lesson, index) => (
-                  <div
-                    key={lesson.id}
-                    className="p-4 border-b border-gray-700 last:border-b-0 cursor-pointer hover:bg-gray-750 transition-colors group"
-                    onClick={() => onSelectLesson(lesson as any)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-300">
-                        {index + 1}
-                      </div>
-                      <span className="text-lg">{lesson.emoji || '📝'}</span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-white group-hover:text-purple-400">{lesson.title}</h4>
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs ${
-                              lesson.lesson_type === 'video' ? 'border-red-500 text-red-400' :
-                              lesson.lesson_type === 'lesson' ? 'border-blue-500 text-blue-400' :
-                              'border-green-500 text-green-400'
-                            }`}
-                          >
-                            {lesson.lesson_type || 'lesson'}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-400">{lesson.description || 'No description'}</p>
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {lesson.duration || 0} min
-                      </div>
-                    </div>
-                  </div>
-                )) || (
-                  <div className="p-4 text-center text-gray-400">
-                    No lessons in this module yet
-                  </div>
-                )}
-              </div>
-            </div>
+          {course.modules?.map((module, index) => (
+            <ContentBox 
+              key={module.id}
+              module={module}
+              index={index}
+              onEdit={() => onEditModule(module)}
+            />
           )) || (
             <div className="text-center text-gray-400 py-8">
-              No modules created yet. Click "Add Module" to get started.
+              <ChefHat className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No content yet - add your first content box!</p>
             </div>
           )}
         </div>
@@ -1295,6 +1232,61 @@ function CourseEditor({
             </Card>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Simple Content Box Component for MVP
+function ContentBox({ module, index, onEdit }: { module: Module; index: number; onEdit: () => void }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ title: module.title, description: module.description });
+
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold">{index + 1}</span>
+          </div>
+          <div className="flex-1">
+            {isEditing ? (
+              <Input
+                value={editData.title}
+                onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                className="bg-gray-700 border-gray-600 text-white font-semibold"
+                onBlur={() => setIsEditing(false)}
+                autoFocus
+              />
+            ) : (
+              <h3 
+                className="font-semibold text-white cursor-pointer hover:text-purple-400"
+                onClick={() => setIsEditing(true)}
+              >
+                {module.title}
+              </h3>
+            )}
+          </div>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-gray-400 hover:text-white hover:bg-gray-600"
+          onClick={onEdit}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <div className="text-sm text-gray-400 mb-3">
+        {module.description || 'Click to edit this content box...'}
+      </div>
+      
+      {/* Simple content area */}
+      <div className="bg-gray-900 rounded p-3 min-h-[80px] border-2 border-dashed border-gray-600">
+        <p className="text-gray-500 text-sm text-center">
+          Content area - Upload meals, add text, or attach files
+        </p>
       </div>
     </div>
   );

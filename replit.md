@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 23, 2025**: Simplified course editing to MVP approach with direct content box editing
+- Replaced complex module/lesson system with simple "Content Box" concept for easier creator experience
+- Added in-place title editing by clicking on content box titles
+- Changed button labels to "Add Content Box" and "Upload Meal" for clearer user intent
+- Created simplified ContentBox component with editable content areas for uploading meals and adding text
+- Removed hardcoded lesson structures in favor of flexible content blocks that creators can customize
+- User emphasized preference for MVP additions over complex features that might break existing functionality
+
 **August 23, 2025**: Successfully implemented cover image upload functionality for course and module creation
 - Added SingleImageUploader component for seamless image upload integration
 - Updated both course and module forms with cover image upload fields and previews
