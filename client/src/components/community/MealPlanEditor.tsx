@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { SingleImageUploader } from "@/components/SingleImageUploader";
+import InlineLessonEditor from "./InlineLessonEditor";
 
 interface Course {
   id: number;
@@ -374,6 +375,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   const [isCreatingLesson, setIsCreatingLesson] = useState(false);
   const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<number | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [lessonEditorData, setLessonEditorData] = useState<{lessonId: number, communityId: string} | null>(null);
   
   // Edit states
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -591,8 +593,9 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
       
       toast({ title: "✅ Lesson created", description: "Your new lesson has been created successfully." });
       
-      // Navigate to the specific lesson editor page
-      window.location.href = `/community/${communityId}/lesson/${data.id}`;
+      // Reset loading state and open lesson editor modal
+      setIsNavigating(false);
+      setLessonEditorData({ lessonId: data.id, communityId });
     },
     onError: (error) => {
       console.error('Error creating lesson:', error);
@@ -697,10 +700,10 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
 
   const handleCreateLesson = (moduleId?: number) => {
     if (selectedCourse) {
-      // Show loading overlay immediately to avoid white screen
+      // Show loading overlay immediately
       setIsNavigating(true);
       
-      // Create the lesson first
+      // Create the lesson - onSuccess will handle opening the modal
       createLessonMutation.mutate({
         courseId: selectedCourse.id,
         moduleId: moduleId,
@@ -714,11 +717,6 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
         servings: 4,
         difficulty_level: 1
       });
-      
-      // Add 2-second delay to ensure loading overlay is visible
-      setTimeout(() => {
-        setIsNavigating(false);
-      }, 2000);
     }
   };
 
@@ -1013,6 +1011,19 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Lesson Editor Modal */}
+        {lessonEditorData && (
+          <div className="fixed inset-0 bg-gray-900 z-[10003] flex items-center justify-center">
+            <div className="w-full h-full">
+              <InlineLessonEditor
+                lessonId={lessonEditorData.lessonId}
+                communityId={lessonEditorData.communityId}
+                onClose={() => setLessonEditorData(null)}
+              />
+            </div>
+          </div>
+        )}
 
       </div>
       
