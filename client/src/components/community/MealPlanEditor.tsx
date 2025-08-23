@@ -487,7 +487,7 @@ function CourseEditor({
               <h1 className="text-2xl font-bold text-white">{course.title}</h1>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {isEditing ? (
               <>
                 <Button
@@ -516,6 +516,14 @@ function CourseEditor({
             ) : (
               <>
                 <Button
+                  onClick={() => onUpdate({ is_published: !course.is_published })}
+                  className={course.is_published ? "bg-gray-600 hover:bg-gray-700" : "bg-green-600 hover:bg-green-700"}
+                  size="sm"
+                >
+                  {course.is_published ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+                  {course.is_published ? 'Unpublish' : 'Publish'}
+                </Button>
+                <Button
                   onClick={() => setIsEditing(true)}
                   variant="outline"
                   className="border-gray-600 text-gray-300"
@@ -523,14 +531,6 @@ function CourseEditor({
                 >
                   <Edit className="h-4 w-4 mr-1" />
                   Edit
-                </Button>
-                <Button
-                  onClick={() => onUpdate({ is_published: !course.is_published })}
-                  className={course.is_published ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"}
-                  size="sm"
-                >
-                  {course.is_published ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
-                  {course.is_published ? 'Unpublish' : 'Publish'}
                 </Button>
                 <Button
                   onClick={onDelete}
