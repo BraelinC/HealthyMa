@@ -13,7 +13,7 @@ import {
   Users, Calendar, MessageSquare, Heart, ChefHat, ArrowLeft, Settings,
   Pin, ThumbsUp, MessageCircle, Share2, Camera, Plus, Search,
   Clock, TrendingUp, User, MoreHorizontal, Send, Menu, X,
-  ChevronDown, CheckCircle, Play, BookOpen
+  ChevronDown, CheckCircle, Play, BookOpen, Share
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -322,106 +322,183 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
   }
 
   return (
-    <div className="space-y-0">
-      {/* Course/Module List - Skool Style with Real Data */}
-      <div className="space-y-1">
-        {courses.length === 0 ? (
-          <div className="text-center py-8">
-            <BookOpen className="w-16 w-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">
-              {isCreator ? "No Courses Created Yet" : "No Published Courses Available"}
-            </h3>
-            <p className="text-gray-400">
-              {isCreator 
-                ? "Create your first course to get started with meal planning!" 
-                : "The creator hasn't published any courses yet. Check back soon!"
-              }
-            </p>
-            {isCreator && (
-              <Button
-                onClick={() => setShowMealPlanEditor(true)}
-                className="bg-purple-600 hover:bg-purple-700 text-white mt-4"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Course
-              </Button>
-            )}
-          </div>
-        ) : (
-          courses.map((course: any) => (
-            <div key={course.id}>
-              {/* Course Header */}
-              <div 
-                className="flex items-center justify-between py-4 cursor-pointer hover:bg-gray-800/50 transition-colors"
-                onClick={() => toggleCourseExpansion(course.id)}
-              >
-                <div className="flex items-center gap-3">
-                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${
-                    expandedCourses.includes(course.id) ? 'rotate-0' : '-rotate-90'
-                  }`} />
-                  <span className="text-lg font-semibold text-white">{course.title} {course.emoji || '📚'}</span>
-                  {!isCreator && !course.is_published && (
-                    <Badge className="bg-yellow-600 text-white text-xs">Draft</Badge>
-                  )}
-                  {course.is_published && (
-                    <Badge className="bg-green-600 text-white text-xs">Published</Badge>
+    <div className="space-y-6">
+      {courses.length === 0 ? (
+        <div className="text-center py-12">
+          <BookOpen className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">
+            {isCreator ? "No Courses Created Yet" : "No Published Courses Available"}
+          </h3>
+          <p className="text-gray-400 mb-6">
+            {isCreator 
+              ? "Create your first course to get started with meal planning!" 
+              : "The creator hasn't published any courses yet. Check back soon!"
+            }
+          </p>
+          {isCreator && (
+            <Button
+              onClick={() => setShowMealPlanEditor(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create First Course
+            </Button>
+          )}
+        </div>
+      ) : (
+        // Course Cards Grid - Skool Style
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {courses.map((course: any) => (
+            <Card 
+              key={course.id}
+              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-200 cursor-pointer group overflow-hidden"
+              onClick={() => toggleCourseExpansion(course.id)}
+            >
+              {/* Course Cover Image */}
+              <div className="relative h-32 bg-gradient-to-br from-purple-600 via-blue-600 to-emerald-600 overflow-hidden">
+                {course.cover_image ? (
+                  <img 
+                    src={course.cover_image} 
+                    alt={course.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-6xl opacity-80">{course.emoji || '📚'}</span>
+                  </div>
+                )}
+                
+                {/* Status Badge */}
+                <div className="absolute top-3 right-3">
+                  {course.is_published ? (
+                    <Badge className="bg-green-600/90 text-white text-xs backdrop-blur-sm">
+                      Published
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-yellow-600/90 text-white text-xs backdrop-blur-sm">
+                      Draft
+                    </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">{course.lesson_count} lessons</span>
+
+                {/* Progress Bar - Bottom of Image */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
+                  <div 
+                    className="h-full bg-white/80 transition-all duration-300"
+                    style={{ width: '0%' }} // TODO: Calculate actual progress
+                  />
                 </div>
               </div>
 
-              {/* Modules and Lessons List - Only show if expanded */}
-              {expandedCourses.includes(course.id) && (
-                <div className="ml-7 space-y-1">
-                  {/* Show modules and their lessons */}
-                  {course.modules?.map((module: any) => (
-                    <div key={module.id} className="mb-4">
-                      <div className="flex items-center gap-2 py-2 px-4 bg-gray-800/50 rounded">
-                        <BookOpen className="h-4 w-4 text-purple-400" />
-                        <span className="text-purple-300 font-medium">{module.title}</span>
-                        <span className="text-xs text-gray-400">({module.lessons?.length || 0} lessons)</span>
-                      </div>
-                      {module.lessons?.map((lesson: any) => (
-                        <div
-                          key={lesson.id}
-                          className="flex items-center gap-3 py-3 px-8 hover:bg-gray-800/30 rounded cursor-pointer transition-colors ml-4"
-                          onClick={() => {
-                            setSelectedCourse(course);
-                            setSelectedLesson(lesson);
-                            setShowLessonView(true);
-                          }}
-                        >
-                          <span className="text-lg">🍽️</span>
-                          <span className="text-white font-medium">{lesson.title}</span>
-                          <div className="ml-auto flex items-center gap-2">
-                            {lesson.prep_time && (
-                              <span className="text-xs text-gray-400 flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {lesson.prep_time + (lesson.cook_time || 0)}min
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+              {/* Course Content */}
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  {/* Title and Stats */}
+                  <div>
+                    <h3 className="font-semibold text-white text-lg leading-tight group-hover:text-purple-300 transition-colors">
+                      {course.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm mt-1 line-clamp-2">
+                      {course.description || "Comprehensive meal planning course with practical lessons"}
+                    </p>
+                  </div>
+
+                  {/* Course Stats */}
+                  <div className="flex items-center justify-between text-xs text-gray-400">
+                    <div className="flex items-center gap-4">
+                      <span className="flex items-center gap-1">
+                        <BookOpen className="h-3 w-3" />
+                        {course.lesson_count} lessons
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        0 enrolled
+                      </span>
                     </div>
-                  ))}
-                  
-                  {/* Show lessons not in modules */}
-                  {course.lessons?.filter((lesson: any) => !lesson.module_id).map((lesson: any) => (
-                    <div
-                      key={lesson.id}
-                      className="flex items-center gap-3 py-3 px-4 hover:bg-gray-800/30 rounded cursor-pointer transition-colors"
-                      onClick={() => {
-                        setSelectedCourse(course);
-                        setSelectedLesson(lesson);
-                        setShowLessonView(true);
+                    <span className="font-medium">0%</span>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="pt-2">
+                    <Button 
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm h-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCourseExpansion(course.id);
                       }}
                     >
-                      <span className="text-lg">🍽️</span>
-                      <span className="text-white font-medium">{lesson.title}</span>
-                      <div className="ml-auto flex items-center gap-2">
+                      {expandedCourses.includes(course.id) ? (
+                        <>
+                          <ChevronDown className="h-3 w-3 mr-1" />
+                          Hide Lessons
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-3 w-3 mr-1" />
+                          View Lessons
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+
+              {/* Expanded Lessons - Mobile Friendly */}
+              {expandedCourses.includes(course.id) && (
+                <div className="border-t border-gray-700 bg-gray-800/50">
+                  <div className="p-4 space-y-3">
+                    {/* Modules */}
+                    {course.modules?.map((module: any) => (
+                      <div key={module.id} className="space-y-2">
+                        <div className="flex items-center gap-2 py-2 px-3 bg-purple-600/20 rounded-lg">
+                          <BookOpen className="h-4 w-4 text-purple-400 flex-shrink-0" />
+                          <span className="text-purple-300 font-medium text-sm">{module.title}</span>
+                          <span className="text-xs text-gray-400 ml-auto">
+                            {module.lessons?.length || 0} lessons
+                          </span>
+                        </div>
+                        
+                        {/* Module Lessons */}
+                        <div className="space-y-1 ml-4">
+                          {module.lessons?.map((lesson: any) => (
+                            <div
+                              key={lesson.id}
+                              className="flex items-center gap-3 py-2 px-3 hover:bg-gray-700/50 rounded cursor-pointer transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCourse(course);
+                                setSelectedLesson(lesson);
+                                setShowLessonView(true);
+                              }}
+                            >
+                              <span className="text-sm">🍽️</span>
+                              <span className="text-white text-sm font-medium flex-1">{lesson.title}</span>
+                              {lesson.prep_time && (
+                                <span className="text-xs text-gray-400 flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {lesson.prep_time + (lesson.cook_time || 0)}min
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Standalone Lessons */}
+                    {course.lessons?.filter((lesson: any) => !lesson.module_id).map((lesson: any) => (
+                      <div
+                        key={lesson.id}
+                        className="flex items-center gap-3 py-2 px-3 hover:bg-gray-700/50 rounded cursor-pointer transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCourse(course);
+                          setSelectedLesson(lesson);
+                          setShowLessonView(true);
+                        }}
+                      >
+                        <span className="text-sm">🍽️</span>
+                        <span className="text-white text-sm font-medium flex-1">{lesson.title}</span>
                         {lesson.prep_time && (
                           <span className="text-xs text-gray-400 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
@@ -429,14 +506,14 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
                           </span>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-          ))
-        )}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Creator Controls */}
       {isCreator && (

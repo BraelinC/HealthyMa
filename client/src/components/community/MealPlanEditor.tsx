@@ -48,8 +48,10 @@ import {
   ChevronLeft,
   FolderPlus,
   MoreHorizontal,
+  Camera,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { ImageUploader } from "@/components/ImageUploader";
 
 interface Course {
   id: number;
@@ -57,6 +59,7 @@ interface Course {
   emoji?: string;
   description?: string;
   category?: string;
+  cover_image?: string;
   lesson_count: number;
   is_published: boolean;
   display_order: number;
@@ -1202,6 +1205,7 @@ function CourseForm({
     description: '',
     emoji: '📚',
     category: 'beginner',
+    cover_image: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1255,6 +1259,42 @@ function CourseForm({
           className="bg-gray-700 border-gray-600 text-white"
           rows={3}
         />
+      </div>
+
+      {/* Cover Image Upload */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Cover Image</label>
+        <div className="space-y-3">
+          {formData.cover_image ? (
+            <div className="relative">
+              <img 
+                src={formData.cover_image} 
+                alt="Course cover" 
+                className="w-full h-32 object-cover rounded-lg border border-gray-600"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+                onClick={() => setFormData({ ...formData, cover_image: '' })}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="w-full h-32 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center bg-gray-800">
+              <div className="text-center">
+                <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">Upload course cover image</p>
+              </div>
+            </div>
+          )}
+          <ImageUploader
+            onImageUploaded={(url) => setFormData({ ...formData, cover_image: url })}
+            className="w-full"
+          />
+        </div>
       </div>
 
       <div>

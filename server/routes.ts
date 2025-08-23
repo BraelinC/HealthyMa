@@ -5065,6 +5065,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emoji: req.body.emoji,
         description: req.body.description,
         category: req.body.category,
+        cover_image: req.body.cover_image || null,
         is_published: false,
         display_order: req.body.display_order || 0,
         drip_enabled: req.body.drip_enabled || false,
