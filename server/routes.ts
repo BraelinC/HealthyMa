@@ -3129,30 +3129,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`🔍 [PERPLEXITY TEST] Starting search for: "${query}"`);
+      console.log(`🔑 [PERPLEXITY TEST] API Key exists: ${!!process.env.PERPLEXITY_API_KEY}`);
 
-      // Test Perplexity API only first
+      // Test Perplexity API only first - Fix the request format
+      const requestBody = {
+        model: 'llama-3.1-sonar-small-128k-online',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a recipe search expert. Find detailed recipes with ingredients, instructions, and cooking times.'
+          },
+          {
+            role: 'user', 
+            content: `Find 3 simple recipes for: ${query}. Include ingredients, instructions, cooking time, and difficulty level for each recipe.`
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.3,
+        top_p: 0.9,
+        return_citations: true,
+        return_images: false,
+        return_related_questions: false,
+        search_recency_filter: "month",
+        top_k: 0,
+        stream: false,
+        presence_penalty: 0,
+        frequency_penalty: 1
+      };
+
+      console.log(`📤 [PERPLEXITY TEST] Request body:`, JSON.stringify(requestBody, null, 2));
+
       const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'llama-3.1-sonar-small-128k-online',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a recipe search expert. Find detailed recipes with ingredients, instructions, and cooking times.'
-            },
-            {
-              role: 'user', 
-              content: `Find 3 simple recipes for: ${query}. Include ingredients, instructions, cooking time, and difficulty level for each recipe.`
-            }
-          ],
-          max_tokens: 1500,
-          temperature: 0.3,
-          return_citations: true
-        })
+        body: JSON.stringify(requestBody)
       });
 
       console.log(`🌐 [PERPLEXITY] Response status: ${perplexityResponse.status}`);
