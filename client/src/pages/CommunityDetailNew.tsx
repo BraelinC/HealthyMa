@@ -639,22 +639,8 @@ export default function CommunityDetailNew() {
                 <Badge className="bg-emerald-600 text-white text-xs">
                   Creator
                 </Badge>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-emerald-400 hover:text-emerald-300 p-2"
-                  onClick={() => toast({ 
-                    title: "Creator Mode", 
-                    description: "You're viewing this community with creator privileges" 
-                  })}
-                >
-                  <Settings className="w-5 h-5" />
-                </Button>
               </div>
             )}
-            <Button variant="ghost" size="sm" className="text-white p-2">
-              <MoreHorizontal className="w-5 h-5" />
-            </Button>
           </div>
         </div>
       </header>
