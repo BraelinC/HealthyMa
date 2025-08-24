@@ -198,8 +198,8 @@ export function StreamingMealPlanGenerator({
                 });
               } else if (parsed.type === 'complete') {
                 console.log('✅ Complete meal plan received');
-                // Meal plan generation complete
-                onComplete(parsed.data);
+                // Meal plan generation complete - defer to prevent render cycle issues
+                setTimeout(() => onComplete(parsed.data), 0);
                 return;
               } else if (parsed.type === 'done') {
                 console.log('🏁 Generation done, using collected meals');
@@ -217,7 +217,8 @@ export function StreamingMealPlanGenerator({
                       }
                       mealPlan[dayKey][meal.mealType] = meal;
                     });
-                    onComplete(mealPlan);
+                    // Defer onComplete to prevent render cycle issues
+                    setTimeout(() => onComplete(mealPlan), 0);
                   }
                   return currentMeals;
                 });
