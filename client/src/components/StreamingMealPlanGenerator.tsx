@@ -444,39 +444,38 @@ export function StreamingMealPlanGenerator({
         </div>
       )}
 
-            {/* Error display */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-destructive/10 text-destructive rounded-lg p-4 flex items-start gap-2"
-              >
-                <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">Generation Failed</p>
-                  <p className="text-sm mt-1">{error}</p>
-                </div>
-              </motion.div>
-            )}
+      {/* Error display */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-destructive/10 text-destructive rounded-lg p-4 flex items-start gap-2"
+        >
+          <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Generation Failed</p>
+            <p className="text-sm mt-1">{error}</p>
+          </div>
+        </motion.div>
+      )}
 
-            {/* Action buttons */}
-            {(isGenerating || error) && (
-              <div className="flex gap-2 justify-end pt-4">
-                <Button
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={!isGenerating}
-                >
-                  Cancel
-                </Button>
-                {error && (
-                  <Button onClick={startGeneration}>
-                    Retry Generation
-                  </Button>
-                )}
-              </div>
-            )}
-      </div>
+      {/* Action buttons */}
+      {(isGenerating || error) && (
+        <div className="flex gap-2 justify-end pt-4">
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            disabled={!isGenerating}
+          >
+            Cancel
+          </Button>
+          {error && (
+            <Button onClick={startGeneration}>
+              Retry Generation
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
