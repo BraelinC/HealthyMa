@@ -3114,6 +3114,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Intelligent Recipe Search using Perplexity + Groq
+  app.post("/api/recipes/intelligent-search", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+
+      const { query, preferences = {} } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      console.log(`🔍 [INTELLIGENT SEARCH] Starting search for: "${query}"`);
+      console.log(`🔍 [INTELLIGENT SEARCH] User preferences:`, preferences);
+
+      // Step 1: Get user profile for personalization
+      let userProfile = null;
+      try {
+        userProfile = await storage.getProfile(userId);
+        console.log(`👤 [INTELLIGENT SEARCH] Retrieved user profile:`, userProfile?.profile_name || 'No profile');
+      } catch (error) {
+        console.log('⚠️ [INTELLIGENT SEARCH] Could not fetch user profile, using basic search');
+      }
+
+      // Step 2: Use Perplexity API to search for recipe links
+      const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-sonar-small-128k-online',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a recipe search expert. Find detailed recipes with ingredients, instructions, and cooking times. Focus on recipes from reputable cooking websites and food blogs. Return comprehensive recipe information.'
+            },
+            {
+              role: 'user', 
+              content: `Find 5-7 detailed recipes for: ${query}. Include ingredients, instructions, cooking time, and difficulty level for each recipe. Focus on practical, home-cookable recipes.`
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.3,
+          return_citations: true
+        })
+      });
+
+      if (!perplexityResponse.ok) {
+        throw new Error(`Perplexity API error: ${perplexityResponse.status}`);
+      }
+
+      const perplexityData = await perplexityResponse.json();
+      const recipeContent = perplexityData.choices[0]?.message?.content || '';
+      const citations = perplexityData.citations || [];
+
+      console.log(`🌐 [PERPLEXITY] Found ${citations.length} citations`);
+      console.log(`📝 [PERPLEXITY] Content length: ${recipeContent.length} characters`);
+
+      // Step 3: Use Groq to parse and rank recipes based on user profile
+      const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'mixtral-8x7b-32768',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an intelligent recipe analyzer and ranker. Parse recipe information and rank them based on user preferences.
+
+USER PROFILE: ${userProfile ? JSON.stringify({
+                name: userProfile.profile_name,
+                goals: userProfile.goals,
+                cultural_background: userProfile.cultural_background,
+                family_size: userProfile.family_size,
+                preferences: userProfile.preferences
+              }) : 'No specific profile available'}
+
+SEARCH PREFERENCES: ${JSON.stringify(preferences)}
+
+Parse the recipe content and return exactly 3 top-ranked recipes in this JSON format:
+{
+  "recipes": [
+    {
+      "title": "Recipe Name",
+      "description": "Brief description",
+      "ingredients": ["ingredient 1", "ingredient 2"],
+      "instructions": ["step 1", "step 2"],
+      "cook_time_minutes": 30,
+      "difficulty": 2,
+      "cuisine": "Cuisine Type",
+      "tags": ["tag1", "tag2"],
+      "nutrition": {
+        "calories": 400,
+        "protein_g": 25,
+        "carbs_g": 35,
+        "fat_g": 15
+      },
+      "ranking_score": 9.2,
+      "ranking_reason": "Why this recipe ranks highly for this user"
+    }
+  ]
+}
+
+Rank recipes based on:
+1. User's cultural background and preferences
+2. Cooking time and difficulty preferences  
+3. Nutritional goals and dietary restrictions
+4. Family size considerations
+5. Recipe quality and practicality
+
+Ensure all recipes are complete with all required fields.`
+            },
+            {
+              role: 'user',
+              content: `Parse and rank these recipes from the search results:\n\n${recipeContent}\n\nCitations: ${citations.join(', ')}\n\nReturn the top 3 recipes ranked for this user's profile.`
+            }
+          ],
+          max_tokens: 3000,
+          temperature: 0.2,
+          response_format: { type: "json_object" }
+        })
+      });
+
+      if (!groqResponse.ok) {
+        throw new Error(`Groq API error: ${groqResponse.status}`);
+      }
+
+      const groqData = await groqResponse.json();
+      const parsedResult = JSON.parse(groqData.choices[0]?.message?.content || '{"recipes": []}');
+
+      console.log(`🤖 [GROQ] Parsed ${parsedResult.recipes?.length || 0} ranked recipes`);
+
+      // Validate and ensure we have 3 recipes
+      const recipes = parsedResult.recipes || [];
+      if (recipes.length === 0) {
+        return res.status(404).json({ 
+          message: "No suitable recipes found for your search",
+          query,
+          citations 
+        });
+      }
+
+      // Take only top 3 recipes
+      const topRecipes = recipes.slice(0, 3);
+
+      res.json({
+        success: true,
+        query,
+        recipes: topRecipes,
+        totalFound: recipes.length,
+        citations,
+        userProfile: userProfile ? {
+          name: userProfile.profile_name,
+          hasPreferences: true
+        } : null,
+        searchMetadata: {
+          perplexitySearched: true,
+          groqRanked: true,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error: any) {
+      console.error("🚨 [INTELLIGENT SEARCH] Error:", error);
+      res.status(500).json({ 
+        message: "Failed to perform intelligent search",
+        error: error.message,
+        query: req.body.query 
+      });
+    }
+  });
+
   // Dietary-cultural conflict resolution endpoint
   app.post("/api/recipes/resolve-conflicts", async (req, res) => {
     try {
