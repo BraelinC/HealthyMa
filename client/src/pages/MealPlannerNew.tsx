@@ -185,12 +185,15 @@ export default function MealPlanner() {
   };
 
   const handleStreamingComplete = async (data: any) => {
-    setShowStreamingGenerator(false);
-    
-    // Reset state to ensure proper display
-    setOpenDays(new Set());
-    setExpandedMeals(new Set());
-    setGeneratedPlan(data);
+    // Keep streaming component visible for 3 seconds so users see the final meal cards
+    setTimeout(() => {
+      setShowStreamingGenerator(false);
+      
+      // Reset state to ensure proper display
+      setOpenDays(new Set());
+      setExpandedMeals(new Set());
+      setGeneratedPlan(data);
+    }, 3000); // 3 second delay
     
     // Check if this is the user's first generated meal plan and unlock achievement
     try {
