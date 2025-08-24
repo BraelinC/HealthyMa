@@ -137,6 +137,10 @@ export function StreamingMealPlanGenerator({
       }
 
       // Use streaming endpoint for regular meal plan generation
+      console.log('🚀 Making streaming request to:', '/api/meal-plan/generate-stream');
+      console.log('📝 Request body:', JSON.stringify(requestBody, null, 2));
+      console.log('🔑 Auth token present:', !!token);
+      
       const response = await fetch('/api/meal-plan/generate-stream', {
         method: 'POST',
         credentials: 'include',
@@ -146,11 +150,16 @@ export function StreamingMealPlanGenerator({
         },
         body: JSON.stringify(requestBody)
       });
+      
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
+        console.error('❌ Response not OK:', response.status, response.statusText);
         // Try to parse error response
         try {
           const errorData = await response.json();
+          console.error('❌ Error data:', errorData);
           throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         } catch {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -167,17 +176,27 @@ export function StreamingMealPlanGenerator({
       }
 
       console.log('🎥 Starting to read SSE stream...');
+      console.log('📊 Initial liveParsingMeals length:', liveParsingMeals.length);
 
+      let chunkCount = 0;
       while (true) {
+        chunkCount++;
         const { done, value } = await reader.read();
         if (done) {
-          console.log('🏁 SSE stream ended');
+          console.log('🏁 SSE stream ended after', chunkCount, 'chunks');
           break;
         }
+        
+        console.log(`📦 Chunk ${chunkCount}:`, value ? `${value.length} bytes` : 'empty');
 
-        buffer += decoder.decode(value, { stream: true });
+        const decodedText = decoder.decode(value, { stream: true });
+        console.log('🔤 Decoded text:', decodedText.substring(0, 100) + (decodedText.length > 100 ? '...' : ''));
+        
+        buffer += decodedText;
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
+        
+        console.log(`📋 Processing ${lines.length} lines from buffer`);
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -194,6 +213,7 @@ export function StreamingMealPlanGenerator({
                 setLiveParsingMeals(prev => {
                   const newMeals = [...prev, parsed.data];
                   console.log(`📊 Total meals now: ${newMeals.length}`);
+                  console.log('🎯 Updated meal list:', newMeals.map(m => m.title));
                   return newMeals;
                 });
               } else if (parsed.type === 'complete') {
@@ -288,12 +308,24 @@ export function StreamingMealPlanGenerator({
     startGeneration();
   }, []);
 
+  // Debug UI state
+  console.log('🎨 UI RENDER DEBUG:');
+  console.log('- isGenerating:', isGenerating);
+  console.log('- liveParsingMeals.length:', liveParsingMeals.length);
+  console.log('- liveParsingMeals:', liveParsingMeals.map(m => m.title || m.name));
+  console.log('- error:', error);
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         {isGenerating && liveParsingMeals.length === 0 && (
           <p className="text-sm text-muted-foreground text-center">
             Crafting delicious meals just for you...
+          </p>
+        )}
+        {liveParsingMeals.length > 0 && (
+          <p className="text-sm text-green-600 text-center font-medium">
+            🍽️ {liveParsingMeals.length} meals generated so far...
           </p>
         )}
       </div>
