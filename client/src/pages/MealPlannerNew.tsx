@@ -727,6 +727,47 @@ export default function MealPlanner() {
           </CardContent>
         </Card>
 
+        {/* Live Streaming Meal Generation Display */}
+        {showStreamingGenerator && (
+          <Card className="shadow-lg border-2 border-primary/20 bg-gradient-to-br from-white to-emerald-50/30 mb-6">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg">
+                  <ChefHat className="h-6 w-6 text-white" />
+                </div>
+                🍽️ Live Meal Generation
+                <div className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                  <div className="animate-pulse h-2 w-2 bg-emerald-600 rounded-full"></div>
+                  Streaming live...
+                </div>
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Watch your personalized meals appear in real-time as our AI creates them
+              </p>
+            </CardHeader>
+            <CardContent>
+              <StreamingMealPlanGenerator
+                filters={{
+                  numDays: numDays[0],
+                  mealsPerDay: mealsPerDay[0],
+                  cookTime: cookTime[0],
+                  difficulty: difficulty[0],
+                  nutritionGoal,
+                  dietaryRestrictions,
+                  availableIngredients,
+                  excludeIngredients,
+                  primaryGoal,
+                  culturalBackground: userProfile?.cultural_background,
+                  selectedFamilyMembers,
+                  useIntelligentPrompt: true
+                }}
+                onComplete={handleStreamingComplete}
+                onCancel={handleStreamingCancel}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Enhanced Generated Plan */}
         <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-blue-50/30">
           <CardHeader className="pb-4">
@@ -747,26 +788,7 @@ export default function MealPlanner() {
             </p>
           </CardHeader>
           <CardContent>
-            {showStreamingGenerator ? (
-              <StreamingMealPlanGenerator
-                filters={{
-                  numDays: numDays[0],
-                  mealsPerDay: mealsPerDay[0],
-                  cookTime: cookTime[0],
-                  difficulty: difficulty[0],
-                  nutritionGoal,
-                  dietaryRestrictions,
-                  availableIngredients,
-                  excludeIngredients,
-                  primaryGoal,
-                  culturalBackground: userProfile?.cultural_background,
-                  selectedFamilyMembers,
-                  useIntelligentPrompt: true
-                }}
-                onComplete={handleStreamingComplete}
-                onCancel={handleStreamingCancel}
-              />
-            ) : !generatedPlan ? (
+            {!generatedPlan ? (
               <div className="text-center text-gray-500 py-16">
                 <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-full p-8 w-32 h-32 mx-auto mb-6 flex items-center justify-center">
                   <ChefHat className="h-16 w-16 text-gray-400" />
