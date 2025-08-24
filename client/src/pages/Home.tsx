@@ -15,9 +15,10 @@ import {
   ChevronDown,
   ChevronUp,
   ShoppingCart,
+  Search,
+  Bot,
   BookOpen,
   Activity,
-  Search,
   GripVertical,
   Move,
   Egg,
@@ -125,6 +126,7 @@ export default function Home() {
   const [showGroceryPanel, setShowGroceryPanel] = useState(false);
   const [groceryListData, setGroceryListData] = useState<any>(null);
   const [isLoadingGroceries, setIsLoadingGroceries] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -202,6 +204,18 @@ export default function Home() {
       setCompletions(mealCompletions);
     }
   }, [mealCompletions]);
+
+  // Close add menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showAddMenu && !(event.target as Element).closest('.floating-add-button')) {
+        setShowAddMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showAddMenu]);
 
   // Update meal plan mutation
   const updateMealPlanMutation = useMutation({
@@ -1525,6 +1539,68 @@ export default function Home() {
         prefetchedData={groceryListData}
         onDataRefreshed={(data) => setGroceryListData(data)}
       />
+      
+      {/* Floating Add Meals Button */}
+      <div className="fixed bottom-6 right-6 z-50 floating-add-button">
+        {/* Expanded Menu - shows above button */}
+        {showAddMenu && (
+          <div className="absolute bottom-16 right-0 mb-2 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 min-w-[200px] animate-in slide-in-from-bottom-2 duration-200">
+            <div className="px-4 py-2 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700">Add Meals</h3>
+            </div>
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
+              onClick={() => {
+                // TODO: Implement search functionality
+                toast({ title: "Search Meals", description: "Search functionality coming soon!" });
+                setShowAddMenu(false);
+              }}
+            >
+              <Search className="h-5 w-5 mr-3 text-gray-600" />
+              <div className="text-left">
+                <div className="font-medium text-gray-900">Search Recipes</div>
+                <div className="text-xs text-gray-500">Browse existing recipes</div>
+              </div>
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
+              onClick={() => {
+                // TODO: Implement AI meal generation
+                toast({ title: "AI Meal Generator", description: "AI meal generation coming soon!" });
+                setShowAddMenu(false);
+              }}
+            >
+              <Bot className="h-5 w-5 mr-3 text-purple-600" />
+              <div className="text-left">
+                <div className="font-medium text-gray-900">Generate with AI</div>
+                <div className="text-xs text-gray-500">Create custom meals instantly</div>
+              </div>
+            </Button>
+          </div>
+        )}
+        
+        {/* Main Plus Button */}
+        <Button
+          onClick={() => setShowAddMenu(!showAddMenu)}
+          className={`
+            relative h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 
+            bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700
+            border-0 group ${showAddMenu ? 'rotate-45' : 'rotate-0'}
+          `}
+        >
+          <Plus className="h-6 w-6 text-white transition-transform duration-200" />
+          
+          {/* Ripple effect on click */}
+          <div className="absolute inset-0 rounded-full bg-white opacity-0 group-active:opacity-20 transition-opacity duration-150"></div>
+          
+          {/* Glow effect */}
+          <div className="absolute inset-0 rounded-full bg-purple-400 opacity-0 group-hover:opacity-20 blur-md transition-opacity duration-200"></div>
+        </Button>
+      </div>
       </div>
     </div>
   );
