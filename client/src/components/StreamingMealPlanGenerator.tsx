@@ -352,100 +352,97 @@ export function StreamingMealPlanGenerator({
     console.log('⏳ No meals yet, showing loader');
   }
 
+  // Debug render conditions
+  console.log(`🔍 RENDER CONDITIONS:`, {
+    hasMeals: liveParsingMeals.length > 0,
+    mealsCount: liveParsingMeals.length,
+    showLoader: liveParsingMeals.length === 0,
+    showMealCards: liveParsingMeals.length > 0
+  });
+
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        {isGenerating && liveParsingMeals.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center">
+      {/* Status message */}
+      <div className="text-center">
+        {liveParsingMeals.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
             Crafting delicious meals just for you...
           </p>
-        )}
-        {liveParsingMeals.length > 0 && (
-          <p className="text-sm text-green-600 text-center font-medium">
+        ) : (
+          <p className="text-sm text-green-600 font-medium">
             🍽️ {liveParsingMeals.length} meals generated so far...
           </p>
         )}
       </div>
-      <div className="space-y-4">
-        {/* Loading indicator when no meals yet */}
-        {liveParsingMeals.length === 0 && (
-          (() => {
-            console.log('🔄 RENDERING: Loading spinner (meals:', liveParsingMeals.length, ')');
-            return (
-              <div className="flex items-center justify-center py-12">
-                <div className="flex items-center gap-3">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <span className="text-muted-foreground">Generating your meal plan...</span>
-                </div>
-              </div>
-            );
-          })()
-        )}
 
-        {/* Meal cards grid - show immediately when meals arrive */}
-        {liveParsingMeals.length > 0 && (
-          (() => {
-            console.log('🍽️ RENDERING: Meal cards grid with', liveParsingMeals.length, 'meals');
+      {/* Loading spinner - only show when no meals */}
+      {liveParsingMeals.length === 0 ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="text-muted-foreground">Generating your meal plan...</span>
+          </div>
+        </div>
+      ) : (
+        // Meal cards grid - show when meals are available
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {liveParsingMeals.map((meal, index) => {
+            const Icon = getMealIcon(meal.mealType);
+            console.log(`🃏 VISIBLE: Rendering meal card ${index}:`, meal.title || meal.name);
             return (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {liveParsingMeals.map((meal, index) => {
-                  const Icon = getMealIcon(meal.mealType);
-                  console.log(`🃏 Rendering meal card ${index}:`, meal.title || meal.name);
-                  return (
-                    <motion.div
-                      key={meal.id || `${meal.day}-${meal.mealType}-${meal.title || meal.name}`}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ 
-                        duration: 0.2,
-                        ease: "easeOut",
-                        delay: index * 0.05 // Small delay between cards for nice effect
-                      }}
-                    >
-                      <Card className="h-full hover:shadow-lg transition-shadow border-2 border-primary/20">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              <Icon className="h-5 w-5 text-primary" />
-                              <Badge variant="secondary" className="text-xs">
-                                Day {meal.day} - {meal.mealType}
-                              </Badge>
-                            </div>
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${getDifficultyColor(meal.difficulty)}`}
-                            >
-                              {getDifficultyLabel(meal.difficulty)}
-                            </Badge>
-                          </div>
-                          <h3 className="font-semibold text-lg mt-2 line-clamp-2">
-                            {meal.title || meal.name}
-                          </h3>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          {meal.description && (
-                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                              {meal.description}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{meal.totalTime || (meal.prep_time + (meal.cook_time || meal.cook_time_minutes || 0))} min</span>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Prep: {meal.prep_time}min • Cook: {meal.cook_time || meal.cook_time_minutes || 0}min
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </div>
+              <motion.div
+                key={meal.id || `${meal.day}-${meal.mealType}-${meal.title || meal.name}`}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ 
+                  duration: 0.2,
+                  ease: "easeOut",
+                  delay: index * 0.05
+                }}
+                className="bg-white border-2 border-emerald-200 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              >
+                <Card className="h-full border-0">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-5 w-5 text-primary" />
+                        <Badge variant="secondary" className="text-xs">
+                          Day {meal.day} - {meal.mealType}
+                        </Badge>
+                      </div>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${getDifficultyColor(meal.difficulty)}`}
+                      >
+                        {getDifficultyLabel(meal.difficulty)}
+                      </Badge>
+                    </div>
+                    <h3 className="font-semibold text-lg mt-2 line-clamp-2 text-gray-800">
+                      {meal.title || meal.name}
+                    </h3>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {meal.description && (
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                        {meal.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{meal.totalTime || (meal.prep_time + (meal.cook_time || meal.cook_time_minutes || 0))} min</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Prep: {meal.prep_time}min • Cook: {meal.cook_time || meal.cook_time_minutes || 0}min
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             );
-          })()
-        )}
+          })}
+        </div>
+      )}
 
             {/* Error display */}
             {error && (
