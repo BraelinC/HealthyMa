@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,13 @@ export function StreamingMealPlanGenerator({
   const [currentStatus, setCurrentStatus] = useState('Initializing...');
   const [progress, setProgress] = useState(0);
   const [liveParsingMeals, setLiveParsingMeals] = useState<Meal[]>([]);
+  const [renderKey, setRenderKey] = useState(0); // Force re-render key
   const { toast } = useToast();
+  
+  // Force update function
+  const forceUpdate = useCallback(() => {
+    setRenderKey(prev => prev + 1);
+  }, []);
 
   const getMealIcon = (mealType: string) => {
     switch (mealType) {
@@ -219,7 +225,7 @@ export function StreamingMealPlanGenerator({
                 // Set generating to false as soon as first meal arrives to show meal cards
                 setIsGenerating(false);
                 
-                // Add new meal to the display array immediately
+                // Add new meal to the display array immediately  
                 setLiveParsingMeals(prev => {
                   // Check if meal already exists to prevent duplicates
                   const mealId = parsed.data.id || `${parsed.data.day || 1}-${parsed.data.mealType}-${parsed.data.title || parsed.data.name}`;
@@ -241,6 +247,10 @@ export function StreamingMealPlanGenerator({
                   const newMeals = [...prev, newMeal];
                   console.log(`📊 Total meals now: ${newMeals.length}`);
                   console.log('🎯 Updated meal list:', newMeals.map(m => m.title || m.name));
+                  
+                  // FORCE RE-RENDER after state update
+                  setTimeout(() => forceUpdate(), 0);
+                  
                   return newMeals;
                 });
               } else if (parsed.type === 'complete') {
@@ -360,9 +370,9 @@ export function StreamingMealPlanGenerator({
     showMealCards: liveParsingMeals.length > 0
   });
 
-  // ULTRA SIMPLE RENDER TEST
+  // ULTRA SIMPLE RENDER TEST - Use renderKey to force updates
   return (
-    <div className="space-y-4">
+    <div key={renderKey} className="space-y-4">
       {/* VISIBLE DEBUG - Always show this */}
       <div className="bg-yellow-100 border border-yellow-400 p-3 text-sm font-mono">
         🔍 DEBUG: Meals={liveParsingMeals.length} | Generating={isGenerating.toString()} | Error={error || 'none'}
