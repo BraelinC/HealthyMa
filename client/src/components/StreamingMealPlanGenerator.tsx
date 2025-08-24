@@ -391,14 +391,23 @@ export function StreamingMealPlanGenerator({
       </div>
 
       {/* TEST: Simple meal count display */}
-      <div className="bg-blue-100 border border-blue-400 p-3">
+      <div className="bg-blue-100 border border-blue-400 p-3 space-y-1">
         <div className="text-lg font-bold">Meal Count Test: {liveParsingMeals.length}</div>
-        <div className="text-sm">
+        <div className="text-xs font-mono">
+          <div>Length: {liveParsingMeals.length} | Type: {typeof liveParsingMeals.length}</div>
+          <div>Is Zero: {liveParsingMeals.length === 0 ? 'TRUE' : 'FALSE'}</div>
+          <div>Is Greater: {liveParsingMeals.length > 0 ? 'TRUE' : 'FALSE'}</div>
+          <div>Strict Comparison: {liveParsingMeals.length === 6 ? 'EQUALS 6' : 'NOT 6'}</div>
+        </div>
+        <div className="text-sm font-bold">
           {liveParsingMeals.length === 0 ? '❌ NO MEALS - SHOWING LOADER' : '✅ MEALS EXIST - SHOULD SHOW CARDS'}
         </div>
       </div>
 
-      {/* SIMPLIFIED CONDITIONAL TEST */}
+      {/* SIMPLIFIED CONDITIONAL TEST WITH EXPLICIT DEBUG */}
+      <div className="bg-purple-100 border border-purple-400 p-2 text-xs">
+        🔍 CONDITIONAL DEBUG: length={liveParsingMeals.length}, isZero={liveParsingMeals.length === 0}, path={liveParsingMeals.length === 0 ? 'LOADING' : 'SUCCESS'}
+      </div>
       {liveParsingMeals.length === 0 ? (
         <div className="bg-red-100 border border-red-400 p-4">
           <div className="text-center">
