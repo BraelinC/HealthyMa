@@ -314,21 +314,13 @@ export function StreamingMealPlanGenerator({
     startGeneration();
   }, []);
 
-  // Debug UI state
-  console.log('🎨 UI RENDER DEBUG:');
-  console.log('- isGenerating:', isGenerating);
-  console.log('- liveParsingMeals.length:', liveParsingMeals.length);
-  console.log('- liveParsingMeals:', liveParsingMeals.map(m => m.title || m.name));
-  console.log('- error:', error);
+  // Minimal debug logging
+  if (liveParsingMeals.length > 0) {
+    console.log(`🍽️ Live streaming: ${liveParsingMeals.length} meals displayed`);
+  }
 
   return (
     <div className="space-y-4">
-      {/* Debug info - always visible */}
-      <div className="bg-blue-50 p-3 rounded text-xs">
-        <div>Debug: isGenerating={String(isGenerating)}, meals={liveParsingMeals.length}, error={String(!!error)}</div>
-        <div>Meals: {liveParsingMeals.map(m => m.title || m.name).join(', ')}</div>
-      </div>
-      
       <div className="space-y-2">
         {isGenerating && liveParsingMeals.length === 0 && (
           <p className="text-sm text-muted-foreground text-center">
@@ -343,7 +335,6 @@ export function StreamingMealPlanGenerator({
       </div>
       <div className="space-y-4">
         {/* Meal cards grid */}
-        <div className="bg-yellow-50 p-2 text-xs">About to render {liveParsingMeals.length} meal cards...</div>
         <AnimatePresence mode="popLayout">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {liveParsingMeals.map((meal, index) => {
