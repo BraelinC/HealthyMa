@@ -153,6 +153,9 @@ export function StreamingMealPlanGenerator({
       
       console.log('📡 Response status:', response.status);
       console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('📡 Response ok:', response.ok);
+      console.log('📡 Response body:', !!response.body);
+      console.log('📡 Response content-type:', response.headers.get('content-type'));
 
       if (!response.ok) {
         console.error('❌ Response not OK:', response.status, response.statusText);
@@ -167,7 +170,10 @@ export function StreamingMealPlanGenerator({
       }
 
       // Process Server-Sent Events stream
+      console.log('🔍 Attempting to get response body reader...');
       const reader = response.body?.getReader();
+      console.log('🔍 Reader obtained:', !!reader);
+      
       const decoder = new TextDecoder();
       let buffer = '';
 
@@ -317,6 +323,12 @@ export function StreamingMealPlanGenerator({
 
   return (
     <div className="space-y-4">
+      {/* Debug info - always visible */}
+      <div className="bg-blue-50 p-3 rounded text-xs">
+        <div>Debug: isGenerating={String(isGenerating)}, meals={liveParsingMeals.length}, error={String(!!error)}</div>
+        <div>Meals: {liveParsingMeals.map(m => m.title || m.name).join(', ')}</div>
+      </div>
+      
       <div className="space-y-2">
         {isGenerating && liveParsingMeals.length === 0 && (
           <p className="text-sm text-muted-foreground text-center">
@@ -331,6 +343,7 @@ export function StreamingMealPlanGenerator({
       </div>
       <div className="space-y-4">
         {/* Meal cards grid */}
+        <div className="bg-yellow-50 p-2 text-xs">About to render {liveParsingMeals.length} meal cards...</div>
         <AnimatePresence mode="popLayout">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {liveParsingMeals.map((meal, index) => {
