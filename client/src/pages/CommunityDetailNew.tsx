@@ -654,9 +654,6 @@ export default function CommunityDetailNew() {
           <TabsTrigger value="meals" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
             Meal Plans
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
-            Calendar
-          </TabsTrigger>
           <TabsTrigger value="members" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
             Members
           </TabsTrigger>
@@ -940,14 +937,6 @@ export default function CommunityDetailNew() {
           <MealPlansClassroom communityId={id} isCreator={isCreator} />
         </TabsContent>
 
-        {/* Calendar Tab */}
-        <TabsContent value="calendar" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900">
-          <div className="text-center py-8">
-            <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">Community Calendar</h3>
-            <p className="text-gray-400">View upcoming events and challenges</p>
-          </div>
-        </TabsContent>
 
         {/* Members Tab */}
         <TabsContent value="members" className="p-4 space-y-4 mt-12 pt-4 bg-gray-900">
