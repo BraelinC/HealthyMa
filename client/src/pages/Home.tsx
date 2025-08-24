@@ -235,23 +235,30 @@ export default function Home() {
       const response = await safeApiRequest('/api/recipes/intelligent-search', {
         method: 'POST',
         body: JSON.stringify({ 
-          query: searchQuery,
-          preferences: {
-            // Could add more search preferences here
-          }
+          query: searchQuery
         }),
       });
 
-      setSearchResults(response.recipes || []);
+      console.log('Perplexity Test Response:', response);
       
-      if (response.recipes && response.recipes.length > 0) {
+      // For now, just show the raw content for testing
+      if (response.success && response.perplexityContent) {
         toast({ 
-          title: `Found ${response.recipes.length} personalized recipes!`, 
-          description: "Ranked based on your profile and preferences" 
+          title: "Perplexity API Working!", 
+          description: `Found ${response.citations?.length || 0} citations, ${response.contentLength} characters` 
         });
+        
+        // Create a simple display format for testing
+        setSearchResults([{
+          title: "Perplexity Search Results",
+          description: "Raw recipe content from Perplexity API",
+          content: response.perplexityContent,
+          citations: response.citations,
+          contentLength: response.contentLength
+        }]);
       } else {
         toast({ 
-          title: "No recipes found", 
+          title: "No results found", 
           description: "Try a different search term",
           variant: "destructive"
         });
@@ -1658,115 +1665,59 @@ export default function Home() {
                 </div>
                 
                 <div className="grid gap-4">
-                  {searchResults.map((recipe, index) => (
+                  {searchResults.map((result, index) => (
                     <Card key={index} className="border border-gray-200 hover:border-purple-300 transition-colors">
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <h4 className="text-lg font-semibold text-gray-800">{recipe.title}</h4>
-                              {recipe.ranking_score && (
-                                <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
-                                  Score: {recipe.ranking_score}/10
-                                </Badge>
-                              )}
+                              <h4 className="text-lg font-semibold text-gray-800">{result.title}</h4>
+                              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                                Perplexity Test
+                              </Badge>
                             </div>
-                            <p className="text-gray-600 text-sm mb-3">{recipe.description}</p>
+                            <p className="text-gray-600 text-sm mb-3">{result.description}</p>
                             
-                            {/* Recipe Stats */}
+                            {/* Test Results */}
                             <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-3">
                               <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                {recipe.cook_time_minutes} min
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                {result.contentLength} chars
                               </div>
                               <div className="flex items-center gap-1">
-                                <ChefHat className="h-4 w-4" />
-                                Difficulty: {recipe.difficulty}/5
+                                <Search className="h-4 w-4" />
+                                {result.citations?.length || 0} citations
                               </div>
-                              {recipe.cuisine && (
-                                <Badge variant="outline" className="text-xs">
-                                  {recipe.cuisine}
-                                </Badge>
-                              )}
                             </div>
 
-                            {/* Nutrition */}
-                            {recipe.nutrition && (
-                              <div className="grid grid-cols-4 gap-2 mb-3">
-                                <div className="text-center p-2 bg-gray-50 rounded text-xs">
-                                  <div className="font-medium text-gray-900">{recipe.nutrition.calories}</div>
-                                  <div className="text-gray-500">Cal</div>
+                            {/* Citations */}
+                            {result.citations && result.citations.length > 0 && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                                <div className="text-xs font-medium text-blue-700 mb-1">Sources:</div>
+                                <div className="text-xs text-blue-600">
+                                  {result.citations.slice(0, 3).map((citation, i) => (
+                                    <div key={i} className="mb-1">{citation}</div>
+                                  ))}
+                                  {result.citations.length > 3 && (
+                                    <div>+ {result.citations.length - 3} more sources</div>
+                                  )}
                                 </div>
-                                <div className="text-center p-2 bg-gray-50 rounded text-xs">
-                                  <div className="font-medium text-gray-900">{recipe.nutrition.protein_g}g</div>
-                                  <div className="text-gray-500">Protein</div>
-                                </div>
-                                <div className="text-center p-2 bg-gray-50 rounded text-xs">
-                                  <div className="font-medium text-gray-900">{recipe.nutrition.carbs_g}g</div>
-                                  <div className="text-gray-500">Carbs</div>
-                                </div>
-                                <div className="text-center p-2 bg-gray-50 rounded text-xs">
-                                  <div className="font-medium text-gray-900">{recipe.nutrition.fat_g}g</div>
-                                  <div className="text-gray-500">Fat</div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Ranking Reason */}
-                            {recipe.ranking_reason && (
-                              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
-                                <div className="text-xs font-medium text-purple-700 mb-1">Why this recipe for you:</div>
-                                <div className="text-xs text-purple-600">{recipe.ranking_reason}</div>
                               </div>
                             )}
                           </div>
                           
                           <div className="ml-4">
-                            <Button
-                              onClick={() => handleAddToMealPlan(recipe)}
-                              disabled={selectedRecipes.has(recipe.title)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                            >
-                              {selectedRecipes.has(recipe.title) ? (
-                                <>
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Added
-                                </>
-                              ) : (
-                                <>
-                                  <Plus className="h-4 w-4 mr-2" />
-                                  Add to Plan
-                                </>
-                              )}
-                            </Button>
+                            <Badge variant="outline" className="text-green-600 border-green-200">
+                              ✅ Working
+                            </Badge>
                           </div>
                         </div>
 
-                        {/* Collapsible Details */}
+                        {/* Content Preview */}
                         <div className="border-t border-gray-100 pt-4 mt-4">
-                          <div className="grid md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <h5 className="font-medium text-gray-700 mb-2">Ingredients:</h5>
-                              <ul className="list-disc list-inside space-y-1 text-gray-600">
-                                {recipe.ingredients?.slice(0, 5).map((ingredient, i) => (
-                                  <li key={i}>{ingredient}</li>
-                                ))}
-                                {recipe.ingredients?.length > 5 && (
-                                  <li className="text-gray-400">+ {recipe.ingredients.length - 5} more...</li>
-                                )}
-                              </ul>
-                            </div>
-                            <div>
-                              <h5 className="font-medium text-gray-700 mb-2">Instructions:</h5>
-                              <ol className="list-decimal list-inside space-y-1 text-gray-600">
-                                {recipe.instructions?.slice(0, 3).map((step, i) => (
-                                  <li key={i}>{step}</li>
-                                ))}
-                                {recipe.instructions?.length > 3 && (
-                                  <li className="text-gray-400">+ {recipe.instructions.length - 3} more steps...</li>
-                                )}
-                              </ol>
-                            </div>
+                          <h5 className="font-medium text-gray-700 mb-2">Recipe Content Preview:</h5>
+                          <div className="bg-gray-50 p-3 rounded text-sm text-gray-700 max-h-32 overflow-y-auto">
+                            <pre className="whitespace-pre-wrap">{result.content?.substring(0, 500)}...</pre>
                           </div>
                         </div>
                       </CardContent>
