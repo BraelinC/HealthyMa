@@ -215,12 +215,24 @@ export function StreamingMealPlanGenerator({
               
               if (parsed.type === 'meal') {
                 console.log(`🍽️ Adding meal to UI: ${parsed.data.title} (${parsed.data.mealType})`);
-                // Add new meal to the display array
+                // Add new meal to the display array with progressive delay
                 setLiveParsingMeals(prev => {
-                  const newMeals = [...prev, parsed.data];
-                  console.log(`📊 Total meals now: ${newMeals.length}`);
-                  console.log('🎯 Updated meal list:', newMeals.map(m => m.title));
-                  return newMeals;
+                  const currentLength = prev.length;
+                  const delay = currentLength * 400; // 400ms delay between each meal
+                  
+                  setTimeout(() => {
+                    setLiveParsingMeals(current => {
+                      if (current.find(m => m.id === parsed.data.id)) {
+                        return current; // Already added
+                      }
+                      const newMeals = [...current, parsed.data];
+                      console.log(`📊 Total meals now: ${newMeals.length}`);
+                      console.log('🎯 Updated meal list:', newMeals.map(m => m.title));
+                      return newMeals;
+                    });
+                  }, delay);
+                  
+                  return prev; // Don't add immediately
                 });
               } else if (parsed.type === 'complete') {
                 console.log('✅ Complete meal plan received');
