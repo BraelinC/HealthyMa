@@ -662,6 +662,7 @@ export class CommunityService {
     if (!userId) {
       return comments.map(({ comment, author }) => ({
         ...comment,
+        images: comment.images ? JSON.parse(comment.images) : [],
         author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
         isLiked: false
       }));
@@ -680,6 +681,7 @@ export class CommunityService {
 
     return comments.map(({ comment, author }) => ({
       ...comment,
+      images: comment.images ? JSON.parse(comment.images) : [],
       author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
       isLiked: likedCommentIds.has(comment.id)
     }));
