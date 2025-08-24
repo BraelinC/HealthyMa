@@ -360,120 +360,48 @@ export function StreamingMealPlanGenerator({
     showMealCards: liveParsingMeals.length > 0
   });
 
+  // ULTRA SIMPLE RENDER TEST
   return (
     <div className="space-y-4">
-      {/* Status message */}
-      <div className="text-center">
-        {liveParsingMeals.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Crafting delicious meals just for you...
-          </p>
-        ) : (
-          <p className="text-sm text-green-600 font-medium">
-            🍽️ {liveParsingMeals.length} meals generated so far...
-          </p>
-        )}
+      {/* VISIBLE DEBUG - Always show this */}
+      <div className="bg-yellow-100 border border-yellow-400 p-3 text-sm font-mono">
+        🔍 DEBUG: Meals={liveParsingMeals.length} | Generating={isGenerating.toString()} | Error={error || 'none'}
       </div>
 
-      {/* Loading spinner - only show when no meals */}
+      {/* TEST: Simple meal count display */}
+      <div className="bg-blue-100 border border-blue-400 p-3">
+        <div className="text-lg font-bold">Meal Count Test: {liveParsingMeals.length}</div>
+        <div className="text-sm">
+          {liveParsingMeals.length === 0 ? '❌ NO MEALS - SHOWING LOADER' : '✅ MEALS EXIST - SHOULD SHOW CARDS'}
+        </div>
+      </div>
+
+      {/* SIMPLIFIED CONDITIONAL TEST */}
       {liveParsingMeals.length === 0 ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="text-muted-foreground">Generating your meal plan...</span>
+        <div className="bg-red-100 border border-red-400 p-4">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <div>🔄 Loading path - no meals yet</div>
           </div>
         </div>
       ) : (
-        // Meal cards grid - show when meals are available
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {liveParsingMeals.map((meal, index) => {
-            const Icon = getMealIcon(meal.mealType);
-            console.log(`🃏 VISIBLE: Rendering meal card ${index}:`, meal.title || meal.name);
-            return (
-              <motion.div
-                key={meal.id || `${meal.day}-${meal.mealType}-${meal.title || meal.name}`}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ 
-                  duration: 0.2,
-                  ease: "easeOut",
-                  delay: index * 0.05
-                }}
-                className="bg-white border-2 border-emerald-200 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-              >
-                <Card className="h-full border-0">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-5 w-5 text-primary" />
-                        <Badge variant="secondary" className="text-xs">
-                          Day {meal.day} - {meal.mealType}
-                        </Badge>
-                      </div>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${getDifficultyColor(meal.difficulty)}`}
-                      >
-                        {getDifficultyLabel(meal.difficulty)}
-                      </Badge>
-                    </div>
-                    <h3 className="font-semibold text-lg mt-2 line-clamp-2 text-gray-800">
-                      {meal.title || meal.name}
-                    </h3>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    {meal.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {meal.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{meal.totalTime || (meal.prep_time + (meal.cook_time || meal.cook_time_minutes || 0))} min</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Prep: {meal.prep_time}min • Cook: {meal.cook_time || meal.cook_time_minutes || 0}min
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
+        <div className="bg-green-100 border border-green-400 p-4">
+          <div className="text-lg font-bold mb-3">✅ SUCCESS! Found {liveParsingMeals.length} meals</div>
+          <div className="space-y-2">
+            {liveParsingMeals.map((meal, index) => (
+              <div key={index} className="bg-white border border-gray-300 p-3 rounded">
+                <div className="font-medium">{meal.title || meal.name}</div>
+                <div className="text-sm text-gray-600">Day {meal.day} - {meal.mealType}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Error display */}
+      {/* Error section if needed */}
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-destructive/10 text-destructive rounded-lg p-4 flex items-start gap-2"
-        >
-          <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-medium">Generation Failed</p>
-            <p className="text-sm mt-1">{error}</p>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Action buttons */}
-      {(isGenerating || error) && (
-        <div className="flex gap-2 justify-end pt-4">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            disabled={!isGenerating}
-          >
-            Cancel
-          </Button>
-          {error && (
-            <Button onClick={startGeneration}>
-              Retry Generation
-            </Button>
-          )}
+        <div className="bg-red-200 border border-red-500 p-3">
+          Error: {error}
         </div>
       )}
     </div>
