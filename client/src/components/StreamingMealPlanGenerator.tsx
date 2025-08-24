@@ -62,7 +62,9 @@ export function StreamingMealPlanGenerator({
   // Debug effect to track meal state changes
   useEffect(() => {
     console.log(`🔄 EFFECT: liveParsingMeals changed to ${liveParsingMeals.length} meals`);
+    console.log(`🔄 EFFECT: Meals array:`, liveParsingMeals.map(m => m.title || m.name));
     setDebugMealCount(liveParsingMeals.length);
+    console.log(`🔄 EFFECT: Set debugMealCount to ${liveParsingMeals.length}`);
   }, [liveParsingMeals]);
 
   const getMealIcon = (mealType: string) => {
@@ -356,36 +358,36 @@ export function StreamingMealPlanGenerator({
   }, []);
 
   // Component render logging with detailed state debugging
-  console.log(`🎨 RENDER: StreamingMealPlanGenerator`);
-  console.log(`📊 State Debug:`, {
+  console.log(`🎨 RENDER: StreamingMealPlanGenerator - RenderKey: ${renderKey}`);
+  console.log(`📊 RENDER State Debug:`, {
     mealsCount: liveParsingMeals.length,
+    debugMealCount,
     isGenerating,
+    renderKey,
     showingLoader: liveParsingMeals.length === 0,
     showingMeals: liveParsingMeals.length > 0,
     error: !!error
   });
   
+  console.log(`🔍 RENDER: liveParsingMeals reference:`, liveParsingMeals);
+  console.log(`🔍 RENDER: liveParsingMeals.length = ${liveParsingMeals.length}`);
+  console.log(`🔍 RENDER: debugMealCount = ${debugMealCount}`);
+  
   if (liveParsingMeals.length > 0) {
-    console.log(`🍽️ Live streaming: ${liveParsingMeals.length} meals displayed`);
-    console.log('📋 Current meals:', liveParsingMeals.map(m => m.title || m.name));
+    console.log(`🍽️ RENDER: Live streaming: ${liveParsingMeals.length} meals displayed`);
+    console.log('📋 RENDER: Current meals:', liveParsingMeals.map(m => m.title || m.name));
   } else {
-    console.log('⏳ No meals yet, showing loader');
+    console.log('⏳ RENDER: No meals yet, showing loader');
   }
-
-  // Debug render conditions
-  console.log(`🔍 RENDER CONDITIONS:`, {
-    hasMeals: liveParsingMeals.length > 0,
-    mealsCount: liveParsingMeals.length,
-    showLoader: liveParsingMeals.length === 0,
-    showMealCards: liveParsingMeals.length > 0
-  });
 
   // ULTRA SIMPLE RENDER TEST - Use renderKey to force updates
   return (
     <div key={renderKey} className="space-y-4">
       {/* VISIBLE DEBUG - Always show this */}
-      <div className="bg-yellow-100 border border-yellow-400 p-3 text-sm font-mono">
-        🔍 DEBUG: Meals={liveParsingMeals.length} | Debug={debugMealCount} | RenderKey={renderKey} | Generating={isGenerating.toString()} | Error={error || 'none'}
+      <div className="bg-yellow-100 border border-yellow-400 p-3 text-sm font-mono space-y-1">
+        <div>🔍 MAIN: Meals={liveParsingMeals.length} | Debug={debugMealCount} | RenderKey={renderKey}</div>
+        <div>🔍 STATE: Generating={isGenerating.toString()} | Error={error || 'none'}</div>
+        <div>🔍 ARRAY: HasMeals={liveParsingMeals.length > 0 ? 'YES' : 'NO'} | IsArray={Array.isArray(liveParsingMeals) ? 'YES' : 'NO'}</div>
       </div>
 
       {/* TEST: Simple meal count display */}
