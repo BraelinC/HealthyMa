@@ -166,9 +166,14 @@ export function StreamingMealPlanGenerator({
         throw new Error('Response body is not readable');
       }
 
+      console.log('🎥 Starting to read SSE stream...');
+
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          console.log('🏁 SSE stream ended');
+          break;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -177,40 +182,56 @@ export function StreamingMealPlanGenerator({
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
+            console.log('📡 Received SSE data:', data.substring(0, 100) + '...');
             
             try {
               const parsed = JSON.parse(data);
+              console.log('✅ Parsed SSE data:', parsed.type, parsed.data?.title || parsed.data);
               
               if (parsed.type === 'meal') {
+                console.log(`🍽️ Adding meal to UI: ${parsed.data.title} (${parsed.data.mealType})`);
                 // Add new meal to the display array
-                setLiveParsingMeals(prev => [...prev, parsed.data]);
+                setLiveParsingMeals(prev => {
+                  const newMeals = [...prev, parsed.data];
+                  console.log(`📊 Total meals now: ${newMeals.length}`);
+                  return newMeals;
+                });
               } else if (parsed.type === 'complete') {
+                console.log('✅ Complete meal plan received');
                 // Meal plan generation complete
                 onComplete(parsed.data);
                 return;
               } else if (parsed.type === 'done') {
+                console.log('🏁 Generation done, using collected meals');
                 // Generation finished but couldn't parse complete plan
                 // Use the meals we collected
-                if (liveParsingMeals.length > 0) {
-                  // Construct a meal plan from collected meals
-                  const mealPlan: any = {};
-                  liveParsingMeals.forEach(meal => {
-                    const dayKey = `day_${meal.day}`;
-                    if (!mealPlan[dayKey]) {
-                      mealPlan[dayKey] = { breakfast: null, lunch: null, dinner: null };
-                    }
-                    mealPlan[dayKey][meal.mealType] = meal;
-                  });
-                  onComplete(mealPlan);
-                }
+                setLiveParsingMeals(currentMeals => {
+                  if (currentMeals.length > 0) {
+                    console.log(`📦 Building meal plan from ${currentMeals.length} collected meals`);
+                    // Construct a meal plan from collected meals
+                    const mealPlan: any = {};
+                    currentMeals.forEach(meal => {
+                      const dayKey = `day_${meal.day}`;
+                      if (!mealPlan[dayKey]) {
+                        mealPlan[dayKey] = { breakfast: null, lunch: null, dinner: null };
+                      }
+                      mealPlan[dayKey][meal.mealType] = meal;
+                    });
+                    onComplete(mealPlan);
+                  }
+                  return currentMeals;
+                });
                 return;
               } else if (parsed.error) {
+                console.error('❌ SSE error received:', parsed.error);
                 throw new Error(parsed.error);
               }
             } catch (e) {
               // Not JSON or parsing error - ignore
-              console.log('Streaming data:', data);
+              console.log('🔍 Non-JSON streaming data:', data.substring(0, 50));
             }
+          } else if (line.trim()) {
+            console.log('📝 SSE line (not data):', line.substring(0, 50));
           }
         }
       }
