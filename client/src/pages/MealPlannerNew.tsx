@@ -185,15 +185,11 @@ export default function MealPlanner() {
   };
 
   const handleStreamingComplete = async (data: any) => {
-    // Keep streaming component visible for 3 seconds so users see the final meal cards
-    setTimeout(() => {
-      setShowStreamingGenerator(false);
-      
-      // Reset state to ensure proper display
-      setOpenDays(new Set());
-      setExpandedMeals(new Set());
-      setGeneratedPlan(data);
-    }, 3000); // 3 second delay
+    // FIXED: Keep streaming component visible permanently to show meal cards
+    console.log('🎯 Streaming completed, keeping component visible to show meal cards');
+    
+    // Store the generated plan but keep streaming component visible 
+    setGeneratedPlan(data);
     
     // Check if this is the user's first generated meal plan and unlock achievement
     try {

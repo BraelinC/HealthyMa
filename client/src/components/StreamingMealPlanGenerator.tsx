@@ -358,7 +358,7 @@ export function StreamingMealPlanGenerator({
   }, []);
 
   // Component render logging with detailed state debugging
-  console.log(`🎨 RENDER: StreamingMealPlanGenerator - RenderKey: ${renderKey}`);
+  console.log(`🎨 RENDER: StreamingMealPlanGenerator - RenderKey: ${renderKey} - COMPONENT INSTANCE: ${Date.now()}`);
   console.log(`📊 RENDER State Debug:`, {
     mealsCount: liveParsingMeals.length,
     debugMealCount,
@@ -366,7 +366,8 @@ export function StreamingMealPlanGenerator({
     renderKey,
     showingLoader: liveParsingMeals.length === 0,
     showingMeals: liveParsingMeals.length > 0,
-    error: !!error
+    error: !!error,
+    componentMount: Date.now()
   });
   
   console.log(`🔍 RENDER: liveParsingMeals reference:`, liveParsingMeals);
@@ -388,6 +389,7 @@ export function StreamingMealPlanGenerator({
         <div>🔍 MAIN: Meals={liveParsingMeals.length} | Debug={debugMealCount} | RenderKey={renderKey}</div>
         <div>🔍 STATE: Generating={isGenerating.toString()} | Error={error || 'none'}</div>
         <div>🔍 ARRAY: HasMeals={liveParsingMeals.length > 0 ? 'YES' : 'NO'} | IsArray={Array.isArray(liveParsingMeals) ? 'YES' : 'NO'}</div>
+        <div>🔍 INSTANCE: {Date.now()} | Mount: {new Date().toLocaleTimeString()}</div>
       </div>
 
       {/* TEST: Simple meal count display */}
