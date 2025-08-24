@@ -705,9 +705,6 @@ export default function CommunityDetailNew() {
                           onImagesChange={setSelectedImages}
                           maxImages={4}
                         />
-                        <Button variant="ghost" size="sm" className="text-gray-400 p-2">
-                          <ChefHat className="w-4 h-4" />
-                        </Button>
                         {/* Creator-only New Course button */}
                         {isCreator && (
                           <Button 
