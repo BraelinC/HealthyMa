@@ -50,13 +50,20 @@ export function StreamingMealPlanGenerator({
   const [currentStatus, setCurrentStatus] = useState('Initializing...');
   const [progress, setProgress] = useState(0);
   const [liveParsingMeals, setLiveParsingMeals] = useState<Meal[]>([]);
-  const [renderKey, setRenderKey] = useState(0); // Force re-render key
+  const [renderKey, setRenderKey] = useState(0); // Force re-render key  
+  const [debugMealCount, setDebugMealCount] = useState(0); // Separate debug state
   const { toast } = useToast();
   
   // Force update function
   const forceUpdate = useCallback(() => {
     setRenderKey(prev => prev + 1);
   }, []);
+
+  // Debug effect to track meal state changes
+  useEffect(() => {
+    console.log(`🔄 EFFECT: liveParsingMeals changed to ${liveParsingMeals.length} meals`);
+    setDebugMealCount(liveParsingMeals.length);
+  }, [liveParsingMeals]);
 
   const getMealIcon = (mealType: string) => {
     switch (mealType) {
@@ -249,7 +256,10 @@ export function StreamingMealPlanGenerator({
                   console.log('🎯 Updated meal list:', newMeals.map(m => m.title || m.name));
                   
                   // FORCE RE-RENDER after state update
-                  setTimeout(() => forceUpdate(), 0);
+                  setTimeout(() => {
+                    forceUpdate();
+                    setDebugMealCount(newMeals.length);
+                  }, 0);
                   
                   return newMeals;
                 });
@@ -375,7 +385,7 @@ export function StreamingMealPlanGenerator({
     <div key={renderKey} className="space-y-4">
       {/* VISIBLE DEBUG - Always show this */}
       <div className="bg-yellow-100 border border-yellow-400 p-3 text-sm font-mono">
-        🔍 DEBUG: Meals={liveParsingMeals.length} | Generating={isGenerating.toString()} | Error={error || 'none'}
+        🔍 DEBUG: Meals={liveParsingMeals.length} | Debug={debugMealCount} | RenderKey={renderKey} | Generating={isGenerating.toString()} | Error={error || 'none'}
       </div>
 
       {/* TEST: Simple meal count display */}
