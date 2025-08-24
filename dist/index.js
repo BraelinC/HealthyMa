@@ -9,11 +9,11 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc6) => {
+var __copyProps = (to, from, except, desc7) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc6 = __getOwnPropDesc(from, key)) || desc6.enumerable });
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc7 = __getOwnPropDesc(from, key)) || desc7.enumerable });
   }
   return to;
 };
@@ -758,6 +758,8 @@ var init_schema = __esm({
       emoji: varchar("emoji", { length: 10 }),
       // Optional emoji for the module
       description: text("description"),
+      cover_image: text("cover_image"),
+      // Optional cover image URL for the module
       module_order: integer("module_order").notNull(),
       is_expanded: boolean("is_expanded").default(false),
       // Whether module is expanded by default
@@ -2813,6 +2815,453 @@ var init_logmealEndpoint = __esm({
     MAX_DAILY_CALLS = 180;
     dailyCallCount = 0;
     lastResetDate = (/* @__PURE__ */ new Date()).toDateString();
+  }
+});
+
+// server/communityService.ts
+var communityService_exports = {};
+__export(communityService_exports, {
+  CommunityService: () => CommunityService,
+  communityService: () => communityService
+});
+import { eq as eq2, and as and2, desc as desc2, sql as sql3, gte as gte2 } from "drizzle-orm";
+var CommunityService, communityService;
+var init_communityService = __esm({
+  "server/communityService.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    CommunityService = class {
+      // Create a new community
+      async createCommunity(userId, data) {
+        const [community] = await db.insert(communities).values({
+          ...data,
+          creator_id: userId,
+          member_count: 1
+        }).returning();
+        await db.insert(communityMembers).values({
+          community_id: community.id,
+          user_id: userId,
+          role: "creator",
+          points: 0,
+          level: 1
+        });
+        return community;
+      }
+      // Get all communities with optional filtering
+      async getCommunities(category, userId) {
+        let whereConditions = [];
+        if (category) {
+          whereConditions.push(eq2(communities.category, category));
+        }
+        const allCommunities = await db.select().from(communities).where(whereConditions.length > 0 ? and2(...whereConditions) : void 0).orderBy(desc2(communities.member_count));
+        if (userId) {
+          const userMemberships = await db.select().from(communityMembers).where(eq2(communityMembers.user_id, userId));
+          const membershipMap = new Set(userMemberships.map((m) => m.community_id));
+          return allCommunities.map((community) => ({
+            ...community,
+            isMember: membershipMap.has(community.id)
+          }));
+        }
+        return allCommunities;
+      }
+      // Get community details with member info
+      async getCommunityDetails(communityId, userId) {
+        const [community] = await db.select().from(communities).where(eq2(communities.id, communityId));
+        if (!community) {
+          throw new Error("Community not found");
+        }
+        let memberInfo = null;
+        if (userId) {
+          const [member] = await db.select().from(communityMembers).where(and2(
+            eq2(communityMembers.community_id, communityId),
+            eq2(communityMembers.user_id, userId)
+          ));
+          memberInfo = member;
+        }
+        const topContributors = await db.select().from(communityMembers).where(eq2(communityMembers.community_id, communityId)).orderBy(desc2(communityMembers.points)).limit(10);
+        return {
+          ...community,
+          memberInfo,
+          topContributors
+        };
+      }
+      // Join a community
+      async joinCommunity(userId, communityId) {
+        const existing = await db.select().from(communityMembers).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+        if (existing.length > 0) {
+          throw new Error("Already a member of this community");
+        }
+        const [member] = await db.insert(communityMembers).values({
+          community_id: communityId,
+          user_id: userId,
+          role: "member",
+          points: 0,
+          level: 1
+        }).returning();
+        await db.update(communities).set({
+          member_count: sql3`${communities.member_count} + 1`,
+          updated_at: /* @__PURE__ */ new Date()
+        }).where(eq2(communities.id, communityId));
+        return member;
+      }
+      // Leave a community
+      async leaveCommunity(userId, communityId) {
+        const [member] = await db.select().from(communityMembers).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+        if (!member) {
+          throw new Error("Not a member of this community");
+        }
+        if (member.role === "creator") {
+          throw new Error("Creator cannot leave their own community");
+        }
+        await db.delete(communityMembers).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+        await db.update(communities).set({
+          member_count: sql3`${communities.member_count} - 1`,
+          updated_at: /* @__PURE__ */ new Date()
+        }).where(eq2(communities.id, communityId));
+      }
+      // Share a meal plan to community
+      async shareMealPlan(userId, communityId, mealPlanId, data) {
+        const member = await this.verifyMembership(userId, communityId);
+        const [sharedPlan] = await db.insert(sharedMealPlans).values({
+          ...data,
+          community_id: communityId,
+          meal_plan_id: mealPlanId,
+          sharer_id: userId
+        }).returning();
+        await this.awardPoints(userId, communityId, 25, "shared_meal_plan");
+        return sharedPlan;
+      }
+      // Get shared meal plans for a community
+      async getCommunityMealPlans(communityId, filter) {
+        let whereConditions = [eq2(sharedMealPlans.community_id, communityId)];
+        if (filter?.featured) {
+          whereConditions.push(eq2(sharedMealPlans.is_featured, true));
+        }
+        const plans = await db.select().from(sharedMealPlans).where(and2(...whereConditions)).orderBy(desc2(sharedMealPlans.created_at));
+        if (filter?.tags && filter.tags.length > 0) {
+          return plans.filter((plan) => {
+            const planTags = plan.tags;
+            return filter.tags.some((tag) => planTags.includes(tag));
+          });
+        }
+        return plans;
+      }
+      // Add a review to a shared meal plan
+      async reviewMealPlan(userId, sharedPlanId, review) {
+        const existing = await db.select().from(mealPlanReviews).where(and2(
+          eq2(mealPlanReviews.shared_plan_id, sharedPlanId),
+          eq2(mealPlanReviews.reviewer_id, userId)
+        ));
+        if (existing.length > 0) {
+          throw new Error("You have already reviewed this meal plan");
+        }
+        const [newReview] = await db.insert(mealPlanReviews).values({
+          ...review,
+          shared_plan_id: sharedPlanId,
+          reviewer_id: userId
+        }).returning();
+        if (review.tried_it) {
+          await this.updatePlanSuccessRate(sharedPlanId);
+        }
+        const [sharedPlan] = await db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.id, sharedPlanId));
+        if (sharedPlan) {
+          await this.awardPoints(userId, sharedPlan.community_id, 10, "reviewed_meal_plan");
+        }
+        return newReview;
+      }
+      // Mark a meal plan as tried
+      async markPlanAsTried(userId, sharedPlanId) {
+        await db.update(sharedMealPlans).set({
+          tries: sql3`${sharedMealPlans.tries} + 1`
+        }).where(eq2(sharedMealPlans.id, sharedPlanId));
+        const [sharedPlan] = await db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.id, sharedPlanId));
+        if (sharedPlan) {
+          await this.awardPoints(userId, sharedPlan.community_id, 15, "tried_meal_plan");
+        }
+      }
+      // Get trending meal plans across all communities
+      async getTrendingMealPlans(limit = 10) {
+        const sevenDaysAgo = /* @__PURE__ */ new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const trending = await db.select().from(sharedMealPlans).where(gte2(sharedMealPlans.created_at, sevenDaysAgo)).orderBy(
+          desc2(sql3`${sharedMealPlans.likes} + ${sharedMealPlans.tries} * 2`)
+        ).limit(limit);
+        return trending;
+      }
+      // Private helper methods
+      async verifyMembership(userId, communityId) {
+        const [member] = await db.select().from(communityMembers).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+        if (!member) {
+          throw new Error("You must be a member to perform this action");
+        }
+        return member;
+      }
+      async awardPoints(userId, communityId, points, reason) {
+        await db.update(communityMembers).set({
+          points: sql3`${communityMembers.points} + ${points}`,
+          level: sql3`CASE 
+          WHEN ${communityMembers.points} + ${points} >= 500 THEN 5
+          WHEN ${communityMembers.points} + ${points} >= 300 THEN 4
+          WHEN ${communityMembers.points} + ${points} >= 150 THEN 3
+          WHEN ${communityMembers.points} + ${points} >= 50 THEN 2
+          ELSE 1
+        END`
+        }).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+      }
+      async updatePlanSuccessRate(sharedPlanId) {
+        const reviews = await db.select().from(mealPlanReviews).where(and2(
+          eq2(mealPlanReviews.shared_plan_id, sharedPlanId),
+          eq2(mealPlanReviews.tried_it, true)
+        ));
+        if (reviews.length > 0) {
+          const positiveReviews = reviews.filter((r) => r.rating >= 4).length;
+          const successRate = Math.round(positiveReviews / reviews.length * 100);
+          await db.update(sharedMealPlans).set({ success_rate: successRate }).where(eq2(sharedMealPlans.id, sharedPlanId));
+        }
+      }
+      // ============================================
+      // COMMUNITY POSTS METHODS
+      // ============================================
+      // Create a new community post
+      async createCommunityPost(userId, communityId, data) {
+        await this.verifyMembership(userId, communityId);
+        console.log("Creating post with data:", JSON.stringify(data, null, 2));
+        let imagesForDB = null;
+        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+          imagesForDB = JSON.stringify(data.images);
+        }
+        console.log("Images for DB (JSON string):", imagesForDB);
+        const [post] = await db.insert(communityPosts).values({
+          content: data.content,
+          post_type: data.post_type || "discussion",
+          meal_plan_id: data.meal_plan_id || null,
+          images: imagesForDB,
+          author_id: userId,
+          community_id: communityId
+        }).returning();
+        const [author] = await db.select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          full_name: users.full_name
+        }).from(users).where(eq2(users.id, userId));
+        await this.awardPoints(userId, communityId, 10, "created_post");
+        return {
+          ...post,
+          images: post.images ? JSON.parse(post.images) : [],
+          // Parse JSON string back to array
+          author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+        };
+      }
+      // Get community posts with pagination and filtering
+      async getCommunityPosts(communityId, options = {}) {
+        const { limit = 20, offset = 0, type, userId } = options;
+        let whereConditions = [eq2(communityPosts.community_id, communityId)];
+        if (type) {
+          whereConditions.push(eq2(communityPosts.post_type, type));
+        }
+        const posts = await db.select({
+          post: communityPosts,
+          author: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            profileImageUrl: users.profileImageUrl,
+            full_name: users.full_name
+          }
+        }).from(communityPosts).leftJoin(users, eq2(communityPosts.author_id, users.id)).where(and2(...whereConditions)).orderBy(desc2(communityPosts.is_pinned), desc2(communityPosts.created_at)).limit(limit).offset(offset);
+        let userLikedPosts = /* @__PURE__ */ new Set();
+        if (userId) {
+          const likedPosts = await db.select({ post_id: communityPostLikes.post_id }).from(communityPostLikes).where(eq2(communityPostLikes.user_id, userId));
+          userLikedPosts = new Set(likedPosts.map((like2) => like2.post_id).filter((id) => id !== null));
+        }
+        return posts.map(({ post, author }) => ({
+          ...post,
+          images: post.images ? JSON.parse(post.images) : [],
+          // Parse JSON string back to array
+          username: author?.full_name || author?.firstName || "Anonymous",
+          likes_count: post.likes,
+          author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+          isLiked: userLikedPosts.has(post.id),
+          is_liked: userLikedPosts.has(post.id),
+          created_at: post.created_at ? new Date(post.created_at).toLocaleString() : (/* @__PURE__ */ new Date()).toLocaleString()
+        }));
+      }
+      // Like/unlike a community post
+      async togglePostLike(userId, postId, communityId) {
+        const [post] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
+        if (!post) {
+          throw new Error("Post not found");
+        }
+        if (post.author_id === userId) {
+          throw new Error("Cannot like your own post");
+        }
+        if (communityId && communityId !== post.community_id) {
+          throw new Error("Post not found");
+        }
+        await this.verifyMembership(userId, post.community_id);
+        const [existingLike] = await db.select().from(communityPostLikes).where(and2(
+          eq2(communityPostLikes.post_id, postId),
+          eq2(communityPostLikes.user_id, userId)
+        ));
+        if (existingLike) {
+          await db.delete(communityPostLikes).where(and2(
+            eq2(communityPostLikes.post_id, postId),
+            eq2(communityPostLikes.user_id, userId)
+          ));
+          await db.update(communityPosts).set({ likes: sql3`${communityPosts.likes} - 1` }).where(eq2(communityPosts.id, postId));
+          const [post2] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
+          return { liked: false, likesCount: post2.likes || 0 };
+        } else {
+          await db.insert(communityPostLikes).values({
+            post_id: postId,
+            user_id: userId
+          });
+          await db.update(communityPosts).set({ likes: sql3`${communityPosts.likes} + 1` }).where(eq2(communityPosts.id, postId));
+          const [post2] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
+          return { liked: true, likesCount: post2.likes || 0 };
+        }
+      }
+      // Like/unlike a community comment
+      async toggleCommentLike(userId, commentId) {
+        const [comment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
+        if (!comment) {
+          throw new Error("Comment not found");
+        }
+        if (comment.author_id === userId) {
+          throw new Error("Cannot like your own comment");
+        }
+        const [post] = await db.select().from(communityPosts).where(eq2(communityPosts.id, comment.post_id));
+        if (!post) {
+          throw new Error("Post not found");
+        }
+        await this.verifyMembership(userId, post.community_id);
+        const [existingLike] = await db.select().from(communityCommentLikes).where(and2(
+          eq2(communityCommentLikes.comment_id, commentId),
+          eq2(communityCommentLikes.user_id, userId)
+        ));
+        if (existingLike) {
+          await db.delete(communityCommentLikes).where(and2(
+            eq2(communityCommentLikes.comment_id, commentId),
+            eq2(communityCommentLikes.user_id, userId)
+          ));
+          await db.update(communityPostComments).set({ likes: sql3`${communityPostComments.likes} - 1` }).where(eq2(communityPostComments.id, commentId));
+          const [updatedComment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
+          return { liked: false, likesCount: updatedComment.likes || 0 };
+        } else {
+          await db.insert(communityCommentLikes).values({
+            comment_id: commentId,
+            user_id: userId
+          });
+          await db.update(communityPostComments).set({ likes: sql3`${communityPostComments.likes} + 1` }).where(eq2(communityPostComments.id, commentId));
+          const [updatedComment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
+          return { liked: true, likesCount: updatedComment.likes || 0 };
+        }
+      }
+      // Add a comment to a community post
+      async addPostComment(userId, postId, content, parentId) {
+        const [comment] = await db.insert(communityPostComments).values({
+          post_id: postId,
+          author_id: userId,
+          content,
+          parent_id: parentId
+        }).returning();
+        await db.update(communityPosts).set({ comments_count: sql3`${communityPosts.comments_count} + 1` }).where(eq2(communityPosts.id, postId));
+        const [author] = await db.select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          full_name: users.full_name
+        }).from(users).where(eq2(users.id, userId));
+        return {
+          ...comment,
+          author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+        };
+      }
+      // Get comments for a post
+      async getPostComments(postId, userId) {
+        const comments = await db.select({
+          comment: communityPostComments,
+          author: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            profileImageUrl: users.profileImageUrl,
+            full_name: users.full_name
+          }
+        }).from(communityPostComments).leftJoin(users, eq2(communityPostComments.author_id, users.id)).where(eq2(communityPostComments.post_id, postId)).orderBy(communityPostComments.created_at);
+        if (!userId) {
+          return comments.map(({ comment, author }) => ({
+            ...comment,
+            images: comment.images ? JSON.parse(comment.images) : [],
+            author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+            isLiked: false
+          }));
+        }
+        const commentIds = comments.map(({ comment }) => comment.id);
+        const userLikes = commentIds.length > 0 ? await db.select().from(communityCommentLikes).where(and2(
+          eq2(communityCommentLikes.user_id, userId),
+          sql3`${communityCommentLikes.comment_id} IN (${sql3.join(commentIds.map((id) => sql3`${id}`), sql3`, `)})`
+        )) : [];
+        const likedCommentIds = new Set(userLikes.map((like2) => like2.comment_id));
+        return comments.map(({ comment, author }) => ({
+          ...comment,
+          images: comment.images ? JSON.parse(comment.images) : [],
+          author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+          isLiked: likedCommentIds.has(comment.id)
+        }));
+      }
+      // Get user membership for a community
+      async getUserMembership(userId, communityId) {
+        const [membership] = await db.select().from(communityMembers).where(and2(
+          eq2(communityMembers.user_id, userId),
+          eq2(communityMembers.community_id, communityId)
+        ));
+        return membership;
+      }
+      // Get community meal plans
+      async getCommunityMealPlans(communityId) {
+        return [];
+      }
+      // Create community meal plan
+      async createCommunityMealPlan(userId, communityId, mealPlanData) {
+        return {
+          id: Date.now(),
+          title: mealPlanData.title,
+          description: mealPlanData.description,
+          image_url: mealPlanData.image_url,
+          youtube_video_id: mealPlanData.youtube_video_id,
+          ingredients: mealPlanData.ingredients,
+          instructions: mealPlanData.instructions,
+          prep_time: mealPlanData.prep_time,
+          cook_time: mealPlanData.cook_time,
+          servings: mealPlanData.servings,
+          creator_name: "Community Creator",
+          created_at: (/* @__PURE__ */ new Date()).toISOString(),
+          likes_count: 0,
+          is_liked: false
+        };
+      }
+    };
+    communityService = new CommunityService();
   }
 });
 
@@ -13321,440 +13770,7 @@ setInterval(() => rateLimiter.cleanup(), 60 * 60 * 1e3);
 
 // server/routes.ts
 init_logmealEndpoint();
-
-// server/communityService.ts
-init_db();
-init_schema();
-import { eq as eq2, and as and2, desc as desc2, sql as sql3, gte as gte2 } from "drizzle-orm";
-var CommunityService = class {
-  // Create a new community
-  async createCommunity(userId, data) {
-    const [community] = await db.insert(communities).values({
-      ...data,
-      creator_id: userId,
-      member_count: 1
-    }).returning();
-    await db.insert(communityMembers).values({
-      community_id: community.id,
-      user_id: userId,
-      role: "creator",
-      points: 0,
-      level: 1
-    });
-    return community;
-  }
-  // Get all communities with optional filtering
-  async getCommunities(category, userId) {
-    let whereConditions = [];
-    if (category) {
-      whereConditions.push(eq2(communities.category, category));
-    }
-    const allCommunities = await db.select().from(communities).where(whereConditions.length > 0 ? and2(...whereConditions) : void 0).orderBy(desc2(communities.member_count));
-    if (userId) {
-      const userMemberships = await db.select().from(communityMembers).where(eq2(communityMembers.user_id, userId));
-      const membershipMap = new Set(userMemberships.map((m) => m.community_id));
-      return allCommunities.map((community) => ({
-        ...community,
-        isMember: membershipMap.has(community.id)
-      }));
-    }
-    return allCommunities;
-  }
-  // Get community details with member info
-  async getCommunityDetails(communityId, userId) {
-    const [community] = await db.select().from(communities).where(eq2(communities.id, communityId));
-    if (!community) {
-      throw new Error("Community not found");
-    }
-    let memberInfo = null;
-    if (userId) {
-      const [member] = await db.select().from(communityMembers).where(and2(
-        eq2(communityMembers.community_id, communityId),
-        eq2(communityMembers.user_id, userId)
-      ));
-      memberInfo = member;
-    }
-    const topContributors = await db.select().from(communityMembers).where(eq2(communityMembers.community_id, communityId)).orderBy(desc2(communityMembers.points)).limit(10);
-    return {
-      ...community,
-      memberInfo,
-      topContributors
-    };
-  }
-  // Join a community
-  async joinCommunity(userId, communityId) {
-    const existing = await db.select().from(communityMembers).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-    if (existing.length > 0) {
-      throw new Error("Already a member of this community");
-    }
-    const [member] = await db.insert(communityMembers).values({
-      community_id: communityId,
-      user_id: userId,
-      role: "member",
-      points: 0,
-      level: 1
-    }).returning();
-    await db.update(communities).set({
-      member_count: sql3`${communities.member_count} + 1`,
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq2(communities.id, communityId));
-    return member;
-  }
-  // Leave a community
-  async leaveCommunity(userId, communityId) {
-    const [member] = await db.select().from(communityMembers).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-    if (!member) {
-      throw new Error("Not a member of this community");
-    }
-    if (member.role === "creator") {
-      throw new Error("Creator cannot leave their own community");
-    }
-    await db.delete(communityMembers).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-    await db.update(communities).set({
-      member_count: sql3`${communities.member_count} - 1`,
-      updated_at: /* @__PURE__ */ new Date()
-    }).where(eq2(communities.id, communityId));
-  }
-  // Share a meal plan to community
-  async shareMealPlan(userId, communityId, mealPlanId, data) {
-    const member = await this.verifyMembership(userId, communityId);
-    const [sharedPlan] = await db.insert(sharedMealPlans).values({
-      ...data,
-      community_id: communityId,
-      meal_plan_id: mealPlanId,
-      sharer_id: userId
-    }).returning();
-    await this.awardPoints(userId, communityId, 25, "shared_meal_plan");
-    return sharedPlan;
-  }
-  // Get shared meal plans for a community
-  async getCommunityMealPlans(communityId, filter) {
-    let whereConditions = [eq2(sharedMealPlans.community_id, communityId)];
-    if (filter?.featured) {
-      whereConditions.push(eq2(sharedMealPlans.is_featured, true));
-    }
-    const plans = await db.select().from(sharedMealPlans).where(and2(...whereConditions)).orderBy(desc2(sharedMealPlans.created_at));
-    if (filter?.tags && filter.tags.length > 0) {
-      return plans.filter((plan) => {
-        const planTags = plan.tags;
-        return filter.tags.some((tag) => planTags.includes(tag));
-      });
-    }
-    return plans;
-  }
-  // Add a review to a shared meal plan
-  async reviewMealPlan(userId, sharedPlanId, review) {
-    const existing = await db.select().from(mealPlanReviews).where(and2(
-      eq2(mealPlanReviews.shared_plan_id, sharedPlanId),
-      eq2(mealPlanReviews.reviewer_id, userId)
-    ));
-    if (existing.length > 0) {
-      throw new Error("You have already reviewed this meal plan");
-    }
-    const [newReview] = await db.insert(mealPlanReviews).values({
-      ...review,
-      shared_plan_id: sharedPlanId,
-      reviewer_id: userId
-    }).returning();
-    if (review.tried_it) {
-      await this.updatePlanSuccessRate(sharedPlanId);
-    }
-    const [sharedPlan] = await db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.id, sharedPlanId));
-    if (sharedPlan) {
-      await this.awardPoints(userId, sharedPlan.community_id, 10, "reviewed_meal_plan");
-    }
-    return newReview;
-  }
-  // Mark a meal plan as tried
-  async markPlanAsTried(userId, sharedPlanId) {
-    await db.update(sharedMealPlans).set({
-      tries: sql3`${sharedMealPlans.tries} + 1`
-    }).where(eq2(sharedMealPlans.id, sharedPlanId));
-    const [sharedPlan] = await db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.id, sharedPlanId));
-    if (sharedPlan) {
-      await this.awardPoints(userId, sharedPlan.community_id, 15, "tried_meal_plan");
-    }
-  }
-  // Get trending meal plans across all communities
-  async getTrendingMealPlans(limit = 10) {
-    const sevenDaysAgo = /* @__PURE__ */ new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const trending = await db.select().from(sharedMealPlans).where(gte2(sharedMealPlans.created_at, sevenDaysAgo)).orderBy(
-      desc2(sql3`${sharedMealPlans.likes} + ${sharedMealPlans.tries} * 2`)
-    ).limit(limit);
-    return trending;
-  }
-  // Private helper methods
-  async verifyMembership(userId, communityId) {
-    const [member] = await db.select().from(communityMembers).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-    if (!member) {
-      throw new Error("You must be a member to perform this action");
-    }
-    return member;
-  }
-  async awardPoints(userId, communityId, points, reason) {
-    await db.update(communityMembers).set({
-      points: sql3`${communityMembers.points} + ${points}`,
-      level: sql3`CASE 
-          WHEN ${communityMembers.points} + ${points} >= 500 THEN 5
-          WHEN ${communityMembers.points} + ${points} >= 300 THEN 4
-          WHEN ${communityMembers.points} + ${points} >= 150 THEN 3
-          WHEN ${communityMembers.points} + ${points} >= 50 THEN 2
-          ELSE 1
-        END`
-    }).where(and2(
-      eq2(communityMembers.community_id, communityId),
-      eq2(communityMembers.user_id, userId)
-    ));
-  }
-  async updatePlanSuccessRate(sharedPlanId) {
-    const reviews = await db.select().from(mealPlanReviews).where(and2(
-      eq2(mealPlanReviews.shared_plan_id, sharedPlanId),
-      eq2(mealPlanReviews.tried_it, true)
-    ));
-    if (reviews.length > 0) {
-      const positiveReviews = reviews.filter((r) => r.rating >= 4).length;
-      const successRate = Math.round(positiveReviews / reviews.length * 100);
-      await db.update(sharedMealPlans).set({ success_rate: successRate }).where(eq2(sharedMealPlans.id, sharedPlanId));
-    }
-  }
-  // ============================================
-  // COMMUNITY POSTS METHODS
-  // ============================================
-  // Create a new community post
-  async createCommunityPost(userId, communityId, data) {
-    await this.verifyMembership(userId, communityId);
-    console.log("Creating post with data:", JSON.stringify(data, null, 2));
-    let imagesForDB = null;
-    if (data.images && Array.isArray(data.images) && data.images.length > 0) {
-      imagesForDB = JSON.stringify(data.images);
-    }
-    console.log("Images for DB (JSON string):", imagesForDB);
-    const [post] = await db.insert(communityPosts).values({
-      content: data.content,
-      post_type: data.post_type || "discussion",
-      meal_plan_id: data.meal_plan_id || null,
-      images: imagesForDB,
-      author_id: userId,
-      community_id: communityId
-    }).returning();
-    const [author] = await db.select({
-      id: users.id,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      profileImageUrl: users.profileImageUrl,
-      full_name: users.full_name
-    }).from(users).where(eq2(users.id, userId));
-    await this.awardPoints(userId, communityId, 10, "created_post");
-    return {
-      ...post,
-      images: post.images ? JSON.parse(post.images) : [],
-      // Parse JSON string back to array
-      author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
-    };
-  }
-  // Get community posts with pagination and filtering
-  async getCommunityPosts(communityId, options = {}) {
-    const { limit = 20, offset = 0, type, userId } = options;
-    let whereConditions = [eq2(communityPosts.community_id, communityId)];
-    if (type) {
-      whereConditions.push(eq2(communityPosts.post_type, type));
-    }
-    const posts = await db.select({
-      post: communityPosts,
-      author: {
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        profileImageUrl: users.profileImageUrl,
-        full_name: users.full_name
-      }
-    }).from(communityPosts).leftJoin(users, eq2(communityPosts.author_id, users.id)).where(and2(...whereConditions)).orderBy(desc2(communityPosts.is_pinned), desc2(communityPosts.created_at)).limit(limit).offset(offset);
-    let userLikedPosts = /* @__PURE__ */ new Set();
-    if (userId) {
-      const likedPosts = await db.select({ post_id: communityPostLikes.post_id }).from(communityPostLikes).where(eq2(communityPostLikes.user_id, userId));
-      userLikedPosts = new Set(likedPosts.map((like2) => like2.post_id).filter((id) => id !== null));
-    }
-    return posts.map(({ post, author }) => ({
-      ...post,
-      images: post.images ? JSON.parse(post.images) : [],
-      // Parse JSON string back to array
-      username: author?.full_name || author?.firstName || "Anonymous",
-      likes_count: post.likes,
-      author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
-      isLiked: userLikedPosts.has(post.id),
-      is_liked: userLikedPosts.has(post.id),
-      created_at: post.created_at ? new Date(post.created_at).toLocaleString() : (/* @__PURE__ */ new Date()).toLocaleString()
-    }));
-  }
-  // Like/unlike a community post
-  async togglePostLike(userId, postId, communityId) {
-    const [post] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
-    if (!post) {
-      throw new Error("Post not found");
-    }
-    if (post.author_id === userId) {
-      throw new Error("Cannot like your own post");
-    }
-    if (communityId && communityId !== post.community_id) {
-      throw new Error("Post not found");
-    }
-    await this.verifyMembership(userId, post.community_id);
-    const [existingLike] = await db.select().from(communityPostLikes).where(and2(
-      eq2(communityPostLikes.post_id, postId),
-      eq2(communityPostLikes.user_id, userId)
-    ));
-    if (existingLike) {
-      await db.delete(communityPostLikes).where(and2(
-        eq2(communityPostLikes.post_id, postId),
-        eq2(communityPostLikes.user_id, userId)
-      ));
-      await db.update(communityPosts).set({ likes: sql3`${communityPosts.likes} - 1` }).where(eq2(communityPosts.id, postId));
-      const [post2] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
-      return { liked: false, likesCount: post2.likes || 0 };
-    } else {
-      await db.insert(communityPostLikes).values({
-        post_id: postId,
-        user_id: userId
-      });
-      await db.update(communityPosts).set({ likes: sql3`${communityPosts.likes} + 1` }).where(eq2(communityPosts.id, postId));
-      const [post2] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
-      return { liked: true, likesCount: post2.likes || 0 };
-    }
-  }
-  // Like/unlike a community comment
-  async toggleCommentLike(userId, commentId) {
-    const [comment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
-    if (!comment) {
-      throw new Error("Comment not found");
-    }
-    if (comment.author_id === userId) {
-      throw new Error("Cannot like your own comment");
-    }
-    const [post] = await db.select().from(communityPosts).where(eq2(communityPosts.id, comment.post_id));
-    if (!post) {
-      throw new Error("Post not found");
-    }
-    await this.verifyMembership(userId, post.community_id);
-    const [existingLike] = await db.select().from(communityCommentLikes).where(and2(
-      eq2(communityCommentLikes.comment_id, commentId),
-      eq2(communityCommentLikes.user_id, userId)
-    ));
-    if (existingLike) {
-      await db.delete(communityCommentLikes).where(and2(
-        eq2(communityCommentLikes.comment_id, commentId),
-        eq2(communityCommentLikes.user_id, userId)
-      ));
-      await db.update(communityPostComments).set({ likes: sql3`${communityPostComments.likes} - 1` }).where(eq2(communityPostComments.id, commentId));
-      const [updatedComment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
-      return { liked: false, likesCount: updatedComment.likes || 0 };
-    } else {
-      await db.insert(communityCommentLikes).values({
-        comment_id: commentId,
-        user_id: userId
-      });
-      await db.update(communityPostComments).set({ likes: sql3`${communityPostComments.likes} + 1` }).where(eq2(communityPostComments.id, commentId));
-      const [updatedComment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
-      return { liked: true, likesCount: updatedComment.likes || 0 };
-    }
-  }
-  // Add a comment to a community post
-  async addPostComment(userId, postId, content, parentId) {
-    const [comment] = await db.insert(communityPostComments).values({
-      post_id: postId,
-      author_id: userId,
-      content,
-      parent_id: parentId
-    }).returning();
-    await db.update(communityPosts).set({ comments_count: sql3`${communityPosts.comments_count} + 1` }).where(eq2(communityPosts.id, postId));
-    const [author] = await db.select({
-      id: users.id,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      profileImageUrl: users.profileImageUrl,
-      full_name: users.full_name
-    }).from(users).where(eq2(users.id, userId));
-    return {
-      ...comment,
-      author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
-    };
-  }
-  // Get comments for a post
-  async getPostComments(postId, userId) {
-    const comments = await db.select({
-      comment: communityPostComments,
-      author: {
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        profileImageUrl: users.profileImageUrl,
-        full_name: users.full_name
-      }
-    }).from(communityPostComments).leftJoin(users, eq2(communityPostComments.author_id, users.id)).where(eq2(communityPostComments.post_id, postId)).orderBy(communityPostComments.created_at);
-    if (!userId) {
-      return comments.map(({ comment, author }) => ({
-        ...comment,
-        author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
-        isLiked: false
-      }));
-    }
-    const commentIds = comments.map(({ comment }) => comment.id);
-    const userLikes = commentIds.length > 0 ? await db.select().from(communityCommentLikes).where(and2(
-      eq2(communityCommentLikes.user_id, userId),
-      sql3`${communityCommentLikes.comment_id} IN (${sql3.join(commentIds.map((id) => sql3`${id}`), sql3`, `)})`
-    )) : [];
-    const likedCommentIds = new Set(userLikes.map((like2) => like2.comment_id));
-    return comments.map(({ comment, author }) => ({
-      ...comment,
-      author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
-      isLiked: likedCommentIds.has(comment.id)
-    }));
-  }
-  // Get user membership for a community
-  async getUserMembership(userId, communityId) {
-    const [membership] = await db.select().from(communityMembers).where(and2(
-      eq2(communityMembers.user_id, userId),
-      eq2(communityMembers.community_id, communityId)
-    ));
-    return membership;
-  }
-  // Get community meal plans
-  async getCommunityMealPlans(communityId) {
-    return [];
-  }
-  // Create community meal plan
-  async createCommunityMealPlan(userId, communityId, mealPlanData) {
-    return {
-      id: Date.now(),
-      title: mealPlanData.title,
-      description: mealPlanData.description,
-      image_url: mealPlanData.image_url,
-      youtube_video_id: mealPlanData.youtube_video_id,
-      ingredients: mealPlanData.ingredients,
-      instructions: mealPlanData.instructions,
-      prep_time: mealPlanData.prep_time,
-      cook_time: mealPlanData.cook_time,
-      servings: mealPlanData.servings,
-      creator_name: "Community Creator",
-      created_at: (/* @__PURE__ */ new Date()).toISOString(),
-      likes_count: 0,
-      is_liked: false
-    };
-  }
-};
-var communityService = new CommunityService();
+init_communityService();
 
 // server/communityCommentsService.ts
 init_schema();
@@ -13830,8 +13846,9 @@ var CommunityCommentsService = class {
     await db.update(communityPosts).set({ comments_count: count }).where(eq3(communityPosts.id, postId));
   }
   // Get nested comment structure (for threaded comments)
-  async getNestedComments(postId) {
-    const allComments = await this.getPostComments(postId);
+  async getNestedComments(postId, userId) {
+    const { communityService: communityService2 } = await Promise.resolve().then(() => (init_communityService(), communityService_exports));
+    const allComments = await communityService2.getPostComments(postId, userId);
     const commentMap = /* @__PURE__ */ new Map();
     const rootComments = [];
     allComments.forEach((comment) => {
@@ -15206,7 +15223,7 @@ async function signObjectURL({
 init_schema();
 init_db();
 import Stripe from "stripe";
-import { eq as eq8, and as and6, isNull as isNull2 } from "drizzle-orm";
+import { eq as eq8, and as and6, isNull as isNull2, desc as desc6 } from "drizzle-orm";
 var YOUTUBE_API_KEY2 = process.env.YOUTUBE_API_KEY;
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
@@ -16995,10 +17012,14 @@ async function registerRoutes(app2) {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("X-Accel-Buffering", "no");
     const sendData = (data) => {
       res.write(`data: ${data}
 
 `);
+      if (typeof res.flush === "function") {
+        res.flush();
+      }
     };
     try {
       const userId = req.user?.id;
@@ -18950,10 +18971,72 @@ async function registerRoutes(app2) {
     try {
       const communityId = Number(req.params.id);
       const userId = req.user?.id;
+      console.log(`[COURSES API] Fetching courses for community ${communityId}, user: ${userId}`);
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
       const courses = await db.select().from(communityMealCourses).where(eq8(communityMealCourses.community_id, communityId)).orderBy(communityMealCourses.display_order);
+      console.log(`[COURSES API] Found ${courses.length} courses`);
+      if (courses.length === 0) {
+        const [member] = await db.select().from(communityMembers).where(and6(
+          eq8(communityMembers.community_id, communityId),
+          eq8(communityMembers.user_id, userId),
+          eq8(communityMembers.role, "creator")
+        ));
+        if (member) {
+          console.log(`[COURSES API] Creator detected, creating default courses`);
+          const defaultCourses = [
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Start Here",
+              emoji: "\u{1F31F}",
+              description: "Essential information to get started with our meal planning community",
+              category: "beginner",
+              is_published: true,
+              display_order: 0,
+              lesson_count: 4
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "30-Day Meal Transformation",
+              emoji: "\u{1F525}",
+              description: "Transform your eating habits with our comprehensive 30-day program",
+              category: "intermediate",
+              is_published: true,
+              display_order: 1,
+              lesson_count: 5
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Budget Nutrition Secrets",
+              emoji: "\u{1F4B0}",
+              description: "Learn how to eat healthy on a budget with smart shopping strategies",
+              category: "beginner",
+              is_published: true,
+              display_order: 2,
+              lesson_count: 4
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Recipe Vault",
+              emoji: "\u{1F4DA}",
+              description: "Access our collection of quick, healthy, and delicious recipes",
+              category: "beginner",
+              is_published: true,
+              display_order: 3,
+              lesson_count: 4
+            }
+          ];
+          const insertedCourses = await db.insert(communityMealCourses).values(defaultCourses).returning();
+          console.log(`[COURSES API] Created ${insertedCourses.length} default courses`);
+          const newCourses = await db.select().from(communityMealCourses).where(eq8(communityMealCourses.community_id, communityId)).orderBy(communityMealCourses.display_order);
+          return res.json(newCourses);
+        }
+      }
       const coursesWithModules = await Promise.all(
         courses.map(async (course) => {
           const modules = await db.select().from(communityMealCourseModules).where(eq8(communityMealCourseModules.course_id, course.id)).orderBy(communityMealCourseModules.module_order);
@@ -18970,10 +19053,10 @@ async function registerRoutes(app2) {
           return { ...course, modules: modulesWithLessons, lessons: standaloneLessons };
         })
       );
-      res.json(coursesWithModules);
+      res.json(coursesWithModules || []);
     } catch (error) {
-      console.error("Error fetching courses:", error);
-      res.status(500).json({ message: "Failed to fetch courses" });
+      console.error("[COURSES API] Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
   app2.post("/api/communities/:id/courses", authenticateToken2, async (req, res) => {
@@ -18998,6 +19081,7 @@ async function registerRoutes(app2) {
         emoji: req.body.emoji,
         description: req.body.description,
         category: req.body.category,
+        cover_image: req.body.cover_image || null,
         is_published: false,
         display_order: req.body.display_order || 0,
         drip_enabled: req.body.drip_enabled || false,
@@ -19063,6 +19147,90 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to delete course" });
     }
   });
+  app2.post("/api/communities/:id/courses/:courseId/modules", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can add modules to this course" });
+      }
+      const modules = await db.select().from(communityMealCourseModules).where(eq8(communityMealCourseModules.course_id, courseId)).orderBy(desc6(communityMealCourseModules.module_order));
+      const nextOrder = modules.length > 0 ? modules[0].module_order + 1 : 0;
+      const moduleData = {
+        course_id: courseId,
+        title: req.body.title || "New Module",
+        emoji: req.body.emoji || "\u{1F4C1}",
+        description: req.body.description || "",
+        cover_image: req.body.cover_image || null,
+        module_order: req.body.module_order ?? nextOrder,
+        is_expanded: req.body.is_expanded ?? false
+      };
+      const [newModule] = await db.insert(communityMealCourseModules).values(moduleData).returning();
+      res.json(newModule);
+    } catch (error) {
+      console.error("Error creating module:", error);
+      res.status(500).json({ message: "Failed to create module" });
+    }
+  });
+  app2.put("/api/communities/:id/courses/:courseId/modules/:moduleId", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const moduleId = Number(req.params.moduleId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can update modules in this course" });
+      }
+      const [updatedModule] = await db.update(communityMealCourseModules).set({
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        module_order: req.body.module_order,
+        is_expanded: req.body.is_expanded,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealCourseModules.id, moduleId)).returning();
+      res.json(updatedModule);
+    } catch (error) {
+      console.error("Error updating module:", error);
+      res.status(500).json({ message: "Failed to update module" });
+    }
+  });
+  app2.delete("/api/communities/:id/courses/:courseId/modules/:moduleId", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const moduleId = Number(req.params.moduleId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can delete modules from this course" });
+      }
+      await db.update(communityMealLessons).set({ module_id: null }).where(eq8(communityMealLessons.module_id, moduleId));
+      await db.delete(communityMealCourseModules).where(eq8(communityMealCourseModules.id, moduleId));
+      res.json({ message: "Module deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting module:", error);
+      res.status(500).json({ message: "Failed to delete module" });
+    }
+  });
   app2.post("/api/communities/:id/courses/:courseId/lessons", authenticateToken2, async (req, res) => {
     try {
       const courseId = Number(req.params.courseId);
@@ -19117,6 +19285,60 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error creating lesson:", error);
       res.status(500).json({ message: "Failed to create lesson" });
+    }
+  });
+  app2.put("/api/communities/:id/courses/:courseId/lessons/:lessonId", authenticateToken2, async (req, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [lesson] = await db.select({
+        lesson: communityMealLessons,
+        course: communityMealCourses
+      }).from(communityMealLessons).innerJoin(communityMealCourses, eq8(communityMealLessons.course_id, communityMealCourses.id)).where(and6(
+        eq8(communityMealLessons.id, lessonId),
+        eq8(communityMealLessons.course_id, courseId)
+      ));
+      if (!lesson || lesson.course.creator_id !== userId) {
+        return res.status(403).json({ message: "Only the creator can update this lesson" });
+      }
+      const [updatedLesson] = await db.update(communityMealLessons).set({
+        title: req.body.title || lesson.lesson.title,
+        emoji: req.body.emoji || lesson.lesson.emoji,
+        description: req.body.description || lesson.lesson.description,
+        video_url: req.body.video_url || lesson.lesson.video_url,
+        youtube_video_id: req.body.youtube_video_id || lesson.lesson.youtube_video_id,
+        image_url: req.body.image_url || lesson.lesson.image_url,
+        ingredients: req.body.ingredients || lesson.lesson.ingredients,
+        instructions: req.body.instructions || lesson.lesson.instructions,
+        prep_time: req.body.prep_time || lesson.lesson.prep_time,
+        cook_time: req.body.cook_time || lesson.lesson.cook_time,
+        servings: req.body.servings || lesson.lesson.servings,
+        difficulty_level: req.body.difficulty_level || lesson.lesson.difficulty_level,
+        is_published: req.body.is_published !== void 0 ? req.body.is_published : lesson.lesson.is_published,
+        lesson_order: req.body.lesson_order || lesson.lesson.lesson_order,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealLessons.id, lessonId)).returning();
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        await db.delete(communityMealLessonSections).where(eq8(communityMealLessonSections.lesson_id, lessonId));
+        const sections = req.body.sections.map((section, index2) => ({
+          lesson_id: lessonId,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index2,
+          is_visible: section.is_visible ?? true
+        }));
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+      res.json(updatedLesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Failed to update lesson" });
     }
   });
   app2.put("/api/communities/:id/lessons/:lessonId", authenticateToken2, async (req, res) => {

@@ -215,6 +215,7 @@ export function StreamingMealPlanGenerator({
               
               if (parsed.type === 'meal') {
                 console.log(`🍽️ Adding meal to UI: ${parsed.data.title} (${parsed.data.mealType})`);
+                
                 // Add new meal to the display array immediately
                 setLiveParsingMeals(prev => {
                   // Check if meal already exists to prevent duplicates
@@ -331,9 +332,11 @@ export function StreamingMealPlanGenerator({
     startGeneration();
   }, []);
 
-  // Minimal debug logging
+  // Component render logging
+  console.log(`🎨 RENDER: StreamingMealPlanGenerator with ${liveParsingMeals.length} meals`);
   if (liveParsingMeals.length > 0) {
     console.log(`🍽️ Live streaming: ${liveParsingMeals.length} meals displayed`);
+    console.log('📋 Current meals:', liveParsingMeals.map(m => m.title || m.name));
   }
 
   return (
@@ -356,6 +359,7 @@ export function StreamingMealPlanGenerator({
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {liveParsingMeals.map((meal, index) => {
                   const Icon = getMealIcon(meal.mealType);
+                  console.log(`🃏 Rendering meal card ${index}:`, meal.title || meal.name);
                   return (
                     <motion.div
                       key={meal.id || `${meal.day}-${meal.mealType}-${meal.title || meal.name}`}

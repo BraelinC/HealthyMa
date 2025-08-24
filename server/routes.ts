@@ -2389,11 +2389,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable proxy buffering for real-time streaming
     
     // Helper function to send SSE data
     const sendData = (data: string) => {
       res.write(`data: ${data}\n\n`);
-      // Note: Express automatically handles flushing for SSE streams
+      // Force flush to ensure data is sent immediately
+      // This is crucial for real-time streaming
+      if (typeof (res as any).flush === 'function') {
+        (res as any).flush();
+      }
     };
 
     try {

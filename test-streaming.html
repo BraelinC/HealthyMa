@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SSE Streaming Test</title>
+</head>
+<body>
+    <h1>Testing SSE Streaming</h1>
+    <div id="status">Waiting to start...</div>
+    <div id="meals"></div>
+    <button onclick="testStreaming()">Test Streaming</button>
+
+    <script>
+        async function testStreaming() {
+            const status = document.getElementById('status');
+            const mealsDiv = document.getElementById('meals');
+            
+            status.textContent = 'Fetching auth token...';
+            
+            // First login to get a token (use test credentials)
+            const loginResponse = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: 'test@example.com',
+                    password: 'testpassword'
+                })
+            });
+            
+            let token = null;
+            if (loginResponse.ok) {
+                const loginData = await loginResponse.json();
+                token = loginData.token;
+                status.textContent = 'Logged in! Starting stream...';
+            } else {
+                status.textContent = 'Using anonymous mode...';
+            }
+            
+            // Now test the streaming endpoint
+            const response = await fetch('/api/meal-plan/generate-stream', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { 'Authorization': `Bearer ${token}` })
+                },
+                body: JSON.stringify({
+                    numDays: 1,
+                    mealsPerDay: 3,
+                    cookTime: 30,
+                    difficulty: 3,
+                    useIntelligentPrompt: false
+                })
+            });
+            
+            if (!response.ok) {
+                status.textContent = `Error: ${response.status} ${response.statusText}`;
+                return;
+            }
+            
+            status.textContent = 'Stream started! Reading...';
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let mealCount = 0;
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const text = decoder.decode(value, { stream: true });
+                buffer += text;
+                
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        console.log('Received:', data);
+                        
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.type === 'meal') {
+                                mealCount++;
+                                const mealDiv = document.createElement('div');
+                                mealDiv.style.padding = '10px';
+                                mealDiv.style.margin = '5px';
+                                mealDiv.style.border = '1px solid #ccc';
+                                mealDiv.innerHTML = `
+                                    <strong>Meal ${mealCount}: ${parsed.data.title || parsed.data.name}</strong><br>
+                                    Type: ${parsed.data.mealType}<br>
+                                    Day: ${parsed.data.day}<br>
+                                    Cook time: ${parsed.data.cook_time || parsed.data.cook_time_minutes} min<br>
+                                    Received at: ${new Date().toLocaleTimeString()}
+                                `;
+                                mealsDiv.appendChild(mealDiv);
+                                status.textContent = `Streaming... ${mealCount} meals received`;
+                            } else if (parsed.type === 'complete') {
+                                status.textContent = `Stream complete! ${mealCount} meals total`;
+                            } else if (parsed.type === 'done') {
+                                status.textContent = `Generation done! ${mealCount} meals received`;
+                            }
+                        } catch (e) {
+                            console.error('Parse error:', e);
+                        }
+                    }
+                }
+            }
+            
+            status.textContent = `Finished! ${mealCount} meals received`;
+        }
+    </script>
+</body>
+</html>
