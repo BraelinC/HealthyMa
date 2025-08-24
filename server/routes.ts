@@ -2393,7 +2393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Helper function to send SSE data
     const sendData = (data: string) => {
       res.write(`data: ${data}\n\n`);
-      res.flush(); // Force immediate sending of data
+      // Note: Express automatically handles flushing for SSE streams
     };
 
     try {
