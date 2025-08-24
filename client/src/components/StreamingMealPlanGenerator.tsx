@@ -38,6 +38,12 @@ interface Meal {
   day: number;
   totalTime: number;
   id?: string;
+  nutrition?: {
+    calories?: number;
+    protein_g?: number;
+    carbs_g?: number;
+    fat_g?: number;
+  };
 }
 
 export function StreamingMealPlanGenerator({ 
@@ -59,24 +65,21 @@ export function StreamingMealPlanGenerator({
     setRenderKey(prev => prev + 1);
   }, []);
 
-  // Debug effect to track meal state changes
+  // Track meal state changes for render updates
   useEffect(() => {
-    console.log(`🔄 EFFECT: liveParsingMeals changed to ${liveParsingMeals.length} meals`);
-    console.log(`🔄 EFFECT: Meals array:`, liveParsingMeals.map(m => m.title || m.name));
     setDebugMealCount(liveParsingMeals.length);
-    console.log(`🔄 EFFECT: Set debugMealCount to ${liveParsingMeals.length}`);
   }, [liveParsingMeals]);
 
   const getMealIcon = (mealType: string) => {
     switch (mealType) {
       case 'breakfast':
-        return Coffee;
+        return '🍳';
       case 'lunch':
-        return Sun;
+        return '🥗';
       case 'dinner':
-        return Moon;
+        return '🍽️';
       default:
-        return Utensils;
+        return '🍴';
     }
   };
 
@@ -357,84 +360,102 @@ export function StreamingMealPlanGenerator({
     startGeneration();
   }, []);
 
-  // Component render logging with detailed state debugging
-  console.log(`🎨 RENDER: StreamingMealPlanGenerator - RenderKey: ${renderKey} - COMPONENT INSTANCE: ${Date.now()}`);
-  console.log(`📊 RENDER State Debug:`, {
-    mealsCount: liveParsingMeals.length,
-    debugMealCount,
-    isGenerating,
-    renderKey,
-    showingLoader: liveParsingMeals.length === 0,
-    showingMeals: liveParsingMeals.length > 0,
-    error: !!error,
-    componentMount: Date.now()
-  });
-  
-  console.log(`🔍 RENDER: liveParsingMeals reference:`, liveParsingMeals);
-  console.log(`🔍 RENDER: liveParsingMeals.length = ${liveParsingMeals.length}`);
-  console.log(`🔍 RENDER: debugMealCount = ${debugMealCount}`);
-  
-  if (liveParsingMeals.length > 0) {
-    console.log(`🍽️ RENDER: Live streaming: ${liveParsingMeals.length} meals displayed`);
-    console.log('📋 RENDER: Current meals:', liveParsingMeals.map(m => m.title || m.name));
-  } else {
-    console.log('⏳ RENDER: No meals yet, showing loader');
-  }
+  // Clean production render - debug removed
 
-  // ULTRA SIMPLE RENDER TEST - Use renderKey to force updates
+  // Beautiful streaming meal display
   return (
     <div key={renderKey} className="space-y-4">
-      {/* VISIBLE DEBUG - Always show this */}
-      <div className="bg-yellow-100 border border-yellow-400 p-3 text-sm font-mono space-y-1">
-        <div>🔍 MAIN: Meals={liveParsingMeals.length} | Debug={debugMealCount} | RenderKey={renderKey}</div>
-        <div>🔍 STATE: Generating={isGenerating.toString()} | Error={error || 'none'}</div>
-        <div>🔍 ARRAY: HasMeals={liveParsingMeals.length > 0 ? 'YES' : 'NO'} | IsArray={Array.isArray(liveParsingMeals) ? 'YES' : 'NO'}</div>
-        <div>🔍 INSTANCE: {Date.now()} | Mount: {new Date().toLocaleTimeString()}</div>
-      </div>
-
-      {/* TEST: Simple meal count display */}
-      <div className="bg-blue-100 border border-blue-400 p-3 space-y-1">
-        <div className="text-lg font-bold">Meal Count Test: {liveParsingMeals.length}</div>
-        <div className="text-xs font-mono">
-          <div>Length: {liveParsingMeals.length} | Type: {typeof liveParsingMeals.length}</div>
-          <div>Is Zero: {liveParsingMeals.length === 0 ? 'TRUE' : 'FALSE'}</div>
-          <div>Is Greater: {liveParsingMeals.length > 0 ? 'TRUE' : 'FALSE'}</div>
-          <div>Strict Comparison: {liveParsingMeals.length === 6 ? 'EQUALS 6' : 'NOT 6'}</div>
-        </div>
-        <div className="text-sm font-bold">
-          {liveParsingMeals.length === 0 ? '❌ NO MEALS - SHOWING LOADER' : '✅ MEALS EXIST - SHOULD SHOW CARDS'}
-        </div>
-      </div>
-
-      {/* SIMPLIFIED CONDITIONAL TEST WITH EXPLICIT DEBUG */}
-      <div className="bg-purple-100 border border-purple-400 p-2 text-xs">
-        🔍 CONDITIONAL DEBUG: length={liveParsingMeals.length}, isZero={liveParsingMeals.length === 0}, path={liveParsingMeals.length === 0 ? 'LOADING' : 'SUCCESS'}
-      </div>
-      
-      {/* FIX: Use explicit variable to avoid React rendering bug */}
       {(() => {
         const hasMeals = liveParsingMeals.length > 0;
-        console.log(`🔧 EXPLICIT RENDER: hasMeals=${hasMeals}, length=${liveParsingMeals.length}`);
         
         if (!hasMeals) {
           return (
-            <div className="bg-red-100 border border-red-400 p-4">
+            <div className="flex flex-col items-center justify-center py-12 px-6">
+              <div className="relative">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 border-t-emerald-600 mb-6"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <ChefHat className="h-6 w-6 text-emerald-600" />
+                </div>
+              </div>
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                <div>🔄 Loading path - no meals yet</div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                  🔥 Generating Your Perfect Meals
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  Our AI chef is creating personalized recipes just for you...
+                </p>
               </div>
             </div>
           );
         }
         
         return (
-          <div className="bg-green-100 border border-green-400 p-4">
-            <div className="text-lg font-bold mb-3">✅ SUCCESS! Found {liveParsingMeals.length} meals</div>
-            <div className="space-y-2">
+          <div className="space-y-4">
+            {/* Progress Header */}
+            <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <ChefHat className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-emerald-800">
+                    ✨ Found {liveParsingMeals.length} Perfect Meals!
+                  </h3>
+                  <p className="text-sm text-emerald-600">
+                    Your personalized meal plan is ready
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
+                <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                Live Generated
+              </div>
+            </div>
+
+            {/* Beautiful Meal Cards */}
+            <div className="grid gap-4">
               {liveParsingMeals.map((meal, index) => (
-                <div key={index} className="bg-white border border-gray-300 p-3 rounded">
-                  <div className="font-medium">{meal.title || meal.name}</div>
-                  <div className="text-sm text-gray-600">Day {meal.day} - {meal.mealType}</div>
+                <div 
+                  key={meal.id || index} 
+                  className="group relative bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:border-emerald-300 animate-fadeIn"
+                  style={{ animationDelay: `${index * 150}ms` }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">{getMealIcon(meal.mealType)}</span>
+                        <div>
+                          <div className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+                            Day {meal.day} • {meal.mealType}
+                          </div>
+                          <h4 className="font-semibold text-gray-800 group-hover:text-emerald-700 transition-colors">
+                            {meal.title || meal.name}
+                          </h4>
+                        </div>
+                      </div>
+                      
+                      {/* Meal Details */}
+                      <div className="flex items-center gap-4 mt-3">
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <Clock className="h-3 w-3" />
+                          <span>{meal.cook_time_minutes || meal.cook_time}min</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <span>⭐</span>
+                          <span>Difficulty {meal.difficulty}</span>
+                        </div>
+                        {meal.nutrition && (
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <span>🔥 {meal.nutrition.calories} cal</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="h-2 w-2 bg-emerald-500 rounded-full"></div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
