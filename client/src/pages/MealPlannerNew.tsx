@@ -437,7 +437,6 @@ export default function MealPlanner() {
           <h1 className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 bg-clip-text text-transparent">
             AI Weekly Meal Planner
           </h1>
-          <div className="absolute -top-2 -right-2 text-2xl">🍽️</div>
         </div>
         <p className="text-gray-600 text-base sm:text-xl max-w-2xl mx-auto leading-relaxed">
           Create personalized meal plans tailored to your preferences with smart shopping integration
