@@ -1541,7 +1541,7 @@ export default function Home() {
       />
       
       {/* Floating Add Meals Button */}
-      <div className="fixed bottom-20 right-6 z-50 floating-add-button">
+      <div className="fixed bottom-24 right-6 z-50 floating-add-button">
         {/* Expanded Menu - shows above button */}
         {showAddMenu && (
           <div className="absolute bottom-16 right-0 mb-2 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 min-w-[200px] animate-in slide-in-from-bottom-2 duration-200">
