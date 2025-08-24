@@ -215,24 +215,29 @@ export function StreamingMealPlanGenerator({
               
               if (parsed.type === 'meal') {
                 console.log(`🍽️ Adding meal to UI: ${parsed.data.title} (${parsed.data.mealType})`);
-                // Add new meal to the display array with progressive delay
+                // Add new meal to the display array immediately
                 setLiveParsingMeals(prev => {
-                  const currentLength = prev.length;
-                  const delay = currentLength * 400; // 400ms delay between each meal
+                  // Check if meal already exists to prevent duplicates
+                  const mealId = parsed.data.id || `${parsed.data.day || 1}-${parsed.data.mealType}-${parsed.data.title || parsed.data.name}`;
+                  if (prev.find(m => (m.id || `${m.day || 1}-${m.mealType}-${m.title || m.name}`) === mealId)) {
+                    console.log('⏭️ Skipping duplicate meal:', parsed.data.title);
+                    return prev; // Already added
+                  }
                   
-                  setTimeout(() => {
-                    setLiveParsingMeals(current => {
-                      if (current.find(m => m.id === parsed.data.id)) {
-                        return current; // Already added
-                      }
-                      const newMeals = [...current, parsed.data];
-                      console.log(`📊 Total meals now: ${newMeals.length}`);
-                      console.log('🎯 Updated meal list:', newMeals.map(m => m.title));
-                      return newMeals;
-                    });
-                  }, delay);
+                  // Add the meal with proper structure
+                  const newMeal = {
+                    ...parsed.data,
+                    id: mealId,
+                    day: parsed.data.day || 1,
+                    prep_time: parsed.data.prep_time || 5,
+                    cook_time: parsed.data.cook_time || parsed.data.cook_time_minutes || 15,
+                    totalTime: (parsed.data.prep_time || 5) + (parsed.data.cook_time || parsed.data.cook_time_minutes || 15)
+                  };
                   
-                  return prev; // Don't add immediately
+                  const newMeals = [...prev, newMeal];
+                  console.log(`📊 Total meals now: ${newMeals.length}`);
+                  console.log('🎯 Updated meal list:', newMeals.map(m => m.title || m.name));
+                  return newMeals;
                 });
               } else if (parsed.type === 'complete') {
                 console.log('✅ Complete meal plan received');
