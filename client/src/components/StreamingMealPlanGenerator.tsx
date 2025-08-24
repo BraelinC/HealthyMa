@@ -408,26 +408,37 @@ export function StreamingMealPlanGenerator({
       <div className="bg-purple-100 border border-purple-400 p-2 text-xs">
         🔍 CONDITIONAL DEBUG: length={liveParsingMeals.length}, isZero={liveParsingMeals.length === 0}, path={liveParsingMeals.length === 0 ? 'LOADING' : 'SUCCESS'}
       </div>
-      {liveParsingMeals.length === 0 ? (
-        <div className="bg-red-100 border border-red-400 p-4">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-            <div>🔄 Loading path - no meals yet</div>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-green-100 border border-green-400 p-4">
-          <div className="text-lg font-bold mb-3">✅ SUCCESS! Found {liveParsingMeals.length} meals</div>
-          <div className="space-y-2">
-            {liveParsingMeals.map((meal, index) => (
-              <div key={index} className="bg-white border border-gray-300 p-3 rounded">
-                <div className="font-medium">{meal.title || meal.name}</div>
-                <div className="text-sm text-gray-600">Day {meal.day} - {meal.mealType}</div>
+      
+      {/* FIX: Use explicit variable to avoid React rendering bug */}
+      {(() => {
+        const hasMeals = liveParsingMeals.length > 0;
+        console.log(`🔧 EXPLICIT RENDER: hasMeals=${hasMeals}, length=${liveParsingMeals.length}`);
+        
+        if (!hasMeals) {
+          return (
+            <div className="bg-red-100 border border-red-400 p-4">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <div>🔄 Loading path - no meals yet</div>
               </div>
-            ))}
+            </div>
+          );
+        }
+        
+        return (
+          <div className="bg-green-100 border border-green-400 p-4">
+            <div className="text-lg font-bold mb-3">✅ SUCCESS! Found {liveParsingMeals.length} meals</div>
+            <div className="space-y-2">
+              {liveParsingMeals.map((meal, index) => (
+                <div key={index} className="bg-white border border-gray-300 p-3 rounded">
+                  <div className="font-medium">{meal.title || meal.name}</div>
+                  <div className="text-sm text-gray-600">Day {meal.day} - {meal.mealType}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Error section if needed */}
       {error && (
