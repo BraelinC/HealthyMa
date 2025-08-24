@@ -653,9 +653,6 @@ export default function CommunityDetailNew() {
               </div>
             )}
             <Button variant="ghost" size="sm" className="text-white p-2">
-              <Search className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="sm" className="text-white p-2">
               <MoreHorizontal className="w-5 h-5" />
             </Button>
           </div>
