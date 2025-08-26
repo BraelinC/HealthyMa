@@ -42,7 +42,7 @@ export default function Favorites() {
   const queryClient = useQueryClient();
 
   // Fetch favorites
-  const { data: favorites = [], isLoading } = useQuery({
+  const { data: favorites = [], isLoading } = useQuery<FavoriteItem[]>({
     queryKey: ['/api/favorites'],
     enabled: true
   });
@@ -83,9 +83,9 @@ export default function Favorites() {
 
   // Group favorites by type
   const favoritesByType = {
-    recipe: filteredFavorites.filter(f => f.item_type === "recipe"),
-    meal_plan: filteredFavorites.filter(f => f.item_type === "meal_plan"),
-    youtube_video: filteredFavorites.filter(f => f.item_type === "youtube_video")
+    recipe: filteredFavorites.filter((f: FavoriteItem) => f.item_type === "recipe"),
+    meal_plan: filteredFavorites.filter((f: FavoriteItem) => f.item_type === "meal_plan"),
+    youtube_video: filteredFavorites.filter((f: FavoriteItem) => f.item_type === "youtube_video")
   };
 
   const handleRemoveFavorite = (favorite: FavoriteItem) => {
@@ -270,7 +270,7 @@ export default function Favorites() {
           <TabsContent value="all">
             {filteredFavorites.length > 0 ? (
               <div className="space-y-4">
-                {filteredFavorites.map((favorite) => (
+                {filteredFavorites.map((favorite: FavoriteItem) => (
                   <FavoriteCard key={favorite.id} favorite={favorite} />
                 ))}
               </div>
@@ -282,7 +282,7 @@ export default function Favorites() {
           <TabsContent value="recipe">
             {favoritesByType.recipe.length > 0 ? (
               <div className="space-y-4">
-                {favoritesByType.recipe.map((favorite) => (
+                {favoritesByType.recipe.map((favorite: FavoriteItem) => (
                   <FavoriteCard key={favorite.id} favorite={favorite} />
                 ))}
               </div>
@@ -294,7 +294,7 @@ export default function Favorites() {
           <TabsContent value="meal_plan">
             {favoritesByType.meal_plan.length > 0 ? (
               <div className="space-y-4">
-                {favoritesByType.meal_plan.map((favorite) => (
+                {favoritesByType.meal_plan.map((favorite: FavoriteItem) => (
                   <FavoriteCard key={favorite.id} favorite={favorite} />
                 ))}
               </div>
@@ -306,7 +306,7 @@ export default function Favorites() {
           <TabsContent value="youtube_video">
             {favoritesByType.youtube_video.length > 0 ? (
               <div className="space-y-4">
-                {favoritesByType.youtube_video.map((favorite) => (
+                {favoritesByType.youtube_video.map((favorite: FavoriteItem) => (
                   <FavoriteCard key={favorite.id} favorite={favorite} />
                 ))}
               </div>
