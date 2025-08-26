@@ -262,6 +262,47 @@ export const mealPlans = pgTable("meal_plans", {
 export type MealPlan = typeof mealPlans.$inferSelect;
 export type InsertMealPlan = typeof mealPlans.$inferInsert;
 
+// User favorites table for saving favorite meals
+export const userFavorites = pgTable("user_favorites", {
+  id: serial("id").primaryKey(),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  item_type: varchar("item_type").notNull(), // "recipe", "meal_plan", "youtube_video"
+  item_id: varchar("item_id").notNull(), // Foreign key to the item being favorited
+  title: text("title").notNull(),
+  description: text("description"),
+  image_url: text("image_url"),
+  time_minutes: integer("time_minutes"),
+  cuisine: text("cuisine"),
+  diet: text("diet"),
+  video_id: text("video_id"), // For YouTube videos
+  video_title: text("video_title"),
+  video_channel: text("video_channel"),
+  metadata: json("metadata"), // Additional data specific to the item type
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userItemIdx: index("user_favorites_user_item_idx").on(table.user_id, table.item_type, table.item_id),
+  userIdx: index("user_favorites_user_idx").on(table.user_id),
+}));
+
+export const insertUserFavoriteSchema = createInsertSchema(userFavorites).pick({
+  user_id: true,
+  item_type: true,
+  item_id: true,
+  title: true,
+  description: true,
+  image_url: true,
+  time_minutes: true,
+  cuisine: true,
+  diet: true,
+  video_id: true,
+  video_title: true,
+  video_channel: true,
+  metadata: true,
+});
+
+export type UserFavorite = typeof userFavorites.$inferSelect;
+export type InsertUserFavorite = z.infer<typeof insertUserFavoriteSchema>;
+
 // Global Cultural Cuisine Cache - shared across all users
 export const culturalCuisineCache = pgTable("cultural_cuisine_cache", {
   id: serial("id").primaryKey(),
@@ -899,6 +940,12 @@ export interface IStorage {
   searchFoodDatabase(query: string): Promise<FoodDatabaseItem[]>;
   getFoodDatabaseItem(name: string): Promise<FoodDatabaseItem | null>;
   createFoodDatabaseItem(data: InsertFoodDatabaseItem): Promise<FoodDatabaseItem>;
+  
+  // Favorites methods
+  getUserFavorites(userId: string): Promise<UserFavorite[]>;
+  addToFavorites(data: InsertUserFavorite): Promise<UserFavorite>;
+  removeFromFavorites(userId: string, itemType: string, itemId: string): Promise<boolean>;
+  isFavorited(userId: string, itemType: string, itemId: string): Promise<boolean>;
 }
 
 // Extend MemStorage in storage.ts to include recipe functionality

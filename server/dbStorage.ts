@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, recipes, mealPlans, profiles, userAchievements, mealCompletions, groceryListCache, foodLogs, foodDatabase, type User, type UpsertUser, type Recipe, type InsertRecipe, type MealPlan, type Profile, type InsertProfile, type UserAchievement, type InsertUserAchievement, type MealCompletion, type InsertMealCompletion, type GroceryListCache, type InsertGroceryListCache, type FoodLog, type InsertFoodLog, type FoodDatabaseItem, type InsertFoodDatabaseItem, type IStorage } from "@shared/schema";
+import { users, recipes, mealPlans, profiles, userAchievements, mealCompletions, groceryListCache, foodLogs, foodDatabase, userFavorites, type User, type UpsertUser, type Recipe, type InsertRecipe, type MealPlan, type Profile, type InsertProfile, type UserAchievement, type InsertUserAchievement, type MealCompletion, type InsertMealCompletion, type GroceryListCache, type InsertGroceryListCache, type FoodLog, type InsertFoodLog, type FoodDatabaseItem, type InsertFoodDatabaseItem, type UserFavorite, type InsertUserFavorite, type IStorage } from "@shared/schema";
 import { eq, desc, and, sql, like, gte, lte } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
@@ -835,6 +835,67 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating food database item:', error);
       throw error;
+    }
+  }
+
+  // Favorites methods
+  async getUserFavorites(userId: string): Promise<UserFavorite[]> {
+    try {
+      return await db.select()
+        .from(userFavorites)
+        .where(eq(userFavorites.user_id, userId))
+        .orderBy(desc(userFavorites.created_at));
+    } catch (error) {
+      console.error('Error getting user favorites:', error);
+      return [];
+    }
+  }
+
+  async addToFavorites(data: InsertUserFavorite): Promise<UserFavorite> {
+    try {
+      const [favorite] = await db.insert(userFavorites)
+        .values(data)
+        .returning();
+      
+      console.log('✅ Added to favorites:', favorite.title);
+      return favorite;
+    } catch (error) {
+      console.error('Error adding to favorites:', error);
+      throw error;
+    }
+  }
+
+  async removeFromFavorites(userId: string, itemType: string, itemId: string): Promise<boolean> {
+    try {
+      await db.delete(userFavorites)
+        .where(and(
+          eq(userFavorites.user_id, userId),
+          eq(userFavorites.item_type, itemType),
+          eq(userFavorites.item_id, itemId)
+        ));
+      console.log('✅ Removed from favorites:', itemType, itemId);
+      return true;
+    } catch (error) {
+      console.error('Error removing from favorites:', error);
+      return false;
+    }
+  }
+
+  async isFavorited(userId: string, itemType: string, itemId: string): Promise<boolean> {
+    try {
+      const [favorite] = await db.select()
+        .from(userFavorites)
+        .where(and(
+          eq(userFavorites.user_id, userId),
+          eq(userFavorites.item_type, itemType),
+          eq(userFavorites.item_id, itemId)
+        ))
+        .limit(1);
+      
+      return !!favorite;
+    } catch (error) {
+      console.error('Error checking if favorited:', error);
+      return false;
     }
   }
 }

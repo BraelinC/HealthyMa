@@ -5698,6 +5698,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Favorites API routes
+  // Get user's favorites
+  app.get("/api/favorites", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const favorites = await storage.getUserFavorites(userId);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      res.status(500).json({ message: "Failed to fetch favorites" });
+    }
+  });
+
+  // Add item to favorites
+  app.post("/api/favorites", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { item_type, item_id, title, description, image_url, time_minutes, cuisine, diet, video_id, video_title, video_channel, metadata } = req.body;
+
+      if (!item_type || !item_id || !title) {
+        return res.status(400).json({ message: "Missing required fields: item_type, item_id, title" });
+      }
+
+      // Check if already favorited
+      const isAlreadyFavorited = await storage.isFavorited(userId, item_type, item_id);
+      if (isAlreadyFavorited) {
+        return res.status(409).json({ message: "Item already favorited" });
+      }
+
+      const favorite = await storage.addToFavorites({
+        user_id: userId,
+        item_type,
+        item_id,
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        video_id,
+        video_title,
+        video_channel,
+        metadata
+      });
+
+      res.status(201).json(favorite);
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      res.status(500).json({ message: "Failed to add to favorites" });
+    }
+  });
+
+  // Remove item from favorites
+  app.delete("/api/favorites/:itemType/:itemId", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { itemType, itemId } = req.params;
+
+      const success = await storage.removeFromFavorites(userId, itemType, itemId);
+      if (success) {
+        res.json({ message: "Removed from favorites" });
+      } else {
+        res.status(404).json({ message: "Favorite not found" });
+      }
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+      res.status(500).json({ message: "Failed to remove from favorites" });
+    }
+  });
+
+  // Check if item is favorited
+  app.get("/api/favorites/:itemType/:itemId/check", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { itemType, itemId } = req.params;
+      const isFavorited = await storage.isFavorited(userId, itemType, itemId);
+      
+      res.json({ isFavorited });
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
+      res.status(500).json({ message: "Failed to check favorite status" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

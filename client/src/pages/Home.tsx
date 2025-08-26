@@ -1782,6 +1782,21 @@ export default function Home() {
                 <div className="text-xs text-gray-500">Create custom meals instantly</div>
               </div>
             </Button>
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
+              onClick={() => {
+                window.location.href = '/favorites';
+                setShowAddMenu(false);
+              }}
+            >
+              <Heart className="h-5 w-5 mr-3 text-pink-600" />
+              <div className="text-left">
+                <div className="font-medium text-gray-900">View Favorites</div>
+                <div className="text-xs text-gray-500">See your saved meals</div>
+              </div>
+            </Button>
           </div>
         )}
         

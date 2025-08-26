@@ -1,0 +1,321 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Heart, 
+  Search, 
+  Clock, 
+  ChefHat, 
+  Trash2, 
+  Play,
+  Loader2,
+  HeartOff
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+interface FavoriteItem {
+  id: number;
+  item_type: "recipe" | "meal_plan" | "youtube_video";
+  item_id: string;
+  title: string;
+  description?: string;
+  image_url?: string;
+  time_minutes?: number;
+  cuisine?: string;
+  diet?: string;
+  video_id?: string;
+  video_title?: string;
+  video_channel?: string;
+  metadata?: any;
+  created_at: string;
+}
+
+export default function Favorites() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch favorites
+  const { data: favorites = [], isLoading } = useQuery({
+    queryKey: ['/api/favorites'],
+    enabled: true
+  });
+
+  // Remove from favorites mutation
+  const removeFromFavoritesMutation = useMutation({
+    mutationFn: async (favorite: FavoriteItem) => {
+      return apiRequest(`/api/favorites/${favorite.item_type}/${favorite.item_id}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      toast({
+        title: "Removed from favorites",
+        description: "Item successfully removed from your favorites"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove item from favorites",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Filter favorites based on search and type
+  const filteredFavorites = favorites.filter((favorite: FavoriteItem) => {
+    const matchesSearch = favorite.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         favorite.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         favorite.cuisine?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesFilter = selectedFilter === "all" || favorite.item_type === selectedFilter;
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  // Group favorites by type
+  const favoritesByType = {
+    recipe: filteredFavorites.filter(f => f.item_type === "recipe"),
+    meal_plan: filteredFavorites.filter(f => f.item_type === "meal_plan"),
+    youtube_video: filteredFavorites.filter(f => f.item_type === "youtube_video")
+  };
+
+  const handleRemoveFavorite = (favorite: FavoriteItem) => {
+    removeFromFavoritesMutation.mutate(favorite);
+  };
+
+  const handleOpenYouTubeVideo = (videoId: string) => {
+    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+  };
+
+  const FavoriteCard = ({ favorite }: { favorite: FavoriteItem }) => (
+    <Card className="group hover:shadow-md transition-all duration-200 relative">
+      <CardContent className="p-4">
+        <div className="flex gap-4">
+          {/* Image */}
+          <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+            {favorite.image_url ? (
+              <img 
+                src={favorite.image_url} 
+                alt={favorite.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                {favorite.item_type === "youtube_video" ? (
+                  <Play className="h-6 w-6 text-purple-600" />
+                ) : favorite.item_type === "meal_plan" ? (
+                  <ChefHat className="h-6 w-6 text-purple-600" />
+                ) : (
+                  <Heart className="h-6 w-6 text-purple-600" />
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="font-semibold text-gray-900 truncate pr-2">
+                {favorite.title}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
+                onClick={() => handleRemoveFavorite(favorite)}
+                disabled={removeFromFavoritesMutation.isPending}
+              >
+                {removeFromFavoritesMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            
+            {favorite.description && (
+              <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                {favorite.description}
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-2 mb-2">
+              <Badge variant="secondary" className="text-xs">
+                {favorite.item_type === "youtube_video" ? "YouTube" :
+                 favorite.item_type === "meal_plan" ? "Meal Plan" : "Recipe"}
+              </Badge>
+              
+              {favorite.time_minutes && (
+                <Badge variant="outline" className="text-xs">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {favorite.time_minutes} min
+                </Badge>
+              )}
+              
+              {favorite.cuisine && (
+                <Badge variant="outline" className="text-xs">
+                  {favorite.cuisine}
+                </Badge>
+              )}
+              
+              {favorite.diet && (
+                <Badge variant="outline" className="text-xs">
+                  {favorite.diet}
+                </Badge>
+              )}
+              
+              {favorite.video_channel && (
+                <Badge variant="outline" className="text-xs">
+                  {favorite.video_channel}
+                </Badge>
+              )}
+            </div>
+
+            {favorite.item_type === "youtube_video" && favorite.video_id && (
+              <Button
+                size="sm"
+                className="mt-2"
+                onClick={() => handleOpenYouTubeVideo(favorite.video_id!)}
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Watch Video
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const EmptyState = ({ type }: { type: string }) => (
+    <div className="text-center py-12">
+      <HeartOff className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+      <h3 className="text-lg font-medium text-gray-600 mb-2">
+        No {type === "all" ? "favorites" : type.replace("_", " ")} found
+      </h3>
+      <p className="text-gray-500 text-sm max-w-md mx-auto">
+        {searchQuery 
+          ? `No ${type === "all" ? "favorites" : type.replace("_", " ")} match your search.`
+          : `Start adding ${type === "all" ? "items" : type.replace("_", " ")} to your favorites to see them here!`
+        }
+      </p>
+    </div>
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 pb-24">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <Heart className="h-8 w-8 text-purple-600" />
+          <h1 className="text-3xl font-bold text-gray-900">My Favorites</h1>
+        </div>
+        <p className="text-gray-600">
+          Your saved recipes, meal plans, and cooking videos in one place
+        </p>
+      </div>
+
+      {/* Search and Stats */}
+      <div className="mb-6">
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search your favorites..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        {favorites.length > 0 && (
+          <div className="text-sm text-gray-600">
+            {filteredFavorites.length} of {favorites.length} favorites
+            {searchQuery && ` matching "${searchQuery}"`}
+          </div>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="animate-spin h-8 w-8 text-purple-600" />
+        </div>
+      ) : favorites.length === 0 ? (
+        <EmptyState type="all" />
+      ) : (
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid grid-cols-4 mb-6">
+            <TabsTrigger value="all">
+              All ({favorites.length})
+            </TabsTrigger>
+            <TabsTrigger value="recipe">
+              Recipes ({favoritesByType.recipe.length})
+            </TabsTrigger>
+            <TabsTrigger value="meal_plan">
+              Meal Plans ({favoritesByType.meal_plan.length})
+            </TabsTrigger>
+            <TabsTrigger value="youtube_video">
+              Videos ({favoritesByType.youtube_video.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all">
+            {filteredFavorites.length > 0 ? (
+              <div className="space-y-4">
+                {filteredFavorites.map((favorite) => (
+                  <FavoriteCard key={favorite.id} favorite={favorite} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState type="all" />
+            )}
+          </TabsContent>
+
+          <TabsContent value="recipe">
+            {favoritesByType.recipe.length > 0 ? (
+              <div className="space-y-4">
+                {favoritesByType.recipe.map((favorite) => (
+                  <FavoriteCard key={favorite.id} favorite={favorite} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState type="recipe" />
+            )}
+          </TabsContent>
+
+          <TabsContent value="meal_plan">
+            {favoritesByType.meal_plan.length > 0 ? (
+              <div className="space-y-4">
+                {favoritesByType.meal_plan.map((favorite) => (
+                  <FavoriteCard key={favorite.id} favorite={favorite} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState type="meal_plan" />
+            )}
+          </TabsContent>
+
+          <TabsContent value="youtube_video">
+            {favoritesByType.youtube_video.length > 0 ? (
+              <div className="space-y-4">
+                {favoritesByType.youtube_video.map((favorite) => (
+                  <FavoriteCard key={favorite.id} favorite={favorite} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState type="youtube_video" />
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
+  );
+}
