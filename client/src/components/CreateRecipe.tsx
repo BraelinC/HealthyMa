@@ -755,22 +755,18 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                               onChange={(e) => updateIngredient(ingredient.id, 'amount', e.target.value)}
                             />
                           </div>
-                          <div className="w-16">
-                            <Select
+                          <div className="w-16 relative">
+                            <Input
+                              placeholder="cup"
                               value={ingredient.unit}
-                              onValueChange={(value) => updateIngredient(ingredient.id, 'unit', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="cup" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getUnitSuggestions(ingredient.name).map((unit) => (
-                                  <SelectItem key={unit} value={unit}>
-                                    {unit}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              onChange={(e) => updateIngredient(ingredient.id, 'unit', e.target.value)}
+                              list={`units-${ingredient.id}`}
+                            />
+                            <datalist id={`units-${ingredient.id}`}>
+                              {getUnitSuggestions(ingredient.name).map((unit) => (
+                                <option key={unit} value={unit} />
+                              ))}
+                            </datalist>
                           </div>
                         </div>
                       ))}
