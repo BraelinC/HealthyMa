@@ -801,15 +801,6 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                               rows={2}
                             />
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeInstruction(instruction.id)}
-                            disabled={instructions.length === 1}
-                            className="mt-1"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
                         </div>
                       ))}
                     </div>
