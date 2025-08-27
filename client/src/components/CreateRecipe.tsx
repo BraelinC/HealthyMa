@@ -211,10 +211,15 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
           background: #10b981;
           color: white;
           border: none;
-          padding: 12px 24px;
-          border-radius: 6px;
-          font-size: 16px;
+          padding: 16px 32px;
+          border-radius: 8px;
+          font-size: 18px;
+          font-weight: bold;
           cursor: pointer;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+          min-height: 48px;
+          min-width: 120px;
         `;
         
         const cancelBtn = document.createElement('button');
@@ -223,14 +228,19 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
           background: #ef4444;
           color: white;
           border: none;
-          padding: 12px 24px;
-          border-radius: 6px;
-          font-size: 16px;
+          padding: 16px 32px;
+          border-radius: 8px;
+          font-size: 18px;
+          font-weight: bold;
           cursor: pointer;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+          min-height: 48px;
+          min-width: 120px;
         `;
         
-        // Capture photo
-        captureBtn.onclick = (e) => {
+        // Capture photo function
+        const capturePhoto = (e) => {
           e.preventDefault();
           e.stopPropagation();
           
@@ -256,13 +266,21 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
           }
         };
         
-        // Cancel
-        cancelBtn.onclick = (e) => {
+        // Add both click and touch events for better mobile support
+        captureBtn.onclick = capturePhoto;
+        captureBtn.ontouchend = capturePhoto;
+        
+        // Cancel function
+        const cancelCapture = (e) => {
           e.preventDefault();
           e.stopPropagation();
           stream.getTracks().forEach(track => track.stop());
           document.body.removeChild(overlay);
         };
+        
+        // Add both click and touch events for better mobile support
+        cancelBtn.onclick = cancelCapture;
+        cancelBtn.ontouchend = cancelCapture;
         
         buttonContainer.appendChild(captureBtn);
         buttonContainer.appendChild(cancelBtn);
