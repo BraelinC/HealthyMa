@@ -20,6 +20,8 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface CreateRecipeProps {
   isOpen: boolean;
@@ -41,6 +43,7 @@ interface Instruction {
 
 export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("basics");
   
   // Recipe form state
@@ -307,6 +310,33 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
     }
   };
 
+  const saveRecipeMutation = useMutation({
+    mutationFn: async (recipeData: any) => {
+      return apiRequest('/api/recipes/create', {
+        method: 'POST',
+        body: JSON.stringify(recipeData),
+      });
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/recipes/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      toast({ 
+        title: "Recipe Saved!", 
+        description: `"${recipeName}" has been saved to your meals.` 
+      });
+      handleClose();
+    },
+    onError: (error) => {
+      console.error('Error saving recipe:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save recipe. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleSave = () => {
     if (!recipeName.trim()) {
       toast({ 
@@ -316,13 +346,59 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
       });
       return;
     }
+
+    // Validate ingredients - convert to simple strings and filter empty ones
+    const validIngredients = ingredients
+      .map(ing => {
+        const parts = [];
+        if (ing.amount?.trim()) parts.push(ing.amount.trim());
+        if (ing.unit?.trim()) parts.push(ing.unit.trim());
+        if (ing.name?.trim()) parts.push(ing.name.trim());
+        return parts.join(' ');
+      })
+      .filter(ing => ing.trim().length > 0);
+
+    if (validIngredients.length === 0) {
+      toast({ 
+        title: "Ingredients Required", 
+        description: "Please add at least one ingredient.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate instructions
+    const validInstructions = instructions
+      .map(inst => inst.text?.trim())
+      .filter(text => text && text.length > 0);
+
+    if (validInstructions.length === 0) {
+      toast({ 
+        title: "Instructions Required", 
+        description: "Please add at least one instruction step.",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    // TODO: Implement save functionality
-    toast({ 
-      title: "Recipe Saved!", 
-      description: `"${recipeName}" has been saved to your collection.` 
-    });
-    onClose();
+    const recipeData = {
+      title: recipeName.trim(),
+      description: description.trim() || `Cook time: ${cookTime || '0'}m | Difficulty: ${difficulty}/5`,
+      image_url: recipeImage,
+      time_minutes: parseInt(cookTime) || 0,
+      cuisine: cuisine.trim() || 'homemade',
+      diet: `Difficulty: ${difficulty}/5`,
+      ingredients: validIngredients,
+      instructions: validInstructions,
+      nutrition_info: {
+        calories: 0, // Could be calculated later
+        protein_g: 0,
+        carbs_g: 0,
+        fat_g: 0
+      }
+    };
+
+    saveRecipeMutation.mutate(recipeData);
   };
 
   const handleClose = () => {

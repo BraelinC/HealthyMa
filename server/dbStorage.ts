@@ -206,6 +206,12 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(recipes.created_at));
   }
 
+  async getUserCreatedRecipes(userId: string): Promise<Recipe[]> {
+    return await db.select().from(recipes)
+      .where(eq(recipes.user_id, userId))
+      .orderBy(desc(recipes.created_at));
+  }
+
   async getRecipeById(recipeId: number): Promise<any> {
     try {
       const recipe = await db

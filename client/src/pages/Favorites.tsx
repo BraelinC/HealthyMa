@@ -58,6 +58,18 @@ export default function Favorites() {
     refetchOnReconnect: false // Don't refetch on reconnect
   });
 
+  // Fetch user's created recipes
+  const { data: userRecipes = [] } = useQuery({
+    queryKey: ['/api/recipes/user'],
+    enabled: true,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: 0,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false
+  });
+
   // Remove from favorites mutation
   const removeFromFavoritesMutation = useMutation({
     mutationFn: async (favorite: FavoriteItem) => {
@@ -90,6 +102,33 @@ export default function Favorites() {
     const matchesFilter = selectedFilter === "all" || favorite.item_type === selectedFilter;
     
     return matchesSearch && matchesFilter;
+  });
+
+  // Transform user recipes to display format
+  const transformedUserRecipes = userRecipes.map((recipe: any) => ({
+    id: `user_recipe_${recipe.id}`,
+    item_type: "user_recipe",
+    item_id: recipe.id.toString(),
+    title: recipe.title,
+    description: recipe.description,
+    image_url: recipe.image_url,
+    time_minutes: recipe.time_minutes,
+    cuisine: recipe.cuisine,
+    diet: recipe.diet,
+    metadata: {
+      ingredients: recipe.ingredients,
+      instructions: recipe.instructions,
+      nutrition_info: recipe.nutrition_info
+    },
+    created_at: recipe.created_at
+  }));
+
+  // Filter user recipes based on search
+  const filteredUserRecipes = transformedUserRecipes.filter((recipe: any) => {
+    const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         recipe.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         recipe.cuisine?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
   // Group favorites by type
@@ -475,7 +514,7 @@ export default function Favorites() {
               Favorites ({favorites.length})
             </TabsTrigger>
             <TabsTrigger value="your_meals">
-              Your Meals ({favoritesByType.recipe.length})
+              Your Meals ({filteredUserRecipes.length})
             </TabsTrigger>
           </TabsList>
 
@@ -492,10 +531,10 @@ export default function Favorites() {
           </TabsContent>
 
           <TabsContent value="your_meals">
-            {favoritesByType.recipe.length > 0 ? (
+            {filteredUserRecipes.length > 0 ? (
               <div className="space-y-4">
-                {favoritesByType.recipe.map((favorite: FavoriteItem) => (
-                  <FavoriteCard key={favorite.id} favorite={favorite} />
+                {filteredUserRecipes.map((recipe: any) => (
+                  <FavoriteCard key={recipe.id} favorite={recipe} />
                 ))}
               </div>
             ) : (

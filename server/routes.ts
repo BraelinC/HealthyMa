@@ -815,6 +815,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create a new user recipe
+  app.post("/api/recipes/create", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+
+      const {
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        ingredients,
+        instructions,
+        nutrition_info
+      } = req.body;
+
+      if (!title?.trim()) {
+        return res.status(400).json({ message: "Recipe title is required" });
+      }
+
+      if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+        return res.status(400).json({ message: "At least one ingredient is required" });
+      }
+
+      if (!instructions || !Array.isArray(instructions) || instructions.length === 0) {
+        return res.status(400).json({ message: "At least one instruction is required" });
+      }
+
+      // Create recipe in database
+      const newRecipe = await storage.createRecipe({
+        title: title.trim(),
+        description: description?.trim() || "",
+        image_url: image_url || null,
+        time_minutes: parseInt(time_minutes) || 0,
+        cuisine: cuisine?.trim() || "homemade",
+        diet: diet?.trim() || "",
+        ingredients: ingredients,
+        instructions: instructions,
+        nutrition_info: nutrition_info || {},
+        user_id: userId
+      });
+
+      console.log(`✅ Created user recipe ${newRecipe.id}: "${title}"`);
+      res.json(newRecipe);
+    } catch (error) {
+      console.error("Error creating user recipe:", error);
+      res.status(500).json({ message: "Failed to create recipe" });
+    }
+  });
+
+  // Get user's created recipes
+  app.get("/api/recipes/user", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+
+      const userRecipes = await storage.getUserCreatedRecipes(userId);
+      res.json(userRecipes);
+    } catch (error) {
+      console.error("Error fetching user recipes:", error);
+      res.status(500).json({ message: "Failed to fetch user recipes" });
+    }
+  });
+
   // Save a recipe
   app.post("/api/recipes/:id/save", authenticateToken, async (req: any, res) => {
     try {
