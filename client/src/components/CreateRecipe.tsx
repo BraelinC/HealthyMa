@@ -755,7 +755,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                               onChange={(e) => updateIngredient(ingredient.id, 'amount', e.target.value)}
                             />
                           </div>
-                          <div className="w-16 relative">
+                          <div className="w-20 relative">
                             <Input
                               placeholder="cup"
                               value={ingredient.unit}
