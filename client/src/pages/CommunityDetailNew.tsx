@@ -861,7 +861,7 @@ export default function CommunityDetailNew() {
                     
                     {/* Meal Share with Tabs - Always show for meal_share posts */}
                     {post.post_type === 'meal_share' ? (
-                      <div className="bg-gray-700 rounded-lg mb-3">
+                      <div className="bg-gray-700 rounded-lg mb-3" onClick={(e) => e.stopPropagation()}>
                         <Tabs defaultValue="message" className="w-full">
                           <TabsList className="grid w-full grid-cols-2 bg-gray-600">
                             <TabsTrigger value="message" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Message</TabsTrigger>
