@@ -133,7 +133,7 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   useEffect(() => {
     if (favorites && recipe.id) {
       const favorited = favorites.some((fav: any) => 
-        fav.item_type === 'recipe' && fav.item_id === recipe.id.toString()
+        fav.item_type === 'recipe' && fav.item_id === recipe.id?.toString()
       );
       setIsFavorited(favorited);
     }

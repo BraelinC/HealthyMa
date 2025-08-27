@@ -20,7 +20,8 @@ import {
   Sparkles,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Heart
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, safeApiRequest } from "@/lib/queryClient";
@@ -186,6 +187,7 @@ const Search = () => {
   const [availableIngredients, setAvailableIngredients] = useState("");
   const [excludeIngredients, setExcludeIngredients] = useState("");
   const [mode, setMode] = useState("fast");
+  const [isFavorited, setIsFavorited] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{role: string, content: string}>>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isAssistantThinking, setIsAssistantThinking] = useState(false);
@@ -562,7 +564,36 @@ const Search = () => {
             {/* Generated Recipe Display */}
             {generatedRecipe && (
               <Card className="mt-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6">
+                <CardContent className="p-6 relative">
+                  {/* Heart icon in top right */}
+                  <div className="absolute top-4 right-4 z-10">
+                    <Button 
+                      variant="secondary" 
+                      size="icon" 
+                      onClick={() => {
+                        if (!generatedRecipe?.id) return;
+                        
+                        // Simple toggle for now
+                        setIsFavorited(!isFavorited);
+                        toast({
+                          title: !isFavorited ? "Added to Favorites" : "Removed from Favorites",
+                          description: !isFavorited ? `${generatedRecipe.title} saved to favorites` : "Recipe removed from your favorites",
+                        });
+                        
+                        // Add API call here if needed later
+                      }}
+                      className={`w-8 h-8 rounded-full shadow-sm transform transition-all duration-200 hover:scale-110 ${
+                        isFavorited 
+                          ? 'bg-red-500 text-white hover:bg-red-600' 
+                          : 'bg-white/90 text-gray-700 hover:bg-white'
+                      }`}
+                    >
+                      <Heart className={`h-4 w-4 transition-all duration-200 ${
+                        isFavorited ? 'fill-white scale-110' : 'hover:text-red-500'
+                      }`} />
+                    </Button>
+                  </div>
+                  
                   <div className="space-y-4">
                     {generatedRecipe.video_id && (
                       <div>
