@@ -46,15 +46,14 @@ export default function Favorites() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch favorites with aggressive caching for better performance
-  const { data: favorites = [], isLoading, error } = useQuery<FavoriteItem[]>({
+  // Fetch favorites with optimized caching
+  const { data: favorites = [], isLoading, error, isFetching } = useQuery<FavoriteItem[]>({
     queryKey: ['/api/favorites'],
     enabled: true,
     staleTime: 60000, // Cache for 1 minute
-    gcTime: 600000, // Keep in cache for 10 minutes
-    retry: 2, // Reduce retries for faster failure feedback
-    refetchOnWindowFocus: false,
-    refetchOnMount: false // Don't refetch on component mount if data exists
+    gcTime: 300000, // Keep in cache for 5 minutes
+    retry: 1,
+    refetchOnWindowFocus: false
   });
 
   // Remove from favorites mutation
@@ -392,6 +391,44 @@ export default function Favorites() {
       </p>
     </div>
   );
+
+  if (isLoading || isFetching) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 pb-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Heart className="h-8 w-8 text-purple-600" />
+                <h1 className="text-3xl font-bold text-gray-900">My Favorites</h1>
+              </div>
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                <span className="ml-3 text-gray-600">Loading your favorites...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 pb-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center py-12">
+              <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Favorites</h2>
+              <p className="text-gray-600 mb-4">There was a problem loading your favorites.</p>
+              <Button onClick={() => window.location.reload()}>Try Again</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-4 pb-24">
