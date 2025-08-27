@@ -21,7 +21,8 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  Heart
+  Heart,
+  Share2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, safeApiRequest } from "@/lib/queryClient";
@@ -201,6 +202,45 @@ const Search = () => {
   const [isAutoLoading, setIsAutoLoading] = useState(false);
 
   const { toast } = useToast();
+
+  // Share function
+  const handleShare = async (recipe: GeneratedRecipe) => {
+    const shareData = {
+      title: recipe.title || 'Healthy Mama Recipe',
+      text: recipe.description || 'Check out this amazing recipe!',
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+        toast({
+          title: "Copied to clipboard!",
+          description: "Recipe details have been copied to your clipboard."
+        });
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        // Fallback to clipboard on any error except user cancellation
+        try {
+          await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+          toast({
+            title: "Copied to clipboard!",
+            description: "Recipe details have been copied to your clipboard."
+          });
+        } catch (clipboardError) {
+          toast({
+            title: "Sharing failed",
+            description: "Unable to share or copy to clipboard.",
+            variant: "destructive"
+          });
+        }
+      }
+    }
+  };
 
   // STEP 1.3: Enhanced URL parameter handling - works on first page load
   useEffect(() => {
@@ -565,8 +605,17 @@ const Search = () => {
             {generatedRecipe && (
               <Card className="mt-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                 <CardContent className="p-6 relative">
-                  {/* Heart icon in top right */}
-                  <div className="absolute top-4 right-4 z-10">
+                  {/* Action buttons in top right */}
+                  <div className="absolute top-4 right-4 z-10 flex gap-2">
+                    <Button 
+                      variant="secondary" 
+                      size="icon" 
+                      onClick={() => handleShare(generatedRecipe)}
+                      className="w-8 h-8 rounded-full shadow-sm bg-white/90 text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                      title="Share recipe"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
                     <Button 
                       variant="secondary" 
                       size="icon" 
