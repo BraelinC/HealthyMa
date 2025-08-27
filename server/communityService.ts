@@ -513,12 +513,24 @@ export class CommunityService {
         }
       }
 
-      // Determine meal plan data - use temp meal plan if available, otherwise look up by ID
+      // Determine meal plan data - check recipe_data first, then temp meal plan, then look up by ID
       let mealPlanData = null;
       if (post.post_type === 'meal_share') {
-        if (tempMealPlan) {
+        // First check if recipe_data contains meal plan structure
+        if (post.recipe_data) {
+          try {
+            mealPlanData = JSON.parse(post.recipe_data);
+            console.log('Found meal plan in recipe_data for post', post.id, ':', mealPlanData);
+          } catch (e) {
+            console.error('Error parsing recipe_data for post', post.id, ':', e);
+          }
+        }
+        // Fallback to temp meal plan from images (legacy)
+        if (!mealPlanData && tempMealPlan) {
           mealPlanData = tempMealPlan;
-        } else if (post.meal_plan_id) {
+        } 
+        // Final fallback to meal plan by ID
+        else if (!mealPlanData && post.meal_plan_id) {
           mealPlanData = mealPlansMap.get(post.meal_plan_id);
         }
       }
