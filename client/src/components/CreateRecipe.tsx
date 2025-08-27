@@ -183,7 +183,14 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
           flex-direction: column;
           align-items: center;
           justify-content: center;
+          pointer-events: all;
+          touch-action: none;
         `;
+        
+        // Prevent scrolling and clicks behind overlay
+        overlay.onclick = (e) => e.stopPropagation();
+        overlay.ontouchstart = (e) => e.preventDefault();
+        overlay.ontouchmove = (e) => e.preventDefault();
         
         video.style.cssText = `
           max-width: 90%;
@@ -223,23 +230,36 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
         `;
         
         // Capture photo
-        captureBtn.onclick = () => {
-          context?.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          setRecipeImage(imageDataUrl);
+        captureBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           
-          // Cleanup
-          stream.getTracks().forEach(track => track.stop());
-          document.body.removeChild(overlay);
-          
-          toast({
-            title: "Photo captured!",
-            description: "Your recipe photo has been added successfully."
-          });
+          if (context && video.videoWidth > 0 && video.videoHeight > 0) {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            setRecipeImage(imageDataUrl);
+            
+            // Cleanup
+            stream.getTracks().forEach(track => track.stop());
+            document.body.removeChild(overlay);
+            
+            toast({
+              title: "Photo captured!",
+              description: "Your recipe photo has been added successfully."
+            });
+          } else {
+            toast({
+              title: "Camera Error",
+              description: "Please wait for camera to fully load, then try again.",
+              variant: "destructive"
+            });
+          }
         };
         
         // Cancel
-        cancelBtn.onclick = () => {
+        cancelBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           stream.getTracks().forEach(track => track.stop());
           document.body.removeChild(overlay);
         };
