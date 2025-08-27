@@ -149,13 +149,13 @@ export default function Home() {
           item_id: meal.title,
           title: meal.title,
           description: `Cook time: ${meal.cook_time_minutes}m | Difficulty: ${meal.difficulty}/5`,
+          time_minutes: meal.cook_time_minutes,
           cuisine: "homemade",
-          data: {
+          diet: meal.difficulty ? `Difficulty: ${meal.difficulty}/5` : "",
+          metadata: {
             ingredients: meal.ingredients,
             instructions: meal.instructions,
-            nutrition: meal.nutrition,
-            cook_time_minutes: meal.cook_time_minutes,
-            difficulty: meal.difficulty
+            nutrition_info: meal.nutrition
           }
         })
       });
