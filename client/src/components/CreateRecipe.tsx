@@ -345,7 +345,10 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh] overflow-hidden p-0 mx-auto">
+      <DialogContent 
+        className="max-w-3xl w-[95vw] max-h-[85vh] overflow-hidden p-0 mx-auto"
+        style={{ touchAction: 'auto' }}
+      >
         <div className="flex flex-col h-full">
           {/* Header */}
           <DialogHeader className="p-6 pb-4 border-b border-gray-100">
@@ -361,7 +364,14 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
           </DialogHeader>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div 
+            className="flex-1 overflow-y-auto p-6" 
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y',
+              overscrollBehavior: 'contain'
+            }}
+          >
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-3 mb-6">
                 <TabsTrigger value="basics">Recipe Basics</TabsTrigger>
