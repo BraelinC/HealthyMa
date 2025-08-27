@@ -383,12 +383,16 @@ export default function Favorites() {
     <div className="text-center py-12">
       <HeartOff className="h-12 w-12 text-gray-300 mx-auto mb-4" />
       <h3 className="text-lg font-medium text-gray-600 mb-2">
-        No {type === "all" ? "favorites" : type.replace("_", " ")} found
+        {type === "favorites" ? "No favorites found" : 
+         type === "your_meals" ? "No meals created yet" : 
+         `No ${type.replace("_", " ")} found`}
       </h3>
       <p className="text-gray-500 text-sm max-w-md mx-auto">
         {searchQuery 
-          ? `No ${type === "all" ? "favorites" : type.replace("_", " ")} match your search.`
-          : `Start adding ${type === "all" ? "items" : type.replace("_", " ")} to your favorites to see them here!`
+          ? `No ${type === "favorites" ? "favorites" : type === "your_meals" ? "meals" : type.replace("_", " ")} match your search.`
+          : type === "your_meals" 
+            ? "Create your first recipe using the 'Create Recipe' button to see it here!"
+            : "Start adding items to your favorites to see them here!"
         }
       </p>
     </div>
@@ -425,7 +429,7 @@ export default function Favorites() {
             <h1 className="text-3xl font-bold text-gray-900">My Favorites</h1>
           </div>
           <p className="text-gray-600">
-            Your saved recipes, meal plans, and cooking videos in one place
+            Your favorite items and custom-created meals in one place
           </p>
         </div>
 
@@ -463,25 +467,19 @@ export default function Favorites() {
           </button>
         </div>
       ) : favorites.length === 0 ? (
-        <EmptyState type="all" />
+        <EmptyState type="favorites" />
       ) : (
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-6">
-            <TabsTrigger value="all">
-              All ({favorites.length})
+        <Tabs defaultValue="favorites" className="w-full">
+          <TabsList className="grid grid-cols-2 mb-6">
+            <TabsTrigger value="favorites">
+              Favorites ({favorites.length})
             </TabsTrigger>
-            <TabsTrigger value="recipe">
-              Recipes ({favoritesByType.recipe.length})
-            </TabsTrigger>
-            <TabsTrigger value="meal_plan">
-              Meal Plans ({favoritesByType.meal_plan.length})
-            </TabsTrigger>
-            <TabsTrigger value="youtube_video">
-              Videos ({favoritesByType.youtube_video.length})
+            <TabsTrigger value="your_meals">
+              Your Meals ({favoritesByType.recipe.length})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all">
+          <TabsContent value="favorites">
             {filteredFavorites.length > 0 ? (
               <div className="space-y-4">
                 {filteredFavorites.map((favorite: FavoriteItem) => (
@@ -489,11 +487,11 @@ export default function Favorites() {
                 ))}
               </div>
             ) : (
-              <EmptyState type="all" />
+              <EmptyState type="favorites" />
             )}
           </TabsContent>
 
-          <TabsContent value="recipe">
+          <TabsContent value="your_meals">
             {favoritesByType.recipe.length > 0 ? (
               <div className="space-y-4">
                 {favoritesByType.recipe.map((favorite: FavoriteItem) => (
@@ -501,31 +499,7 @@ export default function Favorites() {
                 ))}
               </div>
             ) : (
-              <EmptyState type="recipe" />
-            )}
-          </TabsContent>
-
-          <TabsContent value="meal_plan">
-            {favoritesByType.meal_plan.length > 0 ? (
-              <div className="space-y-4">
-                {favoritesByType.meal_plan.map((favorite: FavoriteItem) => (
-                  <FavoriteCard key={favorite.id} favorite={favorite} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState type="meal_plan" />
-            )}
-          </TabsContent>
-
-          <TabsContent value="youtube_video">
-            {favoritesByType.youtube_video.length > 0 ? (
-              <div className="space-y-4">
-                {favoritesByType.youtube_video.map((favorite: FavoriteItem) => (
-                  <FavoriteCard key={favorite.id} favorite={favorite} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState type="youtube_video" />
+              <EmptyState type="your_meals" />
             )}
           </TabsContent>
         </Tabs>
