@@ -247,6 +247,41 @@ export const insertRecipeSchema = createInsertSchema(recipes).pick({
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type Recipe = typeof recipes.$inferSelect;
 
+// User-created recipes table for custom recipes created by users
+export const userRecipes = pgTable("user_recipes", {
+  id: serial("id").primaryKey(),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  image_url: text("image_url"),
+  time_minutes: integer("time_minutes"),
+  cuisine: text("cuisine"),
+  diet: text("diet"),
+  ingredients: json("ingredients").notNull(),
+  instructions: json("instructions").notNull(),
+  nutrition_info: json("nutrition_info"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userIdx: index("user_recipes_user_idx").on(table.user_id),
+}));
+
+export const insertUserRecipeSchema = createInsertSchema(userRecipes).pick({
+  user_id: true,
+  title: true,
+  description: true,
+  image_url: true,
+  time_minutes: true,
+  cuisine: true,
+  diet: true,
+  ingredients: true,
+  instructions: true,
+  nutrition_info: true,
+});
+
+export type InsertUserRecipe = z.infer<typeof insertUserRecipeSchema>;
+export type UserRecipe = typeof userRecipes.$inferSelect;
+
 // Meal plans table for saved meal plans
 export const mealPlans = pgTable("meal_plans", {
   id: serial("id").primaryKey(),

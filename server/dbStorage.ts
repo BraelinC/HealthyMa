@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, recipes, mealPlans, profiles, userAchievements, mealCompletions, groceryListCache, foodLogs, foodDatabase, userFavorites, type User, type UpsertUser, type Recipe, type InsertRecipe, type MealPlan, type Profile, type InsertProfile, type UserAchievement, type InsertUserAchievement, type MealCompletion, type InsertMealCompletion, type GroceryListCache, type InsertGroceryListCache, type FoodLog, type InsertFoodLog, type FoodDatabaseItem, type InsertFoodDatabaseItem, type UserFavorite, type InsertUserFavorite, type IStorage } from "@shared/schema";
+import { users, recipes, userRecipes, mealPlans, profiles, userAchievements, mealCompletions, groceryListCache, foodLogs, foodDatabase, userFavorites, type User, type UpsertUser, type Recipe, type InsertRecipe, type UserRecipe, type InsertUserRecipe, type MealPlan, type Profile, type InsertProfile, type UserAchievement, type InsertUserAchievement, type MealCompletion, type InsertMealCompletion, type GroceryListCache, type InsertGroceryListCache, type FoodLog, type InsertFoodLog, type FoodDatabaseItem, type InsertFoodDatabaseItem, type UserFavorite, type InsertUserFavorite, type IStorage } from "@shared/schema";
 import { eq, desc, and, sql, like, gte, lte } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
@@ -206,10 +206,19 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(recipes.created_at));
   }
 
-  async getUserCreatedRecipes(userId: string): Promise<Recipe[]> {
-    return await db.select().from(recipes)
-      .where(eq(recipes.user_id, userId))
-      .orderBy(desc(recipes.created_at));
+  async getUserCreatedRecipes(userId: string): Promise<UserRecipe[]> {
+    return await db.select().from(userRecipes)
+      .where(eq(userRecipes.user_id, userId))
+      .orderBy(desc(userRecipes.created_at));
+  }
+
+  async createUserRecipe(recipe: InsertUserRecipe): Promise<UserRecipe> {
+    const [createdRecipe] = await db
+      .insert(userRecipes)
+      .values(recipe)
+      .returning();
+    
+    return createdRecipe;
   }
 
   async getRecipeById(recipeId: number): Promise<any> {

@@ -847,8 +847,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "At least one instruction is required" });
       }
 
-      // Create recipe in database
-      const newRecipe = await storage.createRecipe({
+      // Create user recipe in database
+      const newRecipe = await storage.createUserRecipe({
+        user_id: userId,
         title: title.trim(),
         description: description?.trim() || "",
         image_url: image_url || null,
@@ -857,8 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         diet: diet?.trim() || "",
         ingredients: ingredients,
         instructions: instructions,
-        nutrition_info: nutrition_info || {},
-        user_id: userId
+        nutrition_info: nutrition_info || {}
       });
 
       console.log(`✅ Created user recipe ${newRecipe.id}: "${title}"`);
