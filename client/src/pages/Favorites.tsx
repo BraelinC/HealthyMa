@@ -432,21 +432,23 @@ export default function Favorites() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 pb-24">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Heart className="h-8 w-8 text-purple-600" />
-          <h1 className="text-3xl font-bold text-gray-900">My Favorites</h1>
-        </div>
-        <p className="text-gray-600">
-          Your saved recipes, meal plans, and cooking videos in one place
-        </p>
-        {/* Debug info */}
-        <div className="mt-2 text-sm text-gray-500">
-          Debug: {favorites?.length || 0} favorites loaded | Loading: {isLoading ? 'Yes' : 'No'} | Error: {error ? 'Yes' : 'No'}
-        </div>
+    <div className="min-h-screen bg-white">
+      {/* FAVORITES PAGE IS LOADING - TEST COMMENT */}
+      <div className="bg-green-100 p-2 text-center text-sm font-bold">
+        ✅ FAVORITES PAGE LOADED - API returned {favorites?.length || 0} items
       </div>
+      
+      <div className="max-w-4xl mx-auto p-4 pb-24">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Heart className="h-8 w-8 text-purple-600" />
+            <h1 className="text-3xl font-bold text-gray-900">My Favorites</h1>
+          </div>
+          <p className="text-gray-600">
+            Your saved recipes, meal plans, and cooking videos in one place
+          </p>
+        </div>
 
       {/* Search and Stats */}
       <div className="mb-6">
@@ -568,10 +570,11 @@ export default function Favorites() {
         </Tabs>
       )}
       
-      {/* Expanded Favorite Modal */}
-      {expandedFavorite && (
-        <ExpandedFavoriteView favorite={expandedFavorite} />
-      )}
+        {/* Expanded Favorite Modal */}
+        {expandedFavorite && (
+          <ExpandedFavoriteView favorite={expandedFavorite} />
+        )}
+      </div>
     </div>
   );
 }
