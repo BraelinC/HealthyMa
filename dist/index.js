@@ -50,6 +50,8 @@ __export(schema_exports, {
   insertProfileSchema: () => insertProfileSchema,
   insertRecipeSchema: () => insertRecipeSchema,
   insertUserAchievementSchema: () => insertUserAchievementSchema,
+  insertUserFavoriteSchema: () => insertUserFavoriteSchema,
+  insertUserRecipeSchema: () => insertUserRecipeSchema,
   insertUserSavedCulturalMealsSchema: () => insertUserSavedCulturalMealsSchema,
   mealCompletions: () => mealCompletions,
   mealPlanRemixes: () => mealPlanRemixes,
@@ -63,7 +65,9 @@ __export(schema_exports, {
   sharedMealPlans: () => sharedMealPlans,
   simplifiedUserProfileSchema: () => simplifiedUserProfileSchema,
   userAchievements: () => userAchievements,
+  userFavorites: () => userFavorites,
   userMealCourseProgress: () => userMealCourseProgress,
+  userRecipes: () => userRecipes,
   userSavedCulturalMeals: () => userSavedCulturalMeals,
   users: () => users,
   weightBasedMealSchema: () => weightBasedMealSchema
@@ -102,7 +106,7 @@ function mergeFamilyDietaryRestrictions(members) {
   console.log("\u{1F517} Final merged restrictions:", finalRestrictions);
   return finalRestrictions;
 }
-var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema, groceryListCache, insertGroceryListCacheSchema, foodLogs, insertFoodLogSchema, foodDatabase, insertFoodDatabaseSchema, communities, communityMembers, sharedMealPlans, mealPlanReviews, mealPlanRemixes, communityDiscussions, creatorProfiles, creatorFollowers, communityChallenges, communityPosts, communityPostComments, communityPostLikes, communityCommentLikes, communityMealCourses, communityMealLessons, communityMealCourseModules, communityMealLessonSections, userMealCourseProgress;
+var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, userRecipes, insertUserRecipeSchema, mealPlans, userFavorites, insertUserFavoriteSchema, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema, groceryListCache, insertGroceryListCacheSchema, foodLogs, insertFoodLogSchema, foodDatabase, insertFoodDatabaseSchema, communities, communityMembers, sharedMealPlans, mealPlanReviews, mealPlanRemixes, communityDiscussions, creatorProfiles, creatorFollowers, communityChallenges, communityPosts, communityPostComments, communityPostLikes, communityCommentLikes, communityMealCourses, communityMealLessons, communityMealCourseModules, communityMealLessonSections, userMealCourseProgress;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -291,6 +295,35 @@ var init_schema = __esm({
       is_saved: true,
       user_id: true
     });
+    userRecipes = pgTable("user_recipes", {
+      id: serial("id").primaryKey(),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      title: text("title").notNull(),
+      description: text("description"),
+      image_url: text("image_url"),
+      time_minutes: integer("time_minutes"),
+      cuisine: text("cuisine"),
+      diet: text("diet"),
+      ingredients: json("ingredients").notNull(),
+      instructions: json("instructions").notNull(),
+      nutrition_info: json("nutrition_info"),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      userIdx: index("user_recipes_user_idx").on(table.user_id)
+    }));
+    insertUserRecipeSchema = createInsertSchema(userRecipes).pick({
+      user_id: true,
+      title: true,
+      description: true,
+      image_url: true,
+      time_minutes: true,
+      cuisine: true,
+      diet: true,
+      ingredients: true,
+      instructions: true,
+      nutrition_info: true
+    });
     mealPlans = pgTable("meal_plans", {
       id: serial("id").primaryKey(),
       userId: varchar("user_id").notNull().references(() => users.id),
@@ -300,6 +333,45 @@ var init_schema = __esm({
       isAutoSaved: boolean("is_auto_saved").default(false),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
+    });
+    userFavorites = pgTable("user_favorites", {
+      id: serial("id").primaryKey(),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      item_type: varchar("item_type").notNull(),
+      // "recipe", "meal_plan", "youtube_video"
+      item_id: varchar("item_id").notNull(),
+      // Foreign key to the item being favorited
+      title: text("title").notNull(),
+      description: text("description"),
+      image_url: text("image_url"),
+      time_minutes: integer("time_minutes"),
+      cuisine: text("cuisine"),
+      diet: text("diet"),
+      video_id: text("video_id"),
+      // For YouTube videos
+      video_title: text("video_title"),
+      video_channel: text("video_channel"),
+      metadata: json("metadata"),
+      // Additional data specific to the item type
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      userItemIdx: index("user_favorites_user_item_idx").on(table.user_id, table.item_type, table.item_id),
+      userIdx: index("user_favorites_user_idx").on(table.user_id)
+    }));
+    insertUserFavoriteSchema = createInsertSchema(userFavorites).pick({
+      user_id: true,
+      item_type: true,
+      item_id: true,
+      title: true,
+      description: true,
+      image_url: true,
+      time_minutes: true,
+      cuisine: true,
+      diet: true,
+      video_id: true,
+      video_title: true,
+      video_channel: true,
+      metadata: true
     });
     culturalCuisineCache = pgTable("cultural_cuisine_cache", {
       id: serial("id").primaryKey(),
@@ -643,6 +715,8 @@ var init_schema = __esm({
       // "discussion", "question", "announcement", "meal_share"
       meal_plan_id: integer("meal_plan_id").references(() => mealPlans.id),
       // For meal share posts
+      recipe_data: text("recipe_data"),
+      // JSON string of recipe data for meal_share posts
       images: text("images"),
       // JSON string of image URLs
       likes: integer("likes").default(0),
@@ -958,6 +1032,17 @@ var init_dbStorage = __esm({
         }
         return await db.select().from(recipes).where(eq(recipes.is_saved, false)).orderBy(desc(recipes.created_at));
       }
+      async getUserCreatedRecipes(userId) {
+        return await db.select().from(userRecipes).where(eq(userRecipes.user_id, userId)).orderBy(desc(userRecipes.created_at));
+      }
+      async createUserRecipe(recipe) {
+        const [createdRecipe] = await db.insert(userRecipes).values(recipe).returning();
+        return createdRecipe;
+      }
+      async deleteUserRecipe(recipeId, userId) {
+        const result = await db.delete(userRecipes).where(and(eq(userRecipes.id, recipeId), eq(userRecipes.user_id, userId)));
+        return result.rowCount > 0;
+      }
       async getRecipeById(recipeId) {
         try {
           const recipe = await db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
@@ -998,7 +1083,7 @@ var init_dbStorage = __esm({
       // Meal plan operations
       async getSavedMealPlans(userId) {
         try {
-          const plans = await db.select().from(mealPlans).where(eq(mealPlans.userId, userId)).orderBy(desc(mealPlans.updatedAt));
+          const plans = await db.select().from(mealPlans).where(eq(mealPlans.userId, userId)).orderBy(desc(mealPlans.updatedAt)).limit(50);
           console.log("Database returned meal plans:", plans?.length || 0);
           return Array.isArray(plans) ? plans : [];
         } catch (error) {
@@ -1392,6 +1477,52 @@ var init_dbStorage = __esm({
         } catch (error) {
           console.error("Error creating food database item:", error);
           throw error;
+        }
+      }
+      // Favorites methods
+      async getUserFavorites(userId) {
+        try {
+          return await db.select().from(userFavorites).where(eq(userFavorites.user_id, userId)).orderBy(desc(userFavorites.created_at)).limit(100);
+        } catch (error) {
+          console.error("Error getting user favorites:", error);
+          return [];
+        }
+      }
+      async addToFavorites(data) {
+        try {
+          const [favorite] = await db.insert(userFavorites).values(data).returning();
+          console.log("\u2705 Added to favorites:", favorite.title);
+          return favorite;
+        } catch (error) {
+          console.error("Error adding to favorites:", error);
+          throw error;
+        }
+      }
+      async removeFromFavorites(userId, itemType, itemId) {
+        try {
+          await db.delete(userFavorites).where(and(
+            eq(userFavorites.user_id, userId),
+            eq(userFavorites.item_type, itemType),
+            eq(userFavorites.item_id, itemId)
+          ));
+          console.log("\u2705 Removed from favorites:", itemType, itemId);
+          return true;
+        } catch (error) {
+          console.error("Error removing from favorites:", error);
+          return false;
+        }
+      }
+      async isFavorited(userId, itemType, itemId) {
+        try {
+          const [favorite] = await db.select().from(userFavorites).where(and(
+            eq(userFavorites.user_id, userId),
+            eq(userFavorites.item_type, itemType),
+            eq(userFavorites.item_id, itemId)
+          )).limit(1);
+          return !!favorite;
+        } catch (error) {
+          console.error("Error checking if favorited:", error);
+          return false;
         }
       }
     };
@@ -2824,7 +2955,7 @@ __export(communityService_exports, {
   CommunityService: () => CommunityService,
   communityService: () => communityService
 });
-import { eq as eq2, and as and2, desc as desc2, sql as sql3, gte as gte2 } from "drizzle-orm";
+import { eq as eq2, and as and2, desc as desc2, sql as sql3, gte as gte2, inArray } from "drizzle-orm";
 var CommunityService, communityService;
 var init_communityService = __esm({
   "server/communityService.ts"() {
@@ -3092,17 +3223,53 @@ var init_communityService = __esm({
           const likedPosts = await db.select({ post_id: communityPostLikes.post_id }).from(communityPostLikes).where(eq2(communityPostLikes.user_id, userId));
           userLikedPosts = new Set(likedPosts.map((like2) => like2.post_id).filter((id) => id !== null));
         }
-        return posts.map(({ post, author }) => ({
-          ...post,
-          images: post.images ? JSON.parse(post.images) : [],
-          // Parse JSON string back to array
-          username: author?.full_name || author?.firstName || "Anonymous",
-          likes_count: post.likes,
-          author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
-          isLiked: userLikedPosts.has(post.id),
-          is_liked: userLikedPosts.has(post.id),
-          created_at: post.created_at ? new Date(post.created_at).toLocaleString() : (/* @__PURE__ */ new Date()).toLocaleString()
-        }));
+        const mealPlanIds = posts.filter(({ post }) => post.post_type === "meal_share" && post.meal_plan_id).map(({ post }) => post.meal_plan_id);
+        let mealPlansMap = /* @__PURE__ */ new Map();
+        if (mealPlanIds.length > 0) {
+          const mealPlans3 = await db.select().from(mealPlans3).where(inArray(mealPlans3.id, mealPlanIds));
+          mealPlansMap = new Map(mealPlans3.map((plan) => [plan.id, plan]));
+        }
+        return posts.map(({ post, author }) => {
+          let parsedImages = [];
+          let tempMealPlan = null;
+          if (post.images) {
+            try {
+              const imageData = JSON.parse(post.images);
+              if (imageData && typeof imageData === "object") {
+                if (imageData.temp_meal_plan) {
+                  parsedImages = imageData.images || [];
+                  tempMealPlan = imageData.temp_meal_plan;
+                } else if (Array.isArray(imageData)) {
+                  parsedImages = imageData;
+                } else {
+                  parsedImages = [];
+                }
+              }
+            } catch (e) {
+              parsedImages = [];
+            }
+          }
+          let mealPlanData = null;
+          if (post.post_type === "meal_share") {
+            if (tempMealPlan) {
+              mealPlanData = tempMealPlan;
+            } else if (post.meal_plan_id) {
+              mealPlanData = mealPlansMap.get(post.meal_plan_id);
+            }
+          }
+          return {
+            ...post,
+            images: parsedImages,
+            username: author?.full_name || author?.firstName || "Anonymous",
+            likes_count: post.likes,
+            author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+            isLiked: userLikedPosts.has(post.id),
+            is_liked: userLikedPosts.has(post.id),
+            created_at: post.created_at ? new Date(post.created_at).toLocaleString() : (/* @__PURE__ */ new Date()).toLocaleString(),
+            // Include meal plan data for meal_share posts (from DB or temp data)
+            meal_plan: mealPlanData
+          };
+        });
       }
       // Like/unlike a community post
       async togglePostLike(userId, postId, communityId) {
@@ -13873,7 +14040,7 @@ var communityCommentsService = new CommunityCommentsService();
 // server/creatorService.ts
 init_db();
 init_schema();
-import { eq as eq4, and as and3, desc as desc4, sql as sql5, inArray } from "drizzle-orm";
+import { eq as eq4, and as and3, desc as desc4, sql as sql5, inArray as inArray2 } from "drizzle-orm";
 var CreatorService = class {
   // Create or update creator profile
   async upsertCreatorProfile(userId, data) {
@@ -13991,7 +14158,7 @@ var CreatorService = class {
       return [];
     }
     const creatorIds = follows.map((f) => f.creator_id);
-    const plans = await db.select().from(sharedMealPlans).innerJoin(users, eq4(sharedMealPlans.sharer_id, users.id)).where(inArray(sharedMealPlans.sharer_id, creatorIds)).orderBy(desc4(sharedMealPlans.created_at)).limit(limit);
+    const plans = await db.select().from(sharedMealPlans).innerJoin(users, eq4(sharedMealPlans.sharer_id, users.id)).where(inArray2(sharedMealPlans.sharer_id, creatorIds)).orderBy(desc4(sharedMealPlans.created_at)).limit(limit);
     return plans.map((p) => ({
       ...p.shared_meal_plans,
       creator: {
@@ -15229,7 +15396,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
 }
 var stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-06-30.basil"
+  apiVersion: "2025-07-30.basil"
 });
 async function registerRoutes(app2) {
   app2.get("/api/test-cors", (_req, res) => {
@@ -15794,6 +15961,86 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error fetching generated recipes:", error);
       res.status(500).json({ message: "Failed to fetch generated recipes" });
+    }
+  });
+  app2.post("/api/recipes/create", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+      const {
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        ingredients,
+        instructions,
+        nutrition_info
+      } = req.body;
+      if (!title?.trim()) {
+        return res.status(400).json({ message: "Recipe title is required" });
+      }
+      if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+        return res.status(400).json({ message: "At least one ingredient is required" });
+      }
+      if (!instructions || !Array.isArray(instructions) || instructions.length === 0) {
+        return res.status(400).json({ message: "At least one instruction is required" });
+      }
+      const newRecipe = await storage.createUserRecipe({
+        user_id: userId,
+        title: title.trim(),
+        description: description?.trim() || "",
+        image_url: image_url || null,
+        time_minutes: parseInt(time_minutes) || 0,
+        cuisine: cuisine?.trim() || "homemade",
+        diet: diet?.trim() || "",
+        ingredients,
+        instructions,
+        nutrition_info: nutrition_info || {}
+      });
+      console.log(`\u2705 Created user recipe ${newRecipe.id}: "${title}"`);
+      res.json(newRecipe);
+    } catch (error) {
+      console.error("Error creating user recipe:", error);
+      res.status(500).json({ message: "Failed to create recipe" });
+    }
+  });
+  app2.get("/api/recipes/user", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+      const userRecipes2 = await storage.getUserCreatedRecipes(userId);
+      res.json(userRecipes2);
+    } catch (error) {
+      console.error("Error fetching user recipes:", error);
+      res.status(500).json({ message: "Failed to fetch user recipes" });
+    }
+  });
+  app2.delete("/api/recipes/user/:id", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+      const recipeId = parseInt(req.params.id);
+      if (isNaN(recipeId)) {
+        return res.status(400).json({ message: "Invalid recipe ID" });
+      }
+      const success = await storage.deleteUserRecipe(recipeId, userId);
+      if (success) {
+        console.log(`\u2705 Deleted user recipe ${recipeId} for user ${userId}`);
+        res.json({ success: true, message: "Recipe deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Recipe not found or not owned by user" });
+      }
+    } catch (error) {
+      console.error("Error deleting user recipe:", error);
+      res.status(500).json({ message: "Failed to delete recipe" });
     }
   });
   app2.post("/api/recipes/:id/save", authenticateToken2, async (req, res) => {
@@ -17572,6 +17819,83 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: `Failed to calculate batch timing: ${error.message}` });
     }
   });
+  app2.post("/api/recipes/intelligent-search", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+      const { query } = req.body;
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+      console.log(`\u{1F50D} [PERPLEXITY TEST] Starting search for: "${query}"`);
+      console.log(`\u{1F511} [PERPLEXITY TEST] API Key exists: ${!!process.env.PERPLEXITY_API_KEY}`);
+      const requestBody = {
+        model: "llama-3.1-sonar-small-128k-online",
+        messages: [
+          {
+            role: "system",
+            content: "You are a recipe search expert. Find detailed recipes with ingredients, instructions, and cooking times."
+          },
+          {
+            role: "user",
+            content: `Find 3 simple recipes for: ${query}. Include ingredients, instructions, cooking time, and difficulty level for each recipe.`
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.3,
+        top_p: 0.9,
+        return_citations: true,
+        return_images: false,
+        return_related_questions: false,
+        search_recency_filter: "month",
+        top_k: 0,
+        stream: false,
+        presence_penalty: 0,
+        frequency_penalty: 1
+      };
+      console.log(`\u{1F4E4} [PERPLEXITY TEST] Request body:`, JSON.stringify(requestBody, null, 2));
+      const perplexityResponse = await fetch6("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+      console.log(`\u{1F310} [PERPLEXITY] Response status: ${perplexityResponse.status}`);
+      if (!perplexityResponse.ok) {
+        const errorText = await perplexityResponse.text();
+        console.error(`\u{1F6A8} [PERPLEXITY] Error response:`, errorText);
+        throw new Error(`Perplexity API error: ${perplexityResponse.status} - ${errorText}`);
+      }
+      const perplexityData = await perplexityResponse.json();
+      const recipeContent = perplexityData.choices[0]?.message?.content || "";
+      const citations = perplexityData.citations || [];
+      console.log(`\u{1F310} [PERPLEXITY] Success! Found ${citations.length} citations`);
+      console.log(`\u{1F4DD} [PERPLEXITY] Content length: ${recipeContent.length} characters`);
+      console.log(`\u{1F4DD} [PERPLEXITY] Content preview:`, recipeContent.substring(0, 200) + "...");
+      res.json({
+        success: true,
+        query,
+        perplexityContent: recipeContent,
+        citations,
+        contentLength: recipeContent.length,
+        searchMetadata: {
+          perplexitySearched: true,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      });
+    } catch (error) {
+      console.error("\u{1F6A8} [PERPLEXITY TEST] Error:", error);
+      res.status(500).json({
+        message: "Failed to perform perplexity search",
+        error: error.message,
+        query: req.body.query
+      });
+    }
+  });
   app2.post("/api/recipes/resolve-conflicts", async (req, res) => {
     try {
       const { mealRequest, dietaryRestrictions, culturalBackground } = req.body;
@@ -18375,10 +18699,32 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch communities" });
     }
   });
+  app2.get("/api/communities/my-communities", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const userCommunities = await db.select({
+        id: communities.id,
+        name: communities.name,
+        description: communities.description,
+        member_count: communities.member_count,
+        cover_image: communities.cover_image
+      }).from(communities).innerJoin(communityMembers, eq8(communityMembers.community_id, communities.id)).where(eq8(communityMembers.user_id, userId));
+      res.json(userCommunities);
+    } catch (error) {
+      console.error("Error fetching user communities:", error);
+      res.status(500).json({ message: "Failed to fetch user communities" });
+    }
+  });
   app2.get("/api/communities/:id", authenticateToken2, async (req, res) => {
     try {
       const communityId = Number(req.params.id);
       const userId = req.user?.id;
+      if (isNaN(communityId)) {
+        return res.status(400).json({ message: "Invalid community ID" });
+      }
       const community = await communityService.getCommunityDetails(communityId, userId);
       res.json(community);
     } catch (error) {
@@ -18577,8 +18923,8 @@ async function registerRoutes(app2) {
       if (!membership) {
         return res.status(403).json({ message: "You must be a member to view meal plans" });
       }
-      const mealPlans2 = await communityService.getCommunityMealPlans(communityId);
-      res.json(mealPlans2);
+      const mealPlans3 = await communityService.getCommunityMealPlans(communityId);
+      res.json(mealPlans3);
     } catch (error) {
       console.error("Error fetching community meal plans:", error);
       res.status(500).json({ message: "Failed to fetch meal plans" });
@@ -19444,6 +19790,164 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error fetching creator communities:", error);
       res.status(500).json({ message: "Failed to fetch creator communities" });
+    }
+  });
+  app2.post("/api/community-posts", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const {
+        community_id,
+        content,
+        post_type = "meal_share",
+        recipe_data,
+        meal_plan_id,
+        images
+      } = req.body;
+      if (!community_id || !content?.trim()) {
+        return res.status(400).json({ message: "Missing required fields: community_id, content" });
+      }
+      const membership = await db.select().from(communityMembers).where(and6(
+        eq8(communityMembers.community_id, community_id),
+        eq8(communityMembers.user_id, userId)
+      )).limit(1);
+      if (membership.length === 0) {
+        return res.status(403).json({ message: "Not a member of this community" });
+      }
+      const [newPost] = await db.insert(communityPosts).values({
+        community_id,
+        author_id: userId,
+        content: content.trim(),
+        post_type,
+        meal_plan_id: meal_plan_id || null,
+        images: images ? JSON.stringify(images) : null
+      }).returning();
+      if (recipe_data && post_type === "meal_share") {
+        const tempMealPlan = {
+          id: `recipe_${newPost.id}`,
+          // Use post ID for unique identifier
+          name: recipe_data.title || "Shared Recipe",
+          description: recipe_data.description || "",
+          meal_plan: {
+            days: {
+              "day1": {
+                breakfast: recipe_data.ingredients && recipe_data.instructions ? {
+                  name: recipe_data.title,
+                  description: recipe_data.description || "",
+                  ingredients: recipe_data.ingredients || [],
+                  instructions: recipe_data.instructions || [],
+                  prep_time: recipe_data.time_minutes || 30,
+                  cuisine: recipe_data.cuisine || "",
+                  difficulty: "Medium"
+                } : null
+              }
+            }
+          }
+        };
+        const enhancedContent = content.trim() + `
+
+**${recipe_data.title}**
+` + (recipe_data.description ? `${recipe_data.description}
+
+` : "") + (recipe_data.time_minutes ? `\u23F1\uFE0F ${recipe_data.time_minutes} minutes
+` : "") + (recipe_data.cuisine ? `\u{1F30D} ${recipe_data.cuisine}
+` : "");
+        const existingImages = images ? JSON.parse(JSON.stringify(images)) : [];
+        const combinedData = {
+          images: existingImages,
+          temp_meal_plan: tempMealPlan
+        };
+        await db.update(communityPosts).set({
+          content: enhancedContent,
+          images: JSON.stringify(combinedData)
+        }).where(eq8(communityPosts.id, newPost.id));
+      }
+      res.status(201).json({ message: "Post created successfully", post: newPost });
+    } catch (error) {
+      console.error("Error creating community post:", error);
+      res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+  app2.get("/api/favorites", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const favorites = await storage.getUserFavorites(userId);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      res.status(500).json({ message: "Failed to fetch favorites" });
+    }
+  });
+  app2.post("/api/favorites", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { item_type, item_id, title, description, image_url, time_minutes, cuisine, diet, video_id, video_title, video_channel, metadata } = req.body;
+      if (!item_type || !item_id || !title) {
+        return res.status(400).json({ message: "Missing required fields: item_type, item_id, title" });
+      }
+      const isAlreadyFavorited = await storage.isFavorited(userId, item_type, item_id);
+      if (isAlreadyFavorited) {
+        return res.status(409).json({ message: "Item already favorited" });
+      }
+      const favorite = await storage.addToFavorites({
+        user_id: userId,
+        item_type,
+        item_id,
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        video_id,
+        video_title,
+        video_channel,
+        metadata
+      });
+      res.status(201).json(favorite);
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      res.status(500).json({ message: "Failed to add to favorites" });
+    }
+  });
+  app2.delete("/api/favorites/:itemType/:itemId", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { itemType, itemId } = req.params;
+      const success = await storage.removeFromFavorites(userId, itemType, itemId);
+      if (success) {
+        res.json({ message: "Removed from favorites" });
+      } else {
+        res.status(404).json({ message: "Favorite not found" });
+      }
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+      res.status(500).json({ message: "Failed to remove from favorites" });
+    }
+  });
+  app2.get("/api/favorites/:itemType/:itemId/check", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { itemType, itemId } = req.params;
+      const isFavorited = await storage.isFavorited(userId, itemType, itemId);
+      res.json({ isFavorited });
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
+      res.status(500).json({ message: "Failed to check favorite status" });
     }
   });
   const httpServer = createServer(app2);

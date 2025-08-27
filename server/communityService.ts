@@ -473,28 +473,69 @@ export class CommunityService {
       .filter(({ post }) => post.post_type === 'meal_share' && post.meal_plan_id)
       .map(({ post }) => post.meal_plan_id!);
 
-    let mealPlansMap = new Map();
+    let mealPlansMap = new Map<number, any>();
     if (mealPlanIds.length > 0) {
-      const mealPlans = await db.select()
+      const mealPlansData = await db.select()
         .from(mealPlans)
         .where(inArray(mealPlans.id, mealPlanIds));
       
-      mealPlansMap = new Map(mealPlans.map(plan => [plan.id, plan]));
+      mealPlansMap = new Map(mealPlansData.map((plan: any) => [plan.id, plan]));
     }
 
     // Return posts with proper formatting for frontend
-    return posts.map(({ post, author }) => ({
-      ...post,
-      images: post.images ? JSON.parse(post.images) : [], // Parse JSON string back to array
-      username: author?.full_name || author?.firstName || 'Anonymous',
-      likes_count: post.likes,
-      author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
-      isLiked: userLikedPosts.has(post.id),
-      is_liked: userLikedPosts.has(post.id),
-      created_at: post.created_at ? new Date(post.created_at).toLocaleString() : new Date().toLocaleString(),
-      // Include meal plan data for meal_share posts
-      meal_plan: post.post_type === 'meal_share' && post.meal_plan_id ? mealPlansMap.get(post.meal_plan_id) : null
-    }));
+    return posts.map(({ post, author }) => {
+      // Parse images data which may contain temporary meal plan data
+      let parsedImages = [];
+      let tempMealPlan = null;
+      
+      if (post.images) {
+        try {
+          const imageData = JSON.parse(post.images);
+          if (imageData && typeof imageData === 'object') {
+            // Check if it's the new format with temp_meal_plan
+            if (imageData.temp_meal_plan) {
+              parsedImages = imageData.images || [];
+              tempMealPlan = imageData.temp_meal_plan;
+              // Log for debugging
+              console.log('Found temp_meal_plan in post', post.id, ':', tempMealPlan);
+            } else if (Array.isArray(imageData)) {
+              // Old format - just an array of images
+              parsedImages = imageData;
+            } else {
+              // Unknown format, try to handle gracefully
+              parsedImages = [];
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing images for post', post.id, ':', e);
+          // If parsing fails, assume it's an old format or malformed data
+          parsedImages = [];
+        }
+      }
+
+      // Determine meal plan data - use temp meal plan if available, otherwise look up by ID
+      let mealPlanData = null;
+      if (post.post_type === 'meal_share') {
+        if (tempMealPlan) {
+          mealPlanData = tempMealPlan;
+        } else if (post.meal_plan_id) {
+          mealPlanData = mealPlansMap.get(post.meal_plan_id);
+        }
+      }
+
+      return {
+        ...post,
+        images: parsedImages,
+        username: author?.full_name || author?.firstName || 'Anonymous',
+        likes_count: post.likes,
+        author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+        isLiked: userLikedPosts.has(post.id),
+        is_liked: userLikedPosts.has(post.id),
+        created_at: post.created_at ? new Date(post.created_at).toLocaleString() : new Date().toLocaleString(),
+        // Include meal plan data for meal_share posts (from DB or temp data)
+        meal_plan: mealPlanData
+      };
+    });
   }
 
   // Like/unlike a community post
@@ -716,12 +757,6 @@ export class CommunityService {
     return membership;
   }
 
-  // Get community meal plans
-  async getCommunityMealPlans(communityId: number) {
-    // For now, return empty array until we create proper meal plan storage
-    // This will be enhanced with actual meal plan data from the database
-    return [];
-  }
 
   // Create community meal plan
   async createCommunityMealPlan(userId: string, communityId: number, mealPlanData: any) {

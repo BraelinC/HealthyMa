@@ -5872,16 +5872,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         images: images ? JSON.stringify(images) : null,
       }).returning();
 
-      // If recipe data is provided, store it in the content (simple approach)
+      // If recipe data is provided, create a proper meal plan structure
       if (recipe_data && post_type === 'meal_share') {
+        // Create a proper meal plan structure from recipe data to ensure tabs work
+        const tempMealPlan = {
+          id: `recipe_${newPost.id}`, // Use post ID for unique identifier
+          name: recipe_data.title || 'Shared Recipe',
+          description: recipe_data.description || '',
+          meal_plan: {
+            day_1: {
+              breakfast: {
+                name: recipe_data.title || 'Shared Recipe',
+                description: recipe_data.description || '',
+                ingredients: recipe_data.ingredients || [],
+                instructions: recipe_data.instructions || [],
+                prep_time: recipe_data.time_minutes || 30,
+                cuisine: recipe_data.cuisine || '',
+                difficulty: 'Medium',
+                // Add nutrition if available
+                nutrition: recipe_data.nutrition || recipe_data.nutrition_info || null,
+                // Add image if available
+                image_url: recipe_data.image_url || null
+              }
+            }
+          }
+        };
+
+        // Store recipe data as enhanced content for display
         const enhancedContent = content.trim() + '\n\n' + 
           `**${recipe_data.title}**\n` +
           (recipe_data.description ? `${recipe_data.description}\n\n` : '') +
           (recipe_data.time_minutes ? `⏱️ ${recipe_data.time_minutes} minutes\n` : '') +
           (recipe_data.cuisine ? `🌍 ${recipe_data.cuisine}\n` : '');
 
+        // Store the temp meal plan data in images field as JSON (temporary solution)
+        const existingImages = images ? JSON.parse(JSON.stringify(images)) : [];
+        const combinedData = {
+          images: existingImages,
+          temp_meal_plan: tempMealPlan
+        };
+
         await db.update(communityPosts)
-          .set({ content: enhancedContent })
+          .set({ 
+            content: enhancedContent,
+            images: JSON.stringify(combinedData)
+          })
           .where(eq(communityPosts.id, newPost.id));
       }
 

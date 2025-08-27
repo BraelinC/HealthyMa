@@ -876,23 +876,40 @@ export default function CommunityDetailNew() {
                           
                           <TabsContent value="meal" className="p-4">
                             <RecipeDisplay
-                              recipe={{
-                                id: post.meal_plan.id,
-                                title: post.meal_plan.name || 'Shared Recipe',
-                                description: post.meal_plan.description || '',
-                                image_url: '/api/placeholder/400/300',
-                                ingredients: [],
-                                instructions: [],
-                                meal_plan: post.meal_plan.meal_plan,
-                                nutrition_info: null,
-                                time_minutes: 30,
-                                cuisine: '',
-                                diet: ''
-                              }}
-                              onAddToFavorites={() => {}}
-                              onGenerateShoppingList={() => {}}
-                              showMealPlan={true}
-                              isFavorite={false}
+                              recipe={(() => {
+                                // Extract the first recipe from the meal plan
+                                const mealPlan = post.meal_plan?.meal_plan;
+                                const firstDay = mealPlan?.day_1 || mealPlan?.days?.day1;
+                                const firstMeal = firstDay?.breakfast || firstDay?.lunch || firstDay?.dinner;
+                                
+                                if (!firstMeal) {
+                                  return {
+                                    id: post.meal_plan?.id,
+                                    title: post.meal_plan?.name || 'Shared Recipe',
+                                    description: post.meal_plan?.description || '',
+                                    image_url: firstMeal?.image_url || '/api/placeholder/400/300',
+                                    ingredients: [],
+                                    instructions: [],
+                                    time_minutes: 30,
+                                    cuisine: '',
+                                    diet: ''
+                                  };
+                                }
+                                
+                                return {
+                                  id: post.meal_plan?.id,
+                                  title: firstMeal.name || post.meal_plan?.name || 'Shared Recipe',
+                                  description: firstMeal.description || post.meal_plan?.description || '',
+                                  image_url: firstMeal.image_url || '/api/placeholder/400/300',
+                                  ingredients: firstMeal.ingredients || [],
+                                  instructions: firstMeal.instructions || [],
+                                  nutrition_info: firstMeal.nutrition || null,
+                                  time_minutes: firstMeal.prep_time || 30,
+                                  cuisine: firstMeal.cuisine || '',
+                                  diet: firstMeal.diet || ''
+                                };
+                              })()}
+                              onRegenerateClick={() => {}}
                             />
                           </TabsContent>
                         </Tabs>
