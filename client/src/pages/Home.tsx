@@ -72,6 +72,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { GroceryListPanel } from "@/components/GroceryListPanel";
+import { CommunityShareModal } from "@/components/CommunityShareModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Meal {
@@ -136,47 +137,18 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedRecipes, setSelectedRecipes] = useState<Set<number>>(new Set());
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [itemToShare, setItemToShare] = useState<any>(null);
+  const [shareType, setShareType] = useState<'recipe' | 'meal_plan'>('recipe');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Share function
-  const handleShare = useCallback(async (item: any, itemType: 'recipe' | 'meal_plan' = 'recipe') => {
-    const shareData = {
-      title: item.title || 'Healthy Mama Recipe',
-      text: item.description || 'Check out this amazing recipe!',
-      url: window.location.href
-    };
-
-    try {
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback to clipboard
-        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
-        toast({
-          title: "Copied to clipboard!",
-          description: "Recipe details have been copied to your clipboard."
-        });
-      }
-    } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
-        // Fallback to clipboard on any error except user cancellation
-        try {
-          await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
-          toast({
-            title: "Copied to clipboard!",
-            description: "Recipe details have been copied to your clipboard."
-          });
-        } catch (clipboardError) {
-          toast({
-            title: "Sharing failed",
-            description: "Unable to share or copy to clipboard.",
-            variant: "destructive"
-          });
-        }
-      }
-    }
-  }, [toast]);
+  // Share function - opens community modal
+  const handleShare = useCallback((item: any, itemType: 'recipe' | 'meal_plan' = 'recipe') => {
+    setItemToShare(item);
+    setShareType(itemType);
+    setShareModalOpen(true);
+  }, []);
 
   // Favorites state and mutations
   const [favoriteStatus, setFavoriteStatus] = useState<Record<string, boolean>>({});
@@ -2002,6 +1974,15 @@ export default function Home() {
       <CreateRecipe 
         isOpen={showCreateRecipe} 
         onClose={() => setShowCreateRecipe(false)} 
+      />
+      
+      {/* Community Share Modal */}
+      <CommunityShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        recipe={shareType === 'recipe' ? itemToShare : undefined}
+        mealPlan={shareType === 'meal_plan' ? itemToShare : undefined}
+        shareType={shareType}
       />
       </div>
     </div>

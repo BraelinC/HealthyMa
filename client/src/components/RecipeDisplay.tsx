@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { CommunityShareModal } from "./CommunityShareModal";
 import ReactPlayer from "react-player/youtube";
 import { formatYouTubeEmbedUrl, formatYouTubeThumbnailUrl } from "@/lib/youtubeUtils";
 import { enhanceRecipeWithVideo } from "@/lib/api";
@@ -95,44 +96,11 @@ interface RecipeDisplayProps {
 
 const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   const { toast } = useToast();
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
-  // Share function
-  const handleShare = async () => {
-    const shareData = {
-      title: recipe.title || 'Healthy Mama Recipe',
-      text: recipe.description || 'Check out this amazing recipe!',
-      url: window.location.href
-    };
-
-    try {
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback to clipboard
-        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
-        toast({
-          title: "Copied to clipboard!",
-          description: "Recipe details have been copied to your clipboard."
-        });
-      }
-    } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
-        // Fallback to clipboard on any error except user cancellation
-        try {
-          await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
-          toast({
-            title: "Copied to clipboard!",
-            description: "Recipe details have been copied to your clipboard."
-          });
-        } catch (clipboardError) {
-          toast({
-            title: "Sharing failed",
-            description: "Unable to share or copy to clipboard.",
-            variant: "destructive"
-          });
-        }
-      }
-    }
+  // Share function - opens community modal
+  const handleShare = () => {
+    setShareModalOpen(true);
   };
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
@@ -908,6 +876,14 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
           )}
         </TabsContent>
       </Tabs>
+      
+      {/* Community Share Modal */}
+      <CommunityShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        recipe={recipe}
+        shareType="recipe"
+      />
     </div>
   );
 };

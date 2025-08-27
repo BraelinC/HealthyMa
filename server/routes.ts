@@ -31,6 +31,7 @@ import {
   communityMealCourses,
   communityMealCourseModules,
   communityMealLessons,
+  communityPosts,
   communityMealLessonSections,
   userMealCourseProgress,
   type InsertCommunityMealCourse,
@@ -4338,6 +4339,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const communityId = Number(req.params.id);
       const userId = req.user?.id;
       
+      // Check if communityId is a valid number
+      if (isNaN(communityId)) {
+        return res.status(400).json({ message: "Invalid community ID" });
+      }
+      
       const community = await communityService.getCommunityDetails(communityId, userId);
       res.json(community);
     } catch (error) {
@@ -5791,6 +5797,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching creator communities:", error);
       res.status(500).json({ message: "Failed to fetch creator communities" });
+    }
+  });
+
+  // Get user's communities (for sharing modal)
+  app.get("/api/communities/my-communities", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Get communities where user is a member
+      const userCommunities = await db.select({
+        id: communities.id,
+        name: communities.name,
+        description: communities.description,
+        member_count: communities.member_count,
+        cover_image: communities.cover_image,
+      })
+      .from(communities)
+      .innerJoin(communityMembers, eq(communityMembers.community_id, communities.id))
+      .where(eq(communityMembers.user_id, userId));
+
+      res.json(userCommunities);
+    } catch (error) {
+      console.error("Error fetching user communities:", error);
+      res.status(500).json({ message: "Failed to fetch user communities" });
+    }
+  });
+
+  // Create community post (for sharing)
+  app.post("/api/community-posts", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { 
+        community_id, 
+        content, 
+        post_type = 'meal_share', 
+        recipe_data, 
+        meal_plan_id, 
+        images 
+      } = req.body;
+
+      if (!community_id || !content?.trim()) {
+        return res.status(400).json({ message: "Missing required fields: community_id, content" });
+      }
+
+      // Check if user is member of the community
+      const membership = await db.select()
+        .from(communityMembers)
+        .where(and(
+          eq(communityMembers.community_id, community_id),
+          eq(communityMembers.user_id, userId)
+        ))
+        .limit(1);
+
+      if (membership.length === 0) {
+        return res.status(403).json({ message: "Not a member of this community" });
+      }
+
+      // Create the post
+      const [newPost] = await db.insert(communityPosts).values({
+        community_id: community_id,
+        author_id: userId,
+        content: content.trim(),
+        post_type: post_type,
+        meal_plan_id: meal_plan_id || null,
+        images: images ? JSON.stringify(images) : null,
+      }).returning();
+
+      // If recipe data is provided, store it in the content (simple approach)
+      if (recipe_data && post_type === 'meal_share') {
+        const enhancedContent = content.trim() + '\n\n' + 
+          `**${recipe_data.title}**\n` +
+          (recipe_data.description ? `${recipe_data.description}\n\n` : '') +
+          (recipe_data.time_minutes ? `⏱️ ${recipe_data.time_minutes} minutes\n` : '') +
+          (recipe_data.cuisine ? `🌍 ${recipe_data.cuisine}\n` : '');
+
+        await db.update(communityPosts)
+          .set({ content: enhancedContent })
+          .where(eq(communityPosts.id, newPost.id));
+      }
+
+      res.status(201).json({ message: "Post created successfully", post: newPost });
+    } catch (error) {
+      console.error("Error creating community post:", error);
+      res.status(500).json({ message: "Failed to create post" });
     }
   });
 
