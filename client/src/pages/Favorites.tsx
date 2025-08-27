@@ -16,15 +16,16 @@ import {
   Loader2,
   HeartOff,
   X,
-  ShoppingCart
+  ShoppingCart,
+  AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ReactPlayer from "react-player";
 
 interface FavoriteItem {
-  id: number;
-  item_type: "recipe" | "meal_plan" | "youtube_video";
+  id: number | string;
+  item_type: "recipe" | "meal_plan" | "youtube_video" | "user_recipe";
   item_id: string;
   title: string;
   description?: string;
@@ -59,7 +60,7 @@ export default function Favorites() {
   });
 
   // Fetch user's created recipes
-  const { data: userRecipes = [] } = useQuery({
+  const { data: userRecipes = [] } = useQuery<any[]>({
     queryKey: ['/api/recipes/user'],
     enabled: true,
     staleTime: Infinity,
@@ -88,6 +89,29 @@ export default function Favorites() {
       toast({
         title: "Error",
         description: "Failed to remove item from favorites",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete user recipe mutation
+  const deleteUserRecipeMutation = useMutation({
+    mutationFn: async (recipeId: string) => {
+      return apiRequest(`/api/recipes/user/${recipeId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/recipes/user'] });
+      toast({
+        title: "Recipe deleted",
+        description: "Your recipe has been deleted"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete recipe",
         variant: "destructive"
       });
     }
@@ -139,7 +163,13 @@ export default function Favorites() {
   };
 
   const handleRemoveFavorite = (favorite: FavoriteItem) => {
-    removeFromFavoritesMutation.mutate(favorite);
+    if (favorite.item_type === "user_recipe") {
+      // Delete user-created recipe
+      deleteUserRecipeMutation.mutate(favorite.item_id);
+    } else {
+      // Remove from favorites
+      removeFromFavoritesMutation.mutate(favorite);
+    }
   };
 
   const handleOpenYouTubeVideo = (videoId: string) => {
@@ -182,9 +212,9 @@ export default function Favorites() {
                 size="sm"
                 className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
                 onClick={() => handleRemoveFavorite(favorite)}
-                disabled={removeFromFavoritesMutation.isPending}
+                disabled={removeFromFavoritesMutation.isPending || deleteUserRecipeMutation.isPending}
               >
-                {removeFromFavoritesMutation.isPending ? (
+                {(removeFromFavoritesMutation.isPending || deleteUserRecipeMutation.isPending) ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Trash2 className="h-4 w-4" />

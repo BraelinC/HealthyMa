@@ -885,6 +885,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a user's created recipe
+  app.delete("/api/recipes/user/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+
+      const recipeId = parseInt(req.params.id);
+      if (isNaN(recipeId)) {
+        return res.status(400).json({ message: "Invalid recipe ID" });
+      }
+
+      const success = await storage.deleteUserRecipe(recipeId, userId);
+      if (success) {
+        console.log(`✅ Deleted user recipe ${recipeId} for user ${userId}`);
+        res.json({ success: true, message: "Recipe deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Recipe not found or not owned by user" });
+      }
+    } catch (error) {
+      console.error("Error deleting user recipe:", error);
+      res.status(500).json({ message: "Failed to delete recipe" });
+    }
+  });
+
   // Save a recipe
   app.post("/api/recipes/:id/save", authenticateToken, async (req: any, res) => {
     try {

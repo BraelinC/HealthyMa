@@ -221,6 +221,14 @@ export class DatabaseStorage implements IStorage {
     return createdRecipe;
   }
 
+  async deleteUserRecipe(recipeId: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(userRecipes)
+      .where(and(eq(userRecipes.id, recipeId), eq(userRecipes.user_id, userId)));
+    
+    return result.rowCount > 0;
+  }
+
   async getRecipeById(recipeId: number): Promise<any> {
     try {
       const recipe = await db
