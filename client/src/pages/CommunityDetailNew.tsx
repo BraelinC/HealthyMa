@@ -22,6 +22,7 @@ import { MealPlanEditor } from "@/components/community/MealPlanEditor";
 import { LessonEditor } from "@/components/community/LessonEditor";
 import EnhancedLessonEditor from "@/components/community/EnhancedLessonEditor";
 import InlineLessonEditor from "@/components/community/InlineLessonEditor";
+import RecipeDisplay from "@/components/RecipeDisplay";
 
 interface Community {
   id: number;
@@ -48,6 +49,7 @@ interface CommunityPost {
   meal_plan_id?: number;
   meal_title?: string;
   meal_image?: string;
+  meal_plan?: any; // Full meal plan data for meal_share posts
   images?: string[];
   likes_count: number;
   comments_count: number;
@@ -854,21 +856,32 @@ export default function CommunityDetailNew() {
                       </div>
                     )}
                     
-                    {/* Meal Share Preview */}
-                    {post.post_type === 'meal_share' && post.meal_image && (
-                      <div className="bg-gray-700 rounded-lg p-3 mb-3">
-                        <div className="flex gap-3">
-                          <img 
-                            src={post.meal_image} 
-                            alt={post.meal_title}
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
-                          <div className="flex-1">
-                            <h5 className="font-medium text-white mb-1">{post.meal_title}</h5>
-                            <p className="text-sm text-gray-400">Tap to view full meal plan</p>
-                          </div>
+                    {/* Meal Share Preview - Full Recipe Display */}
+                    {post.post_type === 'meal_share' && post.meal_plan && (
+                      <div className="bg-gray-700 rounded-lg p-4 mb-3">
+                        <h5 className="font-medium text-white mb-3 flex items-center gap-2">
                           <ChefHat className="w-5 h-5 text-green-400" />
-                        </div>
+                          Shared Recipe
+                        </h5>
+                        <RecipeDisplay
+                          recipe={{
+                            id: post.meal_plan.id,
+                            title: post.meal_plan.name || 'Shared Recipe',
+                            description: post.meal_plan.description || '',
+                            image_url: '/api/placeholder/400/300',
+                            ingredients: [],
+                            instructions: [],
+                            meal_plan: post.meal_plan.meal_plan,
+                            nutrition_info: null,
+                            time_minutes: 30,
+                            cuisine: '',
+                            diet: ''
+                          }}
+                          onAddToFavorites={() => {}}
+                          onGenerateShoppingList={() => {}}
+                          showMealPlan={true}
+                          isFavorite={false}
+                        />
                       </div>
                     )}
                   </div>

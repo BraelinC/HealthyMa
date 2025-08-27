@@ -13,6 +13,7 @@ import {
   creatorProfiles,
   creatorFollowers,
   users,
+  mealPlans,
   type Community,
   type CommunityMember,
   type SharedMealPlan,
@@ -27,7 +28,7 @@ import {
   type InsertCommunityPostComment,
   type InsertCommunityPostLike,
 } from "@shared/schema";
-import { eq, and, desc, sql, gte, isNull } from "drizzle-orm";
+import { eq, and, desc, sql, gte, isNull, inArray } from "drizzle-orm";
 
 export class CommunityService {
   // Create a new community
@@ -467,6 +468,20 @@ export class CommunityService {
       userLikedPosts = new Set(likedPosts.map(like => like.post_id).filter((id): id is number => id !== null));
     }
 
+    // Fetch meal plan data for meal_share posts
+    const mealPlanIds = posts
+      .filter(({ post }) => post.post_type === 'meal_share' && post.meal_plan_id)
+      .map(({ post }) => post.meal_plan_id!);
+
+    let mealPlansMap = new Map();
+    if (mealPlanIds.length > 0) {
+      const mealPlans = await db.select()
+        .from(mealPlans)
+        .where(inArray(mealPlans.id, mealPlanIds));
+      
+      mealPlansMap = new Map(mealPlans.map(plan => [plan.id, plan]));
+    }
+
     // Return posts with proper formatting for frontend
     return posts.map(({ post, author }) => ({
       ...post,
@@ -476,7 +491,9 @@ export class CommunityService {
       author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
       isLiked: userLikedPosts.has(post.id),
       is_liked: userLikedPosts.has(post.id),
-      created_at: post.created_at ? new Date(post.created_at).toLocaleString() : new Date().toLocaleString()
+      created_at: post.created_at ? new Date(post.created_at).toLocaleString() : new Date().toLocaleString(),
+      // Include meal plan data for meal_share posts
+      meal_plan: post.post_type === 'meal_share' && post.meal_plan_id ? mealPlansMap.get(post.meal_plan_id) : null
     }));
   }
 

@@ -170,41 +170,41 @@ export function CommunityShareModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] max-w-lg sm:max-w-2xl h-fit max-h-[90vh] p-4 sm:p-6">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="text-base sm:text-xl">Share to Community</DialogTitle>
+      <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl h-fit max-h-[85vh] p-3 sm:p-6 overflow-hidden">
+        <DialogHeader className="pb-1 sm:pb-2">
+          <DialogTitle className="text-sm sm:text-xl font-semibold">Share to Community</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-2 sm:space-y-4">
+        <div className="space-y-2 sm:space-y-4 overflow-y-auto overflow-x-hidden max-h-[calc(85vh-8rem)]">
           {/* Community Selection */}
-          <div>
+          <div className="w-full overflow-hidden">
             <label className="block text-xs sm:text-sm font-medium mb-1">Choose Community</label>
-            <div className="space-y-1 sm:space-y-2">
+            <div className="space-y-1 sm:space-y-2 w-full">
               {communities.length === 0 ? (
                 <p className="text-gray-500 text-sm">You're not a member of any communities yet.</p>
               ) : (
                 communities.map((community) => (
                   <Card
                     key={community.id}
-                    className={`p-1.5 sm:p-3 cursor-pointer transition-colors ${
+                    className={`p-2 sm:p-3 cursor-pointer transition-colors overflow-hidden ${
                       selectedCommunityId === community.id
                         ? 'ring-1 ring-purple-500 bg-purple-50'
                         : 'hover:bg-gray-50'
                     }`}
                     onClick={() => setSelectedCommunityId(community.id)}
                   >
-                    <div className="flex items-center gap-1.5 sm:gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 w-full">
                       {community.cover_image && (
                         <img 
                           src={community.cover_image} 
                           alt={community.name}
-                          className="w-6 h-6 sm:w-10 sm:h-10 rounded object-cover flex-shrink-0"
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded object-cover flex-shrink-0"
                         />
                       )}
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <h3 className="font-medium text-sm sm:text-base truncate">{community.name}</h3>
-                        <p className="text-xs sm:text-sm text-gray-600 truncate">{community.description}</p>
-                        <p className="text-xs text-gray-400">{community.member_count} members</p>
+                        <h3 className="font-medium text-xs sm:text-base truncate pr-1">{community.name}</h3>
+                        <p className="text-[10px] sm:text-sm text-gray-600 truncate pr-1">{community.description}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-400">{community.member_count} members</p>
                       </div>
                     </div>
                   </Card>
@@ -214,26 +214,26 @@ export function CommunityShareModal({
           </div>
 
           {/* Message Input */}
-          <div>
+          <div className="w-full">
             <label className="block text-xs sm:text-sm font-medium mb-1">Your Message</label>
             <Textarea
               placeholder={`Share your thoughts about this ${shareType === 'recipe' ? 'recipe' : 'meal plan'}...`}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="min-h-[60px] sm:min-h-[100px] text-sm resize-none w-full"
+              className="min-h-[50px] sm:min-h-[100px] text-xs sm:text-sm resize-none w-full"
               rows={3}
             />
           </div>
 
           {/* Image Upload */}
-          <div>
+          <div className="w-full">
             <label className="block text-xs sm:text-sm font-medium mb-1">Add Image (Optional)</label>
             {imagePreview ? (
               <div className="relative">
                 <img 
                   src={imagePreview} 
                   alt="Preview" 
-                  className="w-full h-16 sm:h-32 object-cover rounded"
+                  className="w-full h-20 sm:h-32 object-cover rounded"
                 />
                 <Button
                   type="button"
@@ -256,10 +256,10 @@ export function CommunityShareModal({
                 />
                 <label 
                   htmlFor="image-upload" 
-                  className="cursor-pointer flex items-center justify-center gap-2 text-gray-500 w-full"
+                  className="cursor-pointer flex items-center justify-center gap-1 sm:gap-2 text-gray-500 w-full py-1"
                 >
-                  <Upload className="h-5 w-5" />
-                  <span className="text-sm">Click to upload image</span>
+                  <Upload className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm">Click to upload</span>
                 </label>
               </div>
             )}
@@ -267,37 +267,41 @@ export function CommunityShareModal({
 
           {/* Recipe/Meal Plan Details (Always collapsed on mobile) */}
           {itemToDisplay && (
-            <div>
+            <div className="w-full">
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full justify-between p-2 sm:p-3 h-auto overflow-hidden"
+                className="w-full justify-between p-1.5 sm:p-3 h-auto text-xs sm:text-base"
                 onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
               >
-                <span className="font-medium text-sm sm:text-base truncate">
+                <span className="font-medium truncate">
                   {shareType === 'recipe' ? 'Recipe' : 'Meal Plan'} Details
                 </span>
-                <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 ml-1" />
               </Button>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 pt-3 sm:pt-4 w-full">
-            <Button variant="outline" onClick={onClose} className="flex-1 order-2 sm:order-1 min-w-0">
+          <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 pt-2 sm:pt-4 w-full">
+            <Button 
+              variant="outline" 
+              onClick={onClose} 
+              className="flex-1 order-2 sm:order-1 h-9 sm:h-10 text-xs sm:text-sm"
+            >
               Cancel
             </Button>
             <Button 
               onClick={handleShare} 
               disabled={shareMutation.isPending || !selectedCommunityId || !message.trim()}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 order-1 sm:order-2 min-w-0"
+              className="flex-1 bg-purple-600 hover:bg-purple-700 order-1 sm:order-2 h-9 sm:h-10 text-xs sm:text-sm"
             >
               {shareMutation.isPending ? (
                 "Sharing..."
               ) : (
                 <>
-                  <Send className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">Share</span>
+                  <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 flex-shrink-0" />
+                  <span>Share</span>
                 </>
               )}
             </Button>
