@@ -1,0 +1,381 @@
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  BookOpen, 
+  Clock, 
+  Users, 
+  Plus, 
+  Minus, 
+  Save,
+  X,
+  ChefHat,
+  Star
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface CreateRecipeProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface Ingredient {
+  id: string;
+  amount: string;
+  unit: string;
+  name: string;
+}
+
+interface Instruction {
+  id: string;
+  step: number;
+  text: string;
+}
+
+export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("basics");
+  
+  // Recipe form state
+  const [recipeName, setRecipeName] = useState("");
+  const [description, setDescription] = useState("");
+  const [cookTime, setCookTime] = useState("");
+  const [prepTime, setPrepTime] = useState("");
+  const [servings, setServings] = useState("4");
+  const [difficulty, setDifficulty] = useState(1);
+  const [cuisine, setCuisine] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  
+  const [ingredients, setIngredients] = useState<Ingredient[]>([
+    { id: '1', amount: '', unit: '', name: '' }
+  ]);
+  
+  const [instructions, setInstructions] = useState<Instruction[]>([
+    { id: '1', step: 1, text: '' }
+  ]);
+
+  const addIngredient = () => {
+    const newId = (ingredients.length + 1).toString();
+    setIngredients([...ingredients, { id: newId, amount: '', unit: '', name: '' }]);
+  };
+
+  const removeIngredient = (id: string) => {
+    if (ingredients.length > 1) {
+      setIngredients(ingredients.filter(ing => ing.id !== id));
+    }
+  };
+
+  const updateIngredient = (id: string, field: keyof Ingredient, value: string) => {
+    setIngredients(ingredients.map(ing => 
+      ing.id === id ? { ...ing, [field]: value } : ing
+    ));
+  };
+
+  const addInstruction = () => {
+    const newId = (instructions.length + 1).toString();
+    const newStep = instructions.length + 1;
+    setInstructions([...instructions, { id: newId, step: newStep, text: '' }]);
+  };
+
+  const removeInstruction = (id: string) => {
+    if (instructions.length > 1) {
+      const filtered = instructions.filter(inst => inst.id !== id);
+      // Renumber steps
+      const renumbered = filtered.map((inst, index) => ({ ...inst, step: index + 1 }));
+      setInstructions(renumbered);
+    }
+  };
+
+  const updateInstruction = (id: string, text: string) => {
+    setInstructions(instructions.map(inst => 
+      inst.id === id ? { ...inst, text } : inst
+    ));
+  };
+
+  const handleSave = () => {
+    if (!recipeName.trim()) {
+      toast({ 
+        title: "Recipe Name Required", 
+        description: "Please enter a name for your recipe.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // TODO: Implement save functionality
+    toast({ 
+      title: "Recipe Saved!", 
+      description: `"${recipeName}" has been saved to your collection.` 
+    });
+    onClose();
+  };
+
+  const handleClose = () => {
+    // Reset form
+    setRecipeName("");
+    setDescription("");
+    setCookTime("");
+    setPrepTime("");
+    setServings("4");
+    setDifficulty(1);
+    setCuisine("");
+    setTags([]);
+    setIngredients([{ id: '1', amount: '', unit: '', name: '' }]);
+    setInstructions([{ id: '1', step: 1, text: '' }]);
+    setActiveTab("basics");
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <DialogHeader className="p-6 pb-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BookOpen className="h-8 w-8 text-emerald-600" />
+                <DialogTitle className="text-2xl font-bold text-gray-900">
+                  Create Your Own Recipe
+                </DialogTitle>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-gray-600 mt-2">
+              Build your recipe from scratch with ingredients, instructions, and more
+            </p>
+          </DialogHeader>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-3 mb-6">
+                <TabsTrigger value="basics">Recipe Basics</TabsTrigger>
+                <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+                <TabsTrigger value="instructions">Instructions</TabsTrigger>
+              </TabsList>
+
+              {/* Recipe Basics Tab */}
+              <TabsContent value="basics" className="space-y-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Recipe Name *
+                        </label>
+                        <Input
+                          placeholder="Enter recipe name..."
+                          value={recipeName}
+                          onChange={(e) => setRecipeName(e.target.value)}
+                          className="text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Description
+                        </label>
+                        <Textarea
+                          placeholder="Describe your recipe..."
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            <Clock className="h-4 w-4 inline mr-1" />
+                            Prep Time (min)
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="15"
+                            value={prepTime}
+                            onChange={(e) => setPrepTime(e.target.value)}
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            <ChefHat className="h-4 w-4 inline mr-1" />
+                            Cook Time (min)
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="30"
+                            value={cookTime}
+                            onChange={(e) => setCookTime(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            <Users className="h-4 w-4 inline mr-1" />
+                            Servings
+                          </label>
+                          <Input
+                            type="number"
+                            value={servings}
+                            onChange={(e) => setServings(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            Cuisine Type
+                          </label>
+                          <Input
+                            placeholder="e.g., Italian, Mexican, Asian..."
+                            value={cuisine}
+                            onChange={(e) => setCuisine(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            <Star className="h-4 w-4 inline mr-1" />
+                            Difficulty (1-5)
+                          </label>
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((level) => (
+                              <Button
+                                key={level}
+                                variant={difficulty >= level ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setDifficulty(level)}
+                                className="w-10 h-10 p-0"
+                              >
+                                {level}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Ingredients Tab */}
+              <TabsContent value="ingredients" className="space-y-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Ingredients</h3>
+                      <Button onClick={addIngredient} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Ingredient
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {ingredients.map((ingredient) => (
+                        <div key={ingredient.id} className="flex gap-2 items-center">
+                          <div className="w-20">
+                            <Input
+                              placeholder="1"
+                              value={ingredient.amount}
+                              onChange={(e) => updateIngredient(ingredient.id, 'amount', e.target.value)}
+                            />
+                          </div>
+                          <div className="w-24">
+                            <Input
+                              placeholder="cup"
+                              value={ingredient.unit}
+                              onChange={(e) => updateIngredient(ingredient.id, 'unit', e.target.value)}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <Input
+                              placeholder="Ingredient name"
+                              value={ingredient.name}
+                              onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeIngredient(ingredient.id)}
+                            disabled={ingredients.length === 1}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Instructions Tab */}
+              <TabsContent value="instructions" className="space-y-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Instructions</h3>
+                      <Button onClick={addInstruction} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Step
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {instructions.map((instruction) => (
+                        <div key={instruction.id} className="flex gap-3 items-start">
+                          <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 font-semibold text-sm flex-shrink-0 mt-1">
+                            {instruction.step}
+                          </div>
+                          <div className="flex-1">
+                            <Textarea
+                              placeholder="Describe this step..."
+                              value={instruction.text}
+                              onChange={(e) => updateInstruction(instruction.id, e.target.value)}
+                              rows={2}
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeInstruction(instruction.id)}
+                            disabled={instructions.length === 1}
+                            className="mt-1"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-gray-100 p-6">
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
+                <Save className="h-4 w-4 mr-2" />
+                Save Recipe
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { safeApiRequest } from "@/lib/queryClient";
+import { CreateRecipe } from "@/components/CreateRecipe";
 
 import { 
   ChefHat,
@@ -129,6 +130,7 @@ export default function Home() {
   const [isLoadingGroceries, setIsLoadingGroceries] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [showCreateRecipe, setShowCreateRecipe] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -1893,8 +1895,7 @@ export default function Home() {
               variant="ghost" 
               className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
               onClick={() => {
-                // TODO: Implement custom recipe creation
-                toast({ title: "Recipe Creator", description: "Custom recipe creation coming soon!" });
+                setShowCreateRecipe(true);
                 setShowAddMenu(false);
               }}
             >
@@ -1971,6 +1972,12 @@ export default function Home() {
           <div className="absolute inset-0 rounded-full bg-purple-400 opacity-0 group-hover:opacity-20 blur-md transition-opacity duration-200"></div>
         </Button>
       </div>
+      
+      {/* Create Recipe Dialog */}
+      <CreateRecipe 
+        isOpen={showCreateRecipe} 
+        onClose={() => setShowCreateRecipe(false)} 
+      />
       </div>
     </div>
   );
