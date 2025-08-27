@@ -14,7 +14,10 @@ import {
   Save,
   X,
   ChefHat,
-  Star
+  Star,
+  Camera,
+  Upload,
+  Image as ImageIcon
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,6 +52,8 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
   const [difficulty, setDifficulty] = useState(1);
   const [cuisine, setCuisine] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [recipeImage, setRecipeImage] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   const [ingredients, setIngredients] = useState<Ingredient[]>([
     { id: '1', amount: '', unit: '', name: '' }
@@ -96,6 +101,52 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
     ));
   };
 
+  const handleImageUpload = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setRecipeImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPG, PNG, GIF, etc.)",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const removeImage = () => {
+    setRecipeImage(null);
+  };
+
   const handleSave = () => {
     if (!recipeName.trim()) {
       toast({ 
@@ -127,6 +178,8 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
     setIngredients([{ id: '1', amount: '', unit: '', name: '' }]);
     setInstructions([{ id: '1', step: 1, text: '' }]);
     setActiveTab("basics");
+    setRecipeImage(null);
+    setIsDragOver(false);
     onClose();
   };
 
@@ -176,6 +229,114 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                           onChange={(e) => setRecipeName(e.target.value)}
                           className="text-lg"
                         />
+                      </div>
+
+                      {/* Image Upload Section */}
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Recipe Image
+                        </label>
+                        
+                        {!recipeImage ? (
+                          <div
+                            className={`
+                              border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+                              ${isDragOver 
+                                ? 'border-emerald-400 bg-emerald-50' 
+                                : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50'
+                              }
+                            `}
+                            onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onClick={() => document.getElementById('recipe-image-input')?.click()}
+                          >
+                            <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium text-gray-900">
+                                Add a photo of your recipe
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Drag and drop or click to upload
+                              </p>
+                              <div className="flex items-center justify-center gap-4 mt-4">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-emerald-600 border-emerald-600 hover:bg-emerald-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    document.getElementById('recipe-image-input')?.click();
+                                  }}
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Import Image
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toast({
+                                      title: "Camera Feature",
+                                      description: "Camera functionality coming soon!"
+                                    });
+                                  }}
+                                >
+                                  <Camera className="h-4 w-4 mr-2" />
+                                  Take Picture
+                                </Button>
+                              </div>
+                            </div>
+                            <input
+                              id="recipe-image-input"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleFileChange}
+                            />
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                              <img
+                                src={recipeImage}
+                                alt="Recipe preview"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-2 right-2"
+                              onClick={removeImage}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            <div className="mt-2 flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => document.getElementById('recipe-image-input')?.click()}
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Change Image
+                              </Button>
+                            </div>
+                            <input
+                              id="recipe-image-input"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleFileChange}
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div>
