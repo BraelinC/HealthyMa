@@ -11,6 +11,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { CommentsSection } from "@/components/CommentsSection";
 import { apiRequest } from "@/lib/queryClient";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RecipeDisplay from "@/components/RecipeDisplay";
 
 interface CommunityPost {
   id: number;
@@ -23,6 +25,7 @@ interface CommunityPost {
   meal_plan_id?: number;
   meal_title?: string;
   meal_image?: string;
+  meal_plan?: any; // Full meal plan data for meal_share posts
   images?: string[];
   likes_count: number;
   comments_count: number;
@@ -172,53 +175,74 @@ export default function PostDetail() {
 
             {/* Post Content */}
             <div className="mb-4">
-              <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
-                {post.post_type === 'discussion' || post.post_type === 'question' 
-                  ? post.content.split('\n').slice(1).join('\n')
-                  : post.content
-                }
-              </p>
-              
-              {/* Post Images */}
-              {post.images && post.images.length > 0 && (
-                <div className={`grid gap-3 mt-4 ${
-                  post.images.length === 1 ? 'grid-cols-1' :
-                  post.images.length === 2 ? 'grid-cols-2' :
-                  'grid-cols-2'
-                }`}>
-                  {post.images.map((imageUrl: string, index: number) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={imageUrl}
-                        alt={`Post image ${index + 1}`}
-                        className="w-full h-48 object-cover rounded-lg bg-gray-700"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
-                      />
+              {/* Show tabs for meal_share posts, regular content for others */}
+              {post.post_type === 'meal_share' && post.meal_plan ? (
+                <Tabs defaultValue="message" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-gray-600">
+                    <TabsTrigger value="message" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Message</TabsTrigger>
+                    <TabsTrigger value="meal" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Meal</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="message" className="p-4">
+                    <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                      {post.content}
+                    </p>
+                  </TabsContent>
+                  
+                  <TabsContent value="meal" className="p-4">
+                    <RecipeDisplay
+                      recipe={{
+                        id: post.meal_plan.id,
+                        title: post.meal_plan.name || 'Shared Recipe',
+                        description: post.meal_plan.description || '',
+                        image_url: '/api/placeholder/400/300',
+                        ingredients: [],
+                        instructions: [],
+                        meal_plan: post.meal_plan.meal_plan,
+                        nutrition_info: null,
+                        time_minutes: 30,
+                        cuisine: '',
+                        diet: ''
+                      }}
+                      onAddToFavorites={() => {}}
+                      onGenerateShoppingList={() => {}}
+                      showMealPlan={true}
+                      isFavorite={false}
+                    />
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <>
+                  <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                    {post.post_type === 'discussion' || post.post_type === 'question' 
+                      ? post.content.split('\n').slice(1).join('\n')
+                      : post.content
+                    }
+                  </p>
+                  
+                  {/* Post Images */}
+                  {post.images && post.images.length > 0 && (
+                    <div className={`grid gap-3 mt-4 ${
+                      post.images.length === 1 ? 'grid-cols-1' :
+                      post.images.length === 2 ? 'grid-cols-2' :
+                      'grid-cols-2'
+                    }`}>
+                      {post.images.map((imageUrl: string, index: number) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={imageUrl}
+                            alt={`Post image ${index + 1}`}
+                            className="w-full h-48 object-cover rounded-lg bg-gray-700"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Meal Plan Preview */}
-              {post.post_type === 'meal_share' && post.meal_title && (
-                <div className="mt-4 p-4 bg-gray-700 rounded-lg border border-gray-600">
-                  <div className="flex items-center gap-3">
-                    {post.meal_image && (
-                      <img
-                        src={post.meal_image}
-                        alt={post.meal_title}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                    )}
-                    <div>
-                      <h3 className="font-medium text-white">{post.meal_title}</h3>
-                      <p className="text-sm text-gray-400">Shared meal plan</p>
-                    </div>
-                  </div>
-                </div>
+                  )}
+                </>
               )}
             </div>
 

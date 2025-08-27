@@ -826,7 +826,10 @@ export default function CommunityDetailNew() {
 
                   {/* Post Content */}
                   <div className="mb-4">
-                    <p className="text-gray-200 mb-3">{post.content}</p>
+                    {/* Only show content for non-meal_share posts */}
+                    {post.post_type !== 'meal_share' && (
+                      <p className="text-gray-200 mb-3">{post.content}</p>
+                    )}
                     
                     {/* Post Images */}
                     {post.images && post.images.length > 0 && (
@@ -856,32 +859,43 @@ export default function CommunityDetailNew() {
                       </div>
                     )}
                     
-                    {/* Meal Share Preview - Full Recipe Display */}
+                    {/* Meal Share with Tabs */}
                     {post.post_type === 'meal_share' && post.meal_plan && (
-                      <div className="bg-gray-700 rounded-lg p-4 mb-3">
-                        <h5 className="font-medium text-white mb-3 flex items-center gap-2">
-                          <ChefHat className="w-5 h-5 text-green-400" />
-                          Shared Recipe
-                        </h5>
-                        <RecipeDisplay
-                          recipe={{
-                            id: post.meal_plan.id,
-                            title: post.meal_plan.name || 'Shared Recipe',
-                            description: post.meal_plan.description || '',
-                            image_url: '/api/placeholder/400/300',
-                            ingredients: [],
-                            instructions: [],
-                            meal_plan: post.meal_plan.meal_plan,
-                            nutrition_info: null,
-                            time_minutes: 30,
-                            cuisine: '',
-                            diet: ''
-                          }}
-                          onAddToFavorites={() => {}}
-                          onGenerateShoppingList={() => {}}
-                          showMealPlan={true}
-                          isFavorite={false}
-                        />
+                      <div className="bg-gray-700 rounded-lg mb-3">
+                        <Tabs defaultValue="message" className="w-full">
+                          <TabsList className="grid w-full grid-cols-2 bg-gray-600">
+                            <TabsTrigger value="message" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Message</TabsTrigger>
+                            <TabsTrigger value="meal" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Meal</TabsTrigger>
+                          </TabsList>
+                          
+                          <TabsContent value="message" className="p-4">
+                            <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                              {post.content}
+                            </p>
+                          </TabsContent>
+                          
+                          <TabsContent value="meal" className="p-4">
+                            <RecipeDisplay
+                              recipe={{
+                                id: post.meal_plan.id,
+                                title: post.meal_plan.name || 'Shared Recipe',
+                                description: post.meal_plan.description || '',
+                                image_url: '/api/placeholder/400/300',
+                                ingredients: [],
+                                instructions: [],
+                                meal_plan: post.meal_plan.meal_plan,
+                                nutrition_info: null,
+                                time_minutes: 30,
+                                cuisine: '',
+                                diet: ''
+                              }}
+                              onAddToFavorites={() => {}}
+                              onGenerateShoppingList={() => {}}
+                              showMealPlan={true}
+                              isFavorite={false}
+                            />
+                          </TabsContent>
+                        </Tabs>
                       </div>
                     )}
                   </div>
