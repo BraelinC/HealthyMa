@@ -5870,6 +5870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         post_type: post_type,
         meal_plan_id: meal_plan_id || null,
         images: images ? JSON.stringify(images) : null,
+        recipe_data: recipe_data ? JSON.stringify(recipe_data) : null,
       }).returning();
 
       // If recipe data is provided, create a proper meal plan structure
@@ -5898,24 +5899,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         };
 
-        // Store recipe data as enhanced content for display
-        const enhancedContent = content.trim() + '\n\n' + 
-          `**${recipe_data.title}**\n` +
-          (recipe_data.description ? `${recipe_data.description}\n\n` : '') +
-          (recipe_data.time_minutes ? `⏱️ ${recipe_data.time_minutes} minutes\n` : '') +
-          (recipe_data.cuisine ? `🌍 ${recipe_data.cuisine}\n` : '');
-
-        // Store the temp meal plan data in images field as JSON (temporary solution)
-        const existingImages = images ? JSON.parse(JSON.stringify(images)) : [];
-        const combinedData = {
-          images: existingImages,
-          temp_meal_plan: tempMealPlan
-        };
-
+        // Update the post with the meal plan data in the recipe_data column
         await db.update(communityPosts)
           .set({ 
-            content: enhancedContent,
-            images: JSON.stringify(combinedData)
+            recipe_data: JSON.stringify(tempMealPlan)
           })
           .where(eq(communityPosts.id, newPost.id));
       }
