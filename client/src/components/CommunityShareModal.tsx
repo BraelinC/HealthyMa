@@ -175,7 +175,7 @@ export function CommunityShareModal({
           <DialogTitle className="text-lg sm:text-xl">Share to Community</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-2 sm:space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Community Selection */}
           <div>
             <label className="block text-xs sm:text-sm font-medium mb-1 sm:mb-2">Choose Community</label>
@@ -186,25 +186,25 @@ export function CommunityShareModal({
                 communities.map((community) => (
                   <Card
                     key={community.id}
-                    className={`p-1.5 sm:p-3 cursor-pointer transition-colors ${
+                    className={`p-2 sm:p-3 cursor-pointer transition-colors ${
                       selectedCommunityId === community.id
-                        ? 'ring-1 sm:ring-2 ring-purple-500 bg-purple-50'
+                        ? 'ring-2 ring-purple-500 bg-purple-50'
                         : 'hover:bg-gray-50'
                     }`}
                     onClick={() => setSelectedCommunityId(community.id)}
                   >
-                    <div className="flex items-center gap-1.5 sm:gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       {community.cover_image && (
                         <img 
                           src={community.cover_image} 
                           alt={community.name}
-                          className="w-6 h-6 sm:w-10 sm:h-10 rounded object-cover flex-shrink-0"
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded object-cover flex-shrink-0"
                         />
                       )}
-                      <div className="flex-1 min-w-0 pr-1">
-                        <h3 className="font-medium text-xs sm:text-base truncate leading-tight">{community.name}</h3>
-                        <p className="text-xs text-gray-600 truncate leading-tight">{community.description}</p>
-                        <p className="text-xs text-gray-400 leading-tight">{community.member_count} members</p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm sm:text-base truncate">{community.name}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate">{community.description}</p>
+                        <p className="text-xs text-gray-400">{community.member_count} members</p>
                       </div>
                     </div>
                   </Card>
@@ -220,8 +220,8 @@ export function CommunityShareModal({
               placeholder={`Share your thoughts about this ${shareType === 'recipe' ? 'recipe' : 'meal plan'}...`}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="h-12 sm:min-h-[100px] text-sm resize-none"
-              rows={2}
+              className="min-h-[60px] sm:min-h-[100px] text-sm resize-none"
+              rows={3}
             />
           </div>
 
@@ -233,20 +233,20 @@ export function CommunityShareModal({
                 <img 
                   src={imagePreview} 
                   alt="Preview" 
-                  className="w-full h-16 sm:h-32 object-cover rounded"
+                  className="w-full h-20 sm:h-32 object-cover rounded-lg"
                 />
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
-                  className="absolute top-1 right-1 bg-white/90 hover:bg-white p-1 h-6 w-6"
+                  className="absolute top-2 right-2 bg-white/90 hover:bg-white"
                   onClick={handleRemoveImage}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
-              <div className="border border-dashed border-gray-300 rounded p-2">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-3">
                 <input
                   type="file"
                   accept="image/*"
@@ -256,10 +256,10 @@ export function CommunityShareModal({
                 />
                 <label 
                   htmlFor="image-upload" 
-                  className="cursor-pointer flex items-center justify-center gap-1 text-gray-500"
+                  className="cursor-pointer flex flex-col items-center text-gray-500"
                 >
-                  <Upload className="h-4 w-4" />
-                  <span className="text-xs">Upload image</span>
+                  <Upload className="h-6 w-6 sm:h-8 sm:w-8 mb-1" />
+                  <span className="text-xs sm:text-sm">Click to upload an image</span>
                 </label>
               </div>
             )}
@@ -271,19 +271,19 @@ export function CommunityShareModal({
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full justify-between p-1.5 sm:p-3 h-auto"
+                className="w-full justify-between p-2 sm:p-3 h-auto"
                 onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
               >
-                <span className="font-medium text-xs sm:text-base truncate">
+                <span className="font-medium text-sm sm:text-base">
                   {shareType === 'recipe' ? 'Recipe' : 'Meal Plan'} Details
                 </span>
-                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <ChevronRight className="h-4 w-4 flex-shrink-0" />
               </Button>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 pt-2 sm:pt-4">
+          <div className="flex flex-col sm:flex-row gap-2 pt-3 sm:pt-4">
             <Button variant="outline" onClick={onClose} className="flex-1 order-2 sm:order-1">
               Cancel
             </Button>
