@@ -4333,6 +4333,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's communities (for sharing modal) - MUST come before /:id route
+  app.get("/api/communities/my-communities", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Get communities where user is a member
+      const userCommunities = await db.select({
+        id: communities.id,
+        name: communities.name,
+        description: communities.description,
+        member_count: communities.member_count,
+        cover_image: communities.cover_image,
+      })
+      .from(communities)
+      .innerJoin(communityMembers, eq(communityMembers.community_id, communities.id))
+      .where(eq(communityMembers.user_id, userId));
+
+      res.json(userCommunities);
+    } catch (error) {
+      console.error("Error fetching user communities:", error);
+      res.status(500).json({ message: "Failed to fetch user communities" });
+    }
+  });
+
   // Get community details
   app.get("/api/communities/:id", authenticateToken, async (req: any, res) => {
     try {
@@ -5800,32 +5827,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user's communities (for sharing modal)
-  app.get("/api/communities/my-communities", authenticateToken, async (req: any, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-
-      // Get communities where user is a member
-      const userCommunities = await db.select({
-        id: communities.id,
-        name: communities.name,
-        description: communities.description,
-        member_count: communities.member_count,
-        cover_image: communities.cover_image,
-      })
-      .from(communities)
-      .innerJoin(communityMembers, eq(communityMembers.community_id, communities.id))
-      .where(eq(communityMembers.user_id, userId));
-
-      res.json(userCommunities);
-    } catch (error) {
-      console.error("Error fetching user communities:", error);
-      res.status(500).json({ message: "Failed to fetch user communities" });
-    }
-  });
 
   // Create community post (for sharing)
   app.post("/api/community-posts", authenticateToken, async (req: any, res) => {
