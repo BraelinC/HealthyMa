@@ -346,10 +346,10 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent 
-        className="max-w-3xl w-[95vw] max-h-[85vh] overflow-hidden p-0 mx-auto"
-        style={{ touchAction: 'auto' }}
+        className="max-w-3xl w-[95vw] max-h-[85vh] p-0 mx-auto"
+        style={{ touchAction: 'auto', height: '85vh', display: 'flex', flexDirection: 'column' }}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0">
           {/* Header */}
           <DialogHeader className="p-6 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
@@ -365,11 +365,12 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
 
           {/* Content */}
           <div 
-            className="flex-1 overflow-y-auto p-6" 
+            className="flex-1 overflow-y-auto p-6 min-h-0" 
             style={{ 
               WebkitOverflowScrolling: 'touch',
               touchAction: 'pan-y',
-              overscrollBehavior: 'contain'
+              overscrollBehavior: 'contain',
+              position: 'relative'
             }}
           >
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -686,7 +687,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-100 p-6">
+          <div className="border-t border-gray-100 p-6 flex-shrink-0">
             <div className="flex gap-3 justify-end">
               <Button variant="outline" onClick={handleClose}>
                 Cancel
