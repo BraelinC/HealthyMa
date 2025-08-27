@@ -189,16 +189,11 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
         <div className="flex flex-col h-full">
           {/* Header */}
           <DialogHeader className="p-6 pb-4 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <BookOpen className="h-8 w-8 text-emerald-600" />
-                <DialogTitle className="text-2xl font-bold text-gray-900">
-                  Create Your Own Recipe
-                </DialogTitle>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleClose}>
-                <X className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-8 w-8 text-emerald-600" />
+              <DialogTitle className="text-2xl font-bold text-gray-900">
+                Create Your Own Recipe
+              </DialogTitle>
             </div>
             <p className="text-gray-600 mt-2">
               Build your recipe from scratch with ingredients, instructions, and more
