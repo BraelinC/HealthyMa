@@ -570,17 +570,61 @@ const Search = () => {
                     <Button 
                       variant="secondary" 
                       size="icon" 
-                      onClick={() => {
+                      onClick={async () => {
                         if (!generatedRecipe?.id) return;
                         
-                        // Simple toggle for now
-                        setIsFavorited(!isFavorited);
-                        toast({
-                          title: !isFavorited ? "Added to Favorites" : "Removed from Favorites",
-                          description: !isFavorited ? `${generatedRecipe.title} saved to favorites` : "Recipe removed from your favorites",
-                        });
-                        
-                        // Add API call here if needed later
+                        try {
+                          if (isFavorited) {
+                            // Remove from favorites
+                            await apiRequest('/api/favorites', {
+                              method: 'DELETE',
+                              body: JSON.stringify({
+                                item_type: 'recipe',
+                                item_id: generatedRecipe.id.toString()
+                              })
+                            });
+                            setIsFavorited(false);
+                            toast({
+                              title: "Removed from Favorites",
+                              description: "Recipe removed from your favorites"
+                            });
+                          } else {
+                            // Add to favorites
+                            await apiRequest('/api/favorites', {
+                              method: 'POST',
+                              body: JSON.stringify({
+                                item_type: 'recipe',
+                                item_id: generatedRecipe.id.toString(),
+                                title: generatedRecipe.title,
+                                description: generatedRecipe.description || '',
+                                image_url: generatedRecipe.image_url,
+                                time_minutes: generatedRecipe.time_minutes,
+                                cuisine: generatedRecipe.cuisine,
+                                diet: generatedRecipe.diet,
+                                video_id: generatedRecipe.video_id,
+                                video_title: generatedRecipe.video_title,
+                                video_channel: generatedRecipe.video_channel,
+                                metadata: {
+                                  ingredients: generatedRecipe.ingredients,
+                                  instructions: generatedRecipe.instructions,
+                                  nutrition_info: generatedRecipe.nutrition_info || generatedRecipe.nutrition
+                                }
+                              })
+                            });
+                            setIsFavorited(true);
+                            toast({
+                              title: "Added to Favorites",
+                              description: `${generatedRecipe.title} saved to favorites`
+                            });
+                          }
+                        } catch (error) {
+                          console.error('Favorites error:', error);
+                          toast({
+                            title: "Error",
+                            description: `Failed to ${isFavorited ? 'remove from' : 'add to'} favorites`,
+                            variant: "destructive"
+                          });
+                        }
                       }}
                       className={`w-8 h-8 rounded-full shadow-sm transform transition-all duration-200 hover:scale-110 ${
                         isFavorited 
