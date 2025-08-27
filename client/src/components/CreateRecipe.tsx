@@ -147,6 +147,120 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
     setRecipeImage(null);
   };
 
+  const handleTakePicture = async () => {
+    try {
+      // Request camera access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Use back camera if available
+      });
+      
+      // Create video element to show camera preview
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.playsInline = true;
+      
+      // Create canvas for capturing image
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      
+      // Wait for video to load
+      video.addEventListener('loadedmetadata', () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Show camera preview in a modal-like overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.9);
+          z-index: 9999;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        `;
+        
+        video.style.cssText = `
+          max-width: 90%;
+          max-height: 70%;
+          border-radius: 8px;
+        `;
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+          display: flex;
+          gap: 16px;
+          margin-top: 20px;
+        `;
+        
+        const captureBtn = document.createElement('button');
+        captureBtn.textContent = '📸 Take Photo';
+        captureBtn.style.cssText = `
+          background: #10b981;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 6px;
+          font-size: 16px;
+          cursor: pointer;
+        `;
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '❌ Cancel';
+        cancelBtn.style.cssText = `
+          background: #ef4444;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 6px;
+          font-size: 16px;
+          cursor: pointer;
+        `;
+        
+        // Capture photo
+        captureBtn.onclick = () => {
+          context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setRecipeImage(imageDataUrl);
+          
+          // Cleanup
+          stream.getTracks().forEach(track => track.stop());
+          document.body.removeChild(overlay);
+          
+          toast({
+            title: "Photo captured!",
+            description: "Your recipe photo has been added successfully."
+          });
+        };
+        
+        // Cancel
+        cancelBtn.onclick = () => {
+          stream.getTracks().forEach(track => track.stop());
+          document.body.removeChild(overlay);
+        };
+        
+        buttonContainer.appendChild(captureBtn);
+        buttonContainer.appendChild(cancelBtn);
+        overlay.appendChild(video);
+        overlay.appendChild(buttonContainer);
+        document.body.appendChild(overlay);
+      });
+      
+    } catch (error) {
+      console.error('Camera access error:', error);
+      toast({
+        title: "Camera Access Denied",
+        description: "Please allow camera access to take photos. You can also upload an image instead.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSave = () => {
     if (!recipeName.trim()) {
       toast({ 
@@ -275,10 +389,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                                   className="text-blue-600 border-blue-600 hover:bg-blue-50"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    toast({
-                                      title: "Camera Feature",
-                                      description: "Camera functionality coming soon!"
-                                    });
+                                    handleTakePicture();
                                   }}
                                 >
                                   <Camera className="h-4 w-4 mr-2" />
