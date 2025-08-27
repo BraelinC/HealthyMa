@@ -298,10 +298,14 @@ export default function Favorites() {
                   <TabsContent value="ingredients" className="mt-4">
                     <div className="space-y-2">
                       {ingredients.length > 0 ? (
-                        ingredients.map((ingredient: string, index: number) => (
+                        ingredients.map((ingredient: any, index: number) => (
                           <div key={index} className="flex items-center space-x-2">
                             <Checkbox className="rounded" />
-                            <span className="text-sm">{ingredient}</span>
+                            <span className="text-sm">
+                              {typeof ingredient === 'string' 
+                                ? ingredient 
+                                : ingredient.display_text || ingredient.name || 'Unknown ingredient'}
+                            </span>
                           </div>
                         ))
                       ) : (
