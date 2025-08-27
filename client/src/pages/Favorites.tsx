@@ -17,7 +17,8 @@ import {
   HeartOff,
   X,
   ShoppingCart,
-  AlertCircle
+  AlertCircle,
+  Share2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -46,6 +47,45 @@ export default function Favorites() {
   const [expandedFavorite, setExpandedFavorite] = useState<FavoriteItem | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Share function
+  const handleShare = async (item: FavoriteItem) => {
+    const shareData = {
+      title: item.title || 'Healthy Mama Recipe',
+      text: item.description || 'Check out this amazing recipe!',
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+        toast({
+          title: "Copied to clipboard!",
+          description: "Recipe details have been copied to your clipboard."
+        });
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        // Fallback to clipboard on any error except user cancellation
+        try {
+          await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+          toast({
+            title: "Copied to clipboard!",
+            description: "Recipe details have been copied to your clipboard."
+          });
+        } catch (clipboardError) {
+          toast({
+            title: "Sharing failed",
+            description: "Unable to share or copy to clipboard.",
+            variant: "destructive"
+          });
+        }
+      }
+    }
+  };
 
   // Fetch favorites with instant loading - aggressive caching
   const { data: favorites = [], isLoading, error } = useQuery<FavoriteItem[]>({
@@ -207,22 +247,36 @@ export default function Favorites() {
               <h3 className="font-semibold text-gray-900 truncate pr-2">
                 {favorite.title}
               </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveFavorite(favorite);
-                }}
-                disabled={removeFromFavoritesMutation.isPending || deleteUserRecipeMutation.isPending}
-              >
-                {(removeFromFavoritesMutation.isPending || deleteUserRecipeMutation.isPending) ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShare(favorite);
+                  }}
+                  title="Share recipe"
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveFavorite(favorite);
+                  }}
+                  disabled={removeFromFavoritesMutation.isPending || deleteUserRecipeMutation.isPending}
+                >
+                  {(removeFromFavoritesMutation.isPending || deleteUserRecipeMutation.isPending) ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
             
             {favorite.description && (

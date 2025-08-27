@@ -50,7 +50,8 @@ import {
   Croissant,
   Milk,
   Check,
-  CheckCircle
+  CheckCircle,
+  Share2
 } from "lucide-react";
 
 // Import React Icons for more specific food types
@@ -137,6 +138,45 @@ export default function Home() {
   const [selectedRecipes, setSelectedRecipes] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Share function
+  const handleShare = useCallback(async (item: any, itemType: 'recipe' | 'meal_plan' = 'recipe') => {
+    const shareData = {
+      title: item.title || 'Healthy Mama Recipe',
+      text: item.description || 'Check out this amazing recipe!',
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+        toast({
+          title: "Copied to clipboard!",
+          description: "Recipe details have been copied to your clipboard."
+        });
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        // Fallback to clipboard on any error except user cancellation
+        try {
+          await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+          toast({
+            title: "Copied to clipboard!",
+            description: "Recipe details have been copied to your clipboard."
+          });
+        } catch (clipboardError) {
+          toast({
+            title: "Sharing failed",
+            description: "Unable to share or copy to clipboard.",
+            variant: "destructive"
+          });
+        }
+      }
+    }
+  }, [toast]);
 
   // Favorites state and mutations
   const [favoriteStatus, setFavoriteStatus] = useState<Record<string, boolean>>({});
@@ -1226,6 +1266,22 @@ export default function Home() {
                                     title={favoriteStatus[meal.title] ? "Remove from favorites" : "Add to favorites"}
                                   >
                                     <Heart className={`w-4 h-4 ${favoriteStatus[meal.title] ? 'fill-current' : ''}`} />
+                                  </Button>
+                                )}
+                                
+                                {/* Share button - always visible when there's a meal */}
+                                {meal && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-gray-400 hover:text-blue-600 hover:scale-110 transition-transform"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleShare(meal);
+                                    }}
+                                    title="Share recipe"
+                                  >
+                                    <Share2 className="w-4 h-4" />
                                   </Button>
                                 )}
                                 

@@ -95,6 +95,45 @@ interface RecipeDisplayProps {
 
 const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   const { toast } = useToast();
+
+  // Share function
+  const handleShare = async () => {
+    const shareData = {
+      title: recipe.title || 'Healthy Mama Recipe',
+      text: recipe.description || 'Check out this amazing recipe!',
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+        toast({
+          title: "Copied to clipboard!",
+          description: "Recipe details have been copied to your clipboard."
+        });
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        // Fallback to clipboard on any error except user cancellation
+        try {
+          await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+          toast({
+            title: "Copied to clipboard!",
+            description: "Recipe details have been copied to your clipboard."
+          });
+        } catch (clipboardError) {
+          toast({
+            title: "Sharing failed",
+            description: "Unable to share or copy to clipboard.",
+            variant: "destructive"
+          });
+        }
+      }
+    }
+  };
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
   const [videoId, setVideoId] = useState<string | null>(null);
@@ -516,7 +555,9 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
           <Button 
             variant="secondary" 
             size="icon" 
-            className="bg-white/90 text-gray-700 w-8 h-8 rounded-full shadow-sm"
+            onClick={handleShare}
+            className="bg-white/90 text-gray-700 w-8 h-8 rounded-full shadow-sm hover:bg-blue-50 hover:text-blue-600"
+            title="Share recipe"
           >
             <Share className="h-4 w-4" />
           </Button>
