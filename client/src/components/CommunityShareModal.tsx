@@ -170,16 +170,16 @@ export function CommunityShareModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[88vw] max-w-sm sm:max-w-2xl max-h-[88vh] overflow-y-auto p-3 sm:p-6">
+      <DialogContent className="w-[88vw] max-w-sm sm:max-w-2xl h-fit max-h-[95vh] p-3 sm:p-6">
         <DialogHeader className="pb-3">
           <DialogTitle className="text-lg sm:text-xl">Share to Community</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-2 sm:space-y-4">
           {/* Community Selection */}
           <div>
             <label className="block text-xs sm:text-sm font-medium mb-1 sm:mb-2">Choose Community</label>
-            <div className="space-y-1 sm:space-y-2 max-h-24 sm:max-h-40 overflow-y-auto">
+            <div className="space-y-1 sm:space-y-2">
               {communities.length === 0 ? (
                 <p className="text-gray-500 text-sm">You're not a member of any communities yet.</p>
               ) : (
@@ -220,7 +220,8 @@ export function CommunityShareModal({
               placeholder={`Share your thoughts about this ${shareType === 'recipe' ? 'recipe' : 'meal plan'}...`}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="min-h-[60px] sm:min-h-[100px] text-sm"
+              className="h-12 sm:min-h-[100px] text-sm resize-none"
+              rows={2}
             />
           </div>
 
@@ -232,20 +233,20 @@ export function CommunityShareModal({
                 <img 
                   src={imagePreview} 
                   alt="Preview" 
-                  className="w-full h-24 sm:h-32 object-cover rounded-lg"
+                  className="w-full h-16 sm:h-32 object-cover rounded"
                 />
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
-                  className="absolute top-2 right-2 bg-white/90 hover:bg-white"
+                  className="absolute top-1 right-1 bg-white/90 hover:bg-white p-1 h-6 w-6"
                   onClick={handleRemoveImage}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3" />
                 </Button>
               </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div className="border border-dashed border-gray-300 rounded p-2">
                 <input
                   type="file"
                   accept="image/*"
@@ -255,67 +256,34 @@ export function CommunityShareModal({
                 />
                 <label 
                   htmlFor="image-upload" 
-                  className="cursor-pointer flex flex-col items-center text-gray-500"
+                  className="cursor-pointer flex items-center justify-center gap-1 text-gray-500"
                 >
-                  <Upload className="h-6 w-6 sm:h-8 sm:w-8 mb-1 sm:mb-2" />
-                  <span className="text-xs sm:text-sm">Click to upload an image</span>
+                  <Upload className="h-4 w-4" />
+                  <span className="text-xs">Upload image</span>
                 </label>
               </div>
             )}
           </div>
 
-          {/* Recipe/Meal Plan Details (Collapsible) */}
+          {/* Recipe/Meal Plan Details (Always collapsed on mobile) */}
           {itemToDisplay && (
             <div>
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full justify-between p-2 sm:p-3 h-auto"
+                className="w-full justify-between p-1.5 sm:p-3 h-auto"
                 onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
               >
-                <span className="font-medium text-sm sm:text-base">
+                <span className="font-medium text-xs sm:text-base truncate">
                   {shareType === 'recipe' ? 'Recipe' : 'Meal Plan'} Details
                 </span>
-                {isDetailsExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
+                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               </Button>
-              
-              {isDetailsExpanded && (
-                <Card className="mt-2 p-2 sm:p-4 bg-gray-50">
-                  <h3 className="font-semibold mb-2">
-                    {shareType === 'recipe' ? (recipe as Recipe)?.title : (mealPlan as MealPlan)?.name}
-                  </h3>
-                  {itemToDisplay.description && (
-                    <p className="text-sm text-gray-600 mb-3">{itemToDisplay.description}</p>
-                  )}
-                  
-                  {shareType === 'recipe' && recipe?.ingredients && (
-                    <div className="mb-3">
-                      <h4 className="font-medium text-sm mb-1">Ingredients:</h4>
-                      <ul className="text-xs text-gray-600 space-y-1">
-                        {recipe.ingredients.slice(0, 5).map((ingredient, index) => (
-                          <li key={index}>• {ingredient}</li>
-                        ))}
-                        {recipe.ingredients.length > 5 && (
-                          <li className="text-gray-500">+ {recipe.ingredients.length - 5} more...</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
-
-                  {recipe?.time_minutes && (
-                    <p className="text-xs text-gray-500">Cook time: {recipe.time_minutes} minutes</p>
-                  )}
-                </Card>
-              )}
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 pt-3 sm:pt-4">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2 sm:pt-4">
             <Button variant="outline" onClick={onClose} className="flex-1 order-2 sm:order-1">
               Cancel
             </Button>
