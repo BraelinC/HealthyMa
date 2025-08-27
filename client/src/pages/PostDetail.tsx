@@ -176,7 +176,7 @@ export default function PostDetail() {
             {/* Post Content */}
             <div className="mb-4">
               {/* Show tabs for meal_share posts, regular content for others */}
-              {post.post_type === 'meal_share' && post.meal_plan ? (
+              {post.post_type === 'meal_share' ? (
                 <Tabs defaultValue="message" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 bg-gray-600">
                     <TabsTrigger value="message" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Message</TabsTrigger>
@@ -190,25 +190,48 @@ export default function PostDetail() {
                   </TabsContent>
                   
                   <TabsContent value="meal" className="p-4">
-                    <RecipeDisplay
-                      recipe={{
-                        id: post.meal_plan.id,
-                        title: post.meal_plan.name || 'Shared Recipe',
-                        description: post.meal_plan.description || '',
-                        image_url: '/api/placeholder/400/300',
-                        ingredients: [],
-                        instructions: [],
-                        meal_plan: post.meal_plan.meal_plan,
-                        nutrition_info: null,
-                        time_minutes: 30,
-                        cuisine: '',
-                        diet: ''
-                      }}
-                      onAddToFavorites={() => {}}
-                      onGenerateShoppingList={() => {}}
-                      showMealPlan={true}
-                      isFavorite={false}
-                    />
+                    {post.meal_plan ? (
+                      <RecipeDisplay
+                        recipe={(() => {
+                          // Extract the first recipe from the meal plan
+                          const mealPlan = post.meal_plan?.meal_plan;
+                          const firstDay = mealPlan?.day_1 || mealPlan?.days?.day1;
+                          const firstMeal = firstDay?.breakfast || firstDay?.lunch || firstDay?.dinner;
+                          
+                          if (!firstMeal) {
+                            return {
+                              id: post.meal_plan?.id,
+                              title: post.meal_plan?.name || 'Shared Recipe',
+                              description: post.meal_plan?.description || '',
+                              image_url: '/api/placeholder/400/300',
+                              ingredients: [],
+                              instructions: [],
+                              time_minutes: 30,
+                              cuisine: '',
+                              diet: ''
+                            };
+                          }
+                          
+                          return {
+                            id: post.meal_plan?.id,
+                            title: firstMeal.name || post.meal_plan?.name || 'Shared Recipe',
+                            description: firstMeal.description || post.meal_plan?.description || '',
+                            image_url: firstMeal.image_url || '/api/placeholder/400/300',
+                            ingredients: firstMeal.ingredients || [],
+                            instructions: firstMeal.instructions || [],
+                            nutrition_info: firstMeal.nutrition || null,
+                            time_minutes: firstMeal.prep_time || 30,
+                            cuisine: firstMeal.cuisine || '',
+                            diet: firstMeal.diet || ''
+                          };
+                        })()}
+                        onRegenerateClick={() => {}}
+                      />
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-400">Meal details coming soon...</p>
+                      </div>
+                    )}
                   </TabsContent>
                 </Tabs>
               ) : (
