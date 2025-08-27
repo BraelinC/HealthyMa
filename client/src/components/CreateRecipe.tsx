@@ -689,28 +689,20 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                               onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
                             />
                           </div>
-                          <div className="w-16">
+                          <div className="w-12">
                             <Input
                               placeholder="1"
                               value={ingredient.amount}
                               onChange={(e) => updateIngredient(ingredient.id, 'amount', e.target.value)}
                             />
                           </div>
-                          <div className="w-20">
+                          <div className="w-16">
                             <Input
                               placeholder="cup"
                               value={ingredient.unit}
                               onChange={(e) => updateIngredient(ingredient.id, 'unit', e.target.value)}
                             />
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeIngredient(ingredient.id)}
-                            disabled={ingredients.length === 1}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
                         </div>
                       ))}
                     </div>
