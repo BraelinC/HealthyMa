@@ -189,8 +189,16 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
         
         // Prevent scrolling and clicks behind overlay
         overlay.onclick = (e) => e.stopPropagation();
-        overlay.ontouchstart = (e) => e.preventDefault();
-        overlay.ontouchmove = (e) => e.preventDefault();
+        overlay.ontouchstart = (e) => {
+          if (e.target === overlay) {
+            e.preventDefault();
+          }
+        };
+        overlay.ontouchmove = (e) => {
+          if (e.target === overlay) {
+            e.preventDefault();
+          }
+        };
         
         video.style.cssText = `
           max-width: 90%;
@@ -353,7 +361,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
           </DialogHeader>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-3 mb-6">
                 <TabsTrigger value="basics">Recipe Basics</TabsTrigger>
