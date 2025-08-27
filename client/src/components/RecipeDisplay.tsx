@@ -21,7 +21,8 @@ import {
   Check,
   X,
   Maximize,
-  Youtube
+  Youtube,
+  Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -103,6 +104,7 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   const [hasIngredients, setHasIngredients] = useState<Record<string, boolean>>({});
   const [isSaved, setIsSaved] = useState(recipe.is_saved || false);
   const [imgError, setImgError] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const [recipeSource, setRecipeSource] = useState<{
     name: string;
@@ -117,6 +119,25 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
 
   // Use recipe data directly without additional API calls
   const enhancedRecipe = recipe;
+
+  // Check if recipe is favorited
+  const { data: favorites } = useQuery({
+    queryKey: ['/api/favorites'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/favorites');
+      return response.json();
+    }
+  });
+
+  // Update favorited state when favorites data changes
+  useEffect(() => {
+    if (favorites && recipe.id) {
+      const favorited = favorites.some((fav: any) => 
+        fav.item_type === 'recipe' && fav.item_id === recipe.id.toString()
+      );
+      setIsFavorited(favorited);
+    }
+  }, [favorites, recipe.id]);
 
   // Extract YouTube data and set UI state when enhanced data is available
   useEffect(() => {
@@ -314,6 +335,55 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
     saveRecipeMutation.mutate();
   };
 
+  // Favorites functionality
+  const toggleFavorite = useMutation({
+    mutationFn: async () => {
+      if (isFavorited) {
+        return await apiRequest('/api/favorites', {
+          method: 'DELETE',
+          body: JSON.stringify({
+            item_type: 'recipe',
+            item_id: recipe.id?.toString() || ''
+          })
+        });
+      } else {
+        return await apiRequest('/api/favorites', {
+          method: 'POST',
+          body: JSON.stringify({
+            item_type: 'recipe',
+            item_id: recipe.id?.toString() || '',
+            title: recipe.title,
+            description: recipe.description || '',
+            image_url: recipe.image_url,
+            time_minutes: recipe.time_minutes,
+            cuisine: recipe.cuisine,
+            diet: recipe.diet,
+            metadata: {
+              ingredients: recipe.ingredients,
+              instructions: recipe.instructions,
+              nutrition_info: recipe.nutrition_info
+            }
+          })
+        });
+      }
+    },
+    onSuccess: () => {
+      setIsFavorited(!isFavorited);
+      toast({
+        title: isFavorited ? "Removed from Favorites" : "Added to Favorites",
+        description: isFavorited ? "Recipe removed from your favorites" : `${recipe.title} saved to favorites`,
+      });
+    },
+    onError: (error) => {
+      console.error('Favorites error:', error);
+      toast({
+        title: "Error",
+        description: `Failed to ${isFavorited ? 'remove from' : 'add to'} favorites`,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Generate a fallback image based on recipe title
   const getFallbackImage = () => {
     const recipeName = recipe.title ? encodeURIComponent(recipe.title.toLowerCase().replace(/[^a-z0-9\s]/g, '')) : 'recipe';
@@ -428,6 +498,21 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
 
         {/* Quick action buttons */}
         <div className="absolute top-2 right-2 flex gap-2">
+          <Button 
+            variant="secondary" 
+            size="icon" 
+            onClick={() => toggleFavorite.mutate()}
+            disabled={toggleFavorite.isPending}
+            className={`w-8 h-8 rounded-full shadow-sm transform transition-all duration-200 hover:scale-110 ${
+              isFavorited 
+                ? 'bg-red-500 text-white hover:bg-red-600' 
+                : 'bg-white/90 text-gray-700 hover:bg-white'
+            }`}
+          >
+            <Heart className={`h-4 w-4 transition-all duration-200 ${
+              isFavorited ? 'fill-white scale-110' : 'hover:text-red-500'
+            }`} />
+          </Button>
           <Button 
             variant="secondary" 
             size="icon" 
