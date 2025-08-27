@@ -392,7 +392,8 @@ export default function Favorites() {
     </div>
   );
 
-  if (isLoading || isFetching) {
+  // Simple loading check - remove isFetching to avoid constant loading
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 pb-20">
         <div className="container mx-auto px-4 py-8">
@@ -441,6 +442,10 @@ export default function Favorites() {
         <p className="text-gray-600">
           Your saved recipes, meal plans, and cooking videos in one place
         </p>
+        {/* Debug info */}
+        <div className="mt-2 text-sm text-gray-500">
+          Debug: {favorites?.length || 0} favorites loaded | Loading: {isLoading ? 'Yes' : 'No'} | Error: {error ? 'Yes' : 'No'}
+        </div>
       </div>
 
       {/* Search and Stats */}
