@@ -46,14 +46,16 @@ export default function Favorites() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch favorites with optimized caching
-  const { data: favorites = [], isLoading, error, isFetching } = useQuery<FavoriteItem[]>({
+  // Fetch favorites with instant loading - aggressive caching
+  const { data: favorites = [], isLoading, error } = useQuery<FavoriteItem[]>({
     queryKey: ['/api/favorites'],
     enabled: true,
-    staleTime: 60000, // Cache for 1 minute
-    gcTime: 300000, // Keep in cache for 5 minutes
-    retry: 1,
-    refetchOnWindowFocus: false
+    staleTime: Infinity, // Never consider data stale - instant from cache
+    gcTime: Infinity, // Keep in cache forever
+    retry: 0, // No retries for instant response
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch when component mounts if data exists
+    refetchOnReconnect: false // Don't refetch on reconnect
   });
 
   // Remove from favorites mutation
@@ -392,8 +394,8 @@ export default function Favorites() {
     </div>
   );
 
-  // Simple loading check - remove isFetching to avoid constant loading
-  if (isLoading) {
+  // Only show loading on first visit - subsequent visits are instant
+  if (isLoading && !favorites.length) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 pb-20">
         <div className="container mx-auto px-4 py-8">
@@ -433,10 +435,7 @@ export default function Favorites() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* FAVORITES PAGE IS LOADING - TEST COMMENT */}
-      <div className="bg-green-100 p-2 text-center text-sm font-bold">
-        ✅ FAVORITES PAGE LOADED - API returned {favorites?.length || 0} items
-      </div>
+      {/* Remove test banner - page works! */}
       
       <div className="max-w-4xl mx-auto p-4 pb-24">
         {/* Header */}
