@@ -682,25 +682,25 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                     <div className="space-y-3">
                       {ingredients.map((ingredient) => (
                         <div key={ingredient.id} className="flex gap-2 items-center">
-                          <div className="w-20">
+                          <div className="flex-1">
+                            <Input
+                              placeholder="Ingredient name"
+                              value={ingredient.name}
+                              onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
+                            />
+                          </div>
+                          <div className="w-16">
                             <Input
                               placeholder="1"
                               value={ingredient.amount}
                               onChange={(e) => updateIngredient(ingredient.id, 'amount', e.target.value)}
                             />
                           </div>
-                          <div className="w-24">
+                          <div className="w-20">
                             <Input
                               placeholder="cup"
                               value={ingredient.unit}
                               onChange={(e) => updateIngredient(ingredient.id, 'unit', e.target.value)}
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <Input
-                              placeholder="Ingredient name"
-                              value={ingredient.name}
-                              onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
                             />
                           </div>
                           <Button
