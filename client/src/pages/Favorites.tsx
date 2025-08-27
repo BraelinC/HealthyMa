@@ -250,14 +250,6 @@ export default function Favorites() {
                 </div>
               )}
               
-              {/* Description */}
-              {favorite.description && (
-                <div className="mb-6">
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    {favorite.description}
-                  </p>
-                </div>
-              )}
               
               {/* Badges */}
               <div className="flex flex-wrap gap-2 mb-6">
