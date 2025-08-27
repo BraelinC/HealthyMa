@@ -394,27 +394,7 @@ export default function Favorites() {
     </div>
   );
 
-  // Only show loading on first visit - subsequent visits are instant
-  if (isLoading && !favorites.length) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 pb-20">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-2">
-                <Heart className="h-8 w-8 text-purple-600" />
-                <h1 className="text-3xl font-bold text-gray-900">My Favorites</h1>
-              </div>
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                <span className="ml-3 text-gray-600">Loading your favorites...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // NO LOADING STATE - Always show content immediately
 
   if (error) {
     return (
@@ -469,25 +449,7 @@ export default function Favorites() {
         )}
       </div>
 
-      {isLoading ? (
-        <div className="space-y-6">
-          {/* Loading skeleton */}
-          <div className="grid grid-cols-1 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
-                <div className="flex items-start gap-4">
-                  <div className="w-24 h-24 bg-gray-200 rounded-lg flex-shrink-0"></div>
-                  <div className="flex-1 min-w-0">
-                    <div className="h-5 bg-gray-200 rounded mb-2 w-3/4"></div>
-                    <div className="h-4 bg-gray-200 rounded mb-2 w-1/2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : error ? (
+      {error ? (
         <div className="text-center py-12">
           <div className="text-red-600 mb-4">
             <AlertCircle className="w-12 h-12 mx-auto mb-2" />
