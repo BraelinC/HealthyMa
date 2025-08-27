@@ -271,10 +271,12 @@ export class DatabaseStorage implements IStorage {
   // Meal plan operations
   async getSavedMealPlans(userId: string): Promise<MealPlan[]> {
     try {
+      // Optimize query with limit for better performance
       const plans = await db.select()
         .from(mealPlans)
         .where(eq(mealPlans.userId, userId))
-        .orderBy(desc(mealPlans.updatedAt));
+        .orderBy(desc(mealPlans.updatedAt))
+        .limit(50); // Limit to most recent 50 meal plans
 
       console.log('Database returned meal plans:', plans?.length || 0);
       // Ensure we always return an array

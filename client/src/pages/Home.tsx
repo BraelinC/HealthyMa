@@ -232,15 +232,23 @@ export default function Home() {
     }
   }, [isLoadingGroceries]);
 
-  // Fetch the most recent meal plan
+  // Fetch the most recent meal plan with optimized caching
   const { data: mealPlans, isLoading } = useQuery({
     queryKey: ['/api/meal-plans/saved'],
+    staleTime: 30000, // Cache for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
-  // Fetch meal completions for the current plan
+  // Fetch meal completions for the current plan with optimized caching
   const { data: mealCompletions } = useQuery({
     queryKey: [`/api/meal-plans/${currentPlan?.id}/completions`],
     enabled: !!currentPlan?.id,
+    staleTime: 30000,
+    gcTime: 300000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   // Set the current plan to the most recent one (excluding completed plans)
@@ -267,9 +275,9 @@ export default function Home() {
         const days = Object.keys(normalizedPlan.mealPlan).sort();
         setDayOrder(days);
         
-        // Clear old grocery data and prefetch new
+        // Clear old grocery data - skip prefetching for better loading performance
         setGroceryListData(null);
-        prefetchGroceryList(normalizedPlan.id);
+        // prefetchGroceryList(normalizedPlan.id); // Disabled to improve initial loading speed
       } else {
         // All plans are completed
         setCurrentPlan(null);
@@ -941,8 +949,44 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 pb-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            {/* Header Skeleton */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="h-10 w-64 bg-gray-200 rounded-lg animate-pulse mb-3"></div>
+                  <div className="flex items-center gap-6">
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
+            </div>
+            
+            {/* Meal Plan Cards Skeleton */}
+            <div className="space-y-6">
+              {[1, 2].map((day) => (
+                <div key={day} className="bg-white rounded-2xl shadow-lg p-8">
+                  <div className="h-7 w-32 bg-gray-200 rounded animate-pulse mb-6"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((meal) => (
+                      <div key={meal} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6">
+                        <div className="h-6 w-20 bg-gray-200 rounded animate-pulse mb-4"></div>
+                        <div className="h-24 w-24 bg-gray-200 rounded-xl mx-auto animate-pulse mb-4"></div>
+                        <div className="h-5 w-full bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
