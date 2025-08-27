@@ -170,40 +170,40 @@ export function CommunityShareModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
         <DialogHeader>
           <DialogTitle>Share to Community</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 px-1">
           {/* Community Selection */}
           <div>
             <label className="block text-sm font-medium mb-2">Choose Community</label>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
+            <div className="space-y-2 max-h-32 sm:max-h-40 overflow-y-auto">
               {communities.length === 0 ? (
                 <p className="text-gray-500 text-sm">You're not a member of any communities yet.</p>
               ) : (
                 communities.map((community) => (
                   <Card
                     key={community.id}
-                    className={`p-3 cursor-pointer transition-colors ${
+                    className={`p-2 sm:p-3 cursor-pointer transition-colors ${
                       selectedCommunityId === community.id
                         ? 'ring-2 ring-purple-500 bg-purple-50'
                         : 'hover:bg-gray-50'
                     }`}
                     onClick={() => setSelectedCommunityId(community.id)}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       {community.cover_image && (
                         <img 
                           src={community.cover_image} 
                           alt={community.name}
-                          className="w-10 h-10 rounded-lg object-cover"
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover"
                         />
                       )}
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{community.name}</h3>
-                        <p className="text-sm text-gray-600 truncate">{community.description}</p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm sm:text-base truncate">{community.name}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate">{community.description}</p>
                         <p className="text-xs text-gray-400">{community.member_count} members</p>
                       </div>
                     </div>
@@ -220,7 +220,7 @@ export function CommunityShareModal({
               placeholder={`Share your thoughts about this ${shareType === 'recipe' ? 'recipe' : 'meal plan'}...`}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="min-h-[100px]"
+              className="min-h-[80px] sm:min-h-[100px]"
             />
           </div>
 
@@ -315,14 +315,14 @@ export function CommunityShareModal({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+          <div className="flex flex-col sm:flex-row gap-2 pt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1 order-2 sm:order-1">
               Cancel
             </Button>
             <Button 
               onClick={handleShare} 
               disabled={shareMutation.isPending || !selectedCommunityId || !message.trim()}
-              className="flex-1 bg-purple-600 hover:bg-purple-700"
+              className="flex-1 bg-purple-600 hover:bg-purple-700 order-1 sm:order-2"
             >
               {shareMutation.isPending ? (
                 "Sharing..."
