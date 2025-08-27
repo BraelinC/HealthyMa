@@ -1893,6 +1893,22 @@ export default function Home() {
               variant="ghost" 
               className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
               onClick={() => {
+                // TODO: Implement custom recipe creation
+                toast({ title: "Recipe Creator", description: "Custom recipe creation coming soon!" });
+                setShowAddMenu(false);
+              }}
+            >
+              <BookOpen className="h-5 w-5 mr-3 text-emerald-600" />
+              <div className="text-left">
+                <div className="font-medium text-gray-900">Create Your Own Recipe</div>
+                <div className="text-xs text-gray-500">Build recipes from scratch</div>
+              </div>
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
+              onClick={() => {
                 setShowSearchDialog(true);
                 setShowAddMenu(false);
               }}
