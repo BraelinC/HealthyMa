@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Heart, 
   Search, 
@@ -13,10 +14,13 @@ import {
   Trash2, 
   Play,
   Loader2,
-  HeartOff
+  HeartOff,
+  X,
+  ShoppingCart
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import ReactPlayer from "react-player";
 
 interface FavoriteItem {
   id: number;
@@ -38,6 +42,7 @@ interface FavoriteItem {
 export default function Favorites() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [expandedFavorite, setExpandedFavorite] = useState<FavoriteItem | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -97,7 +102,7 @@ export default function Favorites() {
   };
 
   const FavoriteCard = ({ favorite }: { favorite: FavoriteItem }) => (
-    <Card className="group hover:shadow-md transition-all duration-200 relative">
+    <Card className="group hover:shadow-md transition-all duration-200 relative cursor-pointer" onClick={() => setExpandedFavorite(favorite)}>
       <CardContent className="p-4">
         <div className="flex gap-4">
           {/* Image */}
@@ -195,6 +200,173 @@ export default function Favorites() {
       </CardContent>
     </Card>
   );
+
+  // Expanded Recipe View Component
+  const ExpandedFavoriteView = ({ favorite }: { favorite: FavoriteItem }) => {
+    const metadata = favorite.metadata || {};
+    const ingredients = metadata.ingredients || [];
+    const instructions = metadata.instructions || [];
+    const nutrition = metadata.nutrition_info || metadata.nutrition || {};
+    
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          <div className="p-6 border-b flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900 pr-4">{favorite.title}</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setExpandedFavorite(null)}
+              className="flex-shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+            <div className="p-6">
+              {/* Video Player */}
+              {favorite.video_id && (
+                <div className="mb-6">
+                  <div className="aspect-video rounded-lg overflow-hidden">
+                    <ReactPlayer
+                      url={`https://www.youtube.com/watch?v=${favorite.video_id}`}
+                      width="100%"
+                      height="100%"
+                      controls
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Recipe Image */}
+              {favorite.image_url && !favorite.video_id && (
+                <div className="mb-6">
+                  <img
+                    src={favorite.image_url}
+                    alt={favorite.title}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+              
+              {/* Description */}
+              {favorite.description && (
+                <div className="mb-6">
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    {favorite.description}
+                  </p>
+                </div>
+              )}
+              
+              {/* Badges */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                <Badge variant="secondary">
+                  {favorite.item_type === "youtube_video" ? "YouTube" :
+                   favorite.item_type === "meal_plan" ? "Meal Plan" : "Recipe"}
+                </Badge>
+                
+                {favorite.time_minutes && (
+                  <Badge variant="outline">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {favorite.time_minutes} min
+                  </Badge>
+                )}
+                
+                {favorite.cuisine && (
+                  <Badge variant="outline">{favorite.cuisine}</Badge>
+                )}
+                
+                {favorite.diet && (
+                  <Badge variant="outline">{favorite.diet}</Badge>
+                )}
+                
+                {favorite.video_channel && (
+                  <Badge variant="outline">{favorite.video_channel}</Badge>
+                )}
+              </div>
+              
+              {/* Only show tabs if we have recipe data */}
+              {(ingredients.length > 0 || instructions.length > 0 || Object.keys(nutrition).length > 0) && (
+                <Tabs defaultValue="ingredients" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+                    <TabsTrigger value="instructions">Instructions</TabsTrigger>
+                    <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="ingredients" className="mt-4">
+                    <div className="space-y-2">
+                      {ingredients.length > 0 ? (
+                        ingredients.map((ingredient: string, index: number) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <Checkbox className="rounded" />
+                            <span className="text-sm">{ingredient}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">No ingredients available</p>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="instructions" className="mt-4">
+                    <div className="space-y-3">
+                      {instructions.length > 0 ? (
+                        instructions.map((instruction: string, index: number) => (
+                          <div key={index} className="flex gap-3">
+                            <div className="flex-shrink-0 w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-xs font-medium text-purple-600">
+                              {index + 1}
+                            </div>
+                            <p className="text-sm text-gray-700 flex-1">{instruction}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">No instructions available</p>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="nutrition" className="mt-4">
+                    {Object.keys(nutrition).length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {nutrition.calories && (
+                          <div className="text-center p-3 bg-gray-50 rounded-lg">
+                            <div className="text-lg font-semibold text-gray-900">{Math.round(nutrition.calories)}</div>
+                            <div className="text-xs text-gray-600">Calories</div>
+                          </div>
+                        )}
+                        {(nutrition.protein_g || nutrition.protein) && (
+                          <div className="text-center p-3 bg-gray-50 rounded-lg">
+                            <div className="text-lg font-semibold text-gray-900">{Math.round(nutrition.protein_g || nutrition.protein)}g</div>
+                            <div className="text-xs text-gray-600">Protein</div>
+                          </div>
+                        )}
+                        {(nutrition.carbs_g || nutrition.carbs) && (
+                          <div className="text-center p-3 bg-gray-50 rounded-lg">
+                            <div className="text-lg font-semibold text-gray-900">{Math.round(nutrition.carbs_g || nutrition.carbs)}g</div>
+                            <div className="text-xs text-gray-600">Carbs</div>
+                          </div>
+                        )}
+                        {(nutrition.fat_g || nutrition.fat) && (
+                          <div className="text-center p-3 bg-gray-50 rounded-lg">
+                            <div className="text-lg font-semibold text-gray-900">{Math.round(nutrition.fat_g || nutrition.fat)}g</div>
+                            <div className="text-xs text-gray-600">Fat</div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">No nutrition information available</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const EmptyState = ({ type }: { type: string }) => (
     <div className="text-center py-12">
@@ -315,6 +487,11 @@ export default function Favorites() {
             )}
           </TabsContent>
         </Tabs>
+      )}
+      
+      {/* Expanded Favorite Modal */}
+      {expandedFavorite && (
+        <ExpandedFavoriteView favorite={expandedFavorite} />
       )}
     </div>
   );
