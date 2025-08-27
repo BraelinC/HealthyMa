@@ -1910,37 +1910,6 @@ export default function Home() {
               variant="ghost" 
               className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
               onClick={() => {
-                setShowSearchDialog(true);
-                setShowAddMenu(false);
-              }}
-            >
-              <Search className="h-5 w-5 mr-3 text-gray-600" />
-              <div className="text-left">
-                <div className="font-medium text-gray-900">Search Recipes</div>
-                <div className="text-xs text-gray-500">AI-powered personalized search</div>
-              </div>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
-              onClick={() => {
-                // TODO: Implement AI meal generation
-                toast({ title: "AI Meal Generator", description: "AI meal generation coming soon!" });
-                setShowAddMenu(false);
-              }}
-            >
-              <Bot className="h-5 w-5 mr-3 text-purple-600" />
-              <div className="text-left">
-                <div className="font-medium text-gray-900">Generate with AI</div>
-                <div className="text-xs text-gray-500">Create custom meals instantly</div>
-              </div>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
-              onClick={() => {
                 window.location.href = '/favorites';
                 setShowAddMenu(false);
               }}
