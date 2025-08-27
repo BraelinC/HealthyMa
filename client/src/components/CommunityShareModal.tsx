@@ -170,7 +170,7 @@ export function CommunityShareModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[85vw] max-w-xs sm:max-w-2xl h-fit max-h-[90vh] p-2 sm:p-6 mx-2">
+      <DialogContent className="w-[90vw] max-w-lg sm:max-w-2xl h-fit max-h-[90vh] p-4 sm:p-6">
         <DialogHeader className="pb-2">
           <DialogTitle className="text-base sm:text-xl">Share to Community</DialogTitle>
         </DialogHeader>
@@ -201,9 +201,9 @@ export function CommunityShareModal({
                           className="w-6 h-6 sm:w-10 sm:h-10 rounded object-cover flex-shrink-0"
                         />
                       )}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-xs sm:text-base truncate">{community.name}</h3>
-                        <p className="text-xs text-gray-600 truncate">{community.description}</p>
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <h3 className="font-medium text-sm sm:text-base truncate">{community.name}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate">{community.description}</p>
                         <p className="text-xs text-gray-400">{community.member_count} members</p>
                       </div>
                     </div>
@@ -220,8 +220,8 @@ export function CommunityShareModal({
               placeholder={`Share your thoughts about this ${shareType === 'recipe' ? 'recipe' : 'meal plan'}...`}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="h-12 sm:min-h-[100px] text-xs sm:text-sm resize-none"
-              rows={2}
+              className="min-h-[60px] sm:min-h-[100px] text-sm resize-none w-full"
+              rows={3}
             />
           </div>
 
@@ -256,10 +256,10 @@ export function CommunityShareModal({
                 />
                 <label 
                   htmlFor="image-upload" 
-                  className="cursor-pointer flex items-center justify-center gap-1 text-gray-500"
+                  className="cursor-pointer flex items-center justify-center gap-2 text-gray-500 w-full"
                 >
-                  <Upload className="h-4 w-4" />
-                  <span className="text-xs">Upload image</span>
+                  <Upload className="h-5 w-5" />
+                  <span className="text-sm">Click to upload image</span>
                 </label>
               </div>
             )}
@@ -271,33 +271,33 @@ export function CommunityShareModal({
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full justify-between p-1.5 sm:p-3 h-auto"
+                className="w-full justify-between p-2 sm:p-3 h-auto overflow-hidden"
                 onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
               >
-                <span className="font-medium text-xs sm:text-base">
+                <span className="font-medium text-sm sm:text-base truncate">
                   {shareType === 'recipe' ? 'Recipe' : 'Meal Plan'} Details
                 </span>
-                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <ChevronRight className="h-4 w-4 flex-shrink-0" />
               </Button>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 pt-2 sm:pt-4">
-            <Button variant="outline" onClick={onClose} className="flex-1 order-2 sm:order-1">
+          <div className="flex flex-col sm:flex-row gap-2 pt-3 sm:pt-4 w-full">
+            <Button variant="outline" onClick={onClose} className="flex-1 order-2 sm:order-1 min-w-0">
               Cancel
             </Button>
             <Button 
               onClick={handleShare} 
               disabled={shareMutation.isPending || !selectedCommunityId || !message.trim()}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 order-1 sm:order-2"
+              className="flex-1 bg-purple-600 hover:bg-purple-700 order-1 sm:order-2 min-w-0"
             >
               {shareMutation.isPending ? (
                 "Sharing..."
               ) : (
                 <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Share
+                  <Send className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Share</span>
                 </>
               )}
             </Button>
