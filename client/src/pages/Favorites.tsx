@@ -225,62 +225,69 @@ export default function Favorites() {
           
           <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
             <div className="p-6">
-              {/* Video Player */}
-              {favorite.video_id && (
-                <div className="mb-6">
-                  <div className="aspect-video rounded-lg overflow-hidden">
-                    <ReactPlayer
-                      url={`https://www.youtube.com/watch?v=${favorite.video_id}`}
-                      width="100%"
-                      height="100%"
-                      controls
-                    />
+              <div className="space-y-4">
+                {/* Video Player or Recipe Image */}
+                {favorite.video_id ? (
+                  <div>
+                    <div className="aspect-video rounded-lg overflow-hidden mb-3">
+                      <ReactPlayer
+                        url={`https://www.youtube.com/watch?v=${favorite.video_id}`}
+                        width="100%"
+                        height="100%"
+                        controls
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              {/* Recipe Image */}
-              {favorite.image_url && !favorite.video_id && (
-                <div className="mb-6">
-                  <img
-                    src={favorite.image_url}
-                    alt={favorite.title}
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-              
-              
-              {/* Badges */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                <Badge variant="secondary">
-                  {favorite.item_type === "youtube_video" ? "YouTube" :
-                   favorite.item_type === "meal_plan" ? "Meal Plan" : "Recipe"}
-                </Badge>
-                
-                {favorite.time_minutes && (
-                  <Badge variant="outline">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {favorite.time_minutes} min
-                  </Badge>
+                ) : favorite.image_url ? (
+                  <div>
+                    <div className="aspect-video rounded-lg overflow-hidden mb-3 bg-gray-100 flex items-center justify-center">
+                      <img
+                        src={favorite.image_url}
+                        alt={favorite.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="aspect-video rounded-lg overflow-hidden mb-3 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                      <ChefHat className="h-16 w-16 text-purple-400" />
+                    </div>
+                  </div>
                 )}
                 
-                {favorite.cuisine && (
-                  <Badge variant="outline">{favorite.cuisine}</Badge>
-                )}
-                
-                {favorite.diet && (
-                  <Badge variant="outline">{favorite.diet}</Badge>
-                )}
-                
-                {favorite.video_channel && (
-                  <Badge variant="outline">{favorite.video_channel}</Badge>
-                )}
-              </div>
-              
-              {/* Only show tabs if we have recipe data */}
-              {(ingredients.length > 0 || instructions.length > 0 || Object.keys(nutrition).length > 0) && (
-                <Tabs defaultValue="ingredients" className="w-full">
+                {/* Recipe Info Section */}
+                <div className="space-y-4">
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary">
+                      {favorite.item_type === "youtube_video" ? "YouTube" :
+                       favorite.item_type === "meal_plan" ? "Meal Plan" : "Recipe"}
+                    </Badge>
+                    
+                    {favorite.time_minutes && (
+                      <Badge variant="outline">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {favorite.time_minutes} min
+                      </Badge>
+                    )}
+                    
+                    {favorite.cuisine && (
+                      <Badge variant="outline">{favorite.cuisine}</Badge>
+                    )}
+                    
+                    {favorite.diet && (
+                      <Badge variant="outline">{favorite.diet}</Badge>
+                    )}
+                    
+                    {favorite.video_channel && (
+                      <Badge variant="outline">{favorite.video_channel}</Badge>
+                    )}
+                  </div>
+                  
+                  {/* Only show tabs if we have recipe data */}
+                  {(ingredients.length > 0 || instructions.length > 0 || Object.keys(nutrition).length > 0) && (
+                    <Tabs defaultValue="ingredients" className="w-full">
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
                     <TabsTrigger value="instructions">Instructions</TabsTrigger>
@@ -355,8 +362,10 @@ export default function Favorites() {
                       <p className="text-gray-500 text-sm">No nutrition information available</p>
                     )}
                   </TabsContent>
-                </Tabs>
-              )}
+                    </Tabs>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
