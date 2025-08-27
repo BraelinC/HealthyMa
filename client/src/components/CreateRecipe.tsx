@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   BookOpen, 
   Clock, 
@@ -40,6 +41,64 @@ interface Instruction {
   step: number;
   text: string;
 }
+
+// Smart unit suggestions based on ingredient type
+const getUnitSuggestions = (ingredientName: string): string[] => {
+  const ingredient = ingredientName.toLowerCase();
+  
+  // Liquids
+  if (ingredient.includes('oil') || ingredient.includes('water') || ingredient.includes('milk') || 
+      ingredient.includes('cream') || ingredient.includes('juice') || ingredient.includes('vinegar') ||
+      ingredient.includes('wine') || ingredient.includes('broth') || ingredient.includes('stock') ||
+      ingredient.includes('sauce') || ingredient.includes('syrup')) {
+    return ['cup', 'fl oz', 'tbsp', 'tsp', 'ml'];
+  }
+  
+  // Spices and small amounts
+  if (ingredient.includes('salt') || ingredient.includes('pepper') || ingredient.includes('garlic powder') ||
+      ingredient.includes('onion powder') || ingredient.includes('paprika') || ingredient.includes('cumin') ||
+      ingredient.includes('oregano') || ingredient.includes('basil') || ingredient.includes('thyme') ||
+      ingredient.includes('cinnamon') || ingredient.includes('nutmeg') || ingredient.includes('ginger') ||
+      ingredient.includes('cayenne') || ingredient.includes('chili powder')) {
+    return ['tsp', 'tbsp', 'pinch', 'dash', 'g'];
+  }
+  
+  // Meat and proteins
+  if (ingredient.includes('chicken') || ingredient.includes('beef') || ingredient.includes('pork') ||
+      ingredient.includes('fish') || ingredient.includes('salmon') || ingredient.includes('turkey') ||
+      ingredient.includes('lamb') || ingredient.includes('shrimp') || ingredient.includes('bacon')) {
+    return ['lb', 'oz', 'kg', 'g', 'piece'];
+  }
+  
+  // Vegetables (whole)
+  if (ingredient.includes('onion') || ingredient.includes('potato') || ingredient.includes('tomato') ||
+      ingredient.includes('carrot') || ingredient.includes('bell pepper') || ingredient.includes('cucumber') ||
+      ingredient.includes('avocado') || ingredient.includes('lemon') || ingredient.includes('lime') ||
+      ingredient.includes('apple') || ingredient.includes('banana')) {
+    return ['piece', 'cup', 'lb', 'oz', 'large'];
+  }
+  
+  // Flour and powders
+  if (ingredient.includes('flour') || ingredient.includes('sugar') || ingredient.includes('powder') ||
+      ingredient.includes('cornstarch') || ingredient.includes('cocoa')) {
+    return ['cup', 'tbsp', 'tsp', 'lb', 'oz'];
+  }
+  
+  // Eggs and dairy
+  if (ingredient.includes('egg') || ingredient.includes('butter') || ingredient.includes('cheese') ||
+      ingredient.includes('yogurt') || ingredient.includes('sour cream')) {
+    return ['piece', 'cup', 'tbsp', 'oz', 'lb'];
+  }
+  
+  // Rice, pasta, grains
+  if (ingredient.includes('rice') || ingredient.includes('pasta') || ingredient.includes('quinoa') ||
+      ingredient.includes('oats') || ingredient.includes('barley') || ingredient.includes('noodles')) {
+    return ['cup', 'lb', 'oz', 'pkg', 'g'];
+  }
+  
+  // Default suggestions
+  return ['cup', 'tbsp', 'tsp', 'oz', 'lb'];
+};
 
 export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
   const { toast } = useToast();
@@ -697,11 +756,21 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                             />
                           </div>
                           <div className="w-16">
-                            <Input
-                              placeholder="cup"
+                            <Select
                               value={ingredient.unit}
-                              onChange={(e) => updateIngredient(ingredient.id, 'unit', e.target.value)}
-                            />
+                              onValueChange={(value) => updateIngredient(ingredient.id, 'unit', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="cup" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getUnitSuggestions(ingredient.name).map((unit) => (
+                                  <SelectItem key={unit} value={unit}>
+                                    {unit}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                       ))}
