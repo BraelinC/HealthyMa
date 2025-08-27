@@ -136,6 +136,81 @@ export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Favorites state and mutations
+  const [favoriteStatus, setFavoriteStatus] = useState<Record<string, boolean>>({});
+  
+  // Add to favorites mutation
+  const addToFavoritesMutation = useMutation({
+    mutationFn: async (meal: any) => {
+      return await safeApiRequest("/api/favorites", {
+        method: "POST",
+        body: JSON.stringify({
+          item_type: "recipe",
+          item_id: meal.title,
+          title: meal.title,
+          description: `Cook time: ${meal.cook_time_minutes}m | Difficulty: ${meal.difficulty}/5`,
+          cuisine: "homemade",
+          data: {
+            ingredients: meal.ingredients,
+            instructions: meal.instructions,
+            nutrition: meal.nutrition,
+            cook_time_minutes: meal.cook_time_minutes,
+            difficulty: meal.difficulty
+          }
+        })
+      });
+    },
+    onSuccess: (_, meal) => {
+      setFavoriteStatus(prev => ({ ...prev, [meal.title]: true }));
+      toast({
+        title: "Added to Favorites",
+        description: `${meal.title} has been saved to your favorites!`
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add to favorites. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Remove from favorites mutation
+  const removeFromFavoritesMutation = useMutation({
+    mutationFn: async (meal: any) => {
+      return await safeApiRequest(`/api/favorites/recipe/${encodeURIComponent(meal.title)}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: (_, meal) => {
+      setFavoriteStatus(prev => ({ ...prev, [meal.title]: false }));
+      toast({
+        title: "Removed from Favorites",
+        description: `${meal.title} has been removed from your favorites.`
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove from favorites. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Handle favorite toggle
+  const handleFavoriteToggle = (meal: any, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent meal details from opening
+    
+    const isFavorited = favoriteStatus[meal.title];
+    if (isFavorited) {
+      removeFromFavoritesMutation.mutate(meal);
+    } else {
+      addToFavoritesMutation.mutate(meal);
+    }
+  };
+
   // Prefetch grocery list for better UX
   const prefetchGroceryList = useCallback(async (mealPlanId: number) => {
     if (!mealPlanId || isLoadingGroceries) return;
@@ -283,7 +358,7 @@ export default function Home() {
       title: "Recipe Added!",
       description: `${recipe.title} has been added to your meal planning queue.`
     });
-    setSelectedRecipes(prev => new Set([...prev, recipe.title]));
+    setSelectedRecipes(prev => new Set([...Array.from(prev), recipe.title]));
   };
 
   // Update meal plan mutation
@@ -1090,6 +1165,24 @@ export default function Home() {
                                 {mealType}
                               </CardTitle>
                               <div className="flex gap-1">
+                                {/* Heart/Favorite button - always visible when there's a meal */}
+                                {meal && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className={`hover:scale-110 transition-transform ${
+                                      favoriteStatus[meal.title] 
+                                        ? 'text-red-500 hover:text-red-600' 
+                                        : 'text-gray-400 hover:text-red-500'
+                                    }`}
+                                    onClick={(e) => handleFavoriteToggle(meal, e)}
+                                    disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
+                                    title={favoriteStatus[meal.title] ? "Remove from favorites" : "Add to favorites"}
+                                  >
+                                    <Heart className={`w-4 h-4 ${favoriteStatus[meal.title] ? 'fill-current' : ''}`} />
+                                  </Button>
+                                )}
+                                
                                 {meal && isEditing && (
                                   <>
                                     <Button
@@ -1695,7 +1788,7 @@ export default function Home() {
                               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
                                 <div className="text-xs font-medium text-blue-700 mb-1">Sources:</div>
                                 <div className="text-xs text-blue-600">
-                                  {result.citations.slice(0, 3).map((citation, i) => (
+                                  {result.citations.slice(0, 3).map((citation: any, i: number) => (
                                     <div key={i} className="mb-1">{citation}</div>
                                   ))}
                                   {result.citations.length > 3 && (
