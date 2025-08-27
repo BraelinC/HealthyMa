@@ -211,7 +211,10 @@ export default function Favorites() {
                 variant="ghost"
                 size="sm"
                 className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
-                onClick={() => handleRemoveFavorite(favorite)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveFavorite(favorite);
+                }}
                 disabled={removeFromFavoritesMutation.isPending || deleteUserRecipeMutation.isPending}
               >
                 {(removeFromFavoritesMutation.isPending || deleteUserRecipeMutation.isPending) ? (
@@ -264,7 +267,10 @@ export default function Favorites() {
               <Button
                 size="sm"
                 className="mt-2"
-                onClick={() => handleOpenYouTubeVideo(favorite.video_id!)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenYouTubeVideo(favorite.video_id!);
+                }}
               >
                 <Play className="h-4 w-4 mr-2" />
                 Watch Video
