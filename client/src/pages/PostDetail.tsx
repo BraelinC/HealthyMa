@@ -222,7 +222,10 @@ export default function PostDetail() {
                             nutrition_info: firstMeal.nutrition || null,
                             time_minutes: firstMeal.prep_time || 30,
                             cuisine: firstMeal.cuisine || '',
-                            diet: firstMeal.diet || ''
+                            diet: firstMeal.diet || '',
+                            video_id: firstMeal.video_id || null,
+                            video_title: firstMeal.video_title || null,
+                            video_channel: firstMeal.video_channel || null
                           };
                         })()}
                         onRegenerateClick={() => {}}

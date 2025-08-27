@@ -5893,7 +5893,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Add nutrition if available
                 nutrition: recipe_data.nutrition || recipe_data.nutrition_info || null,
                 // Add image if available
-                image_url: recipe_data.image_url || null
+                image_url: recipe_data.image_url || null,
+                // Add YouTube video info if available
+                video_id: recipe_data.video_id || null,
+                video_title: recipe_data.video_title || null,
+                video_channel: recipe_data.video_channel || null
               }
             }
           }
