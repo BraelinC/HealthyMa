@@ -185,7 +185,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh] overflow-hidden p-0 mx-auto">
         <div className="flex flex-col h-full">
           {/* Header */}
           <DialogHeader className="p-6 pb-4 border-b border-gray-100">
@@ -240,7 +240,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                         {!recipeImage ? (
                           <div
                             className={`
-                              border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+                              border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
                               ${isDragOver 
                                 ? 'border-emerald-400 bg-emerald-50' 
                                 : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50'
@@ -251,7 +251,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                             onDragLeave={handleDragLeave}
                             onClick={() => document.getElementById('recipe-image-input')?.click()}
                           >
-                            <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <ImageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                             <div className="space-y-2">
                               <p className="text-sm font-medium text-gray-900">
                                 Add a photo of your recipe
@@ -259,7 +259,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                               <p className="text-xs text-gray-500">
                                 Drag and drop or click to upload
                               </p>
-                              <div className="flex items-center justify-center gap-4 mt-4">
+                              <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -301,7 +301,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                           </div>
                         ) : (
                           <div className="relative">
-                            <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                            <div className="relative w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
                               <img
                                 src={recipeImage}
                                 alt="Recipe preview"
