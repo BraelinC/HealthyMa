@@ -170,12 +170,12 @@ export function CommunityShareModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
+      <DialogContent className="w-[90vw] max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Share to Community</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 px-1">
+        <div className="space-y-4">
           {/* Community Selection */}
           <div>
             <label className="block text-sm font-medium mb-2">Choose Community</label>
