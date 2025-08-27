@@ -46,10 +46,15 @@ export default function Favorites() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch favorites
-  const { data: favorites = [], isLoading } = useQuery<FavoriteItem[]>({
+  // Fetch favorites with aggressive caching for better performance
+  const { data: favorites = [], isLoading, error } = useQuery<FavoriteItem[]>({
     queryKey: ['/api/favorites'],
-    enabled: true
+    enabled: true,
+    staleTime: 60000, // Cache for 1 minute
+    gcTime: 600000, // Keep in cache for 10 minutes
+    retry: 2, // Reduce retries for faster failure feedback
+    refetchOnWindowFocus: false,
+    refetchOnMount: false // Don't refetch on component mount if data exists
   });
 
   // Remove from favorites mutation
@@ -422,8 +427,35 @@ export default function Favorites() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="animate-spin h-8 w-8 text-purple-600" />
+        <div className="space-y-6">
+          {/* Loading skeleton */}
+          <div className="grid grid-cols-1 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
+                <div className="flex items-start gap-4">
+                  <div className="w-24 h-24 bg-gray-200 rounded-lg flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-5 bg-gray-200 rounded mb-2 w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-2 w-1/2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <div className="text-red-600 mb-4">
+            <AlertCircle className="w-12 h-12 mx-auto mb-2" />
+            Failed to load favorites
+          </div>
+          <button
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/favorites'] })}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       ) : favorites.length === 0 ? (
         <EmptyState type="all" />

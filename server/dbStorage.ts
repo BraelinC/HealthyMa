@@ -841,10 +841,12 @@ export class DatabaseStorage implements IStorage {
   // Favorites methods
   async getUserFavorites(userId: string): Promise<UserFavorite[]> {
     try {
+      // Optimize query with limit to prevent large result sets from slowing down the response
       return await db.select()
         .from(userFavorites)
         .where(eq(userFavorites.user_id, userId))
-        .orderBy(desc(userFavorites.created_at));
+        .orderBy(desc(userFavorites.created_at))
+        .limit(100); // Limit to most recent 100 favorites for better performance
     } catch (error) {
       console.error('Error getting user favorites:', error);
       return [];
