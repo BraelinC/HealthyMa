@@ -1053,38 +1053,6 @@ export default function Profile() {
                 {profileType === 'individual' && isEditing && (
                   <div className="space-y-4 pt-4 border-t border-gray-200">
                     <div>
-                      <Label>Dietary Preferences</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {commonPreferences.map(pref => (
-                          <Button
-                            key={pref}
-                            onClick={() => addIndividualPreference(pref)}
-                            variant={individualPreferences.includes(pref) ? "default" : "outline"}
-                            size="sm"
-                            className="text-xs"
-                          >
-                            {pref}
-                          </Button>
-                        ))}
-                      </div>
-                      {individualPreferences.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {individualPreferences.map((pref: string) => (
-                            <Badge key={pref} variant="secondary" className="flex items-center gap-1">
-                              {pref}
-                              <button
-                                onClick={() => removeIndividualPreference(pref)}
-                                className="ml-1 text-red-500 hover:text-red-700"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
                       <Label className="flex items-center gap-2">
                         <span className="text-red-500">*</span>
                         Dietary Restrictions
@@ -1174,17 +1142,6 @@ export default function Profile() {
 
                 {profileType === 'individual' && !isEditing && (
                   <div className="space-y-4 pt-4 border-t border-gray-200">
-                    {individualPreferences.length > 0 && (
-                      <div>
-                        <Label className="text-sm font-medium">Dietary Preferences:</Label>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {individualPreferences.map((pref: string) => (
-                            <Badge key={pref} variant="outline">{pref}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     {individualDietaryRestrictions.length > 0 && (
                       <div>
                         <Label className="text-sm font-medium text-red-600">Dietary Restrictions:</Label>
