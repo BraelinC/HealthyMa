@@ -19,6 +19,9 @@ interface Recipe {
   cuisine?: string;
   nutrition?: any;
   nutrition_info?: any;
+  video_id?: string;
+  video_title?: string;
+  video_channel?: string;
 }
 
 interface MealPlan {
