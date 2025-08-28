@@ -876,8 +876,12 @@ export default function CommunityDetailNew() {
                           
                           <TabsContent value="meal" className="p-4">
                             {post.meal_plan ? (
-                              <RecipeDisplay
-                                recipe={(() => {
+                              <div>
+                                <div className="mb-4 p-2 bg-red-600 text-white rounded text-xs">
+                                  DEBUG: meal_plan = {JSON.stringify(post.meal_plan, null, 2).substring(0, 500)}
+                                </div>
+                                <RecipeDisplay
+                                  recipe={(() => {
                                   // Extract the first recipe from the meal plan
                                   const mealPlan = post.meal_plan?.meal_plan;
                                   const firstDay = mealPlan?.day_1 || mealPlan?.days?.day1;
@@ -916,9 +920,10 @@ export default function CommunityDetailNew() {
                                     video_title: firstMeal.video_title || null,
                                     video_channel: firstMeal.video_channel || null
                                   };
-                                })()}
-                                onRegenerateClick={() => {}}
-                              />
+                                  })()}
+                                  onRegenerateClick={() => {}}
+                                />
+                              </div>
                             ) : (
                               <div className="text-center py-8">
                                 <p className="text-gray-400">Meal details coming soon...</p>
