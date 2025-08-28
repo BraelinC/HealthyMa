@@ -22,7 +22,8 @@ import {
   ChevronDown,
   ChevronUp,
   Heart,
-  Share2
+  Share2,
+  Plus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommunityShareModal } from "@/components/CommunityShareModal";
@@ -500,6 +501,17 @@ const Search = () => {
                 <CardContent className="p-6 relative">
                   {/* Action buttons in top right */}
                   <div className="absolute top-4 right-4 z-10 flex gap-2">
+                    <Button 
+                      variant="secondary" 
+                      size="icon" 
+                      onClick={() => {
+                        // Add plus button functionality here
+                      }}
+                      className="w-8 h-8 rounded-full shadow-sm bg-white/90 text-gray-700 hover:bg-green-50 hover:text-green-600"
+                      title="Add to meal plan"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
                     <Button 
                       variant="secondary" 
                       size="icon" 
