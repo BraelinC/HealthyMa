@@ -1516,7 +1516,10 @@ export default function Home() {
                                         {meal.ingredients?.map((ingredient, index) => (
                                           <li key={index} className="flex items-start gap-2">
                                             <span className="w-1 h-1 bg-primary rounded-full mt-1.5 flex-shrink-0"></span>
-                                            {ingredient}
+                                            {typeof ingredient === 'string' 
+                                              ? ingredient 
+                                              : ingredient?.display_text || ingredient?.name || 'Ingredient'
+                                            }
                                           </li>
                                         ))}
                                       </ul>
@@ -1564,6 +1567,53 @@ export default function Home() {
                                             <div className="font-medium">Fat</div>
                                             <div className="text-muted-foreground">{meal.nutrition.fat_g}g</div>
                                           </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {/* YouTube Video */}
+                                    {(meal.video_id || meal.video_title) && (
+                                      <div>
+                                        <h5 className="font-medium text-sm mb-2 flex items-center gap-1">
+                                          <svg className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136C4.495 20.455 12 20.455 12 20.455s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                          </svg>
+                                          How to Make
+                                        </h5>
+                                        <div className="bg-background/50 p-3 rounded-lg">
+                                          {meal.video_id ? (
+                                            <div className="space-y-2">
+                                              <div className="aspect-video bg-gray-100 rounded overflow-hidden">
+                                                <iframe
+                                                  src={`https://www.youtube.com/embed/${meal.video_id}`}
+                                                  title={meal.video_title || meal.title}
+                                                  className="w-full h-full"
+                                                  allowFullScreen
+                                                />
+                                              </div>
+                                              {(meal.video_title || meal.video_channel) && (
+                                                <div className="text-xs">
+                                                  {meal.video_title && (
+                                                    <p className="font-medium text-gray-900 line-clamp-2">
+                                                      {meal.video_title}
+                                                    </p>
+                                                  )}
+                                                  {meal.video_channel && (
+                                                    <p className="text-gray-600 mt-1">
+                                                      by {meal.video_channel}
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <div className="text-xs text-gray-600">
+                                              <p className="font-medium">{meal.video_title}</p>
+                                              {meal.video_channel && (
+                                                <p className="mt-1">by {meal.video_channel}</p>
+                                              )}
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     )}
