@@ -15,7 +15,7 @@ interface LandingPageProps {
 
 export function LandingPage({ onGetStarted, onStartPayment, onTestLogin }: LandingPageProps) {
   const [currentFounders, setCurrentFounders] = useState(0);
-  const totalFounders = 1000;
+  const totalFounders = 100;
   const [isTestLoading, setIsTestLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const { toast } = useToast();
@@ -415,9 +415,20 @@ export function LandingPage({ onGetStarted, onStartPayment, onTestLogin }: Landi
             </div>
             
             <div className="text-sm text-purple-700 font-medium">
-              {currentFounders === 0 ? "1000 founding spots available" : `Only ${totalFounders - currentFounders} spots left`}
+              {currentFounders === 0 ? "100 founding spots available" : `Only ${totalFounders - currentFounders} spots left`}
             </div>
           </div>
+        </div>
+
+        {/* CTA */}
+        <div className="text-center">
+          <Button 
+            size="lg" 
+            onClick={() => onStartPayment('founders')}
+            className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:via-indigo-700 hover:to-purple-800 text-white px-12 py-4 text-xl font-bold rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+          >
+            👉 Join now and never ask "what's for dinner?" again.
+          </Button>
         </div>
 
       </div>
