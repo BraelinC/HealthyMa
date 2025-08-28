@@ -427,7 +427,7 @@ export function LandingPage({ onGetStarted, onStartPayment, onTestLogin }: Landi
             onClick={() => onStartPayment('founders')}
             className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:via-indigo-700 hover:to-purple-800 text-white px-12 py-4 text-xl font-bold rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
           >
-👉 Never ask "what's for dinner?" again
+Never ask "what's for dinner?"
           </Button>
         </div>
 
