@@ -74,22 +74,29 @@ export function LandingPage({ onGetStarted, onStartPayment, onTestLogin }: Landi
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 overflow-x-hidden">
       {/* Header */}
-      <header className="px-4 py-3 flex justify-center items-center bg-white/80 backdrop-blur-sm border-b border-purple-100">
+      <header className="px-4 py-3 flex justify-between items-center bg-white/80 backdrop-blur-sm border-b border-purple-100">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full shadow-lg">
             <HandPlatter className="text-white h-6 w-6" />
           </div>
           <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Healthy Mama</h1>
         </div>
+        <Button 
+          onClick={onGetStarted}
+          variant="ghost"
+          className="text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+        >
+          Skip to Login
+        </Button>
       </header>
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-12">
         {/* Hero */}
         <div className="text-center mb-12">
-          <div className="relative">
+          <div className="relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-indigo-400/20 blur-3xl rounded-full transform scale-150"></div>
             <h1 className="relative text-4xl md:text-5xl font-bold bg-gradient-to-r from-emerald-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-4 leading-tight">
               Never ask 'What's for dinner?' again.

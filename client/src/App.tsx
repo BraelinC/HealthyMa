@@ -39,6 +39,7 @@ const SHOW_LANDING_PAGE = true;
 
 function AppHeader() {
   const { user, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   
   // Type assertion for user object to fix TypeScript errors
   const typedUser = user as any;
@@ -49,13 +50,30 @@ function AppHeader() {
     enabled: isAuthenticated,
   });
   
+  const handleSecretClick = () => {
+    // Navigate to landing page with login parameter
+    setLocation("/landingpage?login=true");
+  };
+  
   return (
     <header className="bg-gradient-to-r from-white via-purple-50 to-white px-4 py-3 flex justify-between items-center sticky top-0 z-50 shadow-sm border-b border-purple-100">
       <div className="flex items-center gap-2">
         <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full shadow-md">
           <HandPlatter className="text-white h-6 w-6" />
         </div>
-        <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Healthy Mama</h1>
+        <button 
+          onClick={handleSecretClick}
+          className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer hover:opacity-70 transition-opacity select-none"
+          style={{ 
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            font: 'inherit',
+            outline: 'none'
+          }}
+        >
+          Healthy Mama
+        </button>
       </div>
       
       <div className="flex items-center gap-2">
@@ -239,13 +257,27 @@ function Router() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Switch>
-        <Route path="/landingpage" component={() => (
-          <LandingPage 
-            onGetStarted={() => setShowAuth(true)} 
-            onStartPayment={handleStartPayment} 
-            onTestLogin={() => setShowAuth(true)} 
-          />
-        )} />
+        <Route path="/landingpage" component={() => {
+          const urlParams = new URLSearchParams(window.location.search);
+          const shouldShowLogin = urlParams.has('login');
+          
+          if (shouldShowLogin) {
+            return (
+              <AuthForm onSuccess={(user, token) => {
+                localStorage.setItem("auth_token", token);
+                window.location.href = '/';
+              }} />
+            );
+          }
+          
+          return (
+            <LandingPage 
+              onGetStarted={() => setShowAuth(true)} 
+              onStartPayment={handleStartPayment} 
+              onTestLogin={() => setShowAuth(true)} 
+            />
+          );
+        }} />
         <Route path="/logo" component={() => (
           <div className="min-h-screen bg-white flex items-center justify-center">
             <div className="p-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full shadow-2xl">
