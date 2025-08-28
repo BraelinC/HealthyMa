@@ -18,7 +18,8 @@ import {
   X,
   ShoppingCart,
   AlertCircle,
-  Share2
+  Share2,
+  Plus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommunityShareModal } from "@/components/CommunityShareModal";
@@ -218,6 +219,18 @@ export default function Favorites() {
                 {favorite.title}
               </h3>
               <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-green-500 hover:text-green-600 hover:bg-green-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Add plus button functionality here
+                  }}
+                  title="Add to meal plan"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
