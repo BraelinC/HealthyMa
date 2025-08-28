@@ -88,4 +88,4 @@ task = "shell.exec"
 args = "npm run dev"
 
 [agent]
-integrations = ["javascript_openai==1.0.0", "perplexity_v0==1.0.0"]
+integrations = ["perplexity_v0==1.0.0", "javascript_stripe==1.0.0", "javascript_openai==1.0.0"]

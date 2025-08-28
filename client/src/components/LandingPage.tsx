@@ -421,15 +421,13 @@ export function LandingPage({ onGetStarted, onStartPayment, onTestLogin }: Landi
         </div>
 
         {/* CTA */}
-        <div className="text-center">
+        <div className="flex justify-center px-4">
           <Button 
             size="lg" 
             onClick={() => onStartPayment('founders')}
-            className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:via-indigo-700 hover:to-purple-800 text-white px-12 py-4 text-xl font-bold rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+            className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:via-indigo-700 hover:to-purple-800 text-white px-6 sm:px-12 py-4 text-base sm:text-xl font-bold rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
           >
-            <span className="flex items-center justify-center">
-              Never ask "what's for dinner?"
-            </span>
+            👉 Never ask "what's for dinner?" again
           </Button>
         </div>
 
