@@ -81,21 +81,15 @@ const commonPreferences = [
 ];
 
 const commonDietaryRestrictions = [
-  'Vegetarian',
-  'Vegan',
-  'Gluten-Free',
-  'Dairy-Free',
-  'Nut-Free',
-  'Egg-Free',
-  'Soy-Free',
-  'Shellfish Allergy',
-  'Fish Allergy',
-  'Halal',
-  'Kosher',
-  'Low-Sodium',
-  'Diabetic',
-  'Keto',
-  'Paleo'
+  'Milk (including cow\'s milk and derivatives)',
+  'Eggs',
+  'Fish (such as bass, flounder, cod, salmon, and halibut)',
+  'Shellfish (especially crustaceans like crab, lobster, shrimp)',
+  'Tree nuts (including almonds, cashews, walnuts, pecans, pistachios, and Brazil nuts)',
+  'Peanuts',
+  'Wheat',
+  'Soy (or soybeans)',
+  'Sesame'
 ];
 
 const personalGoals = [
@@ -1058,66 +1052,21 @@ export default function Profile() {
                         Dietary Restrictions
                       </Label>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Gluten-Free')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Gluten-Free']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Gluten-Free') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Gluten-Free
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Dairy-Free/Lactose Intolerance')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Dairy-Free/Lactose Intolerance']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Dairy-Free/Lactose Intolerance') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Dairy-Free/Lactose Intolerance
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Nut-Free')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Nut-Free']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Nut-Free') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Nut-Free
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Vegetarian or Vegan')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Vegetarian or Vegan']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Vegetarian or Vegan') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Vegetarian or Vegan
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Egg-Free')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Egg-Free']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Egg-Free') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Egg-Free
-                        </Button>
+                        {commonDietaryRestrictions.map(restriction => (
+                          <Button
+                            key={restriction}
+                            onClick={() => {
+                              if (!individualDietaryRestrictions.includes(restriction)) {
+                                setIndividualDietaryRestrictions([...individualDietaryRestrictions, restriction]);
+                              }
+                            }}
+                            variant={individualDietaryRestrictions.includes(restriction) ? "destructive" : "outline"}
+                            size="sm"
+                            className="text-xs"
+                          >
+                            {restriction}
+                          </Button>
+                        ))}
                       </div>
                       {individualDietaryRestrictions.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
