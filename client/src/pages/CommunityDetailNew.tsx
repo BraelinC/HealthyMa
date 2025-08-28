@@ -881,10 +881,26 @@ export default function CommunityDetailNew() {
                                   recipe={(() => {
                                   // Extract the first recipe from the meal plan
                                   const mealPlan = post.meal_plan?.meal_plan;
+                                  
+                                  // Debug: Log the entire meal plan structure
+                                  console.log('=== DEBUG: Full meal plan data ===', {
+                                    meal_plan: post.meal_plan,
+                                    mealPlan: mealPlan
+                                  });
+                                  
                                   const firstDay = mealPlan?.day_1 || mealPlan?.days?.day1;
                                   const firstMeal = firstDay?.breakfast || firstDay?.lunch || firstDay?.dinner;
                                   
+                                  // Debug: Log the extracted meal
+                                  console.log('=== DEBUG: Extracted meal ===', {
+                                    firstDay,
+                                    firstMeal,
+                                    ingredients: firstMeal?.ingredients,
+                                    ingredientsType: Array.isArray(firstMeal?.ingredients) ? 'array' : typeof firstMeal?.ingredients
+                                  });
+                                  
                                   if (!firstMeal) {
+                                    console.log('=== DEBUG: No meal found, returning default ===');
                                     return {
                                       id: post.meal_plan?.id,
                                       title: post.meal_plan?.name || 'Shared Recipe',
@@ -898,13 +914,44 @@ export default function CommunityDetailNew() {
                                     };
                                   }
                                   
+                                  // Process ingredients to ensure correct format
+                                  let processedIngredients = [];
+                                  if (Array.isArray(firstMeal.ingredients)) {
+                                    processedIngredients = firstMeal.ingredients.map((ing: any, index: number) => {
+                                      // Debug each ingredient
+                                      console.log(`=== DEBUG: Ingredient ${index} ===`, ing);
+                                      
+                                      // Handle different ingredient formats
+                                      if (typeof ing === 'string') {
+                                        // Simple string format
+                                        return {
+                                          name: ing,
+                                          display_text: ing,
+                                          measurements: []
+                                        };
+                                      } else if (ing && typeof ing === 'object') {
+                                        // Object format - try to extract proper fields
+                                        return {
+                                          name: ing.name || ing.ingredient || ing.item || '',
+                                          display_text: ing.display_text || ing.text || ing.description || `${ing.quantity || ''} ${ing.unit || ''} ${ing.name || ing.ingredient || ''}`.trim(),
+                                          measurements: ing.measurements || (ing.quantity ? [{
+                                            quantity: parseFloat(ing.quantity) || 0,
+                                            unit: ing.unit || ''
+                                          }] : [])
+                                        };
+                                      }
+                                      return null;
+                                    }).filter(Boolean);
+                                  }
                                   
-                                  return {
+                                  console.log('=== DEBUG: Processed ingredients ===', processedIngredients);
+                                  
+                                  const recipeData = {
                                     id: post.meal_plan?.id,
                                     title: firstMeal.name || firstMeal.title || post.meal_plan?.name || 'Shared Recipe',
                                     description: firstMeal.description || post.meal_plan?.description || '',
                                     image_url: firstMeal.image_url || '/api/placeholder/400/300',
-                                    ingredients: Array.isArray(firstMeal.ingredients) ? firstMeal.ingredients : [],
+                                    ingredients: processedIngredients,
                                     instructions: Array.isArray(firstMeal.instructions) ? firstMeal.instructions : [],
                                     nutrition_info: firstMeal.nutrition || null,
                                     time_minutes: firstMeal.prep_time || firstMeal.time_minutes || firstMeal.cook_time_minutes || 30,
@@ -914,6 +961,10 @@ export default function CommunityDetailNew() {
                                     video_title: firstMeal.video_title || null,
                                     video_channel: firstMeal.video_channel || null
                                   };
+                                  
+                                  console.log('=== DEBUG: Final recipe data ===', recipeData);
+                                  
+                                  return recipeData;
                                   })()}
                                   onRegenerateClick={() => {}}
                                 />

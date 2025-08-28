@@ -158,10 +158,23 @@ export function CommunityShareModal({
     };
 
     if (shareType === 'recipe' && recipe) {
+      // Debug: Log the recipe data being shared
+      console.log('=== CommunityShareModal: Sharing recipe ===', {
+        recipe,
+        ingredientsLength: recipe.ingredients?.length,
+        firstIngredient: recipe.ingredients?.[0]
+      });
       shareData.recipe_data = recipe;
     } else if (shareType === 'meal_plan' && mealPlan) {
+      // Debug: Log the meal plan data being shared
+      console.log('=== CommunityShareModal: Sharing meal plan ===', {
+        mealPlan,
+        id: mealPlan.id
+      });
       shareData.meal_plan_id = mealPlan.id;
     }
+    
+    console.log('=== CommunityShareModal: Final share data ===', shareData);
 
     // Handle image upload if present
     if (selectedImage) {

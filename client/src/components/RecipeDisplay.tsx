@@ -98,6 +98,14 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   const { toast } = useToast();
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
+  // Debug: Log the received recipe data
+  console.log('=== RecipeDisplay: Received recipe ===', {
+    recipe,
+    ingredientsLength: recipe?.ingredients?.length,
+    ingredientsType: Array.isArray(recipe?.ingredients) ? 'array' : typeof recipe?.ingredients,
+    firstIngredient: recipe?.ingredients?.[0]
+  });
+
   // Share function - opens community modal
   const handleShare = () => {
     setShareModalOpen(true);
