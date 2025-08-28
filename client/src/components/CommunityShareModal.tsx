@@ -100,6 +100,10 @@ export function CommunityShareModal({
       
       // Invalidate community posts to refresh
       queryClient.invalidateQueries({ queryKey: ['/api/community-posts'] });
+      // Also invalidate the specific community's posts
+      if (selectedCommunityId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/communities/${selectedCommunityId}/posts`] });
+      }
     },
     onError: (error) => {
       console.error('Share error:', error);
