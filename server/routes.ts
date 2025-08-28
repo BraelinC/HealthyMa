@@ -5875,6 +5875,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If recipe data is provided, create a proper meal plan structure
       if (recipe_data && post_type === 'meal_share') {
+        // Debug: Log the received recipe data
+        console.log('=== SERVER: Received recipe_data for sharing ===', {
+          hasVideoId: !!recipe_data.video_id,
+          video_id: recipe_data.video_id,
+          video_title: recipe_data.video_title,
+          video_channel: recipe_data.video_channel,
+          title: recipe_data.title,
+          hasIngredients: !!recipe_data.ingredients
+        });
+        
         // Create a proper meal plan structure from recipe data to ensure tabs work
         const tempMealPlan = {
           id: `recipe_${newPost.id}`, // Use post ID for unique identifier

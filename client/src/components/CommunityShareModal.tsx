@@ -162,7 +162,11 @@ export function CommunityShareModal({
       console.log('=== CommunityShareModal: Sharing recipe ===', {
         recipe,
         ingredientsLength: recipe.ingredients?.length,
-        firstIngredient: recipe.ingredients?.[0]
+        firstIngredient: recipe.ingredients?.[0],
+        hasVideoId: !!recipe.video_id,
+        video_id: recipe.video_id,
+        video_title: recipe.video_title,
+        video_channel: recipe.video_channel
       });
       shareData.recipe_data = recipe;
     } else if (shareType === 'meal_plan' && mealPlan) {

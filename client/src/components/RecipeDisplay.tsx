@@ -103,7 +103,11 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
     recipe,
     ingredientsLength: recipe?.ingredients?.length,
     ingredientsType: Array.isArray(recipe?.ingredients) ? 'array' : typeof recipe?.ingredients,
-    firstIngredient: recipe?.ingredients?.[0]
+    firstIngredient: recipe?.ingredients?.[0],
+    hasVideoId: !!recipe?.video_id,
+    video_id: recipe?.video_id,
+    video_title: recipe?.video_title,
+    video_channel: recipe?.video_channel
   });
 
   // Share function - opens community modal
@@ -112,7 +116,7 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   };
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
-  const [videoId, setVideoId] = useState<string | null>(null);
+  const [videoId, setVideoId] = useState<string | null>(recipe.video_id || null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [isPlayingInApp, setIsPlayingInApp] = useState(false);
@@ -130,7 +134,10 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   const [videoDetails, setVideoDetails] = useState<{
     title: string;
     channelTitle: string;
-  } | null>(null);
+  } | null>(recipe.video_title && recipe.video_channel ? {
+    title: recipe.video_title,
+    channelTitle: recipe.video_channel
+  } : null);
 
   // Use recipe data directly without additional API calls
   const enhancedRecipe = recipe;
@@ -159,7 +166,10 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
     if (enhancedRecipe) {
       // Set video ID
       if (enhancedRecipe.video_id) {
+        console.log('=== RecipeDisplay: Setting video ID from enhancedRecipe ===', enhancedRecipe.video_id);
         setVideoId(enhancedRecipe.video_id);
+      } else {
+        console.log('=== RecipeDisplay: No video_id in enhancedRecipe ===');
       }
 
       // Set video details

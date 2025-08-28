@@ -896,7 +896,11 @@ export default function CommunityDetailNew() {
                                     firstDay,
                                     firstMeal,
                                     ingredients: firstMeal?.ingredients,
-                                    ingredientsType: Array.isArray(firstMeal?.ingredients) ? 'array' : typeof firstMeal?.ingredients
+                                    ingredientsType: Array.isArray(firstMeal?.ingredients) ? 'array' : typeof firstMeal?.ingredients,
+                                    hasVideoId: !!firstMeal?.video_id,
+                                    video_id: firstMeal?.video_id,
+                                    video_title: firstMeal?.video_title,
+                                    video_channel: firstMeal?.video_channel
                                   });
                                   
                                   if (!firstMeal) {
