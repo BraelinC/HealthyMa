@@ -415,14 +415,6 @@ const Search = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 pb-20">
       <div className="container mx-auto px-4 py-6 md:py-10">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent mb-4">
-            Recipe Search
-          </h1>
-          <p className="text-lg text-teal-700 max-w-2xl mx-auto">
-            Discover amazing recipes with video instructions and shopping lists
-          </p>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recipe Generator */}
