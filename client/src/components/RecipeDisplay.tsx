@@ -747,24 +747,6 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
         </TabsContent>
 
         <TabsContent value="nutrition" className="p-4 pt-3">
-          {/* Debug: Show nutrition_info data */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded text-xs">
-              <strong>🔍 NUTRITION DEBUG - Recipe ID {recipe.id}</strong>
-              <br />
-              nutrition_info exists: {recipe.nutrition_info ? 'YES' : 'NO'}
-              <br />
-              Raw nutrition_info: {JSON.stringify(recipe.nutrition_info, null, 2)}
-              <br />
-              Calories: {recipe.nutrition_info?.calories || 'N/A'}
-              <br />
-              Protein (protein_g): {recipe.nutrition_info?.protein_g ? `${recipe.nutrition_info.protein_g}g` : 'N/A'}
-              <br />
-              Check condition: {recipe.nutrition_info && recipe.nutrition_info.calories && recipe.nutrition_info.protein_g ? '✅ PASS' : '❌ FAIL'}
-              <br />
-              Fallback condition (ID ≥ 405): {recipe.id && Number(recipe.id) >= 405 ? '✅ PASS' : '❌ FAIL'}
-            </div>
-          )}
           
           {(recipe.nutrition_info && recipe.nutrition_info.calories && recipe.nutrition_info.protein_g) || (recipe.id && Number(recipe.id) >= 405) ? (
             <div>
