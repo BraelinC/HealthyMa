@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommunityShareModal } from "@/components/CommunityShareModal";
+import { MealPlanSelectionModal } from "@/components/MealPlanSelectionModal";
 import { apiRequest, safeApiRequest } from "@/lib/queryClient";
 import ReactPlayer from "react-player";
 import RecipeCard from "@/components/RecipeCard";
@@ -199,6 +200,8 @@ const Search = () => {
   // State to track auto-trigger execution
   const [hasAutoTriggered, setHasAutoTriggered] = useState(false);
   const [currentUrlQuery, setCurrentUrlQuery] = useState<string | null>(null);
+  const [mealPlanModalOpen, setMealPlanModalOpen] = useState(false);
+  const [selectedRecipeForMealPlan, setSelectedRecipeForMealPlan] = useState<any>(null);
   
   // STEP 3.1: Set loading state immediately when URL query is detected
   const [isAutoLoading, setIsAutoLoading] = useState(false);
@@ -505,7 +508,24 @@ const Search = () => {
                       variant="secondary" 
                       size="icon" 
                       onClick={() => {
-                        // Add plus button functionality here
+                        // Prepare recipe data for meal plan modal
+                        const recipeData = {
+                          id: generatedRecipe?.id,
+                          title: generatedRecipe?.title || '',
+                          description: generatedRecipe?.description || '',
+                          image_url: generatedRecipe?.image_url,
+                          time_minutes: generatedRecipe?.time_minutes,
+                          cuisine: generatedRecipe?.cuisine,
+                          diet: generatedRecipe?.diet,
+                          ingredients: generatedRecipe?.ingredients || [],
+                          instructions: generatedRecipe?.instructions || [],
+                          nutrition_info: generatedRecipe?.nutrition || null,
+                          video_id: generatedRecipe?.video_id,
+                          video_title: generatedRecipe?.video_title,
+                          video_channel: generatedRecipe?.video_channel
+                        };
+                        setSelectedRecipeForMealPlan(recipeData);
+                        setMealPlanModalOpen(true);
                       }}
                       className="w-8 h-8 rounded-full shadow-sm bg-white/90 text-gray-700 hover:bg-green-50 hover:text-green-600"
                       title="Add to meal plan"
@@ -832,6 +852,23 @@ const Search = () => {
         onClose={() => setShareModalOpen(false)}
         recipe={itemToShare}
         shareType="recipe"
+      />
+      
+      {/* Meal Plan Selection Modal */}
+      <MealPlanSelectionModal
+        isOpen={mealPlanModalOpen}
+        onClose={() => {
+          setMealPlanModalOpen(false);
+          setSelectedRecipeForMealPlan(null);
+        }}
+        recipe={selectedRecipeForMealPlan}
+        onSuccess={() => {
+          // Optionally show success message
+          toast({
+            title: "Recipe added to meal plan!",
+            description: "You can view and edit your meal plan from the home page.",
+          });
+        }}
       />
     </div>
   );

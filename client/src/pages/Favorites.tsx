@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommunityShareModal } from "@/components/CommunityShareModal";
+import { MealPlanSelectionModal } from "@/components/MealPlanSelectionModal";
 import { apiRequest } from "@/lib/queryClient";
 import ReactPlayer from "react-player";
 
@@ -48,6 +49,8 @@ export default function Favorites() {
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [expandedFavorite, setExpandedFavorite] = useState<FavoriteItem | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [mealPlanModalOpen, setMealPlanModalOpen] = useState(false);
+  const [selectedRecipeForMealPlan, setSelectedRecipeForMealPlan] = useState<any>(null);
   const [itemToShare, setItemToShare] = useState<FavoriteItem | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -225,7 +228,24 @@ export default function Favorites() {
                   className="opacity-0 group-hover:opacity-100 transition-opacity text-green-500 hover:text-green-600 hover:bg-green-50"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Add plus button functionality here
+                    // Prepare recipe data for meal plan modal
+                    const recipeData = {
+                      id: favorite.item_id,
+                      title: favorite.title,
+                      description: favorite.description,
+                      image_url: favorite.image_url,
+                      time_minutes: favorite.time_minutes,
+                      cuisine: favorite.cuisine,
+                      diet: favorite.diet,
+                      ingredients: favorite.metadata?.ingredients || [],
+                      instructions: favorite.metadata?.instructions || [],
+                      nutrition_info: favorite.metadata?.nutrition || null,
+                      video_id: favorite.video_id,
+                      video_title: favorite.video_title,
+                      video_channel: favorite.video_channel
+                    };
+                    setSelectedRecipeForMealPlan(recipeData);
+                    setMealPlanModalOpen(true);
                   }}
                   title="Add to meal plan"
                 >
@@ -642,6 +662,20 @@ export default function Favorites() {
             video_channel: itemToShare.video_channel
           } : undefined}
           shareType="recipe"
+        />
+
+        {/* Meal Plan Selection Modal */}
+        <MealPlanSelectionModal
+          isOpen={mealPlanModalOpen}
+          onClose={() => {
+            setMealPlanModalOpen(false);
+            setSelectedRecipeForMealPlan(null);
+          }}
+          recipe={selectedRecipeForMealPlan}
+          onSuccess={() => {
+            // Optionally refresh favorites or show success message
+            queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+          }}
         />
       </div>
     </div>
