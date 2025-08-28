@@ -279,54 +279,6 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
               ) : (
                 <div className="space-y-6">
                 
-                {/* Summary */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Smart Shopping Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Total items:</span>
-                      <span className="font-medium">{ingredients.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm mt-2">
-                      <span className="text-muted-foreground">Categories:</span>
-                      <span className="font-medium">{Object.keys(categorizedIngredients).length}</span>
-                    </div>
-                    {savings && (
-                      <>
-                        <div className="flex items-center justify-between text-sm mt-2">
-                          <span className="text-muted-foreground">Duplicates removed:</span>
-                          <span className="font-medium text-green-600">{savings.duplicatesRemoved}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm mt-2">
-                          <span className="text-muted-foreground">Items consolidated:</span>
-                          <span className="font-medium text-green-600">{savings.itemsConsolidated}</span>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                {/* Recommendations */}
-                {recommendations.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm">Smart Shopping Tips</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        {recommendations.map((rec, index) => (
-                          <li key={index} className="text-sm text-muted-foreground flex items-start">
-                            <ChevronRight className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                            <span>{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
-                
                 {/* Categorized ingredients */}
                 {Object.entries(categorizedIngredients).map(([category, items]) => (
                   <div key={category}>
