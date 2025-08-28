@@ -613,7 +613,21 @@ export default function Favorites() {
         <CommunityShareModal
           isOpen={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
-          recipe={itemToShare}
+          recipe={itemToShare ? {
+            id: itemToShare.id,
+            title: itemToShare.title,
+            description: itemToShare.description || '',
+            ingredients: itemToShare.metadata?.ingredients || [],
+            instructions: itemToShare.metadata?.instructions || [],
+            image_url: itemToShare.image_url,
+            time_minutes: itemToShare.time_minutes,
+            cuisine: itemToShare.cuisine,
+            nutrition: itemToShare.metadata?.nutrition_info || itemToShare.metadata?.nutrition,
+            nutrition_info: itemToShare.metadata?.nutrition_info || itemToShare.metadata?.nutrition,
+            video_id: itemToShare.video_id,
+            video_title: itemToShare.video_title,
+            video_channel: itemToShare.video_channel
+          } : undefined}
           shareType="recipe"
         />
       </div>
