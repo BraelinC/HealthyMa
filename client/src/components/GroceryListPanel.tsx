@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation } from "@tanstack/react-query";
 import { safeApiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -117,7 +118,21 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
   const [isLoading, setIsLoading] = useState(false);
   const [savings, setSavings] = useState<{ duplicatesRemoved: number; itemsConsolidated: number } | null>(null);
   const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  // Handle checkbox changes
+  const handleItemCheck = (itemKey: string, checked: boolean) => {
+    setCheckedItems(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(itemKey);
+      } else {
+        newSet.delete(itemKey);
+      }
+      return newSet;
+    });
+  };
 
   // Handle opening Instacart
   const handleOpenInstacart = async () => {
@@ -290,19 +305,30 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
                       </Badge>
                     </div>
                     <div className="space-y-2">
-                      {items.map((ingredient, index) => (
-                        <div
-                          key={`${category}-${index}`}
-                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <span className="text-sm font-medium">{ingredient.displayText || ingredient.name}</span>
-                            {ingredient.notes && (
-                              <span className="text-xs text-muted-foreground block mt-1">{ingredient.notes}</span>
-                            )}
+                      {items.map((ingredient, index) => {
+                        const itemKey = `${category}-${index}`;
+                        const isChecked = checkedItems.has(itemKey);
+                        return (
+                          <div
+                            key={itemKey}
+                            className={`flex items-center gap-3 p-3 bg-muted/50 rounded-lg transition-all ${isChecked ? 'opacity-50' : ''}`}
+                          >
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={(checked) => handleItemCheck(itemKey, checked as boolean)}
+                              className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                            />
+                            <div className="flex-1">
+                              <span className={`text-sm font-medium ${isChecked ? 'line-through text-muted-foreground' : ''}`}>
+                                {ingredient.displayText || ingredient.name}
+                              </span>
+                              {ingredient.notes && (
+                                <span className="text-xs text-muted-foreground block mt-1">{ingredient.notes}</span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
