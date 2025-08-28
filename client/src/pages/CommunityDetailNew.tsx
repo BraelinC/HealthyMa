@@ -897,15 +897,19 @@ export default function CommunityDetailNew() {
                                     };
                                   }
                                   
+                                  console.log('🔍 [MEAL DEBUG] firstMeal structure:', firstMeal);
+                                  console.log('🔍 [MEAL DEBUG] ingredients:', firstMeal.ingredients);
+                                  console.log('🔍 [MEAL DEBUG] instructions:', firstMeal.instructions);
+                                  
                                   return {
                                     id: post.meal_plan?.id,
-                                    title: firstMeal.name || post.meal_plan?.name || 'Shared Recipe',
+                                    title: firstMeal.name || firstMeal.title || post.meal_plan?.name || 'Shared Recipe',
                                     description: firstMeal.description || post.meal_plan?.description || '',
                                     image_url: firstMeal.image_url || '/api/placeholder/400/300',
                                     ingredients: firstMeal.ingredients || [],
                                     instructions: firstMeal.instructions || [],
                                     nutrition_info: firstMeal.nutrition || null,
-                                    time_minutes: firstMeal.prep_time || 30,
+                                    time_minutes: firstMeal.prep_time || firstMeal.time_minutes || 30,
                                     cuisine: firstMeal.cuisine || '',
                                     diet: firstMeal.diet || '',
                                     video_id: firstMeal.video_id || null,
