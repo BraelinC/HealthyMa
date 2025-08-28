@@ -139,7 +139,7 @@ Return ONLY a JSON object with this structure:
 }
 
 /**
- * Convert consolidated ingredients to Instacart format with smart mapping
+ * Convert consolidated ingredients to Instacart format with proper API structure
  */
 export async function formatForInstacart(ingredients: ConsolidatedIngredient[]) {
   // Import our smart mapper
@@ -148,28 +148,126 @@ export async function formatForInstacart(ingredients: ConsolidatedIngredient[]) 
   return ingredients.map(ing => {
     // First check for edge cases
     const edgeCase = handleEdgeCases(ing.displayText);
-    if (edgeCase) {
-      return {
-        name: edgeCase.name,
-        display_text: edgeCase.displayText,
-        measurements: [{
-          quantity: edgeCase.quantity,
-          unit: normalizeUnitForInstacart(edgeCase.unit)
-        }]
-      };
-    }
+    const mapped = edgeCase || mapToStoreQuantities(ing.displayText);
     
-    // Apply smart mapping if needed
-    const mapped = mapToStoreQuantities(ing.displayText);
+    // Extract clean ingredient name and create descriptive display text
+    const cleanName = extractCleanIngredientName(mapped.name);
+    const descriptiveText = createDescriptiveDisplayText(cleanName, mapped.category);
+    
     return {
-      name: mapped.name,
-      display_text: mapped.displayText,
+      name: cleanName,  // Clean ingredient name only (e.g., "eggs", "spinach", "olive oil")
+      display_text: descriptiveText,  // Descriptive name for display (e.g., "Large Eggs", "Fresh Spinach")
       measurements: [{
         quantity: mapped.quantity,
         unit: normalizeUnitForInstacart(mapped.unit)
       }]
     };
   });
+}
+
+/**
+ * Extract clean ingredient name without quantities or units
+ */
+function extractCleanIngredientName(name: string): string {
+  // Remove common descriptors and get base ingredient
+  const cleanName = name
+    .replace(/^(fresh |organic |dried |ground |whole |chopped |minced |sliced )/gi, '')
+    .replace(/\s*(leaves?|powder|flakes?)\s*$/gi, '')
+    .trim();
+  
+  return cleanName;
+}
+
+/**
+ * Create descriptive display text for better Instacart product matching
+ */
+function createDescriptiveDisplayText(name: string, category: string): string {
+  const descriptiveMap: { [key: string]: { [key: string]: string } } = {
+    produce: {
+      'apples': 'Fresh Red Apples',
+      'apple': 'Fresh Red Apples',
+      'bananas': 'Fresh Bananas',
+      'banana': 'Fresh Bananas',
+      'onions': 'Yellow Onions',
+      'onion': 'Yellow Onions',
+      'tomatoes': 'Fresh Tomatoes',
+      'tomato': 'Fresh Tomatoes',
+      'lettuce': 'Fresh Romaine Lettuce',
+      'spinach': 'Fresh Baby Spinach',
+      'carrots': 'Fresh Carrots',
+      'carrot': 'Fresh Carrots',
+      'potatoes': 'Russet Potatoes',
+      'potato': 'Russet Potatoes',
+      'garlic': 'Fresh Garlic',
+      'cilantro': 'Fresh Cilantro Bunch',
+      'parsley': 'Fresh Parsley Bunch',
+      'basil': 'Fresh Basil Leaves'
+    },
+    dairy: {
+      'eggs': 'Large Eggs',
+      'egg': 'Large Eggs',
+      'milk': 'Whole Milk',
+      'butter': 'Unsalted Butter',
+      'cheese': 'Cheddar Cheese',
+      'cheddar cheese': 'Sharp Cheddar Cheese',
+      'mozzarella': 'Mozzarella Cheese',
+      'yogurt': 'Plain Greek Yogurt',
+      'cream': 'Heavy Cream',
+      'sour cream': 'Sour Cream'
+    },
+    meat: {
+      'chicken': 'Boneless Chicken Breast',
+      'chicken breast': 'Boneless Skinless Chicken Breast',
+      'ground beef': 'Lean Ground Beef',
+      'beef': 'Beef Sirloin',
+      'pork': 'Pork Loin',
+      'bacon': 'Thick Cut Bacon',
+      'turkey': 'Ground Turkey',
+      'salmon': 'Fresh Atlantic Salmon',
+      'shrimp': 'Large Raw Shrimp'
+    },
+    spices: {
+      'salt': 'Sea Salt',
+      'pepper': 'Black Pepper',
+      'black pepper': 'Ground Black Pepper',
+      'paprika': 'Paprika',
+      'cumin': 'Ground Cumin',
+      'oregano': 'Dried Oregano',
+      'cinnamon': 'Ground Cinnamon',
+      'garlic powder': 'Garlic Powder',
+      'onion powder': 'Onion Powder',
+      'chili powder': 'Chili Powder',
+      'vanilla': 'Pure Vanilla Extract'
+    },
+    pantry: {
+      'flour': 'All-Purpose Flour',
+      'all-purpose flour': 'All-Purpose Flour',
+      'sugar': 'Granulated Sugar',
+      'brown sugar': 'Light Brown Sugar',
+      'rice': 'Long Grain White Rice',
+      'pasta': 'Spaghetti Pasta',
+      'olive oil': 'Extra Virgin Olive Oil',
+      'oil': 'Vegetable Oil',
+      'vinegar': 'White Vinegar',
+      'baking soda': 'Baking Soda',
+      'baking powder': 'Baking Powder'
+    }
+  };
+  
+  // Check for specific mapping
+  const categoryMap = descriptiveMap[category] || {};
+  const lowerName = name.toLowerCase();
+  
+  // Return mapped name or create a default descriptive name
+  if (categoryMap[lowerName]) {
+    return categoryMap[lowerName];
+  }
+  
+  // Default formatting: capitalize first letter of each word
+  return name
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 /**

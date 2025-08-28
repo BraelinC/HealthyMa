@@ -34,7 +34,7 @@ import Favorites from "@/pages/Favorites";
 // ========== LANDING PAGE TOGGLE ==========
 // Set this to false to skip the landing page and go directly to login
 // Set this to true to show the landing page first
-const SHOW_LANDING_PAGE = false;
+const SHOW_LANDING_PAGE = true;
 // ========================================
 
 function AppHeader() {

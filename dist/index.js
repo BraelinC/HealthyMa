@@ -1539,6 +1539,422 @@ var init_storage = __esm({
   }
 });
 
+// server/instacartQuantityMapper.ts
+var instacartQuantityMapper_exports = {};
+__export(instacartQuantityMapper_exports, {
+  handleEdgeCases: () => handleEdgeCases,
+  mapToStoreQuantities: () => mapToStoreQuantities,
+  smartQuantityRounding: () => smartQuantityRounding
+});
+function mapToStoreQuantities(ingredient) {
+  const normalized = ingredient.toLowerCase().trim();
+  const parsed = parseIngredientText(normalized);
+  const category = categorizeIngredient(parsed.name);
+  switch (category) {
+    case "spices":
+      return mapSpices(parsed);
+    case "produce":
+      return mapProduce(parsed);
+    case "dairy":
+      return mapDairy(parsed);
+    case "meat":
+      return mapMeat(parsed);
+    case "pantry":
+      return mapPantry(parsed);
+    default:
+      return createDefaultMapping(parsed);
+  }
+}
+function parseIngredientText(text2) {
+  const quantityPattern = /^(\d+(?:\/\d+)?(?:\.\d+)?)\s*(?:to\s*)?(\d+(?:\/\d+)?(?:\.\d+)?)?\s*(\w+)?\s+(.+)/;
+  const match = text2.match(quantityPattern);
+  if (match) {
+    const quantity = match[1];
+    const quantityMax = match[2];
+    const unit = match[3] || "";
+    const name = match[4];
+    return {
+      quantity: quantityMax || quantity,
+      unit: unit.toLowerCase(),
+      name,
+      originalText: text2
+    };
+  }
+  if (text2.includes("to taste")) {
+    const name = text2.replace("to taste", "").trim();
+    return {
+      quantity: "1",
+      unit: "container",
+      name,
+      originalText: text2
+    };
+  }
+  return {
+    quantity: "1",
+    unit: "item",
+    name: text2,
+    originalText: text2
+  };
+}
+function categorizeIngredient(ingredient) {
+  const lower = ingredient.toLowerCase();
+  const spices = [
+    "salt",
+    "pepper",
+    "paprika",
+    "cumin",
+    "coriander",
+    "turmeric",
+    "cinnamon",
+    "nutmeg",
+    "clove",
+    "cardamom",
+    "saffron",
+    "vanilla",
+    "oregano",
+    "basil",
+    "thyme",
+    "rosemary",
+    "sage",
+    "parsley",
+    "garlic powder",
+    "onion powder",
+    "chili powder",
+    "cayenne",
+    "ginger",
+    "mustard",
+    "bay leaf",
+    "dill",
+    "fennel",
+    "tarragon"
+  ];
+  if (spices.some((spice) => lower.includes(spice))) {
+    return "spices";
+  }
+  const produce = [
+    "apple",
+    "banana",
+    "orange",
+    "lemon",
+    "lime",
+    "grape",
+    "berry",
+    "tomato",
+    "onion",
+    "garlic",
+    "potato",
+    "carrot",
+    "celery",
+    "lettuce",
+    "spinach",
+    "kale",
+    "cabbage",
+    "broccoli",
+    "cauliflower",
+    "pepper",
+    "cucumber",
+    "zucchini",
+    "squash",
+    "corn",
+    "bean"
+  ];
+  if (produce.some((item) => lower.includes(item) && !lower.includes("powder"))) {
+    return "produce";
+  }
+  if (lower.includes("milk") || lower.includes("cheese") || lower.includes("yogurt") || lower.includes("butter") || lower.includes("cream") || lower.includes("egg")) {
+    return "dairy";
+  }
+  if (lower.includes("chicken") || lower.includes("beef") || lower.includes("pork") || lower.includes("turkey") || lower.includes("lamb") || lower.includes("fish") || lower.includes("salmon") || lower.includes("shrimp")) {
+    return "meat";
+  }
+  if (lower.includes("flour") || lower.includes("sugar") || lower.includes("rice") || lower.includes("pasta") || lower.includes("oil") || lower.includes("vinegar")) {
+    return "pantry";
+  }
+  return "general";
+}
+function mapSpices(parsed) {
+  return {
+    name: parsed.name,
+    displayText: `1 container ${parsed.name}`,
+    quantity: 1,
+    unit: "container",
+    category: "spices",
+    originalText: parsed.originalText
+  };
+}
+function mapProduce(parsed) {
+  const quantity = parseFloat(parsed.quantity) || 1;
+  const unit = parsed.unit;
+  if (unit === "" || unit === "item" || unit === "piece") {
+    let pounds = 1;
+    if (quantity <= 2) {
+      pounds = 1;
+    } else if (quantity <= 5) {
+      pounds = 2;
+    } else {
+      pounds = 3;
+    }
+    return {
+      name: parsed.name,
+      displayText: `${pounds} lb ${parsed.name}`,
+      quantity: pounds,
+      unit: "pound",
+      category: "produce",
+      originalText: parsed.originalText
+    };
+  }
+  if (unit === "lb" || unit === "pound" || unit === "kg") {
+    const roundedQty = Math.ceil(quantity);
+    return {
+      name: parsed.name,
+      displayText: `${roundedQty} lb ${parsed.name}`,
+      quantity: roundedQty,
+      unit: "pound",
+      category: "produce",
+      originalText: parsed.originalText
+    };
+  }
+  return {
+    name: parsed.name,
+    displayText: `2 lb ${parsed.name}`,
+    quantity: 2,
+    unit: "pound",
+    category: "produce",
+    originalText: parsed.originalText
+  };
+}
+function mapDairy(parsed) {
+  const name = parsed.name.toLowerCase();
+  const quantity = parseFloat(parsed.quantity) || 1;
+  if (name.includes("egg")) {
+    const dozens = quantity <= 6 ? 1 : Math.ceil(quantity / 12);
+    return {
+      name: "eggs",
+      displayText: `${dozens} dozen eggs`,
+      quantity: dozens * 12,
+      unit: "eggs",
+      category: "dairy",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("milk")) {
+    const unit = parsed.unit;
+    let displayText = "";
+    let finalQty = 1;
+    let finalUnit = "quart";
+    if (unit === "cup" || unit === "cups") {
+      if (quantity <= 2) {
+        displayText = "1 pint milk";
+        finalQty = 1;
+        finalUnit = "pint";
+      } else if (quantity <= 4) {
+        displayText = "1 quart milk";
+        finalQty = 1;
+        finalUnit = "quart";
+      } else {
+        displayText = "1 half gallon milk";
+        finalQty = 0.5;
+        finalUnit = "gallon";
+      }
+    } else {
+      displayText = "1 quart milk";
+    }
+    return {
+      name: "milk",
+      displayText,
+      quantity: finalQty,
+      unit: finalUnit,
+      category: "dairy",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("cheese")) {
+    const pounds = Math.ceil(quantity / 4);
+    return {
+      name: parsed.name,
+      displayText: `${pounds} lb ${parsed.name}`,
+      quantity: pounds,
+      unit: "pound",
+      category: "dairy",
+      originalText: parsed.originalText
+    };
+  }
+  return {
+    name: parsed.name,
+    displayText: `1 container ${parsed.name}`,
+    quantity: 1,
+    unit: "container",
+    category: "dairy",
+    originalText: parsed.originalText
+  };
+}
+function mapMeat(parsed) {
+  const quantity = parseFloat(parsed.quantity) || 1;
+  const unit = parsed.unit;
+  if (unit === "" || unit === "piece" || unit === "breast" || unit === "thigh") {
+    const pounds = Math.ceil(quantity * 0.5);
+    return {
+      name: parsed.name,
+      displayText: `${pounds} lb ${parsed.name}`,
+      quantity: pounds,
+      unit: "pound",
+      category: "meat",
+      originalText: parsed.originalText
+    };
+  }
+  if (unit === "lb" || unit === "pound") {
+    const rounded = Math.ceil(quantity);
+    return {
+      name: parsed.name,
+      displayText: `${rounded} lb ${parsed.name}`,
+      quantity: rounded,
+      unit: "pound",
+      category: "meat",
+      originalText: parsed.originalText
+    };
+  }
+  return {
+    name: parsed.name,
+    displayText: `1 lb ${parsed.name}`,
+    quantity: 1,
+    unit: "pound",
+    category: "meat",
+    originalText: parsed.originalText
+  };
+}
+function mapPantry(parsed) {
+  const name = parsed.name.toLowerCase();
+  const quantity = parseFloat(parsed.quantity) || 1;
+  const unit = parsed.unit;
+  if (name.includes("flour")) {
+    let bagSize = "2 lb";
+    if (unit === "cup" || unit === "cups") {
+      if (quantity <= 3) {
+        bagSize = "2 lb";
+      } else if (quantity <= 6) {
+        bagSize = "5 lb";
+      } else {
+        bagSize = "10 lb";
+      }
+    }
+    return {
+      name: "all-purpose flour",
+      displayText: `1 bag (${bagSize}) all-purpose flour`,
+      quantity: 1,
+      unit: "bag",
+      category: "pantry",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("sugar")) {
+    let bagSize = "2 lb";
+    if (unit === "cup" || unit === "cups") {
+      bagSize = quantity <= 3 ? "2 lb" : "5 lb";
+    }
+    return {
+      name: parsed.name,
+      displayText: `1 bag (${bagSize}) ${parsed.name}`,
+      quantity: 1,
+      unit: "bag",
+      category: "pantry",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("oil") || name.includes("vinegar")) {
+    return {
+      name: parsed.name,
+      displayText: `1 bottle ${parsed.name}`,
+      quantity: 1,
+      unit: "bottle",
+      category: "pantry",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("rice") || name.includes("pasta")) {
+    const pounds = Math.ceil(quantity);
+    return {
+      name: parsed.name,
+      displayText: `${pounds} lb ${parsed.name}`,
+      quantity: pounds,
+      unit: "pound",
+      category: "pantry",
+      originalText: parsed.originalText
+    };
+  }
+  return {
+    name: parsed.name,
+    displayText: `1 package ${parsed.name}`,
+    quantity: 1,
+    unit: "package",
+    category: "pantry",
+    originalText: parsed.originalText
+  };
+}
+function createDefaultMapping(parsed) {
+  return {
+    name: parsed.name,
+    displayText: `1 ${parsed.name}`,
+    quantity: 1,
+    unit: "item",
+    category: "general",
+    originalText: parsed.originalText
+  };
+}
+function smartQuantityRounding(quantity, category) {
+  switch (category) {
+    case "produce":
+      return Math.ceil(quantity * 2) / 2;
+    case "meat":
+      return Math.ceil(quantity);
+    case "dairy":
+      return Math.ceil(quantity);
+    default:
+      return Math.ceil(quantity);
+  }
+}
+function handleEdgeCases(ingredient) {
+  const lower = ingredient.toLowerCase();
+  if (lower.includes("to taste")) {
+    const name = lower.replace("to taste", "").trim();
+    return {
+      name,
+      displayText: `1 container ${name}`,
+      quantity: 1,
+      unit: "container",
+      category: "spices",
+      originalText: ingredient
+    };
+  }
+  if (lower.includes("pinch of") || lower.includes("dash of")) {
+    const name = lower.replace(/pinch of|dash of/, "").trim();
+    return {
+      name,
+      displayText: `1 container ${name}`,
+      quantity: 1,
+      unit: "container",
+      category: "spices",
+      originalText: ingredient
+    };
+  }
+  if (lower.includes("fresh") && (lower.includes("basil") || lower.includes("parsley") || lower.includes("cilantro") || lower.includes("mint"))) {
+    const herb = lower.replace("fresh", "").trim();
+    return {
+      name: `fresh ${herb}`,
+      displayText: `1 bunch fresh ${herb}`,
+      quantity: 1,
+      unit: "bunch",
+      category: "produce",
+      originalText: ingredient
+    };
+  }
+  return null;
+}
+var init_instacartQuantityMapper = __esm({
+  "server/instacartQuantityMapper.ts"() {
+    "use strict";
+  }
+});
+
 // server/smartIngredientOptimizer.ts
 var smartIngredientOptimizer_exports = {};
 __export(smartIngredientOptimizer_exports, {
@@ -1907,7 +2323,7 @@ async function createInstacartRecipePage(recipeData) {
     image_url: recipeData.image_url,
     link_type: "recipe",
     instructions: recipeData.instructions,
-    ingredients: formatIngredientsForInstacart(recipeData.ingredients),
+    ingredients: await formatIngredientsForInstacart(recipeData.ingredients),
     landing_page_configuration: {
       partner_linkback_url: process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(",")[0] : "https://example.com",
       enable_pantry_items: true
@@ -1964,64 +2380,53 @@ async function getNearbyRetailers(postalCode, countryCode = "US") {
     throw new Error(`Failed to get nearby retailers: ${error.message}`);
   }
 }
-function formatIngredientsForInstacart(ingredients) {
+async function formatIngredientsForInstacart(ingredients) {
+  const { mapToStoreQuantities: mapToStoreQuantities2, handleEdgeCases: handleEdgeCases2 } = await Promise.resolve().then(() => (init_instacartQuantityMapper(), instacartQuantityMapper_exports));
   return ingredients.map((ingredient) => {
     if (typeof ingredient === "string") {
-      const parsed = parseIngredientString(ingredient);
+      const edgeCase = handleEdgeCases2(ingredient);
+      if (edgeCase) {
+        return {
+          name: edgeCase.name,
+          display_text: edgeCase.displayText,
+          measurements: [{
+            quantity: edgeCase.quantity,
+            unit: normalizeUnit(edgeCase.unit)
+          }]
+        };
+      }
+      const mapped = mapToStoreQuantities2(ingredient);
       return {
-        name: parsed.ingredient,
-        display_text: ingredient,
-        measurements: parsed.quantity && parsed.unit ? [{
-          quantity: parseFloat(parsed.quantity) || 1,
-          unit: normalizeUnit(parsed.unit)
-        }] : []
+        name: mapped.name,
+        display_text: mapped.displayText,
+        measurements: [{
+          quantity: mapped.quantity,
+          unit: normalizeUnit(mapped.unit)
+        }]
       };
     } else if (ingredient.display_text) {
-      return ingredient;
-    } else {
+      const mapped = mapToStoreQuantities2(ingredient.display_text);
       return {
-        name: ingredient.name || "Unknown ingredient",
-        display_text: ingredient.display_text || ingredient.name || "Unknown ingredient",
-        measurements: ingredient.measurements || []
+        name: mapped.name,
+        display_text: mapped.displayText,
+        measurements: [{
+          quantity: mapped.quantity,
+          unit: normalizeUnit(mapped.unit)
+        }]
+      };
+    } else {
+      const displayText = ingredient.display_text || ingredient.name || "Unknown ingredient";
+      const mapped = mapToStoreQuantities2(displayText);
+      return {
+        name: mapped.name,
+        display_text: mapped.displayText,
+        measurements: [{
+          quantity: mapped.quantity,
+          unit: normalizeUnit(mapped.unit)
+        }]
       };
     }
   });
-}
-function parseIngredientString(ingredientStr) {
-  const cleaned = ingredientStr.trim();
-  const patterns = [
-    // "2 cups flour" or "1/2 cup milk"
-    /^(\d+(?:\/\d+)?(?:\.\d+)?)\s+(\w+)\s+(.+?)(?:,\s*(.+))?$/,
-    // "1 large onion, diced"
-    /^(\d+)\s+(\w+)\s+(.+?)(?:,\s*(.+))?$/,
-    // "Salt and pepper to taste"
-    /^(.+?)\s+to\s+taste$/
-  ];
-  for (const pattern of patterns) {
-    const match = cleaned.match(pattern);
-    if (match) {
-      if (pattern.source.includes("to\\s+taste")) {
-        return {
-          quantity: "",
-          unit: "",
-          ingredient: match[1],
-          preparation: "to taste"
-        };
-      } else {
-        return {
-          quantity: match[1] || "",
-          unit: match[2] || "",
-          ingredient: match[3] || "",
-          preparation: match[4] || void 0
-        };
-      }
-    }
-  }
-  return {
-    quantity: "",
-    unit: "",
-    ingredient: cleaned
-  };
 }
 function normalizeUnit(unit) {
   const unitMap = {
@@ -3226,8 +3631,8 @@ var init_communityService = __esm({
         const mealPlanIds = posts.filter(({ post }) => post.post_type === "meal_share" && post.meal_plan_id).map(({ post }) => post.meal_plan_id);
         let mealPlansMap = /* @__PURE__ */ new Map();
         if (mealPlanIds.length > 0) {
-          const mealPlans3 = await db.select().from(mealPlans3).where(inArray(mealPlans3.id, mealPlanIds));
-          mealPlansMap = new Map(mealPlans3.map((plan) => [plan.id, plan]));
+          const mealPlansData = await db.select().from(mealPlans).where(inArray(mealPlans.id, mealPlanIds));
+          mealPlansMap = new Map(mealPlansData.map((plan) => [plan.id, plan]));
         }
         return posts.map(({ post, author }) => {
           let parsedImages = [];
@@ -3239,6 +3644,7 @@ var init_communityService = __esm({
                 if (imageData.temp_meal_plan) {
                   parsedImages = imageData.images || [];
                   tempMealPlan = imageData.temp_meal_plan;
+                  console.log("Found temp_meal_plan in post", post.id, ":", tempMealPlan);
                 } else if (Array.isArray(imageData)) {
                   parsedImages = imageData;
                 } else {
@@ -3246,14 +3652,23 @@ var init_communityService = __esm({
                 }
               }
             } catch (e) {
+              console.error("Error parsing images for post", post.id, ":", e);
               parsedImages = [];
             }
           }
           let mealPlanData = null;
           if (post.post_type === "meal_share") {
-            if (tempMealPlan) {
+            if (post.recipe_data) {
+              try {
+                mealPlanData = JSON.parse(post.recipe_data);
+                console.log("Found meal plan in recipe_data for post", post.id, ":", mealPlanData);
+              } catch (e) {
+                console.error("Error parsing recipe_data for post", post.id, ":", e);
+              }
+            }
+            if (!mealPlanData && tempMealPlan) {
               mealPlanData = tempMealPlan;
-            } else if (post.meal_plan_id) {
+            } else if (!mealPlanData && post.meal_plan_id) {
               mealPlanData = mealPlansMap.get(post.meal_plan_id);
             }
           }
@@ -3403,10 +3818,6 @@ var init_communityService = __esm({
           eq2(communityMembers.community_id, communityId)
         ));
         return membership;
-      }
-      // Get community meal plans
-      async getCommunityMealPlans(communityId) {
-        return [];
       }
       // Create community meal plan
       async createCommunityMealPlan(userId, communityId, mealPlanData) {
@@ -5074,23 +5485,49 @@ __export(intelligentGroceryListOptimizer_exports, {
 import OpenAI2 from "openai";
 async function consolidateIngredientsWithAI(ingredients) {
   try {
-    const prompt = `You are a grocery shopping expert. Consolidate this list of ingredients into a smart shopping list.
+    const prompt = `You are a grocery shopping expert. Consolidate this list of ingredients into a smart shopping list with STORE-REALISTIC quantities.
 
 INGREDIENTS TO CONSOLIDATE:
 ${ingredients.map((ing, i) => `${i + 1}. ${ing}`).join("\n")}
 
-RULES:
-1. Combine duplicate ingredients (e.g., "2 eggs" + "3 eggs" = "5 eggs")
-2. Convert to realistic purchase quantities:
-   - Eggs: 1-6 \u2192 "half dozen eggs", 7-12 \u2192 "1 dozen eggs", 13-18 \u2192 "1.5 dozen eggs"
-   - Milk: <2 cups \u2192 "1 pint milk", 2-4 cups \u2192 "1 quart milk", >4 cups \u2192 "half gallon milk"
-   - Flour: <3 cups \u2192 "2 lb bag flour", 3-6 cups \u2192 "5 lb bag flour", >6 cups \u2192 "10 lb bag flour"
-   - Chicken: combine all and round up to nearest pound
-   - Produce: round to nearest whole or half pound
-   - Spices/condiments: only buy once regardless of quantity
-3. Group similar items (e.g., "olive oil" and "extra virgin olive oil" \u2192 "1 bottle olive oil")
-4. For oils/vinegars/condiments: always just "1 bottle" regardless of how many times they appear
-5. Use realistic grocery store units (dozen, pound, gallon, bag, bottle, container)
+CRITICAL RULE #1 - DEDUPLICATION (MOST IMPORTANT):
+- ALWAYS combine duplicate ingredients FIRST before applying any other rules
+- Examples: "2 eggs" + "3 eggs" + "1 egg" = "6 eggs total" \u2192 then convert to "1 dozen eggs"
+- "1 onion" + "2 onions" + "1 yellow onion" = "4 onions total" \u2192 then convert to "2 lb onions"
+- "olive oil" appearing 5 times = combine to "1 bottle olive oil" (only buy once)
+
+AFTER DEDUPLICATION, APPLY STORE PACKAGING RULES:
+1. PRODUCE (apples, onions, tomatoes, etc):
+   - Single items (1 apple, 2 onions) \u2192 Convert to pounds: "3 lb apples", "2 lb onions"
+   - Never use "1 bag apple" \u2192 Always "3 lb apples" or specific weight
+   - Leafy greens \u2192 "1 bunch" or "1 bag" (e.g., "1 bunch cilantro", "1 bag spinach")
+
+2. EGGS & DAIRY:
+   - Eggs: Always in dozens \u2192 "1 dozen eggs" (never "6 eggs" or "1 egg")
+   - Milk: Use standard sizes \u2192 "1 quart milk", "1 half gallon milk"
+   - Cheese: By pound \u2192 "1 lb cheddar cheese"
+   - Butter: By package \u2192 "1 lb butter"
+
+3. MEAT & SEAFOOD:
+   - Always by pound, round UP \u2192 "2 lb chicken breast", "1 lb ground beef"
+   - Never use pieces \u2192 Convert "3 chicken breasts" to "2 lb chicken breast"
+
+4. SPICES & SEASONINGS (VERY IMPORTANT):
+   - ANY amount of spice = "1 container [spice name]"
+   - Examples: "1 tsp salt" \u2192 "1 container salt"
+   - "2 tbsp paprika" \u2192 "1 container paprika"
+   - "black pepper to taste" \u2192 "1 container black pepper"
+
+5. PANTRY ITEMS:
+   - Flour: "1 bag (5 lb) all-purpose flour"
+   - Sugar: "1 bag (4 lb) sugar"
+   - Oil/Vinegar: Always "1 bottle [type]"
+   - Rice/Pasta: By pound \u2192 "2 lb rice", "1 lb pasta"
+
+6. SPECIAL CASES:
+   - "to taste" \u2192 "1 container [ingredient]"
+   - Fractional amounts \u2192 Round UP to practical sizes
+   - Fresh herbs \u2192 "1 bunch fresh basil" (not dried)
 
 Return ONLY a JSON object with this structure:
 {
@@ -5134,7 +5571,7 @@ Return ONLY a JSON object with this structure:
       displayText: ing.displayText || ing.name || "Unknown item",
       quantity: ing.quantity || 1,
       unit: ing.unit || "unit",
-      category: ing.category || categorizeIngredient(ing.name)
+      category: ing.category || categorizeIngredient2(ing.name)
     }));
     return result;
   } catch (error) {
@@ -5142,15 +5579,107 @@ Return ONLY a JSON object with this structure:
     return fallbackConsolidation(ingredients);
   }
 }
-function formatForInstacart(ingredients) {
-  return ingredients.map((ing) => ({
-    name: ing.name,
-    display_text: ing.displayText,
-    measurements: [{
-      quantity: ing.quantity,
-      unit: normalizeUnitForInstacart(ing.unit)
-    }]
-  }));
+async function formatForInstacart(ingredients) {
+  const { mapToStoreQuantities: mapToStoreQuantities2, handleEdgeCases: handleEdgeCases2 } = await Promise.resolve().then(() => (init_instacartQuantityMapper(), instacartQuantityMapper_exports));
+  return ingredients.map((ing) => {
+    const edgeCase = handleEdgeCases2(ing.displayText);
+    const mapped = edgeCase || mapToStoreQuantities2(ing.displayText);
+    const cleanName = extractCleanIngredientName(mapped.name);
+    const descriptiveText = createDescriptiveDisplayText(cleanName, mapped.category);
+    return {
+      name: cleanName,
+      // Clean ingredient name only (e.g., "eggs", "spinach", "olive oil")
+      display_text: descriptiveText,
+      // Descriptive name for display (e.g., "Large Eggs", "Fresh Spinach")
+      measurements: [{
+        quantity: mapped.quantity,
+        unit: normalizeUnitForInstacart(mapped.unit)
+      }]
+    };
+  });
+}
+function extractCleanIngredientName(name) {
+  const cleanName = name.replace(/^(fresh |organic |dried |ground |whole |chopped |minced |sliced )/gi, "").replace(/\s*(leaves?|powder|flakes?)\s*$/gi, "").trim();
+  return cleanName;
+}
+function createDescriptiveDisplayText(name, category) {
+  const descriptiveMap = {
+    produce: {
+      "apples": "Fresh Red Apples",
+      "apple": "Fresh Red Apples",
+      "bananas": "Fresh Bananas",
+      "banana": "Fresh Bananas",
+      "onions": "Yellow Onions",
+      "onion": "Yellow Onions",
+      "tomatoes": "Fresh Tomatoes",
+      "tomato": "Fresh Tomatoes",
+      "lettuce": "Fresh Romaine Lettuce",
+      "spinach": "Fresh Baby Spinach",
+      "carrots": "Fresh Carrots",
+      "carrot": "Fresh Carrots",
+      "potatoes": "Russet Potatoes",
+      "potato": "Russet Potatoes",
+      "garlic": "Fresh Garlic",
+      "cilantro": "Fresh Cilantro Bunch",
+      "parsley": "Fresh Parsley Bunch",
+      "basil": "Fresh Basil Leaves"
+    },
+    dairy: {
+      "eggs": "Large Eggs",
+      "egg": "Large Eggs",
+      "milk": "Whole Milk",
+      "butter": "Unsalted Butter",
+      "cheese": "Cheddar Cheese",
+      "cheddar cheese": "Sharp Cheddar Cheese",
+      "mozzarella": "Mozzarella Cheese",
+      "yogurt": "Plain Greek Yogurt",
+      "cream": "Heavy Cream",
+      "sour cream": "Sour Cream"
+    },
+    meat: {
+      "chicken": "Boneless Chicken Breast",
+      "chicken breast": "Boneless Skinless Chicken Breast",
+      "ground beef": "Lean Ground Beef",
+      "beef": "Beef Sirloin",
+      "pork": "Pork Loin",
+      "bacon": "Thick Cut Bacon",
+      "turkey": "Ground Turkey",
+      "salmon": "Fresh Atlantic Salmon",
+      "shrimp": "Large Raw Shrimp"
+    },
+    spices: {
+      "salt": "Sea Salt",
+      "pepper": "Black Pepper",
+      "black pepper": "Ground Black Pepper",
+      "paprika": "Paprika",
+      "cumin": "Ground Cumin",
+      "oregano": "Dried Oregano",
+      "cinnamon": "Ground Cinnamon",
+      "garlic powder": "Garlic Powder",
+      "onion powder": "Onion Powder",
+      "chili powder": "Chili Powder",
+      "vanilla": "Pure Vanilla Extract"
+    },
+    pantry: {
+      "flour": "All-Purpose Flour",
+      "all-purpose flour": "All-Purpose Flour",
+      "sugar": "Granulated Sugar",
+      "brown sugar": "Light Brown Sugar",
+      "rice": "Long Grain White Rice",
+      "pasta": "Spaghetti Pasta",
+      "olive oil": "Extra Virgin Olive Oil",
+      "oil": "Vegetable Oil",
+      "vinegar": "White Vinegar",
+      "baking soda": "Baking Soda",
+      "baking powder": "Baking Powder"
+    }
+  };
+  const categoryMap = descriptiveMap[category] || {};
+  const lowerName = name.toLowerCase();
+  if (categoryMap[lowerName]) {
+    return categoryMap[lowerName];
+  }
+  return name.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
 }
 function fallbackConsolidation(ingredients) {
   const ingredientMap = /* @__PURE__ */ new Map();
@@ -5163,7 +5692,7 @@ function fallbackConsolidation(ingredients) {
     displayText: count > 1 ? `${name} (\xD7${count})` : name,
     quantity: count,
     unit: "unit",
-    category: categorizeIngredient(name)
+    category: categorizeIngredient2(name)
   }));
   return {
     consolidatedIngredients: consolidated,
@@ -5177,7 +5706,7 @@ function fallbackConsolidation(ingredients) {
     ]
   };
 }
-function categorizeIngredient(ingredient) {
+function categorizeIngredient2(ingredient) {
   const lowerIngredient = ingredient.toLowerCase();
   if (lowerIngredient.includes("chicken") || lowerIngredient.includes("beef") || lowerIngredient.includes("pork") || lowerIngredient.includes("turkey") || lowerIngredient.includes("lamb") || lowerIngredient.includes("bacon")) {
     return "meat";
@@ -16249,7 +16778,7 @@ async function registerRoutes(app2) {
       const consolidationResult = await consolidateIngredientsWithAI2(allIngredients);
       console.log(`\u2705 Consolidated ${allIngredients.length} ingredients into ${consolidationResult.consolidatedIngredients.length} items`);
       console.log(`\u{1F4B0} Removed ${consolidationResult.savings.duplicatesRemoved} duplicates`);
-      const formattedIngredients = formatForInstacart2(consolidationResult.consolidatedIngredients);
+      const formattedIngredients = await formatForInstacart2(consolidationResult.consolidatedIngredients);
       const recipeData = {
         title: `Grocery List for ${mealPlan.name}`,
         image_url: "",
@@ -18923,8 +19452,8 @@ async function registerRoutes(app2) {
       if (!membership) {
         return res.status(403).json({ message: "You must be a member to view meal plans" });
       }
-      const mealPlans3 = await communityService.getCommunityMealPlans(communityId);
-      res.json(mealPlans3);
+      const mealPlans2 = await communityService.getCommunityMealPlans(communityId);
+      res.json(mealPlans2);
     } catch (error) {
       console.error("Error fetching community meal plans:", error);
       res.status(500).json({ message: "Failed to fetch meal plans" });
@@ -19822,46 +20351,47 @@ async function registerRoutes(app2) {
         content: content.trim(),
         post_type,
         meal_plan_id: meal_plan_id || null,
-        images: images ? JSON.stringify(images) : null
+        images: images ? JSON.stringify(images) : null,
+        recipe_data: recipe_data ? JSON.stringify(recipe_data) : null
       }).returning();
       if (recipe_data && post_type === "meal_share") {
+        console.log("=== SERVER: Received recipe_data for sharing ===", {
+          hasVideoId: !!recipe_data.video_id,
+          video_id: recipe_data.video_id,
+          video_title: recipe_data.video_title,
+          video_channel: recipe_data.video_channel,
+          title: recipe_data.title,
+          hasIngredients: !!recipe_data.ingredients
+        });
         const tempMealPlan = {
           id: `recipe_${newPost.id}`,
           // Use post ID for unique identifier
           name: recipe_data.title || "Shared Recipe",
           description: recipe_data.description || "",
           meal_plan: {
-            days: {
-              "day1": {
-                breakfast: recipe_data.ingredients && recipe_data.instructions ? {
-                  name: recipe_data.title,
-                  description: recipe_data.description || "",
-                  ingredients: recipe_data.ingredients || [],
-                  instructions: recipe_data.instructions || [],
-                  prep_time: recipe_data.time_minutes || 30,
-                  cuisine: recipe_data.cuisine || "",
-                  difficulty: "Medium"
-                } : null
+            day_1: {
+              breakfast: {
+                name: recipe_data.title || "Shared Recipe",
+                description: recipe_data.description || "",
+                ingredients: recipe_data.ingredients || [],
+                instructions: recipe_data.instructions || [],
+                prep_time: recipe_data.time_minutes || 30,
+                cuisine: recipe_data.cuisine || "",
+                difficulty: "Medium",
+                // Add nutrition if available
+                nutrition: recipe_data.nutrition || recipe_data.nutrition_info || null,
+                // Add image if available
+                image_url: recipe_data.image_url || null,
+                // Add video fields if available
+                video_id: recipe_data.video_id || null,
+                video_title: recipe_data.video_title || null,
+                video_channel: recipe_data.video_channel || null
               }
             }
           }
         };
-        const enhancedContent = content.trim() + `
-
-**${recipe_data.title}**
-` + (recipe_data.description ? `${recipe_data.description}
-
-` : "") + (recipe_data.time_minutes ? `\u23F1\uFE0F ${recipe_data.time_minutes} minutes
-` : "") + (recipe_data.cuisine ? `\u{1F30D} ${recipe_data.cuisine}
-` : "");
-        const existingImages = images ? JSON.parse(JSON.stringify(images)) : [];
-        const combinedData = {
-          images: existingImages,
-          temp_meal_plan: tempMealPlan
-        };
         await db.update(communityPosts).set({
-          content: enhancedContent,
-          images: JSON.stringify(combinedData)
+          recipe_data: JSON.stringify(tempMealPlan)
         }).where(eq8(communityPosts.id, newPost.id));
       }
       res.status(201).json({ message: "Post created successfully", post: newPost });
