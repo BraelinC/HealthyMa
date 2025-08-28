@@ -119,11 +119,6 @@ export function MealPlanSelectionModal({ isOpen, onClose, recipe, onSuccess }: M
     ? Math.max(...existingDays.map(d => d.dayNumber)) + 1 
     : 1;
 
-  // Debug logging
-  console.log('Debug - mealPlansData:', mealPlansData);
-  console.log('Debug - currentPlan:', currentPlan);
-  console.log('Debug - mealPlanData:', mealPlanData);
-  console.log('Debug - existingDays:', existingDays);
 
   // Mutation to add recipe to meal plan
   const addToMealPlanMutation = useMutation({
@@ -157,13 +152,15 @@ export function MealPlanSelectionModal({ isOpen, onClose, recipe, onSuccess }: M
 
       // If updating existing meal plan
       if (currentPlan?.id) {
-        const response = await fetch(`/api/meal-plan/${currentPlan.id}`, {
+        const response = await fetch(`/api/meal-plans/${currentPlan.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           },
           body: JSON.stringify({
+            name: currentPlan.name,
+            description: currentPlan.description || '',
             meal_plan: updatedMealPlan
           }),
         });
@@ -195,7 +192,7 @@ export function MealPlanSelectionModal({ isOpen, onClose, recipe, onSuccess }: M
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/meal-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/meal-plans/saved'] });
       toast({
         title: "Recipe Added! 🎉",
         description: `${recipe?.title} has been added to your meal plan.`,
