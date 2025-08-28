@@ -1173,7 +1173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`💰 Removed ${consolidationResult.savings.duplicatesRemoved} duplicates`);
       
       // Format ingredients for Instacart API
-      const formattedIngredients = formatForInstacart(consolidationResult.consolidatedIngredients);
+      const formattedIngredients = await formatForInstacart(consolidationResult.consolidatedIngredients);
       
       const recipeData = {
         title: `Grocery List for ${mealPlan.name}`,

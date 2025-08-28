@@ -32,23 +32,49 @@ export async function consolidateIngredientsWithAI(
   ingredients: string[]
 ): Promise<GroceryOptimizationResult> {
   try {
-    const prompt = `You are a grocery shopping expert. Consolidate this list of ingredients into a smart shopping list.
+    const prompt = `You are a grocery shopping expert. Consolidate this list of ingredients into a smart shopping list with STORE-REALISTIC quantities.
 
 INGREDIENTS TO CONSOLIDATE:
 ${ingredients.map((ing, i) => `${i + 1}. ${ing}`).join('\n')}
 
-RULES:
-1. Combine duplicate ingredients (e.g., "2 eggs" + "3 eggs" = "5 eggs")
-2. Convert to realistic purchase quantities:
-   - Eggs: 1-6 → "half dozen eggs", 7-12 → "1 dozen eggs", 13-18 → "1.5 dozen eggs"
-   - Milk: <2 cups → "1 pint milk", 2-4 cups → "1 quart milk", >4 cups → "half gallon milk"
-   - Flour: <3 cups → "2 lb bag flour", 3-6 cups → "5 lb bag flour", >6 cups → "10 lb bag flour"
-   - Chicken: combine all and round up to nearest pound
-   - Produce: round to nearest whole or half pound
-   - Spices/condiments: only buy once regardless of quantity
-3. Group similar items (e.g., "olive oil" and "extra virgin olive oil" → "1 bottle olive oil")
-4. For oils/vinegars/condiments: always just "1 bottle" regardless of how many times they appear
-5. Use realistic grocery store units (dozen, pound, gallon, bag, bottle, container)
+CRITICAL RULE #1 - DEDUPLICATION (MOST IMPORTANT):
+- ALWAYS combine duplicate ingredients FIRST before applying any other rules
+- Examples: "2 eggs" + "3 eggs" + "1 egg" = "6 eggs total" → then convert to "1 dozen eggs"
+- "1 onion" + "2 onions" + "1 yellow onion" = "4 onions total" → then convert to "2 lb onions"
+- "olive oil" appearing 5 times = combine to "1 bottle olive oil" (only buy once)
+
+AFTER DEDUPLICATION, APPLY STORE PACKAGING RULES:
+1. PRODUCE (apples, onions, tomatoes, etc):
+   - Single items (1 apple, 2 onions) → Convert to pounds: "3 lb apples", "2 lb onions"
+   - Never use "1 bag apple" → Always "3 lb apples" or specific weight
+   - Leafy greens → "1 bunch" or "1 bag" (e.g., "1 bunch cilantro", "1 bag spinach")
+
+2. EGGS & DAIRY:
+   - Eggs: Always in dozens → "1 dozen eggs" (never "6 eggs" or "1 egg")
+   - Milk: Use standard sizes → "1 quart milk", "1 half gallon milk"
+   - Cheese: By pound → "1 lb cheddar cheese"
+   - Butter: By package → "1 lb butter"
+
+3. MEAT & SEAFOOD:
+   - Always by pound, round UP → "2 lb chicken breast", "1 lb ground beef"
+   - Never use pieces → Convert "3 chicken breasts" to "2 lb chicken breast"
+
+4. SPICES & SEASONINGS (VERY IMPORTANT):
+   - ANY amount of spice = "1 container [spice name]"
+   - Examples: "1 tsp salt" → "1 container salt"
+   - "2 tbsp paprika" → "1 container paprika"
+   - "black pepper to taste" → "1 container black pepper"
+
+5. PANTRY ITEMS:
+   - Flour: "1 bag (5 lb) all-purpose flour"
+   - Sugar: "1 bag (4 lb) sugar"
+   - Oil/Vinegar: Always "1 bottle [type]"
+   - Rice/Pasta: By pound → "2 lb rice", "1 lb pasta"
+
+6. SPECIAL CASES:
+   - "to taste" → "1 container [ingredient]"
+   - Fractional amounts → Round UP to practical sizes
+   - Fresh herbs → "1 bunch fresh basil" (not dried)
 
 Return ONLY a JSON object with this structure:
 {
@@ -113,17 +139,37 @@ Return ONLY a JSON object with this structure:
 }
 
 /**
- * Convert consolidated ingredients to Instacart format
+ * Convert consolidated ingredients to Instacart format with smart mapping
  */
-export function formatForInstacart(ingredients: ConsolidatedIngredient[]) {
-  return ingredients.map(ing => ({
-    name: ing.name,
-    display_text: ing.displayText,
-    measurements: [{
-      quantity: ing.quantity,
-      unit: normalizeUnitForInstacart(ing.unit)
-    }]
-  }));
+export async function formatForInstacart(ingredients: ConsolidatedIngredient[]) {
+  // Import our smart mapper
+  const { mapToStoreQuantities, handleEdgeCases } = await import('./instacartQuantityMapper');
+  
+  return ingredients.map(ing => {
+    // First check for edge cases
+    const edgeCase = handleEdgeCases(ing.displayText);
+    if (edgeCase) {
+      return {
+        name: edgeCase.name,
+        display_text: edgeCase.displayText,
+        measurements: [{
+          quantity: edgeCase.quantity,
+          unit: normalizeUnitForInstacart(edgeCase.unit)
+        }]
+      };
+    }
+    
+    // Apply smart mapping if needed
+    const mapped = mapToStoreQuantities(ing.displayText);
+    return {
+      name: mapped.name,
+      display_text: mapped.displayText,
+      measurements: [{
+        quantity: mapped.quantity,
+        unit: normalizeUnitForInstacart(mapped.unit)
+      }]
+    };
+  });
 }
 
 /**

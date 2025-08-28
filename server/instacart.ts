@@ -55,7 +55,7 @@ export async function createInstacartRecipePage(recipeData: any) {
     image_url: recipeData.image_url,
     link_type: "recipe",
     instructions: recipeData.instructions,
-    ingredients: formatIngredientsForInstacart(recipeData.ingredients),
+    ingredients: await formatIngredientsForInstacart(recipeData.ingredients),
     landing_page_configuration: {
       partner_linkback_url: process.env.REPLIT_DOMAINS ? 
         process.env.REPLIT_DOMAINS.split(',')[0] : 
@@ -134,29 +134,59 @@ export async function getNearbyRetailers(postalCode: string, countryCode: string
 }
 
 /**
- * Format ingredients for better Instacart integration
+ * Format ingredients for better Instacart integration using smart mapping
  */
-function formatIngredientsForInstacart(ingredients: any[]): Ingredient[] {
+async function formatIngredientsForInstacart(ingredients: any[]): Promise<Ingredient[]> {
+  // Import our smart mapper
+  const { mapToStoreQuantities, handleEdgeCases } = await import('./instacartQuantityMapper');
+  
   return ingredients.map(ingredient => {
     if (typeof ingredient === 'string') {
-      const parsed = parseIngredientString(ingredient);
+      // First check for edge cases
+      const edgeCase = handleEdgeCases(ingredient);
+      if (edgeCase) {
+        return {
+          name: edgeCase.name,
+          display_text: edgeCase.displayText,
+          measurements: [{
+            quantity: edgeCase.quantity,
+            unit: normalizeUnit(edgeCase.unit)
+          }]
+        };
+      }
+      
+      // Apply smart mapping
+      const mapped = mapToStoreQuantities(ingredient);
       return {
-        name: parsed.ingredient,
-        display_text: ingredient,
-        measurements: parsed.quantity && parsed.unit ? [{
-          quantity: parseFloat(parsed.quantity) || 1,
-          unit: normalizeUnit(parsed.unit)
-        }] : []
+        name: mapped.name,
+        display_text: mapped.displayText,
+        measurements: [{
+          quantity: mapped.quantity,
+          unit: normalizeUnit(mapped.unit)
+        }]
       };
     } else if (ingredient.display_text) {
-      // Already formatted ingredient
-      return ingredient;
-    } else {
-      // Handle object format
+      // Already formatted ingredient - still apply smart mapping to display_text
+      const mapped = mapToStoreQuantities(ingredient.display_text);
       return {
-        name: ingredient.name || 'Unknown ingredient',
-        display_text: ingredient.display_text || ingredient.name || 'Unknown ingredient',
-        measurements: ingredient.measurements || []
+        name: mapped.name,
+        display_text: mapped.displayText,
+        measurements: [{
+          quantity: mapped.quantity,
+          unit: normalizeUnit(mapped.unit)
+        }]
+      };
+    } else {
+      // Handle object format with smart mapping
+      const displayText = ingredient.display_text || ingredient.name || 'Unknown ingredient';
+      const mapped = mapToStoreQuantities(displayText);
+      return {
+        name: mapped.name,
+        display_text: mapped.displayText,
+        measurements: [{
+          quantity: mapped.quantity,
+          unit: normalizeUnit(mapped.unit)
+        }]
       };
     }
   });
