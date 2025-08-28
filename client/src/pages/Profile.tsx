@@ -81,14 +81,14 @@ const commonPreferences = [
 ];
 
 const commonDietaryRestrictions = [
-  'Milk (including cow\'s milk and derivatives)',
+  'Milk',
   'Eggs',
-  'Fish (such as bass, flounder, cod, salmon, and halibut)',
-  'Shellfish (especially crustaceans like crab, lobster, shrimp)',
-  'Tree nuts (including almonds, cashews, walnuts, pecans, pistachios, and Brazil nuts)',
+  'Fish',
+  'Shellfish',
+  'Tree Nuts',
   'Peanuts',
   'Wheat',
-  'Soy (or soybeans)',
+  'Soy',
   'Sesame'
 ];
 
