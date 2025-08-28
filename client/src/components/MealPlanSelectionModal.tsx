@@ -72,9 +72,9 @@ export function MealPlanSelectionModal({ isOpen, onClose, recipe, onSuccess }: M
 
   // Fetch user's current meal plans
   const { data: mealPlansData, isLoading: isLoadingPlans } = useQuery({
-    queryKey: ['/api/meal-plans'],
+    queryKey: ['/api/meal-plans/saved'],
     queryFn: async () => {
-      const response = await fetch('/api/meal-plans', {
+      const response = await fetch('/api/meal-plans/saved', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
         },
@@ -118,6 +118,12 @@ export function MealPlanSelectionModal({ isOpen, onClose, recipe, onSuccess }: M
   const nextDayNumber = existingDays.length > 0 
     ? Math.max(...existingDays.map(d => d.dayNumber)) + 1 
     : 1;
+
+  // Debug logging
+  console.log('Debug - mealPlansData:', mealPlansData);
+  console.log('Debug - currentPlan:', currentPlan);
+  console.log('Debug - mealPlanData:', mealPlanData);
+  console.log('Debug - existingDays:', existingDays);
 
   // Mutation to add recipe to meal plan
   const addToMealPlanMutation = useMutation({
