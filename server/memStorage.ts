@@ -71,6 +71,10 @@ export class MemStorage implements IStorage {
     phone?: string;
     password_hash: string;
     full_name: string;
+    account_type?: string;
+    trial_ends_at?: Date;
+    subscription_status?: string;
+    stripe_customer_id?: string;
   }): Promise<User> {
     const user: User = {
       id: crypto.randomUUID(),
@@ -78,6 +82,10 @@ export class MemStorage implements IStorage {
       phone: userData.phone || null,
       password_hash: userData.password_hash,
       full_name: userData.full_name,
+      account_type: userData.account_type || 'free_trial',
+      trial_ends_at: userData.trial_ends_at || null,
+      subscription_status: userData.subscription_status || 'active',
+      stripe_customer_id: userData.stripe_customer_id || null,
       created_at: new Date(),
       updated_at: new Date(),
     };

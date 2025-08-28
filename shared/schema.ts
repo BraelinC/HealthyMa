@@ -28,6 +28,13 @@ export const users = pgTable("users", {
   full_name: varchar("full_name", { length: 255 }),
   google_id: varchar("google_id"),
   is_creator: boolean("is_creator").default(false), // Dynamic creator status
+  
+  // Subscription/Trial fields
+  account_type: varchar("account_type", { length: 50 }).default("free_trial"), // "free_trial", "monthly", "lifetime"
+  trial_ends_at: timestamp("trial_ends_at"), // When the free trial ends
+  subscription_status: varchar("subscription_status", { length: 50 }).default("active"), // "active", "cancelled", "expired"
+  stripe_customer_id: varchar("stripe_customer_id", { length: 255 }), // Stripe customer ID for billing
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

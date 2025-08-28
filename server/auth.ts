@@ -196,12 +196,19 @@ export async function registerUser(req: Request, res: Response) {
     // Hash password
     const hashedPassword = await hashPassword(validatedData.password);
 
-    // Create user
+    // Calculate trial end date (30 days from now)
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+    // Create user with free trial
     const user = await storage.createUser({
       email: validatedData.email,
       phone: validatedData.phone,
       password_hash: hashedPassword,
       full_name: validatedData.full_name,
+      account_type: 'free_trial',
+      trial_ends_at: trialEndsAt,
+      subscription_status: 'active',
     });
 
     // Generate token with creator status

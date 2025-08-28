@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import fetch from "node-fetch";
 import jwt from "jsonwebtoken";
@@ -298,8 +298,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let description;
 
       if (paymentType === 'founders') {
-        paymentAmount = 9900; // $99.00 in cents
+        paymentAmount = 10000; // $100.00 in cents
         description = "Healthy Mama Founders Offer - Lifetime Access";
+      } else if (paymentType === 'monthly') {
+        paymentAmount = 2000; // $20.00 in cents
+        description = "Healthy Mama Monthly Subscription";
       } else if (paymentType === 'trial') {
         paymentAmount = 0; // $0 for trial setup
         description = "Healthy Mama 21-Day Premium Trial Setup";
@@ -324,6 +327,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       res.status(500).json({ 
         message: "Error creating payment intent: " + error.message 
+      });
+    }
+  });
+
+  // Create monthly subscription ($20/month)
+  app.post('/api/create-monthly-subscription', async (req, res) => {
+    try {
+      const { paymentMethodId, email, name } = req.body;
+
+      if (!email || !paymentMethodId) {
+        return res.status(400).json({ message: 'Email and payment method are required' });
+      }
+
+      // Create or retrieve customer
+      const customer = await stripe.customers.create({
+        email: email,
+        name: name || '',
+        payment_method: paymentMethodId,
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
+      });
+
+      // Create subscription for $20/month
+      const subscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Healthy Mama Monthly',
+              description: 'Monthly subscription for meal planning',
+            },
+            unit_amount: 2000, // $20.00 in cents
+            recurring: {
+              interval: 'month',
+            },
+          },
+        }],
+        payment_settings: {
+          payment_method_types: ['card'],
+          save_default_payment_method: 'on_subscription',
+        },
+        expand: ['latest_invoice.payment_intent'],
+      });
+
+      res.json({
+        subscriptionId: subscription.id,
+        customerId: customer.id,
+        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+        message: 'Monthly subscription created successfully'
+      });
+    } catch (error: any) {
+      console.error('Error creating monthly subscription:', error);
+      res.status(500).json({ 
+        message: "Error setting up monthly subscription: " + error.message 
+      });
+    }
+  });
+
+  // Create setup intent for collecting payment method (monthly or trial)
+  app.post('/api/create-setup-intent', async (req, res) => {
+    try {
+      const { email, name, paymentType } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+
+      // Create customer
+      const customer = await stripe.customers.create({
+        email: email,
+        name: name || '',
+        metadata: {
+          paymentType: paymentType || 'trial'
+        }
+      });
+
+      // Create setup intent for collecting payment method
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customer.id,
+        payment_method_types: ['card'],
+        usage: 'off_session',
+        metadata: {
+          type: paymentType || 'trial',
+          email: email
+        }
+      });
+
+      // If monthly, we'll create the subscription after payment method is confirmed
+      // Store the plan details in metadata for later use
+      if (paymentType === 'monthly') {
+        await stripe.customers.update(customer.id, {
+          metadata: {
+            paymentType: 'monthly',
+            pendingSubscription: 'true',
+            priceAmount: '2000', // $20 in cents
+            email: email
+          }
+        });
+      }
+
+      res.json({
+        customerId: customer.id,
+        clientSecret: setupIntent.client_secret,
+        paymentType: paymentType,
+        message: `${paymentType === 'monthly' ? 'Monthly subscription' : 'Trial'} setup created successfully`
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: "Error creating setup intent: " + error.message 
       });
     }
   });
@@ -366,6 +480,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Error setting up trial: " + error.message 
       });
     }
+  });
+
+  // Stripe webhook handler
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    let event;
+
+    try {
+      const sig = req.headers['stripe-signature'] as string;
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        console.log('Warning: Stripe webhook secret not configured');
+        // In development, we can process without signature verification
+        event = JSON.parse(req.body.toString());
+      } else {
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      }
+    } catch (err: any) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'setup_intent.succeeded':
+        const setupIntent = event.data.object as any;
+        console.log('SetupIntent succeeded:', setupIntent.id);
+        
+        // Check if this is for a monthly subscription
+        if (setupIntent.metadata?.type === 'monthly') {
+          try {
+            // Get the customer
+            const customer = await stripe.customers.retrieve(setupIntent.customer as string) as any;
+            
+            if (customer.metadata?.pendingSubscription === 'true') {
+              // Create the subscription
+              const subscription = await stripe.subscriptions.create({
+                customer: customer.id,
+                items: [{
+                  price_data: {
+                    currency: 'usd',
+                    product_data: {
+                      name: 'Healthy Mama Monthly',
+                      description: 'Monthly subscription for meal planning',
+                    },
+                    unit_amount: 2000, // $20 in cents
+                    recurring: {
+                      interval: 'month',
+                    },
+                  },
+                }],
+                default_payment_method: setupIntent.payment_method,
+              });
+              
+              console.log('Subscription created:', subscription.id);
+              
+              // Update customer metadata
+              await stripe.customers.update(customer.id, {
+                metadata: {
+                  subscriptionId: subscription.id,
+                  subscriptionStatus: 'active',
+                  pendingSubscription: 'false'
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error creating subscription from webhook:', error);
+          }
+        } else if (setupIntent.metadata?.type === 'trial') {
+          // For trial, create subscription with 30-day trial
+          try {
+            const customer = await stripe.customers.retrieve(setupIntent.customer as string) as any;
+            
+            const subscription = await stripe.subscriptions.create({
+              customer: customer.id,
+              items: [{
+                price_data: {
+                  currency: 'usd',
+                  product_data: {
+                    name: 'Healthy Mama Monthly',
+                    description: 'Monthly subscription after 30-day trial',
+                  },
+                  unit_amount: 2000, // $20 in cents
+                  recurring: {
+                    interval: 'month',
+                  },
+                },
+              }],
+              default_payment_method: setupIntent.payment_method,
+              trial_period_days: 30, // 30-day free trial
+            });
+            
+            console.log('Trial subscription created:', subscription.id);
+            
+            // Update customer metadata
+            await stripe.customers.update(customer.id, {
+              metadata: {
+                subscriptionId: subscription.id,
+                subscriptionStatus: 'trialing',
+                trialEndsAt: new Date(subscription.trial_end! * 1000).toISOString()
+              }
+            });
+          } catch (error) {
+            console.error('Error creating trial subscription from webhook:', error);
+          }
+        }
+        break;
+        
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object as any;
+        console.log('PaymentIntent succeeded:', paymentIntent.id);
+        
+        // Handle successful one-time payment (founders offer)
+        if (paymentIntent.metadata?.paymentType === 'founders') {
+          console.log('Founders payment successful for amount:', paymentIntent.amount / 100);
+          // You could update user account type in database here
+        }
+        break;
+        
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        const subscription = event.data.object as any;
+        console.log(`Subscription ${event.type}:`, subscription.id);
+        // Update user subscription status in database
+        break;
+        
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({ received: true });
   });
 
   // Recipe generation API

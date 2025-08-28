@@ -20,6 +20,10 @@ export class DatabaseStorage implements IStorage {
     phone: string;
     password_hash: string;
     full_name: string;
+    account_type?: string;
+    trial_ends_at?: Date;
+    subscription_status?: string;
+    stripe_customer_id?: string;
   }): Promise<User> {
     // Generate a simple sequential ID for standard auth
     const timestamp = Date.now();
@@ -36,6 +40,10 @@ export class DatabaseStorage implements IStorage {
         full_name: userData.full_name,
         firstName: userData.full_name.split(' ')[0],
         lastName: userData.full_name.split(' ').slice(1).join(' ') || null,
+        account_type: userData.account_type || 'free_trial',
+        trial_ends_at: userData.trial_ends_at,
+        subscription_status: userData.subscription_status || 'active',
+        stripe_customer_id: userData.stripe_customer_id,
       })
       .returning();
     

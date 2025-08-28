@@ -168,8 +168,11 @@ function Router() {
     }
   }, []);
 
-  const handleStartPayment = (paymentType: 'founders' | 'trial') => {
-    setCheckoutState({ show: true, paymentType });
+  const handleStartPayment = (paymentType: 'founders' | 'trial' | 'monthly') => {
+    console.log('handleStartPayment called with:', paymentType);
+    console.log('Setting checkout state to show');
+    setCheckoutState({ show: true, paymentType: paymentType as any });
+    console.log('New checkout state:', { show: true, paymentType });
   };
 
   const handlePaymentSuccess = () => {
@@ -194,17 +197,20 @@ function Router() {
     );
   }
 
+  // Show checkout if payment flow is active (for both authenticated and non-authenticated users)
+  if (checkoutState.show && checkoutState.paymentType) {
+    console.log('Rendering Checkout component with paymentType:', checkoutState.paymentType);
+    return (
+      <Checkout
+        paymentType={checkoutState.paymentType}
+        onSuccess={handlePaymentSuccess}
+        onCancel={handlePaymentCancel}
+      />
+    );
+  }
+
   if (!isAuthenticated) {
-    // Show checkout if payment flow is active
-    if (checkoutState.show && checkoutState.paymentType) {
-      return (
-        <Checkout
-          paymentType={checkoutState.paymentType}
-          onSuccess={handlePaymentSuccess}
-          onCancel={handlePaymentCancel}
-        />
-      );
-    }
+    console.log('Not authenticated. Checkout state:', checkoutState);
     
     if (!showAuth) {
       // Use the toggle to control whether to show landing page or go directly to auth
@@ -235,9 +241,9 @@ function Router() {
       <Switch>
         <Route path="/landingpage" component={() => (
           <LandingPage 
-            onGetStarted={() => {}} 
-            onStartPayment={() => {}} 
-            onTestLogin={() => {}} 
+            onGetStarted={() => setShowAuth(true)} 
+            onStartPayment={handleStartPayment} 
+            onTestLogin={() => setShowAuth(true)} 
           />
         )} />
         <Route path="/logo" component={() => (

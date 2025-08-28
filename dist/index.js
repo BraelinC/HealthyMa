@@ -131,6 +131,15 @@ var init_schema = __esm({
       google_id: varchar("google_id"),
       is_creator: boolean("is_creator").default(false),
       // Dynamic creator status
+      // Subscription/Trial fields
+      account_type: varchar("account_type", { length: 50 }).default("free_trial"),
+      // "free_trial", "monthly", "lifetime"
+      trial_ends_at: timestamp("trial_ends_at"),
+      // When the free trial ends
+      subscription_status: varchar("subscription_status", { length: 50 }).default("active"),
+      // "active", "cancelled", "expired"
+      stripe_customer_id: varchar("stripe_customer_id", { length: 255 }),
+      // Stripe customer ID for billing
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -928,7 +937,11 @@ var init_dbStorage = __esm({
           password_hash: userData.password_hash,
           full_name: userData.full_name,
           firstName: userData.full_name.split(" ")[0],
-          lastName: userData.full_name.split(" ").slice(1).join(" ") || null
+          lastName: userData.full_name.split(" ").slice(1).join(" ") || null,
+          account_type: userData.account_type || "free_trial",
+          trial_ends_at: userData.trial_ends_at,
+          subscription_status: userData.subscription_status || "active",
+          stripe_customer_id: userData.stripe_customer_id
         }).returning();
         return user;
       }
@@ -3970,11 +3983,16 @@ async function registerUser(req, res) {
       return res.status(400).json({ message: "User already exists with this email" });
     }
     const hashedPassword = await hashPassword(validatedData.password);
+    const trialEndsAt = /* @__PURE__ */ new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
     const user = await storage.createUser({
       email: validatedData.email,
       phone: validatedData.phone,
       password_hash: hashedPassword,
-      full_name: validatedData.full_name
+      full_name: validatedData.full_name,
+      account_type: "free_trial",
+      trial_ends_at: trialEndsAt,
+      subscription_status: "active"
     });
     const token = generateToken(user.id.toString(), user.is_creator || false);
     const { password_hash, ...userWithoutPassword } = user;
@@ -13115,7 +13133,7 @@ var init_intelligentMealBaseSelector = __esm({
 });
 
 // server/index.ts
-import express2 from "express";
+import express3 from "express";
 import session from "express-session";
 import cors from "cors";
 import dotenv6 from "dotenv";
@@ -16061,8 +16079,11 @@ async function registerRoutes(app2) {
       let paymentAmount;
       let description;
       if (paymentType === "founders") {
-        paymentAmount = 9900;
+        paymentAmount = 1e4;
         description = "Healthy Mama Founders Offer - Lifetime Access";
+      } else if (paymentType === "monthly") {
+        paymentAmount = 2e3;
+        description = "Healthy Mama Monthly Subscription";
       } else if (paymentType === "trial") {
         paymentAmount = 0;
         description = "Healthy Mama 21-Day Premium Trial Setup";
@@ -16086,6 +16107,100 @@ async function registerRoutes(app2) {
     } catch (error) {
       res.status(500).json({
         message: "Error creating payment intent: " + error.message
+      });
+    }
+  });
+  app2.post("/api/create-monthly-subscription", async (req, res) => {
+    try {
+      const { paymentMethodId, email, name } = req.body;
+      if (!email || !paymentMethodId) {
+        return res.status(400).json({ message: "Email and payment method are required" });
+      }
+      const customer = await stripe.customers.create({
+        email,
+        name: name || "",
+        payment_method: paymentMethodId,
+        invoice_settings: {
+          default_payment_method: paymentMethodId
+        }
+      });
+      const subscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "Healthy Mama Monthly",
+              description: "Monthly subscription for meal planning"
+            },
+            unit_amount: 2e3,
+            // $20.00 in cents
+            recurring: {
+              interval: "month"
+            }
+          }
+        }],
+        payment_settings: {
+          payment_method_types: ["card"],
+          save_default_payment_method: "on_subscription"
+        },
+        expand: ["latest_invoice.payment_intent"]
+      });
+      res.json({
+        subscriptionId: subscription.id,
+        customerId: customer.id,
+        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
+        message: "Monthly subscription created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating monthly subscription:", error);
+      res.status(500).json({
+        message: "Error setting up monthly subscription: " + error.message
+      });
+    }
+  });
+  app2.post("/api/create-setup-intent", async (req, res) => {
+    try {
+      const { email, name, paymentType } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      const customer = await stripe.customers.create({
+        email,
+        name: name || "",
+        metadata: {
+          paymentType: paymentType || "trial"
+        }
+      });
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customer.id,
+        payment_method_types: ["card"],
+        usage: "off_session",
+        metadata: {
+          type: paymentType || "trial",
+          email
+        }
+      });
+      if (paymentType === "monthly") {
+        await stripe.customers.update(customer.id, {
+          metadata: {
+            paymentType: "monthly",
+            pendingSubscription: "true",
+            priceAmount: "2000",
+            // $20 in cents
+            email
+          }
+        });
+      }
+      res.json({
+        customerId: customer.id,
+        clientSecret: setupIntent.client_secret,
+        paymentType,
+        message: `${paymentType === "monthly" ? "Monthly subscription" : "Trial"} setup created successfully`
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error creating setup intent: " + error.message
       });
     }
   });
@@ -16120,6 +16235,113 @@ async function registerRoutes(app2) {
         message: "Error setting up trial: " + error.message
       });
     }
+  });
+  app2.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+    let event;
+    try {
+      const sig = req.headers["stripe-signature"];
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      if (!webhookSecret) {
+        console.log("Warning: Stripe webhook secret not configured");
+        event = JSON.parse(req.body.toString());
+      } else {
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      }
+    } catch (err) {
+      console.error("Webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    switch (event.type) {
+      case "setup_intent.succeeded":
+        const setupIntent = event.data.object;
+        console.log("SetupIntent succeeded:", setupIntent.id);
+        if (setupIntent.metadata?.type === "monthly") {
+          try {
+            const customer = await stripe.customers.retrieve(setupIntent.customer);
+            if (customer.metadata?.pendingSubscription === "true") {
+              const subscription2 = await stripe.subscriptions.create({
+                customer: customer.id,
+                items: [{
+                  price_data: {
+                    currency: "usd",
+                    product_data: {
+                      name: "Healthy Mama Monthly",
+                      description: "Monthly subscription for meal planning"
+                    },
+                    unit_amount: 2e3,
+                    // $20 in cents
+                    recurring: {
+                      interval: "month"
+                    }
+                  }
+                }],
+                default_payment_method: setupIntent.payment_method
+              });
+              console.log("Subscription created:", subscription2.id);
+              await stripe.customers.update(customer.id, {
+                metadata: {
+                  subscriptionId: subscription2.id,
+                  subscriptionStatus: "active",
+                  pendingSubscription: "false"
+                }
+              });
+            }
+          } catch (error) {
+            console.error("Error creating subscription from webhook:", error);
+          }
+        } else if (setupIntent.metadata?.type === "trial") {
+          try {
+            const customer = await stripe.customers.retrieve(setupIntent.customer);
+            const subscription2 = await stripe.subscriptions.create({
+              customer: customer.id,
+              items: [{
+                price_data: {
+                  currency: "usd",
+                  product_data: {
+                    name: "Healthy Mama Monthly",
+                    description: "Monthly subscription after 30-day trial"
+                  },
+                  unit_amount: 2e3,
+                  // $20 in cents
+                  recurring: {
+                    interval: "month"
+                  }
+                }
+              }],
+              default_payment_method: setupIntent.payment_method,
+              trial_period_days: 30
+              // 30-day free trial
+            });
+            console.log("Trial subscription created:", subscription2.id);
+            await stripe.customers.update(customer.id, {
+              metadata: {
+                subscriptionId: subscription2.id,
+                subscriptionStatus: "trialing",
+                trialEndsAt: new Date(subscription2.trial_end * 1e3).toISOString()
+              }
+            });
+          } catch (error) {
+            console.error("Error creating trial subscription from webhook:", error);
+          }
+        }
+        break;
+      case "payment_intent.succeeded":
+        const paymentIntent = event.data.object;
+        console.log("PaymentIntent succeeded:", paymentIntent.id);
+        if (paymentIntent.metadata?.paymentType === "founders") {
+          console.log("Founders payment successful for amount:", paymentIntent.amount / 100);
+        }
+        break;
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        const subscription = event.data.object;
+        console.log(`Subscription ${event.type}:`, subscription.id);
+        break;
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+    res.json({ received: true });
   });
   app2.post("/api/recipes/generate", authenticateToken2, async (req, res) => {
     try {
@@ -20485,7 +20707,7 @@ async function registerRoutes(app2) {
 }
 
 // server/vite.ts
-import express from "express";
+import express2 from "express";
 import fs4 from "fs";
 import path9 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
@@ -20594,7 +20816,7 @@ function serveStatic(app2) {
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app2.use(express.static(distPath));
+  app2.use(express2.static(distPath));
   app2.use("*", (_req, res) => {
     res.sendFile(path9.resolve(distPath, "index.html"));
   });
@@ -20605,7 +20827,7 @@ init_googleAuth();
 var __filename6 = fileURLToPath6(import.meta.url);
 var __dirname7 = path10.dirname(__filename6);
 dotenv6.config({ path: path10.join(__dirname7, "..", ".env") });
-var app = express2();
+var app = express3();
 var corsOptions = {
   origin: function(origin, callback) {
     if (!origin) return callback(null, true);
@@ -20639,8 +20861,14 @@ var corsOptions = {
   // Cache preflight response for 24 hours
 };
 app.use(cors(corsOptions));
-app.use(express2.json({ limit: "10mb" }));
-app.use(express2.urlencoded({ extended: false, limit: "10mb" }));
+app.use((req, res, next) => {
+  if (req.path === "/api/stripe/webhook") {
+    next();
+  } else {
+    express3.json({ limit: "10mb" })(req, res, next);
+  }
+});
+app.use(express3.urlencoded({ extended: false, limit: "10mb" }));
 app.use(session({
   secret: process.env.SESSION_SECRET || "healthy-mama-session-secret-2025",
   resave: false,

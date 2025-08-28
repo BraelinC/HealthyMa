@@ -57,7 +57,14 @@ app.use(cors(corsOptions));
 
 // Replit Auth enabled
 // Increase payload size limit for image uploads (10MB)
-app.use(express.json({ limit: '10mb' }));
+// Skip JSON parsing for Stripe webhook (it needs raw body)
+app.use((req, res, next) => {
+  if (req.path === '/api/stripe/webhook') {
+    next();
+  } else {
+    express.json({ limit: '10mb' })(req, res, next);
+  }
+});
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // Configure session middleware (required for passport and fallback auth)
