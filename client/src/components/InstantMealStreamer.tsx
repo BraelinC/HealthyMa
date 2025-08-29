@@ -57,10 +57,12 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
     if (!containerRef.current) return;
 
     const mealCard = document.createElement('div');
-    mealCard.className = 'group relative bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:border-emerald-300 mb-4';
+    mealCard.className = 'group relative bg-white border-2 border-emerald-200 rounded-xl p-6 hover:shadow-xl transition-all duration-300 hover:border-emerald-400 mb-4 shadow-lg';
     mealCard.style.opacity = '0';
     mealCard.style.transform = 'translateY(20px)';
     mealCard.style.transition = 'all 0.3s ease';
+    mealCard.style.zIndex = '10';
+    mealCard.style.position = 'relative';
 
     mealCard.innerHTML = `
       <div class="flex items-start justify-between">
@@ -283,8 +285,14 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
       )}
 
       {/* Meals Container - Direct DOM manipulation */}
-      <div ref={containerRef} className="space-y-4">
+      <div ref={containerRef} className="space-y-4 min-h-[200px] bg-gray-50/30 rounded-lg p-4 border-2 border-dashed border-emerald-200">
         {/* Meals will be added here via direct DOM manipulation */}
+        {mealCount === 0 && isGenerating && (
+          <div className="text-center text-gray-500 py-8">
+            <div className="animate-spin h-8 w-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p className="text-sm">Meals will appear here as they're generated...</p>
+          </div>
+        )}
       </div>
 
       {/* Error Display */}
