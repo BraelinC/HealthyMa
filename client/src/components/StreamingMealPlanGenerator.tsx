@@ -58,6 +58,7 @@ export function StreamingMealPlanGenerator({
   const [liveParsingMeals, setLiveParsingMeals] = useState<Meal[]>([]);
   const [renderKey, setRenderKey] = useState(0); // Force re-render key  
   const [debugMealCount, setDebugMealCount] = useState(0); // Separate debug state
+  const [mealCounter, setMealCounter] = useState(0); // Force immediate UI updates
   const { toast } = useToast();
   
   // Force update function
@@ -262,7 +263,8 @@ export function StreamingMealPlanGenerator({
                   return newMeals;
                 });
                 
-                // FORCE RE-RENDER after state update (outside the setter)
+                // FORCE IMMEDIATE RE-RENDER with multiple triggers
+                setMealCounter(prev => prev + 1);
                 forceUpdate();
                 setDebugMealCount(liveParsingMeals.length + 1);
               } else if (parsed.type === 'complete') {
