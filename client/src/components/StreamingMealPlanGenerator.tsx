@@ -359,106 +359,102 @@ export function StreamingMealPlanGenerator({
 
   // Clean production render - debug removed
 
-  // Beautiful streaming meal display
+  // Simple streaming meal display - always show both loading and meals
   return (
     <div key={renderKey} className="space-y-4">
-      {(() => {
-        const hasMeals = liveParsingMeals.length > 0;
-        
-        if (!hasMeals) {
-          return (
-            <div className="flex flex-col items-center justify-center py-12 px-6">
-              <div className="relative">
-                <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 border-t-emerald-600 mb-6"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <ChefHat className="h-6 w-6 text-emerald-600" />
-                </div>
+      {/* Show loading state if no meals yet OR still generating */}
+      {liveParsingMeals.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 px-6">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 border-t-emerald-600 mb-6"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <ChefHat className="h-6 w-6 text-emerald-600" />
+            </div>
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">
+              🔥 Generating Your Perfect Meals
+            </h3>
+            <p className="text-gray-500 text-sm">
+              Our AI chef is creating personalized recipes just for you...
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Show meals as they arrive */}
+      {liveParsingMeals.length > 0 && (
+        <div className="space-y-4">
+          {/* Progress Header */}
+          <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <ChefHat className="h-5 w-5 text-emerald-600" />
               </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                  🔥 Generating Your Perfect Meals
+              <div>
+                <h3 className="font-semibold text-emerald-800">
+                  ✨ Found {liveParsingMeals.length} Perfect Meals!
                 </h3>
-                <p className="text-gray-500 text-sm">
-                  Our AI chef is creating personalized recipes just for you...
+                <p className="text-sm text-emerald-600">
+                  Your personalized meal plan is ready
                 </p>
               </div>
             </div>
-          );
-        }
-        
-        return (
-          <div className="space-y-4">
-            {/* Progress Header */}
-            <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-100 rounded-lg">
-                  <ChefHat className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-emerald-800">
-                    ✨ Found {liveParsingMeals.length} Perfect Meals!
-                  </h3>
-                  <p className="text-sm text-emerald-600">
-                    Your personalized meal plan is ready
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
-                <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                Live Generated
-              </div>
+            <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
+              <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              Live Generated
             </div>
+          </div>
 
-            {/* Beautiful Meal Cards */}
-            <div className="grid gap-4">
-              {liveParsingMeals.map((meal, index) => (
-                <div 
-                  key={meal.id || index} 
-                  className="group relative bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:border-emerald-300 animate-fadeIn"
-                  style={{ animationDelay: `${index * 150}ms` }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">{getMealIcon(meal.mealType)}</span>
-                        <div>
-                          <div className="text-xs font-medium text-blue-600 uppercase tracking-wide">
-                            Day {meal.day} • {meal.mealType}
-                          </div>
-                          <h4 className="font-semibold text-gray-800 group-hover:text-emerald-700 transition-colors">
-                            {meal.title || meal.name}
-                          </h4>
+          {/* Beautiful Meal Cards */}
+          <div className="grid gap-4">
+            {liveParsingMeals.map((meal, index) => (
+              <div 
+                key={meal.id || index} 
+                className="group relative bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:border-emerald-300 animate-fadeIn"
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">{getMealIcon(meal.mealType)}</span>
+                      <div>
+                        <div className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+                          Day {meal.day} • {meal.mealType}
                         </div>
-                      </div>
-                      
-                      {/* Meal Details */}
-                      <div className="flex items-center gap-4 mt-3">
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Clock className="h-3 w-3" />
-                          <span>{meal.cook_time_minutes || meal.cook_time}min</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <span>⭐</span>
-                          <span>Difficulty {meal.difficulty}</span>
-                        </div>
-                        {meal.nutrition && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <span>🔥 {meal.nutrition.calories} cal</span>
-                          </div>
-                        )}
+                        <h4 className="font-semibold text-gray-800 group-hover:text-emerald-700 transition-colors">
+                          {meal.title || meal.name}
+                        </h4>
                       </div>
                     </div>
                     
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="h-2 w-2 bg-emerald-500 rounded-full"></div>
+                    {/* Meal Details */}
+                    <div className="flex items-center gap-4 mt-3">
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Clock className="h-3 w-3" />
+                        <span>{meal.cook_time_minutes || meal.cook_time}min</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <span>⭐</span>
+                        <span>Difficulty {meal.difficulty}</span>
+                      </div>
+                      {meal.nutrition && (
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <span>🔥 {meal.nutrition.calories} cal</span>
+                        </div>
+                      )}
                     </div>
                   </div>
+                  
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="h-2 w-2 bg-emerald-500 rounded-full"></div>
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* Error section if needed */}
       {error && (
