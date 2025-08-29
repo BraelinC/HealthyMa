@@ -2027,6 +2027,9 @@ export default function Home() {
               variant="ghost" 
               className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
               onClick={() => {
+                console.log('🔍 [DEBUG] View Favorites clicked - navigating to /favorites');
+                console.log('🔍 [DEBUG] Current location:', window.location.href);
+                console.log('🔍 [DEBUG] User agent:', navigator.userAgent);
                 window.location.href = '/favorites';
                 setShowAddMenu(false);
               }}
