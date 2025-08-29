@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { safeApiRequest } from "@/lib/queryClient";
+import { safeApiRequest, apiRequest } from "@/lib/queryClient";
 import { CreateRecipe } from "@/components/CreateRecipe";
 
 import { 
@@ -51,7 +51,8 @@ import {
   Milk,
   Check,
   CheckCircle,
-  Share2
+  Share2,
+  UserPlus
 } from "lucide-react";
 
 // Import React Icons for more specific food types
@@ -142,6 +143,20 @@ export default function Home() {
   const [shareType, setShareType] = useState<'recipe' | 'meal_plan'>('recipe');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Check if user has a profile
+  const { data: profileData, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['/api/profile'],
+    queryFn: () => apiRequest('/api/profile').catch(() => null),
+    retry: false
+  });
+  
+  // Determine if user has a complete profile
+  const hasCompleteProfile = profileData && (
+    profileData.profile_name || 
+    profileData.members?.length > 0 ||
+    profileData.family_size > 0
+  );
 
   // Share function - opens community modal
   const handleShare = useCallback((item: any, itemType: 'recipe' | 'meal_plan' = 'recipe') => {
@@ -1021,19 +1036,43 @@ export default function Home() {
                   Congratulations! You've completed all your meal plans. 
                   Time to create a new one for your next cooking adventure.
                 </p>
-                <Button onClick={() => window.location.href = '/meal-planner'}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Meal Plan
-                </Button>
+                {!isLoadingProfile && !hasCompleteProfile ? (
+                  <Button 
+                    onClick={() => window.location.href = '/profile'}
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Create Your Profile First
+                  </Button>
+                ) : (
+                  <Button onClick={() => window.location.href = '/meal-planner'}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create New Meal Plan
+                  </Button>
+                )}
               </>
             ) : (
               <>
                 <h1 className="text-3xl font-bold mb-4">No Meal Plans Found</h1>
-                <p className="text-muted-foreground mb-6">Create your first meal plan to get started.</p>
-                <Button onClick={() => window.location.href = '/meal-planner'}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Meal Plan
-                </Button>
+                <p className="text-muted-foreground mb-6">
+                  {!hasCompleteProfile 
+                    ? "Set up your profile first to get personalized meal plans!"
+                    : "Create your first meal plan to get started."}
+                </p>
+                {!isLoadingProfile && !hasCompleteProfile ? (
+                  <Button 
+                    onClick={() => window.location.href = '/profile'}
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Create Your Profile First
+                  </Button>
+                ) : (
+                  <Button onClick={() => window.location.href = '/meal-planner'}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Meal Plan
+                  </Button>
+                )}
               </>
             )}
           </div>

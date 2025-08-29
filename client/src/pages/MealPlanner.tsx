@@ -2,15 +2,18 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CalendarDays, Clock, ChefHat, ShoppingCart, Target, ChevronDown, ChevronRight, ExternalLink, Utensils } from "lucide-react";
+import { CalendarDays, Clock, ChefHat, ShoppingCart, Target, ChevronDown, ChevronRight, ExternalLink, Utensils, UserPlus, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 import { useProfileSystem } from "@/hooks/useProfileSystem";
 import ProfileSystemIndicator from "@/components/ProfileSystemIndicator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Recipe {
   title: string;
@@ -34,6 +37,21 @@ interface PlanResponse {
 export default function MealPlanner() {
   // Profile system detection
   const { isSmartProfileEnabled } = useProfileSystem();
+  const [, setLocation] = useLocation();
+  
+  // Check if user has a profile
+  const { data: profileData, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['/api/profile'],
+    queryFn: () => apiRequest('/api/profile').catch(() => null),
+    retry: false
+  });
+  
+  // Determine if user has a complete profile
+  const hasCompleteProfile = profileData && (
+    profileData.profile_name || 
+    profileData.members?.length > 0 ||
+    profileData.family_size > 0
+  );
   
   const [cookTime, setCookTime] = useState([30]);
   const [difficulty, setDifficulty] = useState([3.0]);
@@ -321,14 +339,36 @@ export default function MealPlanner() {
               />
             </div>
 
-            <Button 
-              onClick={handleGeneratePlan} 
-              disabled={isGenerating}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-              size="lg"
-            >
-              {isGenerating ? "Generating Plan..." : "Generate Weekly Plan"}
-            </Button>
+            {/* Profile Creation Alert */}
+            {!isLoadingProfile && !hasCompleteProfile && (
+              <Alert className="border-orange-200 bg-orange-50">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-sm">
+                  <strong>Create your profile first!</strong> Setting up your profile helps us personalize meal plans to your family's preferences, dietary needs, and cooking style.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Conditional Buttons */}
+            {!isLoadingProfile && !hasCompleteProfile ? (
+              <Button 
+                onClick={() => setLocation('/profile')}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                size="lg"
+              >
+                <UserPlus className="mr-2 h-5 w-5" />
+                Create Your Profile First
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleGeneratePlan} 
+                disabled={isGenerating || isLoadingProfile}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                size="lg"
+              >
+                {isGenerating ? "Generating Plan..." : "Generate Weekly Plan"}
+              </Button>
+            )}
           </CardContent>
         </Card>
 

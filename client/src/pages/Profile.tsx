@@ -1379,41 +1379,6 @@ export default function Profile() {
 
                           <div className="space-y-4">
                             <div>
-                              <Label>Dietary Preferences</Label>
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {commonPreferences.map(pref => (
-                                  <Button
-                                    key={pref}
-                                    onClick={() => addPreference(pref)}
-                                    variant={newMember.preferences.includes(pref) ? "default" : "outline"}
-                                    size="sm"
-                                    className="text-xs"
-                                  >
-                                    {pref}
-                                  </Button>
-                                ))}
-                              </div>
-                              {newMember.preferences.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {newMember.preferences.map((pref: string) => (
-                                    <Badge key={pref} variant="secondary" className="flex items-center gap-1">
-                                      {pref}
-                                      <button
-                                        onClick={() => setNewMember({
-                                          ...newMember,
-                                          preferences: newMember.preferences.filter((p: string) => p !== pref)
-                                        })}
-                                        className="ml-1 text-red-500 hover:text-red-700"
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </button>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            <div>
                               <Label className="flex items-center gap-2">
                                 <span className="text-red-500">*</span>
                                 Dietary Restrictions
@@ -1443,41 +1408,6 @@ export default function Profile() {
                                           dietaryRestrictions: newMember.dietaryRestrictions.filter((r: string) => r !== restriction)
                                         })}
                                         className="ml-1 text-white hover:text-gray-200"
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </button>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            <div>
-                              <Label>Personal Goals</Label>
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {personalGoals.map(goal => (
-                                  <Button
-                                    key={goal}
-                                    onClick={() => addGoal(goal)}
-                                    variant={newMember.goals.includes(goal) ? "default" : "outline"}
-                                    size="sm"
-                                    className="text-xs"
-                                  >
-                                    {goal}
-                                  </Button>
-                                ))}
-                              </div>
-                              {newMember.goals.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {newMember.goals.map((goal: string) => (
-                                    <Badge key={goal} variant="secondary" className="flex items-center gap-1">
-                                      {goal}
-                                      <button
-                                        onClick={() => setNewMember({
-                                          ...newMember,
-                                          goals: newMember.goals.filter((g: string) => g !== goal)
-                                        })}
-                                        className="ml-1 text-red-500 hover:text-red-700"
                                       >
                                         <X className="h-3 w-3" />
                                       </button>
