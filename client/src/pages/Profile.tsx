@@ -771,12 +771,17 @@ export default function Profile() {
             </div>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-emerald-600 bg-clip-text text-transparent">
-                {profileType === 'individual' ? 'Individual Profile' : 'Family Profile'}
+                {!profile && !isEditing && !showProfileTypeSelection 
+                  ? 'Profile Setup' 
+                  : profileType === 'individual' ? 'Individual Profile' : 'Family Profile'
+                }
               </h1>
               <p className="text-gray-600 mt-1">
-                {profileType === 'individual' 
-                  ? 'Create your personalized meal planning experience' 
-                  : 'Create your family\'s meal planning experience'
+                {!profile && !isEditing && !showProfileTypeSelection 
+                  ? 'Set up your profile to get personalized meal plans'
+                  : profileType === 'individual' 
+                    ? 'Create your personalized meal planning experience' 
+                    : 'Create your family\'s meal planning experience'
                 }
               </p>
             </div>
