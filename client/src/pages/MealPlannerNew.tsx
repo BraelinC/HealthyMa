@@ -26,7 +26,7 @@ import {
   ensureUniqueName,
   type MealPlanGenerationParams 
 } from "@/lib/mealPlanUtils";
-import { StreamingMealPlanGenerator } from "@/components/StreamingMealPlanGenerator";
+import { InstantMealStreamer } from "@/components/InstantMealStreamer";
 import { 
   addToSessionCache, 
   getSessionCache, 
@@ -740,7 +740,7 @@ export default function MealPlanner() {
               </p>
             </CardHeader>
             <CardContent>
-              <StreamingMealPlanGenerator
+              <InstantMealStreamer
                 filters={{
                   numDays: numDays[0],
                   mealsPerDay: mealsPerDay[0],
