@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { safeApiRequest, apiRequest } from "@/lib/queryClient";
 import { CreateRecipe } from "@/components/CreateRecipe";
 
@@ -119,6 +120,7 @@ interface MealCompletion {
 }
 
 export default function Home() {
+  const [, setLocation] = useLocation(); // For instant navigation
   const [currentPlan, setCurrentPlan] = useState<MealPlan | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingMeal, setEditingMeal] = useState<{ dayKey: string; mealType: string; meal: Meal } | null>(null);
@@ -278,6 +280,28 @@ export default function Home() {
     gcTime: 300000,
     refetchOnWindowFocus: false,
     refetchOnMount: false
+  });
+
+  // Background prefetching for favorites data - INSTANT LOADING
+  // Prefetch favorites data in the background so it's ready when user clicks "View Favorites"
+  useQuery({
+    queryKey: ['/api/favorites'],
+    staleTime: Infinity, // Never consider data stale - instant from cache
+    gcTime: Infinity, // Keep in cache forever
+    refetchOnWindowFocus: false,
+    refetchOnMount: true, // Always prefetch on Home page load
+    refetchOnReconnect: false
+  });
+
+  // Background prefetching for user recipes - INSTANT LOADING  
+  // Prefetch user's created recipes so they're ready for favorites page
+  useQuery({
+    queryKey: ['/api/recipes/user'],
+    staleTime: Infinity, // Never consider data stale - instant from cache
+    gcTime: Infinity, // Keep in cache forever
+    refetchOnWindowFocus: false,
+    refetchOnMount: true, // Always prefetch on Home page load
+    refetchOnReconnect: false
   });
 
   // Set the current plan to the most recent one (excluding completed plans)
@@ -2027,10 +2051,8 @@ export default function Home() {
               variant="ghost" 
               className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
               onClick={() => {
-                console.log('🔍 [DEBUG] View Favorites clicked - navigating to /favorites');
-                console.log('🔍 [DEBUG] Current location:', window.location.href);
-                console.log('🔍 [DEBUG] User agent:', navigator.userAgent);
-                window.location.href = '/favorites';
+                // Instant navigation using React Router - data already prefetched in background
+                setLocation('/favorites');
                 setShowAddMenu(false);
               }}
             >

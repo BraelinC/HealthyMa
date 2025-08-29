@@ -647,7 +647,7 @@ export default function Favorites() {
           isOpen={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
           recipe={itemToShare ? {
-            id: itemToShare.id,
+            id: typeof itemToShare.id === 'string' ? parseInt(itemToShare.id) : itemToShare.id,
             title: itemToShare.title,
             description: itemToShare.description || '',
             ingredients: itemToShare.metadata?.ingredients || [],
