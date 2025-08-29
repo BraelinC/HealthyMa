@@ -2937,24 +2937,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currentDay = parseInt(dayMatches[dayMatches.length - 1][1]);
           }
           
-          // Look for complete meal objects with "title" field
-          const mealRegex = /"title":\s*"([^"]+)"[^}]*"cook_time_minutes":\s*(\d+)[^}]*"difficulty":\s*(\d+)/g;
+          // Look for meal titles in real-time - stream as soon as we see a title!
+          const titleRegex = /"title":\s*"([^"]+)"/g;
           
-          // Only search for meals in new content since last processed position
-          let lastSearchPosition = buffer.length - content.length;
-          mealRegex.lastIndex = Math.max(0, lastSearchPosition - 200); // Search a bit before new content
-          
+          // Only search in the new content that just arrived
+          const newContent = content;
           let match;
-          while ((match = mealRegex.exec(buffer)) !== null) {
-            const [fullMatch, mealTitle, cookTime, difficulty] = match;
+          while ((match = titleRegex.exec(newContent)) !== null) {
+            const mealTitle = match[1];
             
-            // Create a unique key based on meal title and position in buffer
-            const mealPosition = buffer.indexOf(fullMatch);
-            const mealKey = `${mealTitle}_${mealPosition}`;
+            // Create a simple unique key based on meal title
+            const mealKey = `${mealTitle.trim()}`;
             
-            // Skip if we've already processed this exact meal at this position
+            // Skip if we've already processed this meal title
             if (processedMeals.has(mealKey)) {
-              console.log(`⏭️ Skipping duplicate meal: ${mealTitle} at position ${mealPosition}`);
+              console.log(`⏭️ Skipping duplicate meal: ${mealTitle}`);
               continue;
             }
             
@@ -2964,26 +2961,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
             processedMeals.add(mealKey);
             mealCount++;
             
-            console.log(`🍽️ NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount}`);
+            console.log(`🍽️ NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount} 🚀 STREAMING IMMEDIATELY!`);
             
-            // Send individual meal as SSE event immediately
+            // Send individual meal as SSE event IMMEDIATELY when title is found
             const mealData = {
               title: mealTitle,
               name: mealTitle, // For compatibility
-              cook_time_minutes: parseInt(cookTime),
-              cook_time: parseInt(cookTime), // For compatibility
+              cook_time_minutes: 25, // Default cook time
+              cook_time: 25, // For compatibility
               prep_time: 10, // Default prep time
-              difficulty: parseInt(difficulty),
+              difficulty: 2, // Default difficulty
               mealType: mealType,
               day: currentDay || 1,
-              totalTime: parseInt(cookTime) + 10,
+              totalTime: 35,
               id: `${mealType}_${mealCount}_${Date.now()}`
             };
             
+            // 🚀 IMMEDIATE STREAMING! Send as soon as title appears
             sendData(JSON.stringify({
               type: 'meal',
               data: mealData
             }));
+            
+            console.log(`✨ STREAMED: ${mealTitle} sent to frontend immediately!`);
           }
         }
       }
