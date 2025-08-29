@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -101,6 +102,8 @@ export function StreamingMealPlanGenerator({
       setIsGenerating(true);
       setError(null);
       setLiveParsingMeals([]); // Reset meals
+      setMealCounter(0); // Reset counter
+      setDebugMealCount(0); // Reset debug count
 
       // Get token from storage
       const token = localStorage.getItem('auth_token');
@@ -263,10 +266,12 @@ export function StreamingMealPlanGenerator({
                   return newMeals;
                 });
                 
-                // FORCE IMMEDIATE RE-RENDER with multiple triggers
-                setMealCounter(prev => prev + 1);
+                // FORCE IMMEDIATE SYNCHRONOUS RE-RENDER
+                flushSync(() => {
+                  setMealCounter(prev => prev + 1);
+                  setDebugMealCount(liveParsingMeals.length + 1);
+                });
                 forceUpdate();
-                setDebugMealCount(liveParsingMeals.length + 1);
               } else if (parsed.type === 'complete') {
                 console.log('✅ Complete meal plan received');
                 // Meal plan generation complete - defer to prevent render cycle issues
