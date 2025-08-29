@@ -3878,7 +3878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, profileType, questionnaire_answers, questionnaire_selections } = req.body;
 
       console.log('💾 Creating weight-based profile with data:', {
         profileName,
@@ -3901,7 +3901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         primary_goal: 'Weight-Based Planning',
         family_size: familySize,
         members: [], // Empty for weight-based approach
-        profile_type: 'individual' as const,
+        profile_type: (profileType || 'individual') as 'individual' | 'family',
         preferences: dietaryRestrictions,
         goals: goalsArray,
         cultural_background: culturalBackground
@@ -3940,7 +3940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, profileType, questionnaire_answers, questionnaire_selections } = req.body;
 
       console.log('💾 Saving weight-based profile with data:', {
         profileName,
@@ -3967,7 +3967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           primary_goal: 'Weight-Based Planning',
           family_size: familySize || existingProfile.family_size || 2,
           members: existingProfile.members || [],
-          profile_type: 'individual' as const,
+          profile_type: (profileType || existingProfile.profile_type || 'individual') as 'individual' | 'family',
           preferences: dietaryRestrictions || existingProfile.preferences || [],
           goals: goalsArray,
           cultural_background: culturalBackground || existingProfile.cultural_background || []
@@ -3983,7 +3983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           primary_goal: 'Weight-Based Planning',
           family_size: familySize || 2,
           members: [],
-          profile_type: 'individual' as const,
+          profile_type: (profileType || 'individual') as 'individual' | 'family',
           preferences: dietaryRestrictions || [],
           goals: goalsArray,
           cultural_background: culturalBackground || []

@@ -73,10 +73,6 @@ export default function Favorites() {
     refetchOnReconnect: false // Don't refetch on reconnect
   });
 
-  // Debug logging to see what data we're getting
-  useEffect(() => {
-    console.log('🔍 [FAVORITES DEBUG] Data:', { favorites, length: favorites?.length, isLoading, error });
-  }, [favorites, isLoading, error]);
 
   // Fetch user's created recipes
   const { data: userRecipes = [] } = useQuery<any[]>({

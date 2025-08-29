@@ -182,7 +182,7 @@ export default function Home() {
       }
     });
     setFavoriteStatus(status);
-  }, [cachedFavorites]);
+  }, [cachedFavorites.length]); // Only depend on length to avoid infinite re-renders
   
   // Add to favorites mutation
   const addToFavoritesMutation = useMutation({
