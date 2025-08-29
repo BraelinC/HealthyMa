@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,9 +69,14 @@ export default function Favorites() {
     gcTime: Infinity, // Keep in cache forever
     retry: 0, // No retries for instant response
     refetchOnWindowFocus: false,
-    refetchOnMount: false, // Don't refetch when component mounts if data exists
+    refetchOnMount: true, // Always fetch fresh data when mounting
     refetchOnReconnect: false // Don't refetch on reconnect
   });
+
+  // Debug logging to see what data we're getting
+  useEffect(() => {
+    console.log('🔍 [FAVORITES DEBUG] Data:', { favorites, length: favorites?.length, isLoading, error });
+  }, [favorites, isLoading, error]);
 
   // Fetch user's created recipes
   const { data: userRecipes = [] } = useQuery<any[]>({
@@ -81,7 +86,7 @@ export default function Favorites() {
     gcTime: Infinity,
     retry: 0,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true, // Always fetch fresh data when mounting
     refetchOnReconnect: false
   });
 
