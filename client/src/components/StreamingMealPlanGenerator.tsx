@@ -234,8 +234,7 @@ export function StreamingMealPlanGenerator({
               if (parsed.type === 'meal') {
                 console.log(`🍽️ Adding meal to UI: ${parsed.data.title} (${parsed.data.mealType})`);
                 
-                // Set generating to false as soon as first meal arrives to show meal cards
-                setIsGenerating(false);
+                // Don't change isGenerating - let meal cards show up via hasMeals logic
                 
                 // Add new meal to the display array immediately  
                 setLiveParsingMeals(prev => {
