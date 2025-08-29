@@ -259,14 +259,12 @@ export function StreamingMealPlanGenerator({
                   console.log(`📊 Total meals now: ${newMeals.length}`);
                   console.log('🎯 Updated meal list:', newMeals.map(m => m.title || m.name));
                   
-                  // FORCE RE-RENDER after state update
-                  setTimeout(() => {
-                    forceUpdate();
-                    setDebugMealCount(newMeals.length);
-                  }, 0);
-                  
                   return newMeals;
                 });
+                
+                // FORCE RE-RENDER after state update (outside the setter)
+                forceUpdate();
+                setDebugMealCount(liveParsingMeals.length + 1);
               } else if (parsed.type === 'complete') {
                 console.log('✅ Complete meal plan received');
                 // Meal plan generation complete - defer to prevent render cycle issues
