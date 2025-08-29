@@ -96,12 +96,9 @@ export function LandingPage({ onGetStarted, onStartPayment, onTestLogin }: Landi
       <div className="max-w-4xl mx-auto px-4 py-12">
         {/* Hero */}
         <div className="text-center mb-12">
-          <div className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-indigo-400/20 blur-3xl rounded-full transform scale-150"></div>
-            <h1 className="relative text-4xl md:text-5xl font-bold bg-gradient-to-r from-emerald-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-4 leading-tight">
-              Never ask 'What's for dinner?' again.
-            </h1>
-          </div>
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-emerald-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-4 leading-tight">
+            Never ask 'What's for dinner?' again.
+          </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
             The Future of Meals is Shared
           </p>
