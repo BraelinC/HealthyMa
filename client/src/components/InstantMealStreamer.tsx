@@ -209,7 +209,7 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
                 setTimeout(() => {
                   addMealToDOM(meal, mealIndex);
                   setMealCount(mealsRef.current.length);
-                }, mealIndex * 800); // 800ms delay between each meal for visual streaming
+                }, mealIndex * 500); // 500ms delay between each meal for faster streaming
                 
               } else if (parsed.type === 'complete') {
                 console.log('✅ INSTANT: Generation complete');
