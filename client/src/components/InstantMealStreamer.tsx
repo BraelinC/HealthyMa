@@ -49,6 +49,7 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
   const mealsRef = useRef<Meal[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mealCount, setMealCount] = useState(0);
   const { toast } = useToast();
 
   // Function to immediately add meal card to DOM
@@ -204,6 +205,9 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
                 // INSTANTLY add to DOM
                 addMealToDOM(meal, mealsRef.current.length - 1);
                 
+                // Update meal count for progress header
+                setMealCount(mealsRef.current.length);
+                
               } else if (parsed.type === 'complete') {
                 console.log('✅ INSTANT: Generation complete');
                 setTimeout(() => onComplete(parsed.data), 500);
@@ -256,7 +260,7 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
       )}
 
       {/* Progress Header - Show when we have meals */}
-      {mealsRef.current.length > 0 && (
+      {mealCount > 0 && (
         <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-100 rounded-lg">
@@ -264,7 +268,7 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
             </div>
             <div>
               <h3 className="font-semibold text-emerald-800">
-                ✨ Found {mealsRef.current.length} Perfect Meals!
+                ✨ Found {mealCount} Perfect Meals!
               </h3>
               <p className="text-sm text-emerald-600">
                 Your personalized meal plan is ready
