@@ -883,37 +883,6 @@ export default function Profile() {
           </Card>
         )}
 
-        {!profile && !isEditing && (
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-white/30 backdrop-blur-sm border-0 shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="bg-gradient-to-r from-pink-100 to-purple-100 p-4 rounded-full w-fit mx-auto mb-4">
-                  <Users className="h-8 w-8 text-pink-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Family Members</h3>
-                <p className="text-sm text-gray-600">Add each family member with their preferences and goals</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/30 backdrop-blur-sm border-0 shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="bg-gradient-to-r from-blue-100 to-emerald-100 p-4 rounded-full w-fit mx-auto mb-4">
-                  <Target className="h-8 w-8 text-blue-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Personal Goals</h3>
-                <p className="text-sm text-gray-600">Set dietary goals and preferences for each family member</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/30 backdrop-blur-sm border-0 shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="bg-gradient-to-r from-emerald-100 to-green-100 p-4 rounded-full w-fit mx-auto mb-4">
-                  <ChefHat className="h-8 w-8 text-emerald-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Smart Meal Plans</h3>
-                <p className="text-sm text-gray-600">Get personalized meal plans based on your family's profile</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {(isEditing || profile) && (
           <div className="space-y-6 mt-6">
