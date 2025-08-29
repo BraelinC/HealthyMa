@@ -99,6 +99,7 @@ export default function Favorites() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      queryClient.refetchQueries({ queryKey: ['/api/favorites'] });
       toast({
         title: "Removed from favorites",
         description: "Item successfully removed from your favorites"

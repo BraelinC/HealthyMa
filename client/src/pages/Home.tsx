@@ -169,6 +169,20 @@ export default function Home() {
 
   // Favorites state and mutations
   const [favoriteStatus, setFavoriteStatus] = useState<Record<string, boolean>>({});
+
+  // Get cached favorites data to sync heart icon state
+  const cachedFavorites = queryClient.getQueryData(['/api/favorites']) as any[] || [];
+  
+  // Initialize favorite status from cached data
+  useEffect(() => {
+    const status: Record<string, boolean> = {};
+    cachedFavorites.forEach((fav: any) => {
+      if (fav.title) {
+        status[fav.title] = true;
+      }
+    });
+    setFavoriteStatus(status);
+  }, [cachedFavorites]);
   
   // Add to favorites mutation
   const addToFavoritesMutation = useMutation({
@@ -193,6 +207,9 @@ export default function Home() {
     },
     onSuccess: (_, meal) => {
       setFavoriteStatus(prev => ({ ...prev, [meal.title]: true }));
+      // Immediately refresh favorites cache
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      queryClient.refetchQueries({ queryKey: ['/api/favorites'] });
       toast({
         title: "Added to Favorites",
         description: `${meal.title} has been saved to your favorites!`
@@ -216,6 +233,9 @@ export default function Home() {
     },
     onSuccess: (_, meal) => {
       setFavoriteStatus(prev => ({ ...prev, [meal.title]: false }));
+      // Immediately refresh favorites cache
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      queryClient.refetchQueries({ queryKey: ['/api/favorites'] });
       toast({
         title: "Removed from Favorites",
         description: `${meal.title} has been removed from your favorites.`
