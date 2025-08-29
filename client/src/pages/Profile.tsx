@@ -203,6 +203,7 @@ export default function Profile() {
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      queryClient.refetchQueries({ queryKey: ['/api/profile'] });
 
       // Reset to idle after showing saved state
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -253,6 +254,7 @@ export default function Profile() {
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      queryClient.refetchQueries({ queryKey: ['/api/profile'] });
 
       // Reset to idle after showing saved state
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -608,6 +610,7 @@ export default function Profile() {
       // Wait a moment before invalidating to ensure database update is complete
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      queryClient.refetchQueries({ queryKey: ['/api/profile'] });
       }, 500);
 
       console.log('✅ Cultural preferences saved successfully!');
