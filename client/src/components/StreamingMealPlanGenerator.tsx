@@ -359,13 +359,11 @@ export function StreamingMealPlanGenerator({
 
   // Clean production render - debug removed
 
-  // Simple streaming meal display - always show both loading and meals
-  console.log('🎯 RENDER: Meals count:', liveParsingMeals.length, 'Meals:', liveParsingMeals.map(m => m.title));
-  
+  // Simple streaming meal display - always show both sections
   return (
     <div key={renderKey} className="space-y-4">
-      {/* Show loading state if no meals yet OR still generating */}
-      {liveParsingMeals.length === 0 && (
+      {/* Show loading state when no meals, show meal cards when we have meals */}
+      {liveParsingMeals.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-6">
           <div className="relative">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 border-t-emerald-600 mb-6"></div>
@@ -382,10 +380,7 @@ export function StreamingMealPlanGenerator({
             </p>
           </div>
         </div>
-      )}
-
-      {/* Show meals as they arrive */}
-      {liveParsingMeals.length > 0 && (
+      ) : (
         <div className="space-y-4">
           {/* Progress Header */}
           <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200">
