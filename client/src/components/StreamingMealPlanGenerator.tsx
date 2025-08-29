@@ -360,6 +360,8 @@ export function StreamingMealPlanGenerator({
   // Clean production render - debug removed
 
   // Simple streaming meal display - always show both loading and meals
+  console.log('🎯 RENDER: Meals count:', liveParsingMeals.length, 'Meals:', liveParsingMeals.map(m => m.title));
+  
   return (
     <div key={renderKey} className="space-y-4">
       {/* Show loading state if no meals yet OR still generating */}
