@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
+import { unstable_batchedUpdates } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +61,7 @@ export function StreamingMealPlanGenerator({
   const [renderKey, setRenderKey] = useState(0); // Force re-render key  
   const [debugMealCount, setDebugMealCount] = useState(0); // Separate debug state
   const [mealCounter, setMealCounter] = useState(0); // Force immediate UI updates
+  const mealsRef = useRef<Meal[]>([]); // Direct reference for immediate access
   const { toast } = useToast();
   
   // Force update function
@@ -104,6 +106,7 @@ export function StreamingMealPlanGenerator({
       setLiveParsingMeals([]); // Reset meals
       setMealCounter(0); // Reset counter
       setDebugMealCount(0); // Reset debug count
+      mealsRef.current = []; // Reset ref meals immediately
 
       // Get token from storage
       const token = localStorage.getItem('auth_token');
@@ -240,38 +243,44 @@ export function StreamingMealPlanGenerator({
                 
                 // Don't change isGenerating - let meal cards show up via hasMeals logic
                 
-                // Add new meal to the display array immediately  
-                setLiveParsingMeals(prev => {
-                  // Check if meal already exists to prevent duplicates
-                  const mealId = parsed.data.id || `${parsed.data.day || 1}-${parsed.data.mealType}-${parsed.data.title || parsed.data.name}`;
-                  if (prev.find(m => (m.id || `${m.day || 1}-${m.mealType}-${m.title || m.name}`) === mealId)) {
-                    console.log('⏭️ Skipping duplicate meal:', parsed.data.title);
-                    return prev; // Already added
-                  }
-                  
-                  // Add the meal with proper structure
-                  const newMeal = {
-                    ...parsed.data,
-                    id: mealId,
-                    day: parsed.data.day || 1,
-                    prep_time: parsed.data.prep_time || 5,
-                    cook_time: parsed.data.cook_time || parsed.data.cook_time_minutes || 15,
-                    totalTime: (parsed.data.prep_time || 5) + (parsed.data.cook_time || parsed.data.cook_time_minutes || 15)
-                  };
-                  
-                  const newMeals = [...prev, newMeal];
-                  console.log(`📊 Total meals now: ${newMeals.length}`);
-                  console.log('🎯 Updated meal list:', newMeals.map(m => m.title || m.name));
-                  
-                  return newMeals;
-                });
+                // Add meal to ref immediately for instant access
+                const mealId = parsed.data.id || `${parsed.data.day || 1}-${parsed.data.mealType}-${parsed.data.title || parsed.data.name}`;
                 
-                // FORCE IMMEDIATE SYNCHRONOUS RE-RENDER
-                flushSync(() => {
+                // Check if meal already exists to prevent duplicates
+                if (mealsRef.current.find(m => (m.id || `${m.day || 1}-${m.mealType}-${m.title || m.name}`) === mealId)) {
+                  console.log('⏭️ Skipping duplicate meal:', parsed.data.title);
+                  return;
+                }
+                
+                // Add the meal with proper structure
+                const newMeal = {
+                  ...parsed.data,
+                  id: mealId,
+                  day: parsed.data.day || 1,
+                  prep_time: parsed.data.prep_time || 5,
+                  cook_time: parsed.data.cook_time || parsed.data.cook_time_minutes || 15,
+                  totalTime: (parsed.data.prep_time || 5) + (parsed.data.cook_time || parsed.data.cook_time_minutes || 15)
+                };
+                
+                // Add to ref immediately
+                mealsRef.current = [...mealsRef.current, newMeal];
+                console.log(`📊 Total meals now: ${mealsRef.current.length}`);
+                console.log('🎯 Updated meal list:', mealsRef.current.map(m => m.title || m.name));
+                
+                // Update state AND trigger multiple re-renders immediately
+                setLiveParsingMeals(mealsRef.current);
+                
+                // FORCE IMMEDIATE RENDER - Break React's batching
+                unstable_batchedUpdates(() => {
                   setMealCounter(prev => prev + 1);
                   setDebugMealCount(liveParsingMeals.length + 1);
+                  setRenderKey(prev => prev + 1); // Force re-render
                 });
-                forceUpdate();
+                
+                // Additional synchronous render trigger
+                flushSync(() => {
+                  setMealCounter(prev => prev + 1);
+                });
               } else if (parsed.type === 'complete') {
                 console.log('✅ Complete meal plan received');
                 // Meal plan generation complete - defer to prevent render cycle issues
