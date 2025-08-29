@@ -2924,11 +2924,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for await (const chunk of openaiStream) {
         const content = chunk.choices[0]?.delta?.content || '';
         if (content) {
+          console.log('🌊 STREAM CHUNK received:', content.length, 'chars:', content.substring(0, 100));
           buffer += content;
           
-          // Only log when we see a title being streamed
+          // Log when we see important content
           if (content.includes('"title"')) {
-            console.log('📡 Title found in stream:', content);
+            console.log('📡 TITLE DETECTED in chunk:', content);
           }
           
           // Track current day from the JSON structure
@@ -2937,21 +2938,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currentDay = parseInt(dayMatches[dayMatches.length - 1][1]);
           }
           
+          // 🔍 DEBUG: Check what we're searching in
+          console.log('🔍 PARSING chunk content:', content.length, 'chars');
+          
           // Look for meal titles in real-time - stream as soon as we see a title!
           const titleRegex = /"title":\s*"([^"]+)"/g;
           
           // Only search in the new content that just arrived
           const newContent = content;
+          console.log('🕵️ SEARCHING for titles in new content:', newContent);
+          
           let match;
           while ((match = titleRegex.exec(newContent)) !== null) {
             const mealTitle = match[1];
+            console.log('🎯 REGEX MATCH found title:', mealTitle);
             
             // Create a simple unique key based on meal title
             const mealKey = `${mealTitle.trim()}`;
             
             // Skip if we've already processed this meal title
             if (processedMeals.has(mealKey)) {
-              console.log(`⏭️ Skipping duplicate meal: ${mealTitle}`);
+              console.log(`⏭️ DUPLICATE DETECTED: ${mealTitle} (already processed)`);
               continue;
             }
             
@@ -2978,12 +2985,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
             
             // 🚀 IMMEDIATE STREAMING! Send as soon as title appears
-            sendData(JSON.stringify({
+            console.log('📤 SENDING SSE data for:', mealTitle);
+            const sseData = JSON.stringify({
               type: 'meal',
               data: mealData
-            }));
+            });
+            console.log('📦 SSE payload:', sseData);
             
-            console.log(`✨ STREAMED: ${mealTitle} sent to frontend immediately!`);
+            sendData(sseData);
+            
+            console.log(`✨ STREAMED: ${mealTitle} sent to frontend at ${new Date().toISOString()}!`);
+          }
+          
+          // Log if no matches found
+          if (!titleRegex.test(newContent)) {
+            console.log('❌ NO TITLES found in this chunk');
           }
         }
       }

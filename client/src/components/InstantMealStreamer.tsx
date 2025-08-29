@@ -169,44 +169,56 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
       const decoder = new TextDecoder();
       let buffer = '';
 
-      console.log('🎬 INSTANT: Starting to read stream');
+      console.log('🎬 FRONTEND: Starting to read stream at', new Date().toISOString());
 
       while (true) {
         const { done, value } = await reader.read();
+        console.log('📡 FRONTEND: Stream read - done:', done, 'value length:', value?.length, 'at', new Date().toISOString());
+        
         if (done) {
-          console.log('🏁 INSTANT: Stream completed');
+          console.log('🏁 FRONTEND: Stream completed at', new Date().toISOString());
           break;
         }
 
         const decodedText = decoder.decode(value, { stream: true });
+        console.log('🔄 FRONTEND: Decoded text:', decodedText.length, 'chars:', decodedText.substring(0, 100));
         buffer += decodedText;
         const lines = buffer.split('\n');
+        console.log('📄 FRONTEND: Split into', lines.length, 'lines');
         buffer = lines.pop() || '';
 
         for (const line of lines) {
+          console.log('🔍 FRONTEND: Processing line:', line.substring(0, 50));
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
+            console.log('📨 FRONTEND: Found SSE data:', data.substring(0, 100));
             
             try {
               const parsed = JSON.parse(data);
               
               if (parsed.type === 'meal') {
                 const meal = parsed.data;
-                console.log(`🍽️ INSTANT: Received meal: ${meal.title} - ADDING IMMEDIATELY!`);
+                console.log(`🍽️ FRONTEND: Received meal at ${new Date().toISOString()}: ${meal.title}`);
+                console.log('📦 FRONTEND: Meal data:', meal);
                 
                 // Check for duplicates
                 const mealId = meal.id || `${meal.day || 1}-${meal.mealType}-${meal.title || meal.name}`;
-                if (mealsRef.current.find(m => (m.id || `${m.day || 1}-${m.mealType}-${m.title || m.name}`) === mealId)) {
-                  console.log('⏭️ INSTANT: Skipping duplicate meal');
+                const existingMeal = mealsRef.current.find(m => (m.id || `${m.day || 1}-${m.mealType}-${m.title || m.name}`) === mealId);
+                if (existingMeal) {
+                  console.log('⏭️ FRONTEND: Skipping duplicate meal:', meal.title);
                   continue;
                 }
 
                 // Add to ref
+                console.log('➕ FRONTEND: Adding meal to ref array, current count:', mealsRef.current.length);
                 mealsRef.current.push(meal);
+                console.log('📊 FRONTEND: Ref array now has', mealsRef.current.length, 'meals');
                 
                 // IMMEDIATELY add to DOM - TRUE REAL-TIME!
+                console.log('🎨 FRONTEND: Adding meal to DOM immediately...');
                 addMealToDOM(meal, mealsRef.current.length - 1);
                 setMealCount(mealsRef.current.length);
+                console.log('✅ FRONTEND: Meal added to DOM and count updated');
                 
               } else if (parsed.type === 'complete') {
                 console.log('✅ INSTANT: Generation complete');
