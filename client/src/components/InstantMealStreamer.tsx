@@ -192,7 +192,7 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
               
               if (parsed.type === 'meal') {
                 const meal = parsed.data;
-                console.log(`🍽️ INSTANT: Received meal: ${meal.title}`);
+                console.log(`🍽️ INSTANT: Received meal: ${meal.title} (will appear in ${mealsRef.current.length * 800}ms)`);
                 
                 // Check for duplicates
                 const mealId = meal.id || `${meal.day || 1}-${meal.mealType}-${meal.title || meal.name}`;
@@ -204,11 +204,12 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
                 // Add to ref
                 mealsRef.current.push(meal);
                 
-                // INSTANTLY add to DOM
-                addMealToDOM(meal, mealsRef.current.length - 1);
-                
-                // Update meal count for progress header
-                setMealCount(mealsRef.current.length);
+                // Add to DOM with staggered timing for visual streaming effect
+                const mealIndex = mealsRef.current.length - 1;
+                setTimeout(() => {
+                  addMealToDOM(meal, mealIndex);
+                  setMealCount(mealsRef.current.length);
+                }, mealIndex * 800); // 800ms delay between each meal for visual streaming
                 
               } else if (parsed.type === 'complete') {
                 console.log('✅ INSTANT: Generation complete');
