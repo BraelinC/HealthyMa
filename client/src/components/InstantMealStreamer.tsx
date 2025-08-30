@@ -261,25 +261,6 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
 
   return (
     <div className="space-y-4">
-      {/* Loading State */}
-      {isGenerating && mealsRef.current.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 px-6">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 border-t-emerald-600 mb-6"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <ChefHat className="h-6 w-6 text-emerald-600" />
-            </div>
-          </div>
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              🔥 Generating Your Perfect Meals
-            </h3>
-            <p className="text-gray-500 text-sm">
-              Our AI chef is creating personalized recipes just for you...
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Progress Header - Show when we have meals */}
       {mealCount > 0 && (
