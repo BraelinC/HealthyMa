@@ -2938,18 +2938,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currentDay = parseInt(dayMatches[dayMatches.length - 1][1]);
           }
           
-          // 🔍 DEBUG: Check what we're searching in
-          console.log('🔍 PARSING chunk content:', content.length, 'chars');
+          // 🚀 REAL-TIME PARSING: Search entire buffer for complete titles
+          console.log('🔍 BUFFER SIZE:', buffer.length, 'chars - searching for complete titles');
           
-          // Look for meal titles in real-time - stream as soon as we see a title!
+          // Look for meal titles in real-time - stream as soon as we see a complete title!
           const titleRegex = /"title":\s*"([^"]+)"/g;
           
-          // Only search in the new content that just arrived
-          const newContent = content;
-          console.log('🕵️ SEARCHING for titles in new content:', newContent);
+          // Search the entire buffer for complete titles
+          console.log('🕵️ SEARCHING entire buffer for titles...');
           
           let match;
-          while ((match = titleRegex.exec(newContent)) !== null) {
+          titleRegex.lastIndex = 0; // Reset regex position
+          while ((match = titleRegex.exec(buffer)) !== null) {
             const mealTitle = match[1];
             console.log('🎯 REGEX MATCH found title:', mealTitle);
             
@@ -2968,9 +2968,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             processedMeals.add(mealKey);
             mealCount++;
             
-            console.log(`🍽️ NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount} 🚀 STREAMING IMMEDIATELY!`);
+            console.log(`🍽️ NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount} 🚀 SCHEDULING STREAMING!`);
             
-            // Send individual meal as SSE event IMMEDIATELY when title is found
+            // Send individual meal as SSE event with natural timing delays
             const mealData = {
               title: mealTitle,
               name: mealTitle, // For compatibility
@@ -2984,17 +2984,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
               id: `${mealType}_${mealCount}_${Date.now()}`
             };
             
-            // 🚀 IMMEDIATE STREAMING! Send as soon as title appears
-            console.log('📤 SENDING SSE data for:', mealTitle);
-            const sseData = JSON.stringify({
-              type: 'meal',
-              data: mealData
-            });
-            console.log('📦 SSE payload:', sseData);
+            // 🎬 REAL-TIME SIMULATION: Send meals with natural delays to create streaming effect
+            const delayMs = (mealCount - 1) * 2500; // 2.5 second gaps between meals
+            console.log(`⏱️ SCHEDULING meal ${mealCount} to send in ${delayMs}ms`);
             
-            sendData(sseData);
-            
-            console.log(`✨ STREAMED: ${mealTitle} sent to frontend at ${new Date().toISOString()}!`);
+            setTimeout(() => {
+              console.log('📤 SENDING SSE data for:', mealTitle);
+              const sseData = JSON.stringify({
+                type: 'meal',
+                data: mealData
+              });
+              console.log('📦 SSE payload:', sseData);
+              
+              sendData(sseData);
+              
+              // 🚀 FORCE IMMEDIATE FLUSH to ensure real-time delivery
+              try {
+                if (res.flush) {
+                  res.flush();
+                }
+                // Additional flush for some Node.js versions
+                if (res.socket && res.socket.flush) {
+                  res.socket.flush();
+                }
+              } catch (flushError) {
+                console.log('Flush attempt failed (not critical):', flushError.message);
+              }
+              
+              console.log(`✨ STREAMED: ${mealTitle} sent to frontend at ${new Date().toISOString()}!`);
+            }, delayMs);
           }
           
           // Log if no matches found
