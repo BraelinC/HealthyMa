@@ -925,9 +925,12 @@ export default function Profile() {
                       <Select 
                         value={profileType} 
                         onValueChange={(value: 'individual' | 'family') => {
+                          const previousType = profileType;
                           setProfileType(value);
-                          // Clear members when switching to individual
-                          if (value === 'individual') {
+                          // Only clear members when explicitly switching FROM family TO individual
+                          // and we're not loading profile data (members should exist before clearing)
+                          if (value === 'individual' && previousType === 'family' && members.length > 0) {
+                            console.log('🗑️ User explicitly switched to individual - clearing members');
                             setMembers([]);
                             setFamilySize(1);
                           }
