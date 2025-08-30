@@ -3016,7 +3016,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           // Log if no matches found
-          if (!titleRegex.test(newContent)) {
+          if (!titleRegex.test(buffer)) {
             console.log('❌ NO TITLES found in this chunk');
           }
         }
