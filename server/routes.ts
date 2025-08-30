@@ -2984,35 +2984,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
               id: `${mealType}_${mealCount}_${Date.now()}`
             };
             
-            // 🎬 REAL-TIME SIMULATION: Send meals with natural delays to create streaming effect
-            const delayMs = (mealCount - 1) * 2500; // 2.5 second gaps between meals
-            console.log(`⏱️ SCHEDULING meal ${mealCount} to send in ${delayMs}ms`);
+            // 🚀 IMMEDIATE STREAMING: Send meal as soon as detected, no artificial delays
+            console.log(`📤 SENDING SSE data IMMEDIATELY for meal ${mealCount}/6:`, mealTitle);
+            const sseData = JSON.stringify({
+              type: 'meal',
+              data: mealData,
+              mealNumber: mealCount,
+              totalMeals: 6
+            });
+            console.log('📦 SSE payload:', sseData);
             
-            setTimeout(() => {
-              console.log('📤 SENDING SSE data for:', mealTitle);
-              const sseData = JSON.stringify({
-                type: 'meal',
-                data: mealData
-              });
-              console.log('📦 SSE payload:', sseData);
-              
-              sendData(sseData);
-              
-              // 🚀 FORCE IMMEDIATE FLUSH to ensure real-time delivery
-              try {
-                if (res.flush) {
-                  res.flush();
-                }
-                // Additional flush for some Node.js versions
-                if (res.socket && res.socket.flush) {
-                  res.socket.flush();
-                }
-              } catch (flushError) {
-                console.log('Flush attempt failed (not critical):', flushError.message);
+            sendData(sseData);
+            
+            // 🚀 FORCE IMMEDIATE FLUSH to ensure real-time delivery
+            try {
+              if (res.flush) {
+                res.flush();
               }
-              
-              console.log(`✨ STREAMED: ${mealTitle} sent to frontend at ${new Date().toISOString()}!`);
-            }, delayMs);
+              // Additional flush for some Node.js versions
+              if (res.socket && res.socket.flush) {
+                res.socket.flush();
+              }
+            } catch (flushError) {
+              console.log('Flush attempt failed (not critical):', flushError.message);
+            }
+            
+            console.log(`✨ STREAMED IMMEDIATELY: Meal ${mealCount}/6 - ${mealTitle} sent to frontend at ${new Date().toISOString()}!`);
           }
           
           // Log if no matches found
@@ -3022,19 +3019,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Send the complete meal plan at the end
-      try {
-        // Clean and parse the complete response
-        const cleanBuffer = buffer.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const completeMealPlan = JSON.parse(cleanBuffer);
-        
-        sendData(JSON.stringify({
-          type: 'complete',
-          data: completeMealPlan
+      // 🎯 ROBUST LOGIC: Only send complete meal plan when ALL meals have been streamed
+      console.log(`🔍 COMPLETION CHECK: Streamed ${mealCount} meals out of 6 expected`);
+      
+      if (mealCount >= 6) {
+        console.log('✅ ALL 6 MEALS STREAMED! Now sending complete meal plan...');
+        try {
+          // Clean and parse the complete response
+          const cleanBuffer = buffer.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          const completeMealPlan = JSON.parse(cleanBuffer);
+          
+          sendData(JSON.stringify({
+            type: 'complete',
+            data: completeMealPlan,
+            allMealsStreamed: true,
+            totalMealsStreamed: mealCount
+          }));
+          console.log('📋 COMPLETE MEAL PLAN SENT after all 6 meals streamed!');
+        } catch (e) {
+          console.log('❌ Failed to parse complete meal plan, sending done signal');
+          sendData(JSON.stringify({ type: 'done' }));
+        }
+      } else {
+        console.log(`⏳ WAITING for more meals... Only ${mealCount}/6 streamed so far. NOT sending complete plan yet.`);
+        // Don't send complete plan until all meals are streamed
+        sendData(JSON.stringify({ 
+          type: 'partial_complete',
+          streamedMeals: mealCount,
+          totalExpected: 6,
+          message: 'Waiting for all meals to stream before showing complete plan'
         }));
-      } catch (e) {
-        // If parsing fails, just send done signal
-        sendData(JSON.stringify({ type: 'done' }));
       }
       
       res.end();

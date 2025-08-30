@@ -221,8 +221,18 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
                 console.log('✅ FRONTEND: Meal added to DOM and count updated');
                 
               } else if (parsed.type === 'complete') {
-                console.log('✅ INSTANT: Generation complete');
-                setTimeout(() => onComplete(parsed.data), 500);
+                console.log('✅ INSTANT: Complete signal received');
+                console.log('📊 FRONTEND: All meals streamed:', parsed.allMealsStreamed, 'Total streamed:', parsed.totalMealsStreamed);
+                
+                if (parsed.allMealsStreamed && parsed.totalMealsStreamed >= 6) {
+                  console.log('🎉 ALL 6 MEALS CONFIRMED STREAMED! Showing final complete meal plan...');
+                  setTimeout(() => onComplete(parsed.data), 500);
+                } else {
+                  console.log('⏳ FRONTEND: Complete signal received but not all meals streamed yet. Waiting...');
+                }
+              } else if (parsed.type === 'partial_complete') {
+                console.log(`⏳ FRONTEND: Partial completion - ${parsed.streamedMeals}/${parsed.totalExpected} meals streamed`);
+                // Don't show final result yet, continue waiting for more meals
               }
             } catch (parseError) {
               console.warn('Failed to parse SSE data:', parseError);
