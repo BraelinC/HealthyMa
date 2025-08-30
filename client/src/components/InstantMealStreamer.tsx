@@ -222,10 +222,10 @@ export function InstantMealStreamer({ filters, onComplete, onCancel }: InstantMe
                 
               } else if (parsed.type === 'complete') {
                 console.log('✅ INSTANT: Complete signal received');
-                console.log('📊 FRONTEND: All meals streamed:', parsed.allMealsStreamed, 'Total streamed:', parsed.totalMealsStreamed);
+                console.log('📊 FRONTEND: All meals streamed:', parsed.allMealsStreamed, 'Total streamed:', parsed.totalMealsStreamed, 'Expected:', parsed.expectedTotalMeals);
                 
-                if (parsed.allMealsStreamed && parsed.totalMealsStreamed >= 6) {
-                  console.log('🎉 ALL 6 MEALS CONFIRMED STREAMED! Showing final complete meal plan...');
+                if (parsed.allMealsStreamed && parsed.totalMealsStreamed >= (parsed.expectedTotalMeals || 6)) {
+                  console.log(`🎉 ALL ${parsed.expectedTotalMeals || 6} MEALS CONFIRMED STREAMED! Showing final complete meal plan...`);
                   setTimeout(() => onComplete(parsed.data), 500);
                 } else {
                   console.log('⏳ FRONTEND: Complete signal received but not all meals streamed yet. Waiting...');

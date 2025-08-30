@@ -2908,6 +2908,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         max_tokens: 4096
       });
 
+      // 🎯 DYNAMIC MEAL COUNTING: Calculate expected meals based on user's selection
+      const expectedTotalMeals = numDays * mealsPerDay;
+      console.log(`🧮 DYNAMIC CALCULATION: ${numDays} days × ${mealsPerDay} meals = ${expectedTotalMeals} total expected meals`);
+      
       // Parse meals in real-time from the stream
       let buffer = '';
       let mealCount = 0;
@@ -2985,12 +2989,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
             
             // 🚀 IMMEDIATE STREAMING: Send meal as soon as detected, no artificial delays
-            console.log(`📤 SENDING SSE data IMMEDIATELY for meal ${mealCount}/6:`, mealTitle);
+            console.log(`📤 SENDING SSE data IMMEDIATELY for meal ${mealCount}/${expectedTotalMeals}:`, mealTitle);
             const sseData = JSON.stringify({
               type: 'meal',
               data: mealData,
               mealNumber: mealCount,
-              totalMeals: 6
+              totalMeals: expectedTotalMeals
             });
             console.log('📦 SSE payload:', sseData);
             
@@ -3009,7 +3013,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log('Flush attempt failed (not critical):', flushError.message);
             }
             
-            console.log(`✨ STREAMED IMMEDIATELY: Meal ${mealCount}/6 - ${mealTitle} sent to frontend at ${new Date().toISOString()}!`);
+            console.log(`✨ STREAMED IMMEDIATELY: Meal ${mealCount}/${expectedTotalMeals} - ${mealTitle} sent to frontend at ${new Date().toISOString()}!`);
           }
           
           // Log if no matches found
@@ -3020,10 +3024,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 🎯 ROBUST LOGIC: Only send complete meal plan when ALL meals have been streamed
-      console.log(`🔍 COMPLETION CHECK: Streamed ${mealCount} meals out of 6 expected`);
+      console.log(`🔍 COMPLETION CHECK: Streamed ${mealCount} meals out of ${expectedTotalMeals} expected`);
       
-      if (mealCount >= 6) {
-        console.log('✅ ALL 6 MEALS STREAMED! Now sending complete meal plan...');
+      if (mealCount >= expectedTotalMeals) {
+        console.log(`✅ ALL ${expectedTotalMeals} MEALS STREAMED! Now sending complete meal plan...`);
         try {
           // Clean and parse the complete response
           const cleanBuffer = buffer.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -3033,20 +3037,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'complete',
             data: completeMealPlan,
             allMealsStreamed: true,
-            totalMealsStreamed: mealCount
+            totalMealsStreamed: mealCount,
+            expectedTotalMeals: expectedTotalMeals
           }));
-          console.log('📋 COMPLETE MEAL PLAN SENT after all 6 meals streamed!');
+          console.log(`📋 COMPLETE MEAL PLAN SENT after all ${expectedTotalMeals} meals streamed!`);
         } catch (e) {
           console.log('❌ Failed to parse complete meal plan, sending done signal');
           sendData(JSON.stringify({ type: 'done' }));
         }
       } else {
-        console.log(`⏳ WAITING for more meals... Only ${mealCount}/6 streamed so far. NOT sending complete plan yet.`);
+        console.log(`⏳ WAITING for more meals... Only ${mealCount}/${expectedTotalMeals} streamed so far. NOT sending complete plan yet.`);
         // Don't send complete plan until all meals are streamed
         sendData(JSON.stringify({ 
           type: 'partial_complete',
           streamedMeals: mealCount,
-          totalExpected: 6,
+          totalExpected: expectedTotalMeals,
           message: 'Waiting for all meals to stream before showing complete plan'
         }));
       }
