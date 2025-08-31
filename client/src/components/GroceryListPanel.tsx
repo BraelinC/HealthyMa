@@ -232,18 +232,39 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
         notes: ing.notes
       }));
       
-      // Group by category
-      const grouped = consolidatedIngredients.reduce((acc, ingredient) => {
-        const category = ingredient.category || 'other';
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        acc[category].push(ingredient);
-        return acc;
-      }, {} as { [key: string]: Ingredient[] });
+      // Preserve existing custom ingredients by merging them
+      setCategorizedIngredients(prevCategorized => {
+        // Find custom ingredients (those with is_custom: true)
+        const customIngredients: { [key: string]: Ingredient[] } = {};
+        Object.entries(prevCategorized).forEach(([category, items]) => {
+          const customItems = items.filter((item: any) => item.is_custom);
+          if (customItems.length > 0) {
+            customIngredients[category] = customItems;
+          }
+        });
+        
+        // Group API ingredients by category
+        const grouped = consolidatedIngredients.reduce((acc, ingredient) => {
+          const category = ingredient.category || 'other';
+          if (!acc[category]) {
+            acc[category] = [];
+          }
+          acc[category].push(ingredient);
+          return acc;
+        }, {} as { [key: string]: Ingredient[] });
+        
+        // Merge custom ingredients with API ingredients
+        Object.entries(customIngredients).forEach(([category, customItems]) => {
+          if (!grouped[category]) {
+            grouped[category] = [];
+          }
+          grouped[category] = [...grouped[category], ...customItems];
+        });
+        
+        return grouped;
+      });
       
       setIngredients(consolidatedIngredients);
-      setCategorizedIngredients(grouped);
       setSavings(response.savings);
       setRecommendations(response.recommendations || []);
       

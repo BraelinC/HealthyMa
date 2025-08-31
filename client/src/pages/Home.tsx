@@ -162,25 +162,44 @@ export default function Home() {
     }
 
     // Add ingredient to grocery list data
-    if (groceryListData && groceryListData.categories) {
+    if (groceryListData && groceryListData.consolidatedIngredients) {
       const updatedData = { ...groceryListData };
       
-      // Find or create the category
-      if (!updatedData.categories[newIngredient.category]) {
-        updatedData.categories[newIngredient.category] = [];
-      }
-      
-      // Add the new ingredient
+      // Create the new ingredient object
       const ingredientText = `${newIngredient.quantity} ${newIngredient.unit} ${newIngredient.name}`;
-      updatedData.categories[newIngredient.category].push({
+      const newIngredientObj = {
         name: newIngredient.name,
-        display_text: ingredientText,
+        displayText: ingredientText,
         quantity: newIngredient.quantity,
         unit: newIngredient.unit,
+        category: newIngredient.category,
+        notes: "Custom ingredient",
         is_custom: true
-      });
+      };
+      
+      // Add to consolidated ingredients
+      updatedData.consolidatedIngredients = [...updatedData.consolidatedIngredients, newIngredientObj];
       
       setGroceryListData(updatedData);
+    } else {
+      // If no grocery data exists yet, create initial structure
+      const ingredientText = `${newIngredient.quantity} ${newIngredient.unit} ${newIngredient.name}`;
+      const newIngredientObj = {
+        name: newIngredient.name,
+        displayText: ingredientText,
+        quantity: newIngredient.quantity,
+        unit: newIngredient.unit,
+        category: newIngredient.category,
+        notes: "Custom ingredient",
+        is_custom: true
+      };
+      
+      setGroceryListData({
+        consolidatedIngredients: [newIngredientObj],
+        shoppingUrl: null,
+        savings: null,
+        recommendations: []
+      });
     }
 
     // Reset form and close modal
