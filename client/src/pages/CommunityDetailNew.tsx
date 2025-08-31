@@ -847,12 +847,12 @@ export default function CommunityDetailNew() {
                     <div className="flex gap-3">
                       <Avatar className="w-10 h-10">
                         <AvatarFallback className="bg-blue-600 text-white">
-                          {post.username[0]}
+                          {(post.author?.full_name || post.username || 'U')[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-white">{post.username}</h4>
+                          <h4 className="font-medium text-white">{post.author?.full_name || post.username}</h4>
                           {getPostTypeBadge(post.post_type)}
                         </div>
                         <p className="text-sm text-gray-400">{post.created_at}</p>
