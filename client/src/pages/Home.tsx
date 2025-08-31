@@ -76,6 +76,8 @@ import { useToast } from "@/hooks/use-toast";
 import { GroceryListPanel } from "@/components/GroceryListPanel";
 import { CommunityShareModal } from "@/components/CommunityShareModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Meal {
   title: string;
@@ -136,6 +138,8 @@ export default function Home() {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   const [showCreateRecipe, setShowCreateRecipe] = useState(false);
+  const [showAddIngredientModal, setShowAddIngredientModal] = useState(false);
+  const [newIngredient, setNewIngredient] = useState({ name: '', quantity: 1, unit: 'items', category: 'pantry' });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -145,6 +149,49 @@ export default function Home() {
   const [shareType, setShareType] = useState<'recipe' | 'meal_plan'>('recipe');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Handle adding custom ingredient to grocery list
+  const handleAddIngredient = () => {
+    if (!newIngredient.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an ingredient name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add ingredient to grocery list data
+    if (groceryListData && groceryListData.categories) {
+      const updatedData = { ...groceryListData };
+      
+      // Find or create the category
+      if (!updatedData.categories[newIngredient.category]) {
+        updatedData.categories[newIngredient.category] = [];
+      }
+      
+      // Add the new ingredient
+      const ingredientText = `${newIngredient.quantity} ${newIngredient.unit} ${newIngredient.name}`;
+      updatedData.categories[newIngredient.category].push({
+        name: newIngredient.name,
+        display_text: ingredientText,
+        quantity: newIngredient.quantity,
+        unit: newIngredient.unit,
+        is_custom: true
+      });
+      
+      setGroceryListData(updatedData);
+    }
+
+    // Reset form and close modal
+    setNewIngredient({ name: '', quantity: 1, unit: 'items', category: 'pantry' });
+    setShowAddIngredientModal(false);
+    
+    toast({
+      title: "Ingredient Added",
+      description: `${newIngredient.name} has been added to your grocery list`,
+    });
+  };
 
   // Check if user has a profile
   const { data: profileData, isLoading: isLoadingProfile } = useQuery({
@@ -2082,6 +2129,24 @@ export default function Home() {
                 <div className="text-xs text-gray-500">See your saved meals</div>
               </div>
             </Button>
+            
+            {/* Add Ingredient option - only show when grocery panel is open */}
+            {showGroceryPanel && (
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
+                onClick={() => {
+                  setShowAddIngredientModal(true);
+                  setShowAddMenu(false);
+                }}
+              >
+                <Plus className="h-5 w-5 mr-3 text-purple-600" />
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">Add Ingredient</div>
+                  <div className="text-xs text-gray-500">Add custom items to grocery list</div>
+                </div>
+              </Button>
+            )}
           </div>
         )}
         
@@ -2118,6 +2183,99 @@ export default function Home() {
         mealPlan={shareType === 'meal_plan' ? itemToShare : undefined}
         shareType={shareType}
       />
+      
+      {/* Add Ingredient Modal */}
+      <Dialog open={showAddIngredientModal} onOpenChange={setShowAddIngredientModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-purple-600" />
+              Add Custom Ingredient
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ingredient-name">Ingredient Name</Label>
+              <Input
+                id="ingredient-name"
+                placeholder="e.g., Organic quinoa"
+                value={newIngredient.name}
+                onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={newIngredient.quantity}
+                  onChange={(e) => setNewIngredient({ ...newIngredient, quantity: parseFloat(e.target.value) || 1 })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="unit">Unit</Label>
+                <Select value={newIngredient.unit} onValueChange={(value) => setNewIngredient({ ...newIngredient, unit: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="items">items</SelectItem>
+                    <SelectItem value="lbs">lbs</SelectItem>
+                    <SelectItem value="oz">oz</SelectItem>
+                    <SelectItem value="cups">cups</SelectItem>
+                    <SelectItem value="tbsp">tbsp</SelectItem>
+                    <SelectItem value="tsp">tsp</SelectItem>
+                    <SelectItem value="packages">packages</SelectItem>
+                    <SelectItem value="bottles">bottles</SelectItem>
+                    <SelectItem value="cans">cans</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select value={newIngredient.category} onValueChange={(value) => setNewIngredient({ ...newIngredient, category: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="produce">Produce</SelectItem>
+                  <SelectItem value="meat">Meat & Seafood</SelectItem>
+                  <SelectItem value="dairy">Dairy & Eggs</SelectItem>
+                  <SelectItem value="pantry">Pantry</SelectItem>
+                  <SelectItem value="frozen">Frozen</SelectItem>
+                  <SelectItem value="beverages">Beverages</SelectItem>
+                  <SelectItem value="snacks">Snacks</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowAddIngredientModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                onClick={handleAddIngredient}
+              >
+                Add Ingredient
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );
