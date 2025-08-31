@@ -682,8 +682,7 @@ const Search = () => {
                       </TabsContent>
 
                       <TabsContent value="nutrition" className="p-4 pt-3">
-                        {/* DEBUG: Show exactly what nutrition data we have - HIDDEN FOR PRODUCTION */}
-                        {/* 
+                        {/* DEBUG: Show exactly what nutrition data we have - HIDDEN FOR PRODUCTION 
                         <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs font-mono">
                           <div><strong>🔍 NUTRITION DEBUG:</strong></div>
                           <div>Recipe ID: {generatedRecipe.id}</div>
