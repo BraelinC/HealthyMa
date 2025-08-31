@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Switch, Route, useLocation, Link } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { initializePostsCache } from "./lib/postsCache";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AchievementNotification from "@/components/AchievementNotification";
@@ -318,6 +319,11 @@ function Router() {
 }
 
 function App() {
+  // Initialize caching systems on app startup
+  useEffect(() => {
+    initializePostsCache();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

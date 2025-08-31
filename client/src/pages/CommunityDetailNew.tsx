@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,13 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUploader } from "@/components/ImageUploader";
+import { 
+  getCommunityPostsCache, 
+  addToPostsCache, 
+  updatePostInCache,
+  isPostsCacheFresh,
+  getPostsCacheKey 
+} from "@/lib/postsCache";
 import { MealPlanEditor } from "@/components/community/MealPlanEditor";
 import { LessonEditor } from "@/components/community/LessonEditor";
 import EnhancedLessonEditor from "@/components/community/EnhancedLessonEditor";
@@ -432,14 +439,32 @@ export default function CommunityDetailNew() {
     enabled: !!id && isAuthenticated,
   });
 
-  // Temporarily disable API call to show mock posts with the visual style you liked
-  const { data: posts = [], isLoading: postsLoading } = useQuery({
+  // Smart posts loading with 50-post cache for instant loading
+  const [cachedPosts, setCachedPosts] = useState<CommunityPost[]>([]);
+  const [showCachedData, setShowCachedData] = useState(false);
+
+  // Check cache immediately when component loads
+  useEffect(() => {
+    if (id) {
+      const cached = getCommunityPostsCache(id);
+      if (cached.length > 0) {
+        setCachedPosts(cached as CommunityPost[]);
+        setShowCachedData(true);
+        console.log('⚡ Using cached posts for instant loading:', cached.length, 'posts');
+      }
+    }
+  }, [id]);
+
+  // Fetch fresh posts from API
+  const { data: freshPosts = [], isLoading: postsLoading } = useQuery({
     queryKey: [`/api/communities/${id}/posts`, activeFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (activeFilter !== "all") {
         params.append("type", activeFilter === "meal-shares" ? "meal_share" : activeFilter);
       }
+      // Load more posts for better cache coverage
+      params.append("limit", "50");
       const queryString = params.toString();
       const url = `/api/communities/${id}/posts${queryString ? `?${queryString}` : ""}`;
       const response = await fetch(url, {
@@ -448,10 +473,22 @@ export default function CommunityDetailNew() {
         },
       });
       if (!response.ok) throw new Error('Failed to fetch posts');
-      return response.json();
+      const posts = await response.json();
+      
+      // Update cache with fresh data
+      if (id && posts.length > 0) {
+        addToPostsCache(id, posts);
+        setCachedPosts(posts);
+      }
+      
+      return posts;
     },
-    enabled: !!id && !!community, // Re-enabled to show real posts
+    enabled: !!id && !!community,
+    staleTime: 2 * 60 * 1000, // Consider data stale after 2 minutes
   });
+
+  // Use cached posts for instant display, fresh posts when available
+  const posts = freshPosts.length > 0 ? freshPosts : cachedPosts;
 
   // Check if user is already a member based on memberInfo existence
   const isMember = community?.memberInfo || community?.isMember;
@@ -516,12 +553,22 @@ export default function CommunityDetailNew() {
         }),
       });
     },
-    onSuccess: () => {
+    onSuccess: (newPost) => {
       setNewPostContent("");
       setSelectedImages([]);
-      // Invalidate both the generic and filtered query keys
+      
+      // Add new post to cache immediately for instant UI update
+      if (id && newPost) {
+        const currentCache = getCommunityPostsCache(id);
+        const updatedCache = [newPost, ...currentCache].slice(0, 50);
+        queryClient.setQueryData(getPostsCacheKey(id), updatedCache);
+        setCachedPosts(updatedCache as CommunityPost[]);
+      }
+      
+      // Invalidate queries to refresh from API in background
       queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`] });
       queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`, activeFilter] });
+      
       toast({
         title: "Post shared!",
         description: "Your post has been shared with the community.",
@@ -536,7 +583,29 @@ export default function CommunityDetailNew() {
         method: "POST",
       });
     },
-    onSuccess: () => {
+    onSuccess: (result, postId) => {
+      // Update cache immediately for instant UI feedback
+      if (id) {
+        const currentCache = getCommunityPostsCache(id);
+        const post = currentCache.find(p => p.id === postId);
+        if (post) {
+          const wasLiked = post.is_liked;
+          updatePostInCache(id, postId, {
+            is_liked: !wasLiked,
+            likes_count: wasLiked ? post.likes_count - 1 : post.likes_count + 1
+          });
+          
+          // Update local state immediately
+          const updatedCache = currentCache.map(p => 
+            p.id === postId 
+              ? { ...p, is_liked: !wasLiked, likes_count: wasLiked ? p.likes_count - 1 : p.likes_count + 1 }
+              : p
+          );
+          setCachedPosts(updatedCache as CommunityPost[]);
+        }
+      }
+      
+      // Refresh from API in background
       queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`] });
       queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`, activeFilter] });
     },
