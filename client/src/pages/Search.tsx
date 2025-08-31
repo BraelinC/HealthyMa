@@ -682,7 +682,8 @@ const Search = () => {
                       </TabsContent>
 
                       <TabsContent value="nutrition" className="p-4 pt-3">
-                        {/* DEBUG: Show exactly what nutrition data we have */}
+                        {/* DEBUG: Show exactly what nutrition data we have - HIDDEN FOR PRODUCTION */}
+                        {/* 
                         <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs font-mono">
                           <div><strong>🔍 NUTRITION DEBUG:</strong></div>
                           <div>Recipe ID: {generatedRecipe.id}</div>
@@ -706,6 +707,7 @@ const Search = () => {
                             </div>
                           )}
                         </div>
+                        */
                         {(generatedRecipe.nutrition || generatedRecipe.nutrition_info) ? (
                           <div>
                             <h4 className="font-semibold mb-4 text-purple-700">Nutrition Information</h4>
