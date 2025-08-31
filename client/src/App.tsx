@@ -170,6 +170,15 @@ function Router() {
     const urlParams = new URLSearchParams(window.location.search);
     const hasAuthParams = urlParams.has('token') || urlParams.has('success') || window.location.pathname === '/';
     const hasLoginParam = urlParams.has('login');
+    const hasPaymentParam = urlParams.get('payment');
+    
+    // If payment parameter is present, trigger payment flow
+    if (hasPaymentParam && (hasPaymentParam === 'founders' || hasPaymentParam === 'trial' || hasPaymentParam === 'monthly')) {
+      handleStartPayment(hasPaymentParam as 'founders' | 'trial' | 'monthly');
+      // Clean up URL by removing payment parameter
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
     
     // If login parameter is present, show auth form directly
     if (hasLoginParam) {
@@ -195,9 +204,18 @@ function Router() {
   };
 
   const handlePaymentSuccess = () => {
-    // On payment success, proceed to auth/registration
+    // On payment success, check if user wants to return to a specific page
+    const returnTo = sessionStorage.getItem('returnTo');
     setCheckoutState({ show: false, paymentType: null });
-    setShowAuth(true);
+    
+    if (returnTo && isAuthenticated) {
+      // User is already authenticated and wants to return to specific page
+      sessionStorage.removeItem('returnTo');
+      window.location.href = returnTo;
+    } else {
+      // Default behavior: proceed to auth/registration
+      setShowAuth(true);
+    }
   };
 
   const handlePaymentCancel = () => {

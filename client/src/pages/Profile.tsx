@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe, LogOut, CheckCircle } from 'lucide-react';
+import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe, LogOut, CheckCircle, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Profile, FamilyMember } from '@shared/schema';
 import CulturalCuisineDropdown from '@/components/CulturalCuisineDropdown';
@@ -1420,6 +1420,42 @@ export default function Profile() {
               </CardContent>
               </Card>
             )}
+
+            {/* Support Healthy Mama Section */}
+            <Card className="bg-gradient-to-r from-purple-50 to-emerald-50 border-2 border-purple-200 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-purple-600" />
+                  Support Healthy Mama
+                </CardTitle>
+                <CardDescription>
+                  Enjoying Healthy Mama? Help support me as this grows!
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center">
+                <div className="bg-white/70 rounded-lg p-6 border border-purple-200">
+                  <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    $100
+                  </p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    One-time support<br/>
+                    (Help keep the platform growing!)
+                  </p>
+                  <Button 
+                    onClick={() => {
+                      // Store the current page to return to after payment
+                      sessionStorage.setItem('returnTo', '/profile');
+                      // Trigger the same payment flow as landing page by going to landing page with payment parameter
+                      window.location.href = '/?payment=founders';
+                    }}
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Support Development
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Prompt Preview Section */}
             <ProfilePromptPreview 
