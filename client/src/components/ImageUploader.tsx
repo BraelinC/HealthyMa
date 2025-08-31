@@ -14,52 +14,8 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const compressImage = async (file: File): Promise<File> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculate optimal dimensions (max 1200px width/height)
-        const maxSize = 1200;
-        let { width, height } = img;
-        
-        if (width > height && width > maxSize) {
-          height = (height * maxSize) / width;
-          width = maxSize;
-        } else if (height > maxSize) {
-          width = (width * maxSize) / height;
-          height = maxSize;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const compressedFile = new File([blob], file.name, {
-              type: 'image/jpeg',
-              lastModified: Date.now(),
-            });
-            resolve(compressedFile);
-          } else {
-            resolve(file);
-          }
-        }, 'image/jpeg', 0.8); // 80% quality for fast uploads
-      };
-      
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
   const uploadImage = async (file: File): Promise<string> => {
     try {
-      // Compress image for faster upload
-      const compressedFile = await compressImage(file);
-      
       // Get upload URL from backend
       const response = await fetch('/api/objects/upload', {
         method: 'POST',
@@ -75,12 +31,12 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
 
       const { uploadURL } = await response.json();
 
-      // Upload compressed file for much faster transfer
+      // Upload file directly to object storage
       const uploadResponse = await fetch(uploadURL, {
         method: 'PUT',
-        body: compressedFile,
+        body: file,
         headers: {
-          'Content-Type': compressedFile.type,
+          'Content-Type': file.type,
         },
       });
 
@@ -89,6 +45,7 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
       }
 
       // Return the object path that can be accessed via our server
+      // Extract the object ID from the upload URL and return the server path
       const url = new URL(uploadURL);
       const objectPath = url.pathname;
       const objectId = objectPath.split('/').pop()?.split('?')[0];
@@ -116,10 +73,8 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
 
     setUploading(true);
     const newImages: string[] = [];
-    const previewImages: string[] = [];
 
     try {
-      // Create instant previews while uploading
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         
@@ -143,46 +98,21 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
           continue;
         }
 
-        // Create instant preview URL for immediate display
-        const previewURL = URL.createObjectURL(file);
-        previewImages.push(previewURL);
+        const uploadURL = await uploadImage(file);
+        newImages.push(uploadURL);
       }
 
-      // Show previews immediately for better UX
-      if (previewImages.length > 0) {
-        const tempImages = [...selectedImages, ...previewImages];
-        setSelectedImages(tempImages);
-        onImagesChange(tempImages);
-      }
+      const updatedImages = [...selectedImages, ...newImages];
+      setSelectedImages(updatedImages);
+      onImagesChange(updatedImages);
 
-      // Upload images in parallel for faster processing
-      const uploadPromises = Array.from(files).map(file => {
-        if (file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024) {
-          return uploadImage(file);
-        }
-        return null;
-      }).filter(Boolean);
-
-      const uploadResults = await Promise.all(uploadPromises as Promise<string>[]);
-      
-      // Replace preview URLs with actual upload URLs
-      const finalImages = [...selectedImages, ...uploadResults];
-      setSelectedImages(finalImages);
-      onImagesChange(finalImages);
-
-      // Clean up preview URLs to prevent memory leaks
-      previewImages.forEach(url => URL.revokeObjectURL(url));
-
-      if (uploadResults.length > 0) {
+      if (newImages.length > 0) {
         toast({
           title: "Images uploaded",
-          description: `${uploadResults.length} image(s) ready to share.`,
+          description: `${newImages.length} image(s) uploaded successfully.`,
         });
       }
     } catch (error) {
-      // Clean up preview URLs on error
-      previewImages.forEach(url => URL.revokeObjectURL(url));
-      
       toast({
         title: "Upload failed",
         description: "Failed to upload one or more images. Please try again.",
@@ -219,11 +149,8 @@ export function ImageUploader({ onImagesChange, maxImages = 4, className = "" }:
         </Button>
         {selectedImages.length > 0 && (
           <span className="text-sm text-gray-400">
-            {uploading ? 'Uploading...' : `${selectedImages.length}/${maxImages} images`}
+            {selectedImages.length}/{maxImages} images
           </span>
-        )}
-        {uploading && (
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
         )}
       </div>
 
