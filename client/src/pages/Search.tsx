@@ -682,31 +682,7 @@ const Search = () => {
                       </TabsContent>
 
                       <TabsContent value="nutrition" className="p-4 pt-3">
-                        {/* DEBUG: Show exactly what nutrition data we have - HIDDEN FOR PRODUCTION 
-                        <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs font-mono">
-                          <div><strong>🔍 NUTRITION DEBUG:</strong></div>
-                          <div>Recipe ID: {generatedRecipe.id}</div>
-                          <div>Has nutrition: {!!generatedRecipe.nutrition ? '✅ YES' : '❌ NO'}</div>
-                          <div>Has nutrition_info: {!!generatedRecipe.nutrition_info ? '✅ YES' : '❌ NO'}</div>
-                          <div>Full recipe object keys: {Object.keys(generatedRecipe).join(', ')}</div>
-                          {generatedRecipe.nutrition && (
-                            <div>
-                              <div>nutrition.calories: {generatedRecipe.nutrition.calories}</div>
-                              <div>nutrition.protein_g: {generatedRecipe.nutrition.protein_g}g</div>
-                              <div>nutrition.carbs_g: {generatedRecipe.nutrition.carbs_g}g</div>
-                              <div>nutrition.fat_g: {generatedRecipe.nutrition.fat_g}g</div>
-                            </div>
-                          )}
-                          {generatedRecipe.nutrition_info && (
-                            <div>
-                              <div>nutrition_info type: {typeof generatedRecipe.nutrition_info}</div>
-                              <div>nutrition_info stringified: {JSON.stringify(generatedRecipe.nutrition_info).substring(0, 200)}</div>
-                              <div>nutrition_info.calories: {generatedRecipe.nutrition_info.calories}</div>
-                              <div>nutrition_info.protein_g: {generatedRecipe.nutrition_info.protein_g}g</div>
-                            </div>
-                          )}
-                        </div>
-                        */
+                        {/* DEBUG: Nutrition debug UI removed but available in git history */}
                         {(generatedRecipe.nutrition || generatedRecipe.nutrition_info) ? (
                           <div>
                             <h4 className="font-semibold mb-4 text-purple-700">Nutrition Information</h4>
