@@ -74,42 +74,82 @@ class SmartExtractionRouter {
       
       console.log(`📋 Extracting from ${urlsToExtract.length} recipe URLs`);
 
-      // Extract recipes from discovered URLs
+      // Extract recipes from discovered URLs in parallel batches
       const extractionResults = [];
       const extractionErrors = [];
+      
+      // Process in batches to avoid overwhelming the system
+      const batchSize = 5; // 5 concurrent extractions at a time
+      const batches = [];
+      
+      for (let i = 0; i < urlsToExtract.length; i += batchSize) {
+        batches.push(urlsToExtract.slice(i, i + batchSize));
+      }
+      
+      console.log(`🚀 Processing ${urlsToExtract.length} recipes in ${batches.length} parallel batches of ${batchSize}`);
 
-      for (let i = 0; i < urlsToExtract.length; i++) {
-        const recipeUrl = urlsToExtract[i];
-        console.log(`🍳 [${i + 1}/${urlsToExtract.length}] Extracting: ${recipeUrl}`);
-
-        try {
-          const result = await this.extractSingleRecipe(recipeUrl);
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        console.log(`⚡ Batch ${batchIndex + 1}/${batches.length}: Processing ${batch.length} recipes in parallel`);
+        
+        // Process all URLs in this batch simultaneously
+        const batchPromises = batch.map(async (recipeUrl, index) => {
+          const globalIndex = batchIndex * batchSize + index + 1;
+          console.log(`🍳 [${globalIndex}/${urlsToExtract.length}] Starting: ${recipeUrl}`);
           
+          try {
+            const result = await this.extractSingleRecipe(recipeUrl);
+            
+            if (result.success) {
+              console.log(`✅ [${globalIndex}/${urlsToExtract.length}] Success: ${result.recipe.title}`);
+              return {
+                success: true,
+                url: recipeUrl,
+                recipe: result.recipe,
+                metadata: result.metadata
+              };
+            } else {
+              console.log(`❌ [${globalIndex}/${urlsToExtract.length}] Failed: ${result.error}`);
+              return {
+                success: false,
+                url: recipeUrl,
+                error: result.error
+              };
+            }
+          } catch (error) {
+            console.log(`🚨 [${globalIndex}/${urlsToExtract.length}] Error: ${error.message}`);
+            return {
+              success: false,
+              url: recipeUrl,
+              error: error.message
+            };
+          }
+        });
+        
+        // Wait for all extractions in this batch to complete
+        const batchResults = await Promise.all(batchPromises);
+        
+        // Sort results into successes and errors
+        batchResults.forEach(result => {
           if (result.success) {
             extractionResults.push({
-              url: recipeUrl,
+              url: result.url,
               recipe: result.recipe,
               metadata: result.metadata
             });
-            console.log(`✅ [${i + 1}/${urlsToExtract.length}] Success: ${result.recipe.title}`);
           } else {
             extractionErrors.push({
-              url: recipeUrl,
+              url: result.url,
               error: result.error
             });
-            console.log(`❌ [${i + 1}/${urlsToExtract.length}] Failed: ${result.error}`);
           }
-        } catch (error) {
-          extractionErrors.push({
-            url: recipeUrl,
-            error: error.message
-          });
-          console.log(`🚨 [${i + 1}/${urlsToExtract.length}] Error: ${error.message}`);
-        }
-
-        // Add delay between extractions to be respectful
-        if (i < urlsToExtract.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+        });
+        
+        console.log(`🎯 Batch ${batchIndex + 1} complete: ${batchResults.filter(r => r.success).length}/${batch.length} successful`);
+        
+        // Small delay between batches to be respectful to the server
+        if (batchIndex < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
 
