@@ -6341,7 +6341,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (scrapedData.method === 'json-ld') {
         // Method 1: Fast JSON-LD extraction was successful
-        console.log(`🚀 Using JSON-LD extracted recipe data`);
+        console.log(`🚀 ✅ METHOD 1 SUCCESSFUL: Using JSON-LD extracted recipe data`);
+        console.log(`⚡ FAST TRACK: Found complete structured data immediately`);
         
         // Step 2: Process images and send JSON-LD through GPT-OSS for consistency
         console.log(`👁️ Step 2: Gemini Vision processing`);
@@ -6377,7 +6378,8 @@ Additional Info:
         
       } else {
         // Method 2: Enhanced HTML scraping was used
-        console.log(`🔄 Using enhanced HTML scraping data`);
+        console.log(`🔄 ❌ METHOD 1 FAILED: No complete JSON-LD found, escalating to Method 2`);
+        console.log(`🐌 SLOW TRACK: Using enhanced HTML scraping with extended wait`);
         
         // Step 2: Gemini 2.5 Flash for image filtering and PDF OCR
         console.log(`👁️ Step 2: Gemini Vision processing`);
@@ -6421,6 +6423,11 @@ Additional Info:
       }
       
       console.log(`✅ Successfully extracted recipe: "${extractedRecipe.title}"`);
+      console.log(`📊 PIPELINE SUMMARY:`);
+      console.log(`   Method Used: ${scrapedData.method === 'json-ld' ? 'Method 1 (JSON-LD)' : 'Method 2 (HTML Scraping)'}`);
+      console.log(`   Speed: ${scrapedData.method === 'json-ld' ? 'FAST (~5 seconds)' : 'SLOW (~20+ seconds)'}`);
+      console.log(`   Images Found: ${scrapedData.imageUrls.length}`);
+      console.log(`   Final Processor: GPT-OSS-120B`);
       
       res.json({
         success: true,
@@ -6433,7 +6440,16 @@ Additional Info:
           pdfProcessed: scrapedData.method === 'html-scraping' ? !!scrapedData.pdfUrls.length : false,
           textLength: scrapedData.method === 'json-ld' ? 
             (scrapedData.jsonLdRecipe?.title?.length || 0) + (scrapedData.jsonLdRecipe?.description?.length || 0) :
-            scrapedData.textContent.length
+            scrapedData.textContent.length,
+          pipeline: {
+            method1_jsonLd: scrapedData.method === 'json-ld' ? 'SUCCESS - Used fast extraction' : 'FAILED - No complete JSON-LD found',
+            method2_htmlScraping: scrapedData.method === 'html-scraping' ? 'USED - Extended wait + scraping' : 'SKIPPED - JSON-LD was successful',
+            finalProcessor: 'GPT-OSS-120B used for formatting consistency',
+            speed: scrapedData.method === 'json-ld' ? 'FAST (~5 seconds)' : 'SLOW (~20+ seconds)',
+            reasoning: scrapedData.method === 'json-ld' ? 
+              'Found complete structured recipe data immediately' : 
+              'No JSON-LD found, used enhanced scraping with extended wait'
+          }
         }
       });
       
