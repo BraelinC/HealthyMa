@@ -370,19 +370,64 @@ class UrlDiscoveryService {
 
   // Helper: Check if URL looks like a recipe
   isRecipeUrl(url) {
+    const lowercaseUrl = url.toLowerCase();
+    
+    // Exclude common non-recipe patterns first
+    const excludePatterns = [
+      '/recipe-index',
+      '/recipes-index', 
+      '/recipe-collection',
+      '/recipes-collection',
+      '/recipe-ebook',
+      '/recipes-ebook',
+      '/holiday-recipe',
+      '/about',
+      '/contact',
+      '/privacy',
+      '/terms',
+      '/category',
+      '/tag',
+      '/author',
+      '/page/',
+      '/wp-admin',
+      '/wp-content',
+      '.pdf',
+      '.jpg',
+      '.png',
+      '.gif',
+      '/sitemap',
+      '/feed',
+      '/rss'
+    ];
+    
+    // If URL contains exclusion patterns, skip it
+    if (excludePatterns.some(pattern => lowercaseUrl.includes(pattern))) {
+      return false;
+    }
+    
+    // Look for positive recipe indicators
     const recipeIndicators = [
       '/recipe/',
       '/recipes/',
       '/cooking/',
       '/food/',
       '/dish/',
-      '/meal/',
-      'recipe',
-      'cooking'
+      '/meal/'
     ];
     
-    const lowercaseUrl = url.toLowerCase();
-    return recipeIndicators.some(indicator => lowercaseUrl.includes(indicator));
+    // Must contain at least one recipe indicator
+    const hasRecipeIndicator = recipeIndicators.some(indicator => lowercaseUrl.includes(indicator));
+    
+    // Additional check: URL should look like a specific recipe (not just contain "recipe")
+    // Good: /recipe/chicken-curry/, /recipes/pasta-salad
+    // Bad: /recipe-index/, /recipes-collection/
+    const looksSpecific = (
+      hasRecipeIndicator && 
+      (lowercaseUrl.split('/').length >= 4 || // Has path segments
+       /recipe.*[a-z]{3,}/.test(lowercaseUrl)) // Contains recipe + other words
+    );
+    
+    return looksSpecific;
   }
 
   // Get domain from URL
