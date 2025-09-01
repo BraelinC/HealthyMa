@@ -667,9 +667,15 @@ export default function CommunityDetailNew() {
     },
     onError: (error: any) => {
       setExtractionInProgress(false);
+      
+      // Check if it's a rate limit error
+      const isRateLimit = error.message?.includes('Rate limit') || error.message?.includes('429');
+      
       toast({
-        title: "Extraction Failed",
-        description: error.message || "Failed to extract recipe. Please try again.",
+        title: isRateLimit ? "API Rate Limit Reached" : "Extraction Failed",
+        description: isRateLimit 
+          ? "The AI service has reached its daily limit. Please try again later or with a single recipe URL."
+          : error.message || "Failed to extract recipe. Please try again.",
         variant: "destructive",
       });
     },
