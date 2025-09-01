@@ -104,7 +104,7 @@ class WebScraperService {
   // Smart content loading with progressive scrolling
   async smartContentLoading(page) {
     console.log('🎯 Step 1: Load page → Wait 2s for initial structure');
-    await page.waitForTimeout(2000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     console.log('🔽 Step 2: Scroll to ingredients section → Wait 3s');
     await page.evaluate(() => {
@@ -128,7 +128,7 @@ class WebScraperService {
       // Fallback: scroll to middle of page
       window.scrollTo({ top: window.innerHeight * 1.5, behavior: 'smooth' });
     });
-    await page.waitForTimeout(3000);
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     console.log('📊 Step 3: Check if content loaded');
     const hasIngredients = await page.evaluate(() => {
@@ -142,7 +142,7 @@ class WebScraperService {
       await page.evaluate(() => {
         window.scrollTo({ top: window.innerHeight * 2, behavior: 'smooth' });
       });
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     console.log('🔽 Step 4: Scroll to instructions → Wait 3s');
@@ -166,7 +166,7 @@ class WebScraperService {
       // Fallback: scroll further down
       window.scrollTo({ top: window.innerHeight * 3, behavior: 'smooth' });
     });
-    await page.waitForTimeout(3000);
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     console.log('📊 Step 5: Final content check');
     const contentStats = await page.evaluate(() => {
@@ -184,7 +184,7 @@ class WebScraperService {
 
     if (!contentStats.hasRecipeContent && contentStats.textLength < 1000) {
       console.log('⏰ Content still loading, waiting 5 more seconds...');
-      await page.waitForTimeout(5000);
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
 
     console.log(`✅ Smart loading complete: ${contentStats.textLength} chars, ${contentStats.ingredientCount} ingredients, ${contentStats.stepCount} steps`);
