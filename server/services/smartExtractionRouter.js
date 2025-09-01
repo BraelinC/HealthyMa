@@ -129,14 +129,28 @@ class SmartExtractionRouter {
         // Wait for all extractions in this batch to complete
         const batchResults = await Promise.all(batchPromises);
         
-        // Sort results into successes and errors
+        // Sort results into successes and errors, filtering out invalid recipes
         batchResults.forEach(result => {
           if (result.success) {
-            extractionResults.push({
-              url: result.url,
-              recipe: result.recipe,
-              metadata: result.metadata
-            });
+            // Validate recipe has proper content
+            const recipe = result.recipe;
+            const hasValidTitle = recipe.title && recipe.title !== 'Untitled Recipe';
+            const hasIngredients = recipe.ingredients && recipe.ingredients.length > 0;
+            const hasInstructions = recipe.instructions && recipe.instructions.length > 0;
+            
+            if (hasValidTitle && hasIngredients && hasInstructions) {
+              extractionResults.push({
+                url: result.url,
+                recipe: result.recipe,
+                metadata: result.metadata
+              });
+            } else {
+              console.log(`🚮 Filtered out invalid recipe from ${result.url}: title="${recipe.title}", ingredients=${recipe.ingredients?.length || 0}, instructions=${recipe.instructions?.length || 0}`);
+              extractionErrors.push({
+                url: result.url,
+                error: 'Recipe missing essential content (title, ingredients, or instructions)'
+              });
+            }
           } else {
             extractionErrors.push({
               url: result.url,
