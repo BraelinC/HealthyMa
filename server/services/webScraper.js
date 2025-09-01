@@ -1,4 +1,8 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+
+// Configure stealth mode
+puppeteer.use(StealthPlugin());
 
 class WebScraperService {
   // Extract JSON-LD structured data from page
@@ -101,12 +105,18 @@ class WebScraperService {
     };
   }
 
-  // Smart content loading with progressive scrolling
+  // Smart content loading with network idle waiting
   async smartContentLoading(page) {
-    console.log('🎯 Step 1: Load page → Wait 2s for initial structure');
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log('🎯 Step 1: Wait for initial page load and network to settle');
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Brief initial wait
+    try {
+      await page.waitForNetworkIdle({ idleTime: 1000, timeout: 10000 });
+      console.log('✅ Network settled after initial load');
+    } catch (e) {
+      console.log('⏰ Network idle timeout on initial load, continuing...');
+    }
 
-    console.log('🔽 Step 2: Scroll to ingredients section → Wait 3s');
+    console.log('🔽 Step 2: Scroll to ingredients section and wait for content');
     await page.evaluate(() => {
       // Try to find and scroll to ingredients section
       const ingredientsSelectors = [
@@ -128,7 +138,14 @@ class WebScraperService {
       // Fallback: scroll to middle of page
       window.scrollTo({ top: window.innerHeight * 1.5, behavior: 'smooth' });
     });
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Wait for network to settle after scrolling
+    try {
+      await page.waitForNetworkIdle({ idleTime: 500, timeout: 5000 });
+      console.log('✅ Network settled after scrolling');
+    } catch (e) {
+      console.log('⏰ Network idle timeout after scrolling, continuing...');
+    }
 
     console.log('📊 Step 3: Check if content loaded');
     const hasIngredients = await page.evaluate(() => {
@@ -143,9 +160,15 @@ class WebScraperService {
         window.scrollTo({ top: window.innerHeight * 2, behavior: 'smooth' });
       });
       await new Promise(resolve => setTimeout(resolve, 2000));
+      // Try to wait for more content after additional scrolling
+      try {
+        await page.waitForNetworkIdle({ idleTime: 500, timeout: 3000 });
+      } catch (e) {
+        console.log('⏰ No additional network activity detected');
+      }
     }
 
-    console.log('🔽 Step 4: Scroll to instructions → Wait 3s');
+    console.log('🔽 Step 4: Scroll to instructions and wait for content');
     await page.evaluate(() => {
       const instructionsSelectors = [
         '[class*="instruction"]', '[id*="instruction"]',
@@ -166,7 +189,14 @@ class WebScraperService {
       // Fallback: scroll further down
       window.scrollTo({ top: window.innerHeight * 3, behavior: 'smooth' });
     });
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Wait for network to settle after scrolling to instructions
+    try {
+      await page.waitForNetworkIdle({ idleTime: 500, timeout: 5000 });
+      console.log('✅ Network settled after scrolling to instructions');
+    } catch (e) {
+      console.log('⏰ Network idle timeout after instructions scroll, continuing...');
+    }
 
     console.log('📊 Step 5: Final content check');
     const contentStats = await page.evaluate(() => {
@@ -213,13 +243,33 @@ class WebScraperService {
     try {
       console.log(`🔍 Scraping recipe from: ${url}`);
       
-      // Set user agent to avoid bot detection
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+      // Set comprehensive browser headers to avoid bot detection
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      
+      // Set additional headers for better bot evasion
+      await page.setExtraHTTPHeaders({
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'max-age=0'
+      });
+      
+      // Set viewport to common resolution
+      await page.setViewport({ width: 1366, height: 768 });
       
       await page.goto(url, { 
-        waitUntil: 'networkidle2',
+        waitUntil: 'domcontentloaded',
         timeout: 30000
       });
+      
+      console.log('🔒 Stealth mode active, enhanced headers set, waiting for content...');
       
       // METHOD 1: Fast JSON-LD Extraction (5-second wait)
       console.log('🚀 Method 1: Fast JSON-LD extraction');
