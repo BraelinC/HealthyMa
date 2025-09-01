@@ -1,4 +1,4 @@
-const Groq = require('groq-sdk');
+import Groq from 'groq-sdk';
 
 class GroqService {
   constructor() {
@@ -266,4 +266,4 @@ Return ONLY the corrected JSON:`;
   }
 }
 
-module.exports = GroqService;
+export default GroqService;

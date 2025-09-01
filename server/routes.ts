@@ -6326,10 +6326,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🚀 Starting meal plan extraction for: ${url}`);
       
       // Import services dynamically to avoid startup errors if env vars not set
-      const WebScraperService = require('./services/webScraper.js');
-      const GeminiVisionService = require('./services/geminiVision.js');
-      const TextProcessor = require('./services/textProcessor.js');
-      const GroqService = require('./services/groqService.js');
+      const { default: WebScraperService } = await import('./services/webScraper.js');
+      const { default: GeminiVisionService } = await import('./services/geminiVision.js');
+      const { default: TextProcessor } = await import('./services/textProcessor.js');
+      const { default: GroqService } = await import('./services/groqService.js');
       
       // Step 1: Web scraping with Puppeteer
       console.log(`🕷️ Step 1: Web scraping`);

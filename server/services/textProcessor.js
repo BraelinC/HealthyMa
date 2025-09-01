@@ -184,4 +184,4 @@ class TextProcessor {
   }
 }
 
-module.exports = TextProcessor;
+export default TextProcessor;

@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+import puppeteer from 'puppeteer';
 
 class WebScraperService {
   async scrapeRecipePage(url) {
@@ -125,4 +125,4 @@ class WebScraperService {
   }
 }
 
-module.exports = WebScraperService;
+export default WebScraperService;

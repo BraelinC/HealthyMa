@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 class GeminiVisionService {
   constructor() {
@@ -159,4 +159,4 @@ If no useful text or information is visible, return: "NO_ADDITIONAL_INFO"
   }
 }
 
-module.exports = GeminiVisionService;
+export default GeminiVisionService;
