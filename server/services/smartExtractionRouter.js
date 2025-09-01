@@ -227,8 +227,7 @@ class SmartExtractionRouter {
         console.log(`⚡ Using fast JSON-LD extraction`);
         const imageUrls = scrapedData.imageUrls || [];
         if (imageUrls.length > 0) {
-          const geminiResponse = await gemini.analyzeImages(imageUrls);
-          mainImageUrl = geminiResponse.mainImageUrl || imageUrls[0];
+          mainImageUrl = await gemini.identifyMainRecipeImage(imageUrls);
         }
 
         const jsonLdText = JSON.stringify(scrapedData.jsonLdRecipe);
@@ -241,15 +240,14 @@ class SmartExtractionRouter {
         let geminiResponse = null;
         
         if (imageUrls.length > 0) {
-          geminiResponse = await gemini.analyzeImages(imageUrls);
-          mainImageUrl = geminiResponse.mainImageUrl || imageUrls[0];
+          mainImageUrl = await gemini.identifyMainRecipeImage(imageUrls);
         }
 
         // Text processing and extraction
         const combinedText = textProcessor.combineTexts(
           scrapedData.textContent,
           '',
-          geminiResponse?.extractedText || ''
+          ''
         );
 
         const cleanedText = textProcessor.cleanText(combinedText);
