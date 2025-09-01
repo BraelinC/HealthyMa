@@ -31,6 +31,7 @@ import CreateCommunity from "@/pages/CreateCommunity";
 import CommunityManage from "@/pages/CommunityManage";
 import LessonEditor from "@/pages/LessonEditor";
 import Favorites from "@/pages/Favorites";
+import BatchExtractionTest from "@/pages/BatchExtractionTest";
 
 // ========== LANDING PAGE TOGGLE ==========
 // Set this to false to skip the landing page and go directly to login
@@ -323,6 +324,7 @@ function Router() {
                 <Route path="/community/:id" component={CommunityDetailNew} />
                 <Route path="/profile" component={Profile} />
                 <Route path="/favorites" component={Favorites} />
+                <Route path="/batch-test" component={BatchExtractionTest} />
                 <Route path="/icons" component={IconShowcase} />
                 <Route component={NotFound} />
               </Switch>
