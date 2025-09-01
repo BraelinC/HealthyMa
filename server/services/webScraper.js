@@ -101,6 +101,95 @@ class WebScraperService {
     };
   }
 
+  // Smart content loading with progressive scrolling
+  async smartContentLoading(page) {
+    console.log('🎯 Step 1: Load page → Wait 2s for initial structure');
+    await page.waitForTimeout(2000);
+
+    console.log('🔽 Step 2: Scroll to ingredients section → Wait 3s');
+    await page.evaluate(() => {
+      // Try to find and scroll to ingredients section
+      const ingredientsSelectors = [
+        '[class*="ingredient"]', '[id*="ingredient"]',
+        '.recipe-ingredients', '#ingredients',
+        'h2', 'h3',
+        '.ingredients-section', '[data-module="ingredients"]'
+      ];
+      
+      for (const selector of ingredientsSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          console.log(`Found ingredients at: ${selector}`);
+          return;
+        }
+      }
+      
+      // Fallback: scroll to middle of page
+      window.scrollTo({ top: window.innerHeight * 1.5, behavior: 'smooth' });
+    });
+    await page.waitForTimeout(3000);
+
+    console.log('📊 Step 3: Check if content loaded');
+    const hasIngredients = await page.evaluate(() => {
+      const text = document.body.innerText.toLowerCase();
+      const ingredientKeywords = ['cup', 'tablespoon', 'teaspoon', 'tsp', 'tbsp', 'flour', 'sugar', 'egg'];
+      return ingredientKeywords.some(keyword => text.includes(keyword));
+    });
+
+    if (!hasIngredients) {
+      console.log('❌ No ingredients found, scrolling more...');
+      await page.evaluate(() => {
+        window.scrollTo({ top: window.innerHeight * 2, behavior: 'smooth' });
+      });
+      await page.waitForTimeout(2000);
+    }
+
+    console.log('🔽 Step 4: Scroll to instructions → Wait 3s');
+    await page.evaluate(() => {
+      const instructionsSelectors = [
+        '[class*="instruction"]', '[id*="instruction"]',
+        '.recipe-instructions', '#instructions', '#directions',
+        'h2', 'h3',
+        '.instructions-section', '[data-module="instructions"]'
+      ];
+      
+      for (const selector of instructionsSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          console.log(`Found instructions at: ${selector}`);
+          return;
+        }
+      }
+      
+      // Fallback: scroll further down
+      window.scrollTo({ top: window.innerHeight * 3, behavior: 'smooth' });
+    });
+    await page.waitForTimeout(3000);
+
+    console.log('📊 Step 5: Final content check');
+    const contentStats = await page.evaluate(() => {
+      const text = document.body.innerText;
+      const ingredientCount = (text.match(/\b(cup|tablespoon|teaspoon|tsp|tbsp)\b/gi) || []).length;
+      const stepCount = (text.match(/\b(step|preheat|mix|add|bake|cook)\b/gi) || []).length;
+      
+      return {
+        textLength: text.length,
+        ingredientCount,
+        stepCount,
+        hasRecipeContent: ingredientCount > 0 && stepCount > 0
+      };
+    });
+
+    if (!contentStats.hasRecipeContent && contentStats.textLength < 1000) {
+      console.log('⏰ Content still loading, waiting 5 more seconds...');
+      await page.waitForTimeout(5000);
+    }
+
+    console.log(`✅ Smart loading complete: ${contentStats.textLength} chars, ${contentStats.ingredientCount} ingredients, ${contentStats.stepCount} steps`);
+  }
+
   async scrapeRecipePage(url) {
     const browser = await puppeteer.launch({ 
       headless: true,
@@ -161,17 +250,12 @@ class WebScraperService {
         };
       }
       
-      // METHOD 2: Enhanced HTML Scraping (20-30 second wait)
+      // METHOD 2: Enhanced HTML Scraping with Smart Scrolling
       console.log(`⚠️ JSON-LD incomplete: ${validation.reason}`);
-      console.log('🔄 Method 2: Enhanced HTML scraping with extended wait');
+      console.log('🔄 Method 2: Enhanced HTML scraping with smart scrolling');
       
-      // Wait longer for dynamic content
-      try {
-        await page.waitForTimeout(20000); // 20 second wait for dynamic content
-        console.log('⏱️ Waited 20 seconds for dynamic content to load');
-      } catch (e) {
-        console.log('⚠️ Extended wait completed');
-      }
+      // Smart content loading strategy
+      await this.smartContentLoading(page);
       
       // Extract text content with enhanced selectors
       const textContent = await this.extractTextContent(page);
