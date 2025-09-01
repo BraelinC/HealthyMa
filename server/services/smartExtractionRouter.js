@@ -214,7 +214,6 @@ class SmartExtractionRouter {
       const webScraper = new WebScraperService();
       const gemini = new GeminiVisionService();
       const groq = new GroqService();
-      const textProcessor = new TextProcessor();
 
       // Step 1: Web scraping with stealth mode
       const scrapedData = await webScraper.scrapeRecipePage(url);
@@ -244,13 +243,13 @@ class SmartExtractionRouter {
         }
 
         // Text processing and extraction
-        const combinedText = textProcessor.combineTexts(
+        const combinedText = TextProcessor.combineTexts(
           scrapedData.textContent,
           '',
           ''
         );
 
-        const cleanedText = textProcessor.cleanText(combinedText);
+        const cleanedText = TextProcessor.clean(combinedText);
         extractedRecipe = await groq.extractStructuredRecipe(cleanedText, mainImageUrl);
       }
 
