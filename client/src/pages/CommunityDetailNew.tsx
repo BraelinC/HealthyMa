@@ -421,6 +421,11 @@ export default function CommunityDetailNew() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [showMealPlanEditorMain, setShowMealPlanEditorMain] = useState(false);
+  
+  // Extractor state variables
+  const [extractorUrl, setExtractorUrl] = useState("");
+  const [extractedRecipe, setExtractedRecipe] = useState<any>(null);
+  const [extractionInProgress, setExtractionInProgress] = useState(false);
 
   const navigateToPost = (postId: number) => {
     setLocation(`/community/${id}/post/${postId}`);
@@ -635,6 +640,69 @@ export default function CommunityDetailNew() {
     },
   });
 
+  // Recipe extraction mutation
+  const extractRecipeMutation = useMutation({
+    mutationFn: async () => {
+      const { apiRequest } = await import("@/lib/queryClient");
+      setExtractionInProgress(true);
+      return await apiRequest("/api/extract-meal-plan", {
+        method: "POST",
+        body: JSON.stringify({ url: extractorUrl }),
+      });
+    },
+    onSuccess: (result) => {
+      setExtractedRecipe(result.recipe);
+      setExtractionInProgress(false);
+      toast({
+        title: "Recipe Extracted!",
+        description: `Successfully extracted "${result.recipe.title}"`,
+      });
+    },
+    onError: (error: any) => {
+      setExtractionInProgress(false);
+      toast({
+        title: "Extraction Failed",
+        description: error.message || "Failed to extract recipe. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Share extracted recipe to community
+  const shareExtractedRecipe = async () => {
+    if (!extractedRecipe) return;
+    
+    try {
+      const { apiRequest } = await import("@/lib/queryClient");
+      await apiRequest(`/api/communities/${id}/posts`, {
+        method: "POST",
+        body: JSON.stringify({
+          content: `Check out this recipe I extracted: ${extractedRecipe.title}`,
+          post_type: "meal_share",
+          recipe_data: extractedRecipe,
+        }),
+      });
+      
+      // Clear extracted recipe and reset form
+      setExtractedRecipe(null);
+      setExtractorUrl("");
+      
+      // Refresh posts
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`] });
+      
+      toast({
+        title: "Recipe Shared!",
+        description: "Your extracted recipe has been shared with the community.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Share Failed",
+        description: error.message || "Failed to share recipe. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -727,6 +795,9 @@ export default function CommunityDetailNew() {
           </TabsTrigger>
           <TabsTrigger value="members" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
             Members
+          </TabsTrigger>
+          <TabsTrigger value="extractor" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
+            Extractor
           </TabsTrigger>
         </TabsList>
 
@@ -1158,6 +1229,121 @@ export default function CommunityDetailNew() {
                 </Card>
               ))}
             </div>
+          </div>
+        </TabsContent>
+
+        {/* Extractor Tab */}
+        <TabsContent value="extractor" className="p-4 space-y-4 mt-2 pt-2 bg-gray-900">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Recipe Extractor</h3>
+              <Badge variant="secondary" className="bg-emerald-600 text-white">
+                AI-Powered
+              </Badge>
+            </div>
+            
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="recipe-url" className="text-gray-300 mb-2 block">Recipe URL</Label>
+                    <Input
+                      id="recipe-url"
+                      placeholder="https://example.com/recipe"
+                      value={extractorUrl}
+                      onChange={(e) => setExtractorUrl(e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                      disabled={extractionInProgress}
+                    />
+                    <p className="text-sm text-gray-400 mt-1">
+                      Paste a URL to any recipe webpage and our AI will extract all the details
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => extractRecipeMutation.mutate()}
+                    disabled={!extractorUrl.trim() || extractionInProgress}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {extractionInProgress ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Extracting Recipe...
+                      </>
+                    ) : (
+                      <>
+                        <ChefHat className="w-4 h-4 mr-2" />
+                        Extract Recipe
+                      </>
+                    )}
+                  </Button>
+                  
+                  {extractionInProgress && (
+                    <div className="bg-blue-600/10 border border-blue-600/30 rounded-lg p-3">
+                      <div className="text-sm text-blue-400 space-y-1">
+                        <p>🕷️ Scanning webpage content...</p>
+                        <p>👁️ Analyzing images with Gemini Vision...</p>
+                        <p>🧠 Extracting structured data with AI...</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {extractedRecipe && (
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-white font-medium">Extracted Recipe Preview</h4>
+                        <Badge className="bg-green-600 text-white">
+                          Ready to Share
+                        </Badge>
+                      </div>
+                      
+                      <div className="bg-gray-700 rounded-lg p-4">
+                        <RecipeDisplay
+                          recipe={extractedRecipe}
+                          onRegenerateClick={() => {}}
+                        />
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <Button 
+                          onClick={() => shareExtractedRecipe()}
+                          className="flex-1 bg-purple-600 hover:bg-purple-700"
+                        >
+                          <Share className="w-4 h-4 mr-2" />
+                          Share to Community
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setExtractedRecipe(null);
+                            setExtractorUrl("");
+                          }}
+                          variant="outline"
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!extractedRecipe && !extractionInProgress && (
+                    <Card className="bg-gray-750 border-gray-600">
+                      <CardContent className="p-4">
+                        <div className="text-center space-y-2">
+                          <div className="text-2xl">🤖</div>
+                          <h4 className="text-white font-medium">How it works</h4>
+                          <div className="text-sm text-gray-400 space-y-1">
+                            <p>1. Paste any recipe URL above</p>
+                            <p>2. Our AI scans the page and extracts recipe data</p>
+                            <p>3. Preview and share the structured recipe</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>

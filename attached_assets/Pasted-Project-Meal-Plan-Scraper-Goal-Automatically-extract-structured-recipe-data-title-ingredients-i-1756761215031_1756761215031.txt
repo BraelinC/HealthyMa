@@ -1,0 +1,51 @@
+Project: Meal Plan Scraper
+Goal:
+Automatically extract structured recipe data (title, ingredients, instructions, image) from various meal plan websites and store it in a database.
+
+Key Components:
+Web Scraper (Puppeteer): To fetch web page content.
+Text Pre-processor: To clean and prepare text for the AI.
+AI Extractor (GPT-OSS 120B): To parse cleaned text into structured JSON.
+Database (PostgreSQL): To store the extracted recipe data.
+Simple Plan:
+Step 1: Web Scraping with Puppeteer
+
+Input: A URL of a recipe page.
+Action:
+Launch a headless Chrome browser.
+Navigate to the given URL.
+Wait for the main recipe content to load (e.g., await page.waitForSelector('.recipe-container')).
+Extract all visible text content from the page.
+Extract the URL of the main recipe image (filter out small images, logos, or ads based on size/position).
+If the URL points to a PDF: attempt to download it and extract its text content. If it's an image-only PDF, skip it.
+Output: Raw text content of the recipe page, and the main recipe image URL.
+Step 2: Text Pre-processing
+
+Input: Raw text content from Puppeteer.
+Action:
+Normalize text: convert to lowercase, collapse multiple spaces, remove common boilerplate phrases (e.g., "Print Recipe", "Share on Facebook").
+Identify and remove duplicate blocks of text (e.g., if ingredients are listed twice).
+Output: Cleaned, de-duplicated text ready for AI processing.
+Step 3: Structured Extraction with GPT-OSS 120B
+
+Input: Cleaned text from the pre-processor.
+Action:
+Send the cleaned text to the GPT-OSS 120B model with a strict JSON schema and temperature=0.
+JSON Schema:
+json
+Copy
+{
+  "title": "string",
+  "category": "main|soup|dessert|snack|drink|other",
+  "ingredients": [{"item": "string", "quantity": "string"}],
+  "instructions": ["step 1", "step 2", ...],
+  "image_url": "string",
+  "notes": "string"
+}
+Validation Loop: If the model's output is not valid JSON according to the schema, re-prompt the same GPT-OSS 120B model to correct its output until valid JSON is received.
+Output: Valid JSON object containing the structured recipe data.
+Step 4: Database Storage (PostgreSQL)
+
+Input: Valid JSON object from GPT-OSS 120B.
+Action:
+Store the extracted data into a PostgreSQL database.

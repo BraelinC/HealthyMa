@@ -6309,6 +6309,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Meal Plan Extractor API endpoint
+  app.post("/api/extract-meal-plan", authenticateToken, async (req: any, res) => {
+    try {
+      const { url } = req.body;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      if (!url) {
+        return res.status(400).json({ message: "URL is required" });
+      }
+      
+      console.log(`🚀 Starting meal plan extraction for: ${url}`);
+      
+      // Import services dynamically to avoid startup errors if env vars not set
+      const WebScraperService = require('./services/webScraper.js');
+      const GeminiVisionService = require('./services/geminiVision.js');
+      const TextProcessor = require('./services/textProcessor.js');
+      const GroqService = require('./services/groqService.js');
+      
+      // Step 1: Web scraping with Puppeteer
+      console.log(`🕷️ Step 1: Web scraping`);
+      const scraper = new WebScraperService();
+      const scrapedData = await scraper.scrapeRecipePage(url);
+      
+      // Step 2: Gemini 2.5 Flash for image filtering and PDF OCR
+      console.log(`👁️ Step 2: Gemini Vision processing`);
+      const gemini = new GeminiVisionService();
+      const mainImageUrl = await gemini.identifyMainRecipeImage(scrapedData.imageUrls);
+      
+      let pdfText = '';
+      if (scrapedData.pdfUrls.length > 0) {
+        console.log(`📄 Processing ${scrapedData.pdfUrls.length} PDF(s)`);
+        try {
+          const pdfBuffer = await scraper.downloadPdf(scrapedData.pdfUrls[0]);
+          pdfText = await gemini.extractPdfText(pdfBuffer);
+        } catch (pdfError) {
+          console.error('PDF processing failed:', pdfError);
+          // Continue without PDF content
+        }
+      }
+      
+      // Optional: Analyze main image for additional context
+      let imageAnalysis = '';
+      if (mainImageUrl) {
+        try {
+          imageAnalysis = await gemini.analyzeRecipeImage(mainImageUrl);
+        } catch (imageError) {
+          console.error('Image analysis failed:', imageError);
+        }
+      }
+      
+      // Step 3: Text preprocessing
+      console.log(`🧹 Step 3: Text preprocessing`);
+      const combinedText = TextProcessor.combineTexts(
+        scrapedData.textContent, 
+        pdfText, 
+        imageAnalysis
+      );
+      
+      // Step 4: GPT-OSS-120B structured extraction
+      console.log(`🧠 Step 4: AI extraction`);
+      const groq = new GroqService();
+      const extractedRecipe = await groq.extractStructuredRecipe(combinedText, mainImageUrl);
+      
+      console.log(`✅ Successfully extracted recipe: "${extractedRecipe.title}"`);
+      
+      res.json({
+        success: true,
+        recipe: extractedRecipe,
+        metadata: {
+          originalUrl: url,
+          extractedImages: scrapedData.imageUrls.length,
+          mainImageSelected: !!mainImageUrl,
+          pdfProcessed: !!pdfText,
+          textLength: combinedText.length
+        }
+      });
+      
+    } catch (error) {
+      console.error('🚨 Meal extraction error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to extract meal plan data',
+        details: error.message 
+      });
+    }
+  });
+
   // Check if item is favorited
   app.get("/api/favorites/:itemType/:itemId/check", authenticateToken, async (req: any, res) => {
     try {
