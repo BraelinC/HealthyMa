@@ -683,8 +683,14 @@ export default function CommunityDetailNew() {
 
   // Select a different recipe from the extracted list
   const selectRecipe = (index: number) => {
-    setSelectedRecipeIndex(index);
-    setExtractedRecipe(allExtractedRecipes[index]);
+    // Ensure index is within valid range
+    const validIndex = Math.max(0, Math.min(index, allExtractedRecipes.length - 1));
+    setSelectedRecipeIndex(validIndex);
+    
+    // Ensure we have a valid recipe at this index
+    if (allExtractedRecipes[validIndex]) {
+      setExtractedRecipe(allExtractedRecipes[validIndex]);
+    }
   };
 
   // Clear all extracted recipes
@@ -1374,8 +1380,9 @@ export default function CommunityDetailNew() {
                         </div>
                       )}
                       
-                      <div className="bg-gray-700 rounded-lg p-4">
+                      <div className="bg-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto">
                         <RecipeDisplay
+                          key={`recipe-${selectedRecipeIndex}-${extractedRecipe?.id || 'default'}`}
                           recipe={extractedRecipe}
                           onRegenerateClick={() => {}}
                         />
