@@ -6309,7 +6309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Meal Plan Extractor API endpoint
+  // Smart Meal Plan Extractor API endpoint with intelligent routing
   app.post("/api/extract-meal-plan", authenticateToken, async (req: any, res) => {
     try {
       const { url } = req.body;
@@ -6323,135 +6323,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "URL is required" });
       }
       
-      console.log(`🚀 Starting meal plan extraction for: ${url}`);
+      console.log(`🎯 Starting smart extraction for: ${url}`);
       
-      // Import services dynamically to avoid startup errors if env vars not set
-      const { default: WebScraperService } = await import('./services/webScraper.js');
-      const { default: GeminiVisionService } = await import('./services/geminiVision.js');
-      const { default: TextProcessor } = await import('./services/textProcessor.js');
-      const { default: GroqService } = await import('./services/groqService.js');
+      // Use the smart router to determine extraction strategy
+      const { default: SmartExtractionRouter } = await import('./services/smartExtractionRouter.js');
+      const smartRouter = new SmartExtractionRouter();
       
-      // Step 1: Smart web scraping with dual-method pipeline
-      console.log(`🕷️ Step 1: Web scraping`);
-      const scraper = new WebScraperService();
-      const scrapedData = await scraper.scrapeRecipePage(url);
+      const result = await smartRouter.extractFromUrl(url, { maxRecipes: 10 });
       
-      let extractedRecipe;
-      let mainImageUrl = '';
-      
-      if (scrapedData.method === 'json-ld') {
-        // Method 1: Fast JSON-LD extraction was successful
-        console.log(`🚀 ✅ METHOD 1 SUCCESSFUL: Using JSON-LD extracted recipe data`);
-        console.log(`⚡ FAST TRACK: Found complete structured data immediately`);
-        
-        // Step 2: Process images and send JSON-LD through GPT-OSS for consistency
-        console.log(`👁️ Step 2: Gemini Vision processing`);
-        const gemini = new GeminiVisionService();
-        mainImageUrl = await gemini.identifyMainRecipeImage(scrapedData.imageUrls);
-        
-        // Use the image from JSON-LD if no main image found from analysis
-        if (!mainImageUrl && scrapedData.jsonLdRecipe.image) {
-          mainImageUrl = scrapedData.jsonLdRecipe.image;
-        }
-        
-        // Step 3: Convert JSON-LD to text for GPT-OSS processing (ensures consistency)
-        console.log(`🧠 Step 3: AI formatting`);
-        const jsonLdText = `
-Recipe: ${scrapedData.jsonLdRecipe.title}
-Description: ${scrapedData.jsonLdRecipe.description}
-
-Ingredients:
-${scrapedData.jsonLdRecipe.ingredients.map(ing => `- ${ing}`).join('\n')}
-
-Instructions:
-${scrapedData.jsonLdRecipe.instructions.map((inst, i) => `${i + 1}. ${inst}`).join('\n')}
-
-Additional Info:
-- Prep Time: ${scrapedData.jsonLdRecipe.prepTime || 'Not specified'}
-- Cook Time: ${scrapedData.jsonLdRecipe.cookTime || 'Not specified'}
-- Servings: ${scrapedData.jsonLdRecipe.servings || 'Not specified'}
-- Cuisine: ${scrapedData.jsonLdRecipe.cuisine || 'Not specified'}
-        `.trim();
-        
-        const groq = new GroqService();
-        extractedRecipe = await groq.extractStructuredRecipe(jsonLdText, mainImageUrl);
-        
-      } else {
-        // Method 2: Enhanced HTML scraping was used
-        console.log(`🔄 ❌ METHOD 1 FAILED: No complete JSON-LD found, escalating to Method 2`);
-        console.log(`🐌 SLOW TRACK: Using enhanced HTML scraping with extended wait`);
-        
-        // Step 2: Gemini 2.5 Flash for image filtering and PDF OCR
-        console.log(`👁️ Step 2: Gemini Vision processing`);
-        const gemini = new GeminiVisionService();
-        mainImageUrl = await gemini.identifyMainRecipeImage(scrapedData.imageUrls);
-        
-        let pdfText = '';
-        if (scrapedData.pdfUrls.length > 0) {
-          console.log(`📄 Processing ${scrapedData.pdfUrls.length} PDF(s)`);
-          try {
-            const pdfBuffer = await scraper.downloadPdf(scrapedData.pdfUrls[0]);
-            pdfText = await gemini.extractPdfText(pdfBuffer);
-          } catch (pdfError) {
-            console.error('PDF processing failed:', pdfError);
-            // Continue without PDF content
-          }
-        }
-        
-        // Optional: Analyze main image for additional context
-        let imageAnalysis = '';
-        if (mainImageUrl) {
-          try {
-            imageAnalysis = await gemini.analyzeRecipeImage(mainImageUrl);
-          } catch (imageError) {
-            console.error('Image analysis failed:', imageError);
-          }
-        }
-        
-        // Step 3: Text preprocessing
-        console.log(`🧹 Step 3: Text preprocessing`);
-        const combinedText = TextProcessor.combineTexts(
-          scrapedData.textContent, 
-          pdfText, 
-          imageAnalysis
-        );
-        
-        // Step 4: GPT-OSS-120B structured extraction
-        console.log(`🧠 Step 4: AI extraction`);
-        const groq = new GroqService();
-        extractedRecipe = await groq.extractStructuredRecipe(combinedText, mainImageUrl);
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          error: result.error,
+          metadata: result.metadata
+        });
       }
-      
-      console.log(`✅ Successfully extracted recipe: "${extractedRecipe.title}"`);
-      console.log(`📊 PIPELINE SUMMARY:`);
-      console.log(`   Method Used: ${scrapedData.method === 'json-ld' ? 'Method 1 (JSON-LD)' : 'Method 2 (HTML Scraping)'}`);
-      console.log(`   Speed: ${scrapedData.method === 'json-ld' ? 'FAST (~5 seconds)' : 'SLOW (~20+ seconds)'}`);
-      console.log(`   Images Found: ${scrapedData.imageUrls.length}`);
-      console.log(`   Final Processor: GPT-OSS-120B`);
-      
-      res.json({
-        success: true,
-        recipe: extractedRecipe,
-        metadata: {
-          originalUrl: url,
-          extractionMethod: scrapedData.method,
-          extractedImages: scrapedData.imageUrls.length,
-          mainImageSelected: !!mainImageUrl,
-          pdfProcessed: scrapedData.method === 'html-scraping' ? !!scrapedData.pdfUrls.length : false,
-          textLength: scrapedData.method === 'json-ld' ? 
-            (scrapedData.jsonLdRecipe?.title?.length || 0) + (scrapedData.jsonLdRecipe?.description?.length || 0) :
-            scrapedData.textContent.length,
-          pipeline: {
-            method1_jsonLd: scrapedData.method === 'json-ld' ? 'SUCCESS - Used fast extraction' : 'FAILED - No complete JSON-LD found',
-            method2_htmlScraping: scrapedData.method === 'html-scraping' ? 'USED - Extended wait + scraping' : 'SKIPPED - JSON-LD was successful',
-            finalProcessor: 'GPT-OSS-120B used for formatting consistency',
-            speed: scrapedData.method === 'json-ld' ? 'FAST (~5 seconds)' : 'SLOW (~20+ seconds)',
-            reasoning: scrapedData.method === 'json-ld' ? 
-              'Found complete structured recipe data immediately' : 
-              'No JSON-LD found, used enhanced scraping with extended wait'
-          }
+
+      // Handle different result types
+      if (result.type === 'single-recipe') {
+        // Single recipe extraction (direct recipe URL)
+        console.log(`✅ Single recipe extracted: "${result.recipe.title}"`);
+        
+        res.json({
+          success: true,
+          recipe: result.recipe,
+          metadata: result.metadata
+        });
+        
+      } else if (result.type === 'multi-recipe') {
+        // Multiple recipes from homepage/category page
+        console.log(`✅ Multiple recipes extracted: ${result.recipes.length} recipes`);
+        
+        // For backwards compatibility, return the first recipe as primary
+        // and include the full results in metadata
+        const primaryRecipe = result.recipes[0]?.recipe;
+        
+        if (!primaryRecipe) {
+          return res.status(500).json({
+            success: false,
+            error: 'No recipes could be extracted from the discovered URLs'
+          });
         }
-      });
+        
+        res.json({
+          success: true,
+          recipe: primaryRecipe,
+          metadata: {
+            ...result.recipes[0]?.metadata,
+            multipleRecipesFound: true,
+            totalRecipesExtracted: result.recipes.length,
+            allRecipes: result.recipes.map(r => ({
+              title: r.recipe.title,
+              url: r.url,
+              ingredients: r.recipe.ingredients?.length || 0,
+              instructions: r.recipe.instructions?.length || 0
+            })),
+            extractionSummary: result.summary
+          }
+        });
+      }
       
     } catch (error) {
       console.error('🚨 Meal extraction error:', error);

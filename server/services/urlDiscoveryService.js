@@ -101,7 +101,7 @@ class UrlDiscoveryService {
     }
   }
 
-  // Method 2: Analyze homepage structure
+  // Method 2: Analyze homepage structure with enhanced recipe detection
   async discoverFromHomepage(browser, homepageUrl) {
     console.log('🏠 Method 2: Analyzing homepage...');
     
@@ -117,20 +117,64 @@ class UrlDiscoveryService {
         timeout: 30000
       });
 
-      // Wait for content to load
+      // Wait for content to load and then scroll to load more content
       await page.waitForTimeout(3000);
+      
+      // Scroll down to trigger lazy loading
+      await page.evaluate(() => {
+        window.scrollTo(0, document.body.scrollHeight / 2);
+      });
+      await page.waitForTimeout(2000);
+      
+      // Scroll to bottom to load all content
+      await page.evaluate(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+      await page.waitForTimeout(2000);
 
       const urls = await page.evaluate((baseUrl) => {
         const recipeUrls = new Set();
         
-        // Common recipe URL patterns
+        // Enhanced recipe URL patterns
         const recipePatterns = [
           /\/recipe\//i,
           /\/recipes\//i,
           /\/cooking\//i,
           /\/food\//i,
           /\/dish\//i,
-          /\/meal\//i
+          /\/meal\//i,
+          /-recipe\/?$/i,           // ends with -recipe
+          /-cookies?\/?$/i,         // ends with -cookie(s)
+          /-cake\/?$/i,             // ends with -cake
+          /-bread\/?$/i,            // ends with -bread
+          /-soup\/?$/i,             // ends with -soup
+          /-salad\/?$/i,            // ends with -salad
+          /-pasta\/?$/i,            // ends with -pasta
+          /-pizza\/?$/i,            // ends with -pizza
+          /-chicken\/?$/i,          // ends with -chicken
+          /-beef\/?$/i,             // ends with -beef
+          /-dessert\/?$/i,          // ends with -dessert
+          /-treats?\/?$/i,          // ends with -treat(s)
+          /-smoothie\/?$/i,         // ends with -smoothie
+          /-bars?\/?$/i,            // ends with -bar(s)
+          /-muffins?\/?$/i,         // ends with -muffin(s)
+          /-pancakes?\/?$/i,        // ends with -pancake(s)
+          /-waffles?\/?$/i          // ends with -waffle(s)
+        ];
+
+        // Recipe-related text content patterns
+        const recipeTextPatterns = [
+          /recipe/i,
+          /cook/i,
+          /bake/i,
+          /dish/i,
+          /meal/i,
+          /food/i,
+          /kitchen/i,
+          /ingredient/i,
+          /delicious/i,
+          /tasty/i,
+          /yummy/i
         ];
 
         // Find all links on the page
@@ -138,10 +182,75 @@ class UrlDiscoveryService {
         
         links.forEach(link => {
           const href = link.href;
+          const linkText = link.textContent.toLowerCase().trim();
+          const linkTitle = (link.title || '').toLowerCase();
+          const linkAlt = (link.querySelector('img')?.alt || '').toLowerCase();
           
-          // Check if URL matches recipe patterns
-          if (recipePatterns.some(pattern => pattern.test(href))) {
-            // Ensure it's from the same domain
+          // Check URL patterns
+          const matchesUrlPattern = recipePatterns.some(pattern => pattern.test(href));
+          
+          // Check text content for recipe indicators
+          const matchesTextPattern = recipeTextPatterns.some(pattern => 
+            pattern.test(linkText) || pattern.test(linkTitle) || pattern.test(linkAlt)
+          );
+          
+          // Additional checks for recipe-like content
+          const hasRecipeKeywords = linkText.includes('recipe') || 
+                                  linkText.includes('cook') || 
+                                  linkText.includes('bake') ||
+                                  linkTitle.includes('recipe') ||
+                                  linkAlt.includes('recipe');
+          
+          // Include if URL pattern matches OR text suggests it's a recipe
+          if (matchesUrlPattern || matchesTextPattern || hasRecipeKeywords) {
+            // Ensure it's from the same domain and not obviously non-recipe
+            try {
+              const linkUrl = new URL(href);
+              const baseUrlObj = new URL(baseUrl);
+              
+              if (linkUrl.hostname === baseUrlObj.hostname) {
+                // Exclude obvious non-recipe pages
+                const excludePatterns = [
+                  /\/about/i,
+                  /\/contact/i,
+                  /\/privacy/i,
+                  /\/terms/i,
+                  /\/search/i,
+                  /\/category/i,
+                  /\/tag/i,
+                  /\/author/i,
+                  /\/wp-admin/i,
+                  /\/admin/i,
+                  /\.(jpg|jpeg|png|gif|pdf|doc|docx)$/i
+                ];
+                
+                const isExcluded = excludePatterns.some(pattern => pattern.test(href));
+                if (!isExcluded) {
+                  recipeUrls.add(href);
+                }
+              }
+            } catch (e) {
+              // Skip invalid URLs
+            }
+          }
+        });
+
+        // Also look for recipe cards or structured content
+        const recipeCards = document.querySelectorAll([
+          '.recipe-card',
+          '.recipe-item', 
+          '.post-item',
+          '.entry-item',
+          '.food-item',
+          '.dish-item',
+          '[data-recipe]',
+          '.wp-block-latest-posts__post'
+        ].join(', '));
+        
+        recipeCards.forEach(card => {
+          const cardLinks = card.querySelectorAll('a[href]');
+          cardLinks.forEach(link => {
+            const href = link.href;
             try {
               const linkUrl = new URL(href);
               const baseUrlObj = new URL(baseUrl);
@@ -151,13 +260,13 @@ class UrlDiscoveryService {
             } catch (e) {
               // Skip invalid URLs
             }
-          }
+          });
         });
 
         return Array.from(recipeUrls);
       }, homepageUrl);
 
-      console.log(`🏠 Homepage analysis found ${urls.length} potential recipe URLs`);
+      console.log(`🏠 Enhanced homepage analysis found ${urls.length} potential recipe URLs`);
       return urls;
 
     } catch (error) {
