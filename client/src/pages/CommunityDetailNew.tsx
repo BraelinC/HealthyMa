@@ -1341,42 +1341,55 @@ export default function CommunityDetailNew() {
 
                       {/* Recipe Carousel Navigation */}
                       {allExtractedRecipes.length > 1 && (
-                        <div className="flex items-center justify-between bg-gray-800 rounded-lg p-3">
-                          <Button
-                            onClick={() => selectRecipe(selectedRecipeIndex - 1)}
-                            disabled={selectedRecipeIndex === 0}
-                            variant="outline"
-                            size="sm"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 disabled:opacity-50"
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                            Previous
-                          </Button>
-                          
-                          <div className="flex items-center gap-2">
-                            {allExtractedRecipes.map((_, index) => (
-                              <button
-                                key={index}
-                                onClick={() => selectRecipe(index)}
-                                className={`w-3 h-3 rounded-full transition-colors ${
-                                  index === selectedRecipeIndex 
-                                    ? 'bg-emerald-500' 
-                                    : 'bg-gray-600 hover:bg-gray-500'
-                                }`}
-                              />
-                            ))}
+                        <div className="bg-gray-800 rounded-lg p-3">
+                          {/* Mobile-first: Dots with optional arrow buttons */}
+                          <div className="flex items-center justify-center gap-4">
+                            {/* Previous Button - Hidden on small screens or when disabled */}
+                            {selectedRecipeIndex > 0 && (
+                              <Button
+                                onClick={() => selectRecipe(selectedRecipeIndex - 1)}
+                                variant="outline"
+                                size="sm"
+                                className="hidden sm:flex border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                                <span className="hidden md:inline ml-1">Previous</span>
+                              </Button>
+                            )}
+                            
+                            {/* Dot Navigation - Always visible and centered */}
+                            <div className="flex items-center gap-2 flex-1 justify-center">
+                              {allExtractedRecipes.map((_, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => selectRecipe(index)}
+                                  className={`w-3 h-3 rounded-full transition-colors shrink-0 ${
+                                    index === selectedRecipeIndex 
+                                      ? 'bg-emerald-500' 
+                                      : 'bg-gray-600 hover:bg-gray-500'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            
+                            {/* Next Button - Hidden on small screens or when disabled */}
+                            {selectedRecipeIndex < allExtractedRecipes.length - 1 && (
+                              <Button
+                                onClick={() => selectRecipe(selectedRecipeIndex + 1)}
+                                variant="outline"
+                                size="sm"
+                                className="hidden sm:flex border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
+                              >
+                                <span className="hidden md:inline mr-1">Next</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                           
-                          <Button
-                            onClick={() => selectRecipe(selectedRecipeIndex + 1)}
-                            disabled={selectedRecipeIndex === allExtractedRecipes.length - 1}
-                            variant="outline"
-                            size="sm"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 disabled:opacity-50"
-                          >
-                            Next
-                            <ChevronRight className="w-4 h-4" />
-                          </Button>
+                          {/* Mobile Navigation Info */}
+                          <div className="text-center mt-2 text-sm text-gray-400">
+                            Recipe {selectedRecipeIndex + 1} of {allExtractedRecipes.length}
+                          </div>
                         </div>
                       )}
                       
