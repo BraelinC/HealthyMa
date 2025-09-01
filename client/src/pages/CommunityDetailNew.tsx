@@ -1393,7 +1393,7 @@ export default function CommunityDetailNew() {
                         </div>
                       )}
                       
-                      <div className="bg-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto">
+                      <div className="bg-gray-700 rounded-lg p-4">
                         <RecipeDisplay
                           key={`recipe-${selectedRecipeIndex}-${extractedRecipe?.id || 'default'}`}
                           recipe={extractedRecipe}
