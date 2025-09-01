@@ -6463,6 +6463,60 @@ Additional Info:
     }
   });
 
+  // Batch extract multiple recipes from a website
+  app.post("/api/batch-extract-recipes", authenticateToken, async (req: any, res) => {
+    try {
+      const { homepageUrl, maxRecipes = 50 } = req.body;
+      
+      if (!homepageUrl) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Homepage URL is required' 
+        });
+      }
+
+      console.log(`🚀 Starting batch extraction from: ${homepageUrl}`);
+      console.log(`📊 Max recipes: ${maxRecipes}`);
+
+      // Dynamic import for batch extraction service
+      const { default: BatchExtractionService } = await import('./services/batchExtractionService.js');
+      const batchExtractor = new BatchExtractionService();
+
+      // Start batch extraction
+      const result = await batchExtractor.extractRecipesFromSite(homepageUrl, maxRecipes);
+
+      if (result.success) {
+        console.log(`✅ Batch extraction completed: ${result.summary.successfulExtractions} recipes extracted`);
+        res.json(result);
+      } else {
+        console.log(`❌ Batch extraction failed: ${result.error}`);
+        res.status(500).json(result);
+      }
+
+    } catch (error) {
+      console.error('🚨 Batch extraction error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to start batch extraction',
+        details: error.message 
+      });
+    }
+  });
+
+  // Get batch extraction progress (for future real-time updates)
+  app.get("/api/batch-extract-progress/:sessionId", authenticateToken, async (req: any, res) => {
+    try {
+      // TODO: Implement session-based progress tracking
+      res.json({ 
+        message: "Progress tracking not yet implemented",
+        sessionId: req.params.sessionId 
+      });
+    } catch (error) {
+      console.error('Progress tracking error:', error);
+      res.status(500).json({ message: "Failed to get progress" });
+    }
+  });
+
   // Check if item is favorited
   app.get("/api/favorites/:itemType/:itemId/check", authenticateToken, async (req: any, res) => {
     try {
