@@ -6331,50 +6331,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { default: TextProcessor } = await import('./services/textProcessor.js');
       const { default: GroqService } = await import('./services/groqService.js');
       
-      // Step 1: Web scraping with Puppeteer
+      // Step 1: Smart web scraping with dual-method pipeline
       console.log(`🕷️ Step 1: Web scraping`);
       const scraper = new WebScraperService();
       const scrapedData = await scraper.scrapeRecipePage(url);
       
-      // Step 2: Gemini 2.5 Flash for image filtering and PDF OCR
-      console.log(`👁️ Step 2: Gemini Vision processing`);
-      const gemini = new GeminiVisionService();
-      const mainImageUrl = await gemini.identifyMainRecipeImage(scrapedData.imageUrls);
+      let extractedRecipe;
+      let mainImageUrl = '';
       
-      let pdfText = '';
-      if (scrapedData.pdfUrls.length > 0) {
-        console.log(`📄 Processing ${scrapedData.pdfUrls.length} PDF(s)`);
-        try {
-          const pdfBuffer = await scraper.downloadPdf(scrapedData.pdfUrls[0]);
-          pdfText = await gemini.extractPdfText(pdfBuffer);
-        } catch (pdfError) {
-          console.error('PDF processing failed:', pdfError);
-          // Continue without PDF content
+      if (scrapedData.method === 'json-ld') {
+        // Method 1: Fast JSON-LD extraction was successful
+        console.log(`🚀 Using JSON-LD extracted recipe data`);
+        
+        // Step 2: Process images and send JSON-LD through GPT-OSS for consistency
+        console.log(`👁️ Step 2: Gemini Vision processing`);
+        const gemini = new GeminiVisionService();
+        mainImageUrl = await gemini.identifyMainRecipeImage(scrapedData.imageUrls);
+        
+        // Use the image from JSON-LD if no main image found from analysis
+        if (!mainImageUrl && scrapedData.jsonLdRecipe.image) {
+          mainImageUrl = scrapedData.jsonLdRecipe.image;
         }
-      }
-      
-      // Optional: Analyze main image for additional context
-      let imageAnalysis = '';
-      if (mainImageUrl) {
-        try {
-          imageAnalysis = await gemini.analyzeRecipeImage(mainImageUrl);
-        } catch (imageError) {
-          console.error('Image analysis failed:', imageError);
+        
+        // Step 3: Convert JSON-LD to text for GPT-OSS processing (ensures consistency)
+        console.log(`🧠 Step 3: AI formatting`);
+        const jsonLdText = `
+Recipe: ${scrapedData.jsonLdRecipe.title}
+Description: ${scrapedData.jsonLdRecipe.description}
+
+Ingredients:
+${scrapedData.jsonLdRecipe.ingredients.map(ing => `- ${ing}`).join('\n')}
+
+Instructions:
+${scrapedData.jsonLdRecipe.instructions.map((inst, i) => `${i + 1}. ${inst}`).join('\n')}
+
+Additional Info:
+- Prep Time: ${scrapedData.jsonLdRecipe.prepTime || 'Not specified'}
+- Cook Time: ${scrapedData.jsonLdRecipe.cookTime || 'Not specified'}
+- Servings: ${scrapedData.jsonLdRecipe.servings || 'Not specified'}
+- Cuisine: ${scrapedData.jsonLdRecipe.cuisine || 'Not specified'}
+        `.trim();
+        
+        const groq = new GroqService();
+        extractedRecipe = await groq.extractStructuredRecipe(jsonLdText, mainImageUrl);
+        
+      } else {
+        // Method 2: Enhanced HTML scraping was used
+        console.log(`🔄 Using enhanced HTML scraping data`);
+        
+        // Step 2: Gemini 2.5 Flash for image filtering and PDF OCR
+        console.log(`👁️ Step 2: Gemini Vision processing`);
+        const gemini = new GeminiVisionService();
+        mainImageUrl = await gemini.identifyMainRecipeImage(scrapedData.imageUrls);
+        
+        let pdfText = '';
+        if (scrapedData.pdfUrls.length > 0) {
+          console.log(`📄 Processing ${scrapedData.pdfUrls.length} PDF(s)`);
+          try {
+            const pdfBuffer = await scraper.downloadPdf(scrapedData.pdfUrls[0]);
+            pdfText = await gemini.extractPdfText(pdfBuffer);
+          } catch (pdfError) {
+            console.error('PDF processing failed:', pdfError);
+            // Continue without PDF content
+          }
         }
+        
+        // Optional: Analyze main image for additional context
+        let imageAnalysis = '';
+        if (mainImageUrl) {
+          try {
+            imageAnalysis = await gemini.analyzeRecipeImage(mainImageUrl);
+          } catch (imageError) {
+            console.error('Image analysis failed:', imageError);
+          }
+        }
+        
+        // Step 3: Text preprocessing
+        console.log(`🧹 Step 3: Text preprocessing`);
+        const combinedText = TextProcessor.combineTexts(
+          scrapedData.textContent, 
+          pdfText, 
+          imageAnalysis
+        );
+        
+        // Step 4: GPT-OSS-120B structured extraction
+        console.log(`🧠 Step 4: AI extraction`);
+        const groq = new GroqService();
+        extractedRecipe = await groq.extractStructuredRecipe(combinedText, mainImageUrl);
       }
-      
-      // Step 3: Text preprocessing
-      console.log(`🧹 Step 3: Text preprocessing`);
-      const combinedText = TextProcessor.combineTexts(
-        scrapedData.textContent, 
-        pdfText, 
-        imageAnalysis
-      );
-      
-      // Step 4: GPT-OSS-120B structured extraction
-      console.log(`🧠 Step 4: AI extraction`);
-      const groq = new GroqService();
-      const extractedRecipe = await groq.extractStructuredRecipe(combinedText, mainImageUrl);
       
       console.log(`✅ Successfully extracted recipe: "${extractedRecipe.title}"`);
       
@@ -6383,10 +6427,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         recipe: extractedRecipe,
         metadata: {
           originalUrl: url,
+          extractionMethod: scrapedData.method,
           extractedImages: scrapedData.imageUrls.length,
           mainImageSelected: !!mainImageUrl,
-          pdfProcessed: !!pdfText,
-          textLength: combinedText.length
+          pdfProcessed: scrapedData.method === 'html-scraping' ? !!scrapedData.pdfUrls.length : false,
+          textLength: scrapedData.method === 'json-ld' ? 
+            (scrapedData.jsonLdRecipe?.title?.length || 0) + (scrapedData.jsonLdRecipe?.description?.length || 0) :
+            scrapedData.textContent.length
         }
       });
       
