@@ -118,19 +118,19 @@ class UrlDiscoveryService {
       });
 
       // Wait for content to load and then scroll to load more content
-      await page.waitForTimeout(3000);
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       // Scroll down to trigger lazy loading
       await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight / 2);
       });
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Scroll to bottom to load all content
       await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
       });
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       const urls = await page.evaluate((baseUrl) => {
         const recipeUrls = new Set();
@@ -292,7 +292,7 @@ class UrlDiscoveryService {
         timeout: 30000
       });
 
-      await page.waitForTimeout(3000);
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       const urls = await page.evaluate((baseUrl) => {
         const recipeUrls = new Set();
