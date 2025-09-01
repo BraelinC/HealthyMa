@@ -13,7 +13,7 @@ import {
   Users, Calendar, MessageSquare, Heart, ChefHat, ArrowLeft, Settings,
   Pin, ThumbsUp, MessageCircle, Share2, Camera, Plus, Search,
   Clock, TrendingUp, User, MoreHorizontal, Send, Menu, X,
-  ChevronDown, CheckCircle, Play, BookOpen, Share, Eye
+  ChevronDown, CheckCircle, Play, BookOpen, Share, Eye, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -425,6 +425,8 @@ export default function CommunityDetailNew() {
   // Extractor state variables
   const [extractorUrl, setExtractorUrl] = useState("");
   const [extractedRecipe, setExtractedRecipe] = useState<any>(null);
+  const [allExtractedRecipes, setAllExtractedRecipes] = useState<any[]>([]);
+  const [selectedRecipeIndex, setSelectedRecipeIndex] = useState(0);
   const [extractionInProgress, setExtractionInProgress] = useState(false);
 
   const navigateToPost = (postId: number) => {
@@ -652,10 +654,15 @@ export default function CommunityDetailNew() {
     },
     onSuccess: (result) => {
       setExtractedRecipe(result.recipe);
+      setAllExtractedRecipes(result.allRecipes || [result.recipe]);
+      setSelectedRecipeIndex(0);
       setExtractionInProgress(false);
+      const totalCount = result.allRecipes?.length || 1;
       toast({
         title: "Recipe Extracted!",
-        description: `Successfully extracted "${result.recipe.title}"`,
+        description: totalCount > 1 
+          ? `Successfully extracted ${totalCount} recipes! Showing the best one.`
+          : `Successfully extracted "${result.recipe.title}"`,
       });
     },
     onError: (error: any) => {
@@ -667,6 +674,20 @@ export default function CommunityDetailNew() {
       });
     },
   });
+
+  // Select a different recipe from the extracted list
+  const selectRecipe = (index: number) => {
+    setSelectedRecipeIndex(index);
+    setExtractedRecipe(allExtractedRecipes[index]);
+  };
+
+  // Clear all extracted recipes
+  const clearExtractedRecipes = () => {
+    setExtractedRecipe(null);
+    setAllExtractedRecipes([]);
+    setSelectedRecipeIndex(0);
+    setExtractorUrl("");
+  };
 
   // Share extracted recipe to community
   const shareExtractedRecipe = async () => {
@@ -685,6 +706,8 @@ export default function CommunityDetailNew() {
       
       // Clear extracted recipe and reset form
       setExtractedRecipe(null);
+      setAllExtractedRecipes([]);
+      setSelectedRecipeIndex(0);
       setExtractorUrl("");
       
       // Refresh posts
@@ -1291,11 +1314,59 @@ export default function CommunityDetailNew() {
                   {extractedRecipe && (
                     <div className="mt-6 space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-white font-medium">Extracted Recipe Preview</h4>
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-white font-medium">Extracted Recipe Preview</h4>
+                          {allExtractedRecipes.length > 1 && (
+                            <Badge variant="secondary" className="bg-blue-600 text-white">
+                              {selectedRecipeIndex + 1} of {allExtractedRecipes.length}
+                            </Badge>
+                          )}
+                        </div>
                         <Badge className="bg-green-600 text-white">
                           Ready to Share
                         </Badge>
                       </div>
+
+                      {/* Recipe Carousel Navigation */}
+                      {allExtractedRecipes.length > 1 && (
+                        <div className="flex items-center justify-between bg-gray-800 rounded-lg p-3">
+                          <Button
+                            onClick={() => selectRecipe(selectedRecipeIndex - 1)}
+                            disabled={selectedRecipeIndex === 0}
+                            variant="outline"
+                            size="sm"
+                            className="border-gray-600 text-gray-300 hover:bg-gray-700 disabled:opacity-50"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                            Previous
+                          </Button>
+                          
+                          <div className="flex items-center gap-2">
+                            {allExtractedRecipes.map((_, index) => (
+                              <button
+                                key={index}
+                                onClick={() => selectRecipe(index)}
+                                className={`w-3 h-3 rounded-full transition-colors ${
+                                  index === selectedRecipeIndex 
+                                    ? 'bg-emerald-500' 
+                                    : 'bg-gray-600 hover:bg-gray-500'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          
+                          <Button
+                            onClick={() => selectRecipe(selectedRecipeIndex + 1)}
+                            disabled={selectedRecipeIndex === allExtractedRecipes.length - 1}
+                            variant="outline"
+                            size="sm"
+                            className="border-gray-600 text-gray-300 hover:bg-gray-700 disabled:opacity-50"
+                          >
+                            Next
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                       
                       <div className="bg-gray-700 rounded-lg p-4">
                         <RecipeDisplay
@@ -1313,10 +1384,7 @@ export default function CommunityDetailNew() {
                           Share to Community
                         </Button>
                         <Button 
-                          onClick={() => {
-                            setExtractedRecipe(null);
-                            setExtractorUrl("");
-                          }}
+                          onClick={clearExtractedRecipes}
                           variant="outline"
                           className="border-gray-600 text-gray-300 hover:bg-gray-700"
                         >

@@ -6354,9 +6354,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Multiple recipes from homepage/category page
         console.log(`✅ Multiple recipes extracted: ${result.recipes.length} recipes`);
         
-        // For backwards compatibility, return the first recipe as primary
-        // and include the full results in metadata
-        const primaryRecipe = result.recipes[0]?.recipe;
+        // For backwards compatibility, return the best quality recipe as primary
+        // (recipe with most ingredients and instructions)
+        const bestRecipe = result.recipes.reduce((best, current) => {
+          const currentScore = (current.recipe.ingredients?.length || 0) + (current.recipe.instructions?.length || 0);
+          const bestScore = (best.recipe.ingredients?.length || 0) + (best.recipe.instructions?.length || 0);
+          return currentScore > bestScore ? current : best;
+        });
+        
+        const primaryRecipe = bestRecipe?.recipe;
         
         if (!primaryRecipe) {
           return res.status(500).json({
@@ -6368,8 +6374,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           success: true,
           recipe: primaryRecipe,
+          allRecipes: result.recipes.map(r => r.recipe), // Include all full recipes
           metadata: {
-            ...result.recipes[0]?.metadata,
+            ...bestRecipe?.metadata,
             multipleRecipesFound: true,
             totalRecipesExtracted: result.recipes.length,
             allRecipes: result.recipes.map(r => ({
