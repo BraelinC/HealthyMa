@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, Mail } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
@@ -22,12 +21,11 @@ interface CheckoutFormProps {
   paymentType: 'founders' | 'trial' | 'monthly';
   onSuccess: () => void;
   onCancel: () => void;
-  user: any;
   guestEmail: string;
   guestName: string;
 }
 
-const CheckoutForm = ({ paymentType, onSuccess, onCancel, user, guestEmail, guestName }: CheckoutFormProps) => {
+const CheckoutForm = ({ paymentType, onSuccess, onCancel, guestEmail, guestName }: CheckoutFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -68,15 +66,13 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel, user, guestEmail, gues
           });
         } else {
           // Store payment information for guest checkout
-          if (!user) {
-            const paymentData = {
-              email: guestEmail,
-              name: guestName,
-              paymentType: paymentType,
-              timestamp: new Date().toISOString()
-            };
-            sessionStorage.setItem('pendingPayment', JSON.stringify(paymentData));
-          }
+          const paymentData = {
+            email: guestEmail,
+            name: guestName,
+            paymentType: paymentType,
+            timestamp: new Date().toISOString()
+          };
+          sessionStorage.setItem('pendingPayment', JSON.stringify(paymentData));
           
           toast({
             title: "Setup Successful",
@@ -167,13 +163,10 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
   const [guestEmail, setGuestEmail] = useState("");
   const [guestName, setGuestName] = useState("");
   const { toast } = useToast();
-  const { user, isLoading: authLoading } = useAuth();
 
-  console.log('🔍 CHECKOUT DEBUG - Component rendered:', {
+  console.log('🔍 GUEST CHECKOUT DEBUG:', {
     paymentType,
     isLoading,
-    authLoading,
-    user: user ? 'authenticated' : 'not authenticated',
     clientSecret: clientSecret ? 'has client secret' : 'no client secret',
     guestEmail,
     guestName
@@ -182,14 +175,15 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
   const createPaymentIntent = async () => {
     try {
       setIsLoading(true);
-      console.log('Creating payment intent for:', paymentType);
-      console.log('Current user:', user);
-      console.log('Guest email:', guestEmail);
-      console.log('Guest name:', guestName);
+      console.log('🔍 GUEST CHECKOUT - Creating payment intent:', {
+        paymentType,
+        guestEmail,
+        guestName
+      });
       
-      // Use user data if authenticated, otherwise use guest data
-      const email = (user as any)?.email || guestEmail || "user@example.com";
-      const name = (user as any)?.full_name || (user as any)?.firstName || guestName || "User";
+      if (!guestEmail || !guestName) {
+        throw new Error('Guest email and name are required');
+      }
         
         if (paymentType === 'founders') {
           // Create payment intent for $100 founders offer
@@ -200,7 +194,7 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
               amount: 100
             })
           });
-          console.log('Payment intent created:', data);
+          console.log('🔍 GUEST CHECKOUT - Payment intent created:', data);
           
           if (!data.clientSecret) {
             throw new Error('No client secret received from server');
@@ -212,12 +206,12 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           const data = await apiRequest("/api/create-setup-intent", {
             method: 'POST',
             body: JSON.stringify({
-              email: email,
-              name: name,
+              email: guestEmail,
+              name: guestName,
               paymentType: 'monthly'
             })
           });
-          console.log('Monthly subscription setup intent created:', data);
+          console.log('🔍 GUEST CHECKOUT - Monthly setup intent created:', data);
           
           if (!data.clientSecret) {
             throw new Error('No client secret received from server');
@@ -228,12 +222,12 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           const data = await apiRequest("/api/create-setup-intent", {
             method: 'POST',
             body: JSON.stringify({
-              email: email,
-              name: name,
+              email: guestEmail,
+              name: guestName,
               paymentType: 'trial'
             })
           });
-          console.log('Trial setup intent created:', data);
+          console.log('🔍 GUEST CHECKOUT - Trial setup intent created:', data);
           
           if (!data.clientSecret) {
             throw new Error('No client secret received from server');
@@ -241,7 +235,7 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           setClientSecret(data.clientSecret);
         }
       } catch (error: any) {
-        console.error('Payment initialization error:', error);
+        console.error('🔍 GUEST CHECKOUT - Payment initialization error:', error);
         toast({
           title: "Error",
           description: error.message || "Failed to initialize payment. Please try again.",
@@ -254,34 +248,15 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
     };
 
   useEffect(() => {
-    console.log('🔍 CHECKOUT DEBUG - useEffect triggered:', {
-      user: user ? 'authenticated' : 'not authenticated',
-      authLoading,
-      paymentType,
-      currentIsLoading: isLoading
-    });
-    
-    // Wait for auth to finish loading
-    if (authLoading) {
-      console.log('🔍 CHECKOUT DEBUG - Auth still loading, waiting...');
-      return;
-    }
-    
-    // Only auto-create payment intent if user is already authenticated
-    if (user) {
-      console.log('🔍 CHECKOUT DEBUG - User authenticated, creating payment intent');
-      createPaymentIntent();
-    } else {
-      console.log('🔍 CHECKOUT DEBUG - No user, setting loading to false to show guest form');
-      // For guest users, stop loading and show the email form
-      setIsLoading(false);
-    }
-  }, [paymentType, user, authLoading]);
+    console.log('🔍 GUEST CHECKOUT - Component initialized, showing guest form immediately');
+    // Always start with guest form - no auth checking needed
+    setIsLoading(false);
+  }, [paymentType]);
 
-  console.log('🔍 CHECKOUT DEBUG - Before render decision:', {
+  console.log('🔍 GUEST CHECKOUT - Render decision:', {
     isLoading,
-    user: user ? 'authenticated' : 'not authenticated',
-    clientSecret: clientSecret ? 'has client secret' : 'no client secret'
+    clientSecret: clientSecret ? 'has client secret' : 'no client secret',
+    showGuestForm: !isLoading && !clientSecret
   });
 
   if (isLoading) {
@@ -327,7 +302,7 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           </div>
         </CardHeader>
         <CardContent>
-          {!clientSecret && !user ? (
+          {!clientSecret && !isLoading ? (
             // Guest user form - collect email and name before creating payment intent
             <div className="space-y-4">
               <div>
@@ -396,7 +371,6 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
                 paymentType={paymentType} 
                 onSuccess={onSuccess} 
                 onCancel={onCancel}
-                user={user}
                 guestEmail={guestEmail}
                 guestName={guestName}
               />
