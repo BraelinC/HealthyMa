@@ -177,10 +177,6 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel, guestEmail, guestName 
             </div>
           )}
         </div>
-        <div className="mt-2 space-y-1">
-          <p className="text-xs text-gray-500">Stripe Status: {stripe ? '✅ Loaded' : '❌ Loading...'}</p>
-          <p className="text-xs text-gray-500">Elements Status: {elements ? '✅ Loaded' : '❌ Loading...'}</p>
-        </div>
       </div>
       <div className="flex gap-3">
         <Button
