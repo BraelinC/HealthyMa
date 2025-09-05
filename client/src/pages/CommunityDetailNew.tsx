@@ -240,16 +240,16 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
           )}
         </div>
       ) : (
-        // Course Cards Grid - Better Desktop Layout  
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4 max-w-5xl mx-auto">
+        // Course Cards Grid - Full Width Desktop Layout  
+        <div className="w-full space-y-4">
           {courses.map((course: any) => (
             <Card 
               key={course.id}
-              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-200 cursor-pointer group overflow-hidden w-full"
+              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-200 cursor-pointer group overflow-hidden w-full max-w-none lg:flex lg:flex-row"
               onClick={() => toggleCourseExpansion(course.id)}
             >
-              {/* Course Cover Image */}
-              <div className="relative h-40 lg:h-48 bg-gradient-to-br from-purple-600 via-blue-600 to-emerald-600 overflow-hidden">
+              {/* Course Cover Image - Horizontal Layout for Desktop */}
+              <div className="relative h-24 lg:h-20 bg-gradient-to-br from-purple-600 via-blue-600 to-emerald-600 overflow-hidden lg:w-32 lg:flex-shrink-0">
                 {course.cover_image ? (
                   <img 
                     src={course.cover_image} 
@@ -287,7 +287,7 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
               </div>
 
               {/* Course Content */}
-              <CardContent className="p-4 lg:p-6">
+              <CardContent className="p-4 lg:p-4 lg:flex-1">
                 <div className="space-y-3">
                   {/* Title and Stats */}
                   <div>
