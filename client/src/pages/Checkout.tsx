@@ -371,11 +371,6 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
             </div>
           ) : clientSecret ? (
             <div>
-              <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded">
-                <h4 className="text-sm font-medium text-blue-800">Debug Info:</h4>
-                <p className="text-xs text-blue-600">Client Secret: {clientSecret.substring(0, 20)}...</p>
-                <p className="text-xs text-blue-600">Stripe Key: {STRIPE_PUBLIC_KEY.substring(0, 20)}...</p>
-              </div>
               <Elements stripe={stripePromise} options={{ clientSecret }}>
                 <CheckoutForm 
                   paymentType={paymentType} 
