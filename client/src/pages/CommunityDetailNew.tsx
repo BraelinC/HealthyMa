@@ -1098,6 +1098,9 @@ export default function CommunityDetailNew() {
                           className="text-gray-400 hover:text-white p-1"
                           onClick={(e) => {
                             e.stopPropagation();
+                            console.log("🔴 THREE DOTS BUTTON CLICKED! Post ID:", post.id);
+                            console.log("🔴 BUTTON CLICK EVENT:", e);
+                            console.log("🔴 POST DATA:", post);
                             toast({ title: "Button clicked", description: "Three dots menu button was clicked!" });
                           }}
                         >
