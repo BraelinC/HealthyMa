@@ -786,15 +786,18 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
           </div>
         ) : (
           // Responsive rendering: Simple list for desktop, drag-drop for mobile
-          (() => {
-            console.log('🔍 [RENDER DEBUG] About to render courses - isMobile:', isMobile);
-            if (isMobile) {
-              console.log('🔍 [RENDER DEBUG] Taking MOBILE path');
-            } else {
-              console.log('🔍 [RENDER DEBUG] Taking DESKTOP path');
-            }
-          })(),
-          isMobile ? (
+          <>
+            {(() => {
+              console.log('🔍 [RENDER DEBUG] About to render courses - isMobile:', isMobile);
+              if (isMobile) {
+                console.log('🔍 [RENDER DEBUG] Taking MOBILE path');
+              } else {
+                console.log('🔍 [RENDER DEBUG] Taking DESKTOP path');
+              }
+              return null;
+            })()}
+            
+            {isMobile ? (
             // Mobile: Keep drag-and-drop functionality
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="courses">
@@ -921,7 +924,8 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
                 </Card>
               ))}
             </div>
-          )
+            )}
+          </>
         )}
       </div>
 
