@@ -424,6 +424,31 @@ export class CommunityService {
     };
   }
 
+  // Delete a community post
+  async deletePost(postId: number, communityId: number): Promise<boolean> {
+    try {
+      // First delete all related data (likes, comments, etc.)
+      await db.delete(communityPostLikes)
+        .where(eq(communityPostLikes.post_id, postId));
+
+      await db.delete(communityPostComments)
+        .where(eq(communityPostComments.post_id, postId));
+
+      // Delete the post itself
+      const [deletedPost] = await db.delete(communityPosts)
+        .where(and(
+          eq(communityPosts.id, postId),
+          eq(communityPosts.community_id, communityId)
+        ))
+        .returning();
+
+      return !!deletedPost;
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      return false;
+    }
+  }
+
   // Get community posts with pagination and filtering
   async getCommunityPosts(
     communityId: number, 

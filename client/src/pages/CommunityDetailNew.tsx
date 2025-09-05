@@ -9,11 +9,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Users, Calendar, MessageSquare, Heart, ChefHat, ArrowLeft, Settings,
   Pin, ThumbsUp, MessageCircle, Share2, Camera, Plus, Search,
   Clock, TrendingUp, User, MoreHorizontal, Send, Menu, X,
-  ChevronDown, CheckCircle, Play, BookOpen, Share, Eye, ChevronLeft, ChevronRight
+  ChevronDown, CheckCircle, Play, BookOpen, Share, Eye, ChevronLeft, ChevronRight,
+  Trash2
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -428,6 +445,10 @@ export default function CommunityDetailNew() {
   const [allExtractedRecipes, setAllExtractedRecipes] = useState<any[]>([]);
   const [selectedRecipeIndex, setSelectedRecipeIndex] = useState(0);
   const [extractionInProgress, setExtractionInProgress] = useState(false);
+  
+  // Delete post state
+  const [postToDelete, setPostToDelete] = useState<number | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const navigateToPost = (postId: number) => {
     setLocation(`/community/${id}/post/${postId}`);
@@ -680,6 +701,57 @@ export default function CommunityDetailNew() {
       });
     },
   });
+
+  // Delete post mutation
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: number) => {
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest(`/api/communities/${id}/posts/${postId}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: (result, postId) => {
+      // Remove post from cache immediately for instant UI update
+      if (id) {
+        const currentCache = getCommunityPostsCache(id);
+        const updatedCache = currentCache.filter(p => p.id !== postId);
+        queryClient.setQueryData(getPostsCacheKey(id), updatedCache);
+        setCachedPosts(updatedCache as CommunityPost[]);
+      }
+      
+      // Refresh from API in background
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/posts`, activeFilter] });
+      
+      // Close the dialog and reset state
+      setShowDeleteDialog(false);
+      setPostToDelete(null);
+      
+      toast({
+        title: "Post Deleted",
+        description: "The post has been removed from the community.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to delete post. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle delete post confirmation
+  const handleDeletePost = (postId: number) => {
+    setPostToDelete(postId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeletePost = () => {
+    if (postToDelete) {
+      deletePostMutation.mutate(postToDelete);
+    }
+  };
 
   // Select a different recipe from the extracted list
   const selectRecipe = (index: number) => {
@@ -993,9 +1065,32 @@ export default function CommunityDetailNew() {
                           </Button>
                         </div>
                       )}
-                      <Button variant="ghost" size="sm" className="text-gray-400 p-1">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      {/* Creator-only dropdown menu */}
+                      {isCreator ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                            <DropdownMenuItem
+                              className="text-red-400 hover:text-red-300 hover:bg-gray-700 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePost(post.id);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Post
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <Button variant="ghost" size="sm" className="text-gray-400 p-1">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -1453,6 +1548,40 @@ export default function CommunityDetailNew() {
           }}
         />
       )}
+
+      {/* Delete Post Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-gray-800 border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Post</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeletePost}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={deletePostMutation.isPending}
+            >
+              {deletePostMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Post
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
