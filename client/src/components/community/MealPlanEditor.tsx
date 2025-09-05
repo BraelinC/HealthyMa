@@ -381,6 +381,18 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingModule, setEditingModule] = useState<Module | null>(null);
 
+  // Screen size detection for responsive rendering
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   console.log('MealPlanEditor mounted with communityId:', communityId);
 
   // Fetch courses for this community
@@ -762,82 +774,135 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             <p className="text-gray-500 text-sm mt-1">Create your first course to get started</p>
           </div>
         ) : (
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="courses">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                  {(courses as Course[]).map((course: Course, index: number) => (
-                    <Draggable key={course.id} draggableId={`course-${course.id}`} index={index}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className={`${
-                          snapshot.isDragging ? 'opacity-50' : ''
-                        } ${
-                          selectedCourse?.id === course.id ? 'bg-gray-800' : ''
-                        }`}
-                      >
-                        <Card
-                          className="bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors"
-                          onClick={() => {
-                            setSelectedCourse(course);
-                            // Auto-close sidebar on mobile after selecting course
-                            if (window.innerWidth <= 768) {
-                              const editor = document.querySelector('[data-meal-plan-editor]');
-                              if (editor) {
-                                editor.classList.add('sidebar-collapsed');
-                              }
-                            }
-                          }}
+          // Responsive rendering: Simple list for desktop, drag-drop for mobile
+          isMobile ? (
+            // Mobile: Keep drag-and-drop functionality
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="courses">
+                {(provided) => (
+                  <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                    {(courses as Course[]).map((course: Course, index: number) => (
+                      <Draggable key={course.id} draggableId={`course-${course.id}`} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`${
+                            snapshot.isDragging ? 'opacity-50' : ''
+                          } ${
+                            selectedCourse?.id === course.id ? 'bg-gray-800' : ''
+                          }`}
                         >
-                          <CardContent className="p-3">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-2 flex-1">
-                                <div {...provided.dragHandleProps}>
-                                  <GripVertical className="h-4 w-4 text-gray-400" />
+                          <Card
+                            className="bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors"
+                            onClick={() => {
+                              setSelectedCourse(course);
+                              // Auto-close sidebar on mobile after selecting course
+                              if (window.innerWidth <= 768) {
+                                const editor = document.querySelector('[data-meal-plan-editor]');
+                                if (editor) {
+                                  editor.classList.add('sidebar-collapsed');
+                                }
+                              }
+                            }}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-2 flex-1">
+                                  <div {...provided.dragHandleProps}>
+                                    <GripVertical className="h-4 w-4 text-gray-400" />
+                                  </div>
+                                  <span className="text-lg">{course.emoji || '📚'}</span>
+                                  <div className="flex-1">
+                                    <h3 className="font-medium text-white text-sm">{course.title}</h3>
+                                    <p className="text-xs text-gray-400">{course.lesson_count} lessons</p>
+                                  </div>
                                 </div>
-                                <span className="text-lg">{course.emoji || '📚'}</span>
-                                <div className="flex-1">
-                                  <h3 className="font-medium text-white text-sm">{course.title}</h3>
-                                  <p className="text-xs text-gray-400">{course.lesson_count} lessons</p>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingCourse(course);
+                                    }}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <Badge
+                                    className={`text-xs ${
+                                      course.is_published
+                                        ? 'bg-green-600 text-white'
+                                        : 'bg-gray-600 text-gray-300'
+                                    }`}
+                                  >
+                                    {course.is_published ? 'Published' : 'Draft'}
+                                  </Badge>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingCourse(course);
-                                  }}
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                                <Badge
-                                  className={`text-xs ${
-                                    course.is_published
-                                      ? 'bg-green-600 text-white'
-                                      : 'bg-gray-600 text-gray-300'
-                                  }`}
-                                >
-                                  {course.is_published ? 'Published' : 'Draft'}
-                                </Badge>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      )}
+                    </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          ) : (
+            // Desktop: Simple list without drag-and-drop
+            <div className="space-y-2">
+              {(courses as Course[]).map((course: Course) => (
+                <Card
+                  key={course.id}
+                  className={`bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors ${
+                    selectedCourse?.id === course.id ? 'ring-2 ring-purple-500' : ''
+                  }`}
+                  onClick={() => setSelectedCourse(course)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="text-2xl">{course.emoji || '📚'}</span>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-white text-base">{course.title}</h3>
+                          <p className="text-sm text-gray-400">{course.lesson_count} lessons</p>
+                          {course.description && (
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{course.description}</p>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </Draggable>
-                    )
-                  )}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+                      <div className="flex items-center gap-2 ml-2">
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingCourse(course);
+                          }}
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Badge
+                          className={`text-xs ${
+                            course.is_published
+                              ? 'bg-green-600 text-white'
+                              : 'bg-gray-600 text-gray-300'
+                          }`}
+                        >
+                          {course.is_published ? 'Published' : 'Draft'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )
         )}
       </div>
 
