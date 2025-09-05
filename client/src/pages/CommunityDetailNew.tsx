@@ -520,7 +520,19 @@ export default function CommunityDetailNew() {
 
   // Check if user is already a member based on memberInfo existence
   const isMember = community?.memberInfo || community?.isMember;
+  
+  // Debug logging for creator detection
+  console.log('🔍 [CREATOR DEBUG] Community data:', community);
+  console.log('🔍 [CREATOR DEBUG] User data:', user);
+  console.log('🔍 [CREATOR DEBUG] Creator ID from community:', community?.creator_id);
+  console.log('🔍 [CREATOR DEBUG] User ID variants:', {
+    userUserId: (user as any)?.user?.id,
+    userId: (user as any)?.id,
+    memberRole: community?.memberInfo?.role
+  });
+  
   const isCreator = community?.memberInfo?.role === 'creator' || community?.creator_id === (user as any)?.user?.id || community?.creator_id === (user as any)?.id;
+  console.log('🔍 [CREATOR DEBUG] Final isCreator result:', isCreator);
 
   // Mock posts data (replace with real API call later)
   const mockPosts: CommunityPost[] = [
