@@ -766,8 +766,10 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             <Droppable droppableId="courses">
               {(provided) => (
                 <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                  {(courses as Course[]).map((course: Course, index: number) => (
-                  <Draggable key={course.id} draggableId={`course-${course.id}`} index={index}>
+                  {(courses as Course[]).map((course: Course, index: number) => {
+                    console.log('Rendering course:', course.id, course.title, course.emoji);
+                    return (
+                      <Draggable key={course.id} draggableId={`course-${course.id}`} index={index}>
                     {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
@@ -831,7 +833,8 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
                       </div>
                     )}
                   </Draggable>
-                    ))}
+                    );
+                  })}
                   {provided.placeholder}
                 </div>
               )}
