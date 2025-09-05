@@ -22,9 +22,12 @@ interface CheckoutFormProps {
   paymentType: 'founders' | 'trial' | 'monthly';
   onSuccess: () => void;
   onCancel: () => void;
+  user: any;
+  guestEmail: string;
+  guestName: string;
 }
 
-const CheckoutForm = ({ paymentType, onSuccess, onCancel }: CheckoutFormProps) => {
+const CheckoutForm = ({ paymentType, onSuccess, onCancel, user, guestEmail, guestName }: CheckoutFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -64,6 +67,17 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel }: CheckoutFormProps) =
             variant: "destructive",
           });
         } else {
+          // Store payment information for guest checkout
+          if (!user) {
+            const paymentData = {
+              email: guestEmail,
+              name: guestName,
+              paymentType: paymentType,
+              timestamp: new Date().toISOString()
+            };
+            sessionStorage.setItem('pendingPayment', JSON.stringify(paymentData));
+          }
+          
           toast({
             title: "Setup Successful",
             description: paymentType === 'monthly'
@@ -150,17 +164,22 @@ interface CheckoutProps {
 export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutProps) {
   const [clientSecret, setClientSecret] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestName, setGuestName] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
 
-  useEffect(() => {
-    const createPaymentIntent = async () => {
-      try {
-        setIsLoading(true);
-        console.log('Creating payment intent for:', paymentType);
-        console.log('Current user:', user);
-        console.log('User email:', (user as any)?.email);
-        console.log('User name:', (user as any)?.full_name || (user as any)?.firstName);
+  const createPaymentIntent = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Creating payment intent for:', paymentType);
+      console.log('Current user:', user);
+      console.log('Guest email:', guestEmail);
+      console.log('Guest name:', guestName);
+      
+      // Use user data if authenticated, otherwise use guest data
+      const email = (user as any)?.email || guestEmail || "user@example.com";
+      const name = (user as any)?.full_name || (user as any)?.firstName || guestName || "User";
         
         if (paymentType === 'founders') {
           // Create payment intent for $100 founders offer
@@ -183,8 +202,8 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           const data = await apiRequest("/api/create-setup-intent", {
             method: 'POST',
             body: JSON.stringify({
-              email: (user as any)?.email || "user@example.com",
-              name: (user as any)?.full_name || (user as any)?.firstName || "User",
+              email: email,
+              name: name,
               paymentType: 'monthly'
             })
           });
@@ -199,8 +218,8 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           const data = await apiRequest("/api/create-setup-intent", {
             method: 'POST',
             body: JSON.stringify({
-              email: (user as any)?.email || "user@example.com",
-              name: (user as any)?.full_name || (user as any)?.firstName || "User",
+              email: email,
+              name: name,
               paymentType: 'trial'
             })
           });
@@ -224,8 +243,12 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
       }
     };
 
-    createPaymentIntent();
-  }, [paymentType, onCancel, toast]);
+  useEffect(() => {
+    // Only auto-create payment intent if user is already authenticated
+    if (user) {
+      createPaymentIntent();
+    }
+  }, [paymentType, user]);
 
   if (isLoading) {
     return (
@@ -269,12 +292,77 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           </div>
         </CardHeader>
         <CardContent>
-          {clientSecret ? (
+          {!clientSecret && !user ? (
+            // Guest user form - collect email and name before creating payment intent
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="guest-email">Email Address</Label>
+                <Input
+                  id="guest-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="guest-name">Full Name</Label>
+                <Input
+                  id="guest-name"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  className="flex-1"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+                <Button 
+                  onClick={async () => {
+                    if (!guestEmail || !guestName) {
+                      toast({
+                        title: "Missing Information",
+                        description: "Please enter your email and name to continue.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    // Create payment intent with guest info
+                    await createPaymentIntent();
+                  }}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Setting up...
+                    </>
+                  ) : (
+                    'Continue to Payment'
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : clientSecret ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <CheckoutForm 
                 paymentType={paymentType} 
                 onSuccess={onSuccess} 
-                onCancel={onCancel} 
+                onCancel={onCancel}
+                user={user}
+                guestEmail={guestEmail}
+                guestName={guestName}
               />
             </Elements>
           ) : (

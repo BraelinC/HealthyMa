@@ -131,6 +131,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", loginUser);
   app.get("/api/auth/user", authenticateToken, getCurrentUser);
 
+  // Guest registration with payment linking
+  app.post("/api/auth/register-with-payment", async (req, res) => {
+    try {
+      const { email, password, fullName, stripeCustomerId } = req.body;
+      
+      // Validate required fields
+      if (!email || !password || !fullName) {
+        return res.status(400).json({ message: "Email, password, and full name are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists with this email" });
+      }
+
+      // Hash password
+      const bcrypt = await import("bcryptjs");
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Generate unique user ID  
+      const { v4: uuidv4 } = await import("uuid");
+      const userId = uuidv4();
+
+      // Create user with Stripe customer ID
+      const user = await storage.createUser({
+        id: userId,
+        email: email,
+        password_hash: hashedPassword,
+        full_name: fullName,
+        stripe_customer_id: stripeCustomerId || null,
+        is_creator: false,
+        is_admin: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      // Generate JWT token
+      const { generateToken } = await import("./auth");
+      const token = generateToken(userId, false);
+
+      // Return user without password
+      const userWithoutPassword = {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        stripe_customer_id: user.stripe_customer_id,
+        is_creator: user.is_creator,
+        is_admin: user.is_admin
+      };
+
+      res.status(201).json({
+        message: "User created successfully with payment information",
+        user: userWithoutPassword,
+        token
+      });
+    } catch (error: any) {
+      console.error("Registration with payment error:", error);
+      res.status(500).json({ message: "Failed to create user account" });
+    }
+  });
+
   // Toggle creator status endpoint (for testing)
   app.post("/api/user/toggle-creator", authenticateToken, async (req: any, res) => {
     try {
