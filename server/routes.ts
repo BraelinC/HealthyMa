@@ -350,6 +350,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe configuration endpoint
+  app.get("/api/stripe-config", (req, res) => {
+    res.json({
+      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY
+    });
+  });
+
   // Stripe payment routes
   app.post("/api/create-payment-intent", async (req, res) => {
     try {

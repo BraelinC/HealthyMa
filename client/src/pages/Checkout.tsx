@@ -9,17 +9,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, Mail } from "lucide-react";
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
-// Use the live public key that matches the backend live secret key
-const STRIPE_PUBLIC_KEY = 'pk_live_51RgC3eIyKcXnVVhnECmwj5F5DMLr5Rgw6McwOYtmyict9K9zmiIRARxZHHb7icwlUws0a6VJqx15n30MVz9qCNGY00pT5lD2mU';
+// Fetch Stripe configuration from backend
+let stripePromise: Promise<any> | null = null;
 
-console.log('🔍 STRIPE DEBUG - Public Key:', STRIPE_PUBLIC_KEY.substring(0, 20) + '...');
-console.log('🔍 STRIPE DEBUG - Key Type:', STRIPE_PUBLIC_KEY.startsWith('pk_live') ? 'LIVE' : 'TEST');
-console.log('🔍 STRIPE DEBUG - Full Key Length:', STRIPE_PUBLIC_KEY.length);
-console.log('🔍 STRIPE DEBUG - Key Valid Format:', /^pk_(test|live)_/.test(STRIPE_PUBLIC_KEY));
+const getStripeConfig = async () => {
+  try {
+    const response = await fetch('/api/stripe-config');
+    const { publishableKey } = await response.json();
+    
+    console.log('🔍 STRIPE DEBUG - Public Key:', publishableKey.substring(0, 20) + '...');
+    console.log('🔍 STRIPE DEBUG - Key Type:', publishableKey.startsWith('pk_live') ? 'LIVE' : 'TEST');
+    console.log('🔍 STRIPE DEBUG - Full Key Length:', publishableKey.length);
+    console.log('🔍 STRIPE DEBUG - Key Valid Format:', /^pk_(test|live)_/.test(publishableKey));
+    
+    return loadStripe(publishableKey);
+  } catch (error) {
+    console.error('Failed to fetch Stripe config:', error);
+    return null;
+  }
+};
 
-const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
+// Initialize Stripe promise
+if (!stripePromise) {
+  stripePromise = getStripeConfig();
+}
 console.log('🔍 STRIPE DEBUG - Stripe Promise Created:', !!stripePromise);
 
 interface CheckoutFormProps {
