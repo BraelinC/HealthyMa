@@ -757,6 +757,17 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
           </Button>
         </div>
 
+{(() => {
+          console.log('🔍 [RENDER DEBUG] Rendering state check:');
+          console.log('🔍 [RENDER DEBUG] isLoading:', isLoading);
+          console.log('🔍 [RENDER DEBUG] error:', error);
+          console.log('🔍 [RENDER DEBUG] courses.length:', courses.length);
+          console.log('🔍 [RENDER DEBUG] courses array:', courses);
+          console.log('🔍 [RENDER DEBUG] isMobile:', isMobile);
+          console.log('🔍 [RENDER DEBUG] window.innerWidth:', window.innerWidth);
+          return null;
+        })()}
+        
         {isLoading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
@@ -775,6 +786,14 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
           </div>
         ) : (
           // Responsive rendering: Simple list for desktop, drag-drop for mobile
+          (() => {
+            console.log('🔍 [RENDER DEBUG] About to render courses - isMobile:', isMobile);
+            if (isMobile) {
+              console.log('🔍 [RENDER DEBUG] Taking MOBILE path');
+            } else {
+              console.log('🔍 [RENDER DEBUG] Taking DESKTOP path');
+            }
+          })(),
           isMobile ? (
             // Mobile: Keep drag-and-drop functionality
             <DragDropContext onDragEnd={handleDragEnd}>
