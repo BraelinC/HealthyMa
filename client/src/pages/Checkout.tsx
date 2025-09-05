@@ -247,6 +247,9 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
     // Only auto-create payment intent if user is already authenticated
     if (user) {
       createPaymentIntent();
+    } else {
+      // For guest users, stop loading and show the email form
+      setIsLoading(false);
     }
   }, [paymentType, user]);
 
@@ -337,11 +340,12 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
                       });
                       return;
                     }
-                    // Create payment intent with guest info
+                    // Set loading state and create payment intent with guest info
+                    setIsLoading(true);
                     await createPaymentIntent();
                   }}
                   className="flex-1 bg-purple-600 hover:bg-purple-700"
-                  disabled={isLoading}
+                  disabled={isLoading || !guestEmail || !guestName}
                 >
                   {isLoading ? (
                     <>
