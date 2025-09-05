@@ -5,13 +5,9 @@ import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
-// Check for DATABASE_URL in environment, handle .env override issue
-let databaseUrl = process.env.DATABASE_URL;
-
-// If .env file is overriding with empty string, this is a known issue
-if (!databaseUrl || databaseUrl === "") {
+if (!process.env.DATABASE_URL) {
   throw new Error(
-    "DATABASE_URL must be set. The .env file may be overriding the environment variable. Please remove DATABASE_URL from .env or set it to a valid value.",
+    "DATABASE_URL must be set. Did you forget to provision a database?",
   );
 }
 

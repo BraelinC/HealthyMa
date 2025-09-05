@@ -234,7 +234,7 @@ export class DatabaseStorage implements IStorage {
       .delete(userRecipes)
       .where(and(eq(userRecipes.id, recipeId), eq(userRecipes.user_id, userId)));
     
-    return (result.rowCount ?? 0) > 0;
+    return result.rowCount > 0;
   }
 
   async getRecipeById(recipeId: number): Promise<any> {
