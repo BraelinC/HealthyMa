@@ -75,7 +75,7 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel, guestEmail, guestName 
         const { error } = await stripe.confirmSetup({
           elements,
           confirmParams: {
-            return_url: window.location.origin + '/dashboard?subscription=' + paymentType,
+            return_url: window.location.origin + '/register-payment?subscription=' + paymentType,
           },
         });
 
@@ -108,7 +108,7 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel, guestEmail, guestName 
         const { error } = await stripe.confirmPayment({
           elements,
           confirmParams: {
-            return_url: window.location.origin + '/dashboard',
+            return_url: window.location.origin + '/register-payment?type=founders',
           },
         });
 

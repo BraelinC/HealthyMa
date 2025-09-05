@@ -21,6 +21,7 @@ import { AuthForm } from "@/components/AuthForm";
 import { LandingPage } from "@/components/LandingPage";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Checkout from "@/pages/Checkout";
+import PostPaymentRegistration from "@/pages/PostPaymentRegistration";
 
 import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
@@ -307,6 +308,8 @@ function Router() {
         )} />
         {/* Full-screen lesson editor without header/footer */}
         <Route path="/community/:communityId/lesson/:lessonId" component={LessonEditor} />
+        {/* Post-payment registration page */}
+        <Route path="/register-payment" component={PostPaymentRegistration} />
         <Route component={() => (
           <>
             <AppHeader />
