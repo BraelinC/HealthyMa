@@ -521,18 +521,7 @@ export default function CommunityDetailNew() {
   // Check if user is already a member based on memberInfo existence
   const isMember = community?.memberInfo || community?.isMember;
   
-  // Debug logging for creator detection
-  console.log('🔍 [CREATOR DEBUG] Community data:', community);
-  console.log('🔍 [CREATOR DEBUG] User data:', user);
-  console.log('🔍 [CREATOR DEBUG] Creator ID from community:', community?.creator_id);
-  console.log('🔍 [CREATOR DEBUG] User ID variants:', {
-    userUserId: (user as any)?.user?.id,
-    userId: (user as any)?.id,
-    memberRole: community?.memberInfo?.role
-  });
-  
   const isCreator = community?.memberInfo?.role === 'creator' || community?.creator_id === (user as any)?.user?.id || community?.creator_id === (user as any)?.id;
-  console.log('🔍 [CREATOR DEBUG] Final isCreator result:', isCreator);
 
   // Mock posts data (replace with real API call later)
   const mockPosts: CommunityPost[] = [
@@ -1078,32 +1067,35 @@ export default function CommunityDetailNew() {
                         </div>
                       )}
                       {/* Creator-only dropdown menu */}
-                      {/* Debug: Force show dropdown for now */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-gray-400 hover:text-white p-1"
-                            onClick={() => console.log('🔍 Dropdown trigger clicked!')}
-                          >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-gray-800 border-gray-700" align="end">
-                          <DropdownMenuItem
-                            className="text-red-400 hover:text-red-300 hover:bg-gray-700 cursor-pointer"
-                            onClick={(e) => {
-                              console.log('🔍 Delete clicked for post:', post.id);
-                              e.stopPropagation();
-                              handleDeletePost(post.id);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete Post
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {isCreator ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-gray-400 hover:text-white p-1"
+                              >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="bg-gray-800 border-gray-700" align="end">
+                            <DropdownMenuItem
+                              className="text-red-400 hover:text-red-300 hover:bg-gray-700 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePost(post.id);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Post
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <Button variant="ghost" size="sm" className="text-gray-400 p-1">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
 
