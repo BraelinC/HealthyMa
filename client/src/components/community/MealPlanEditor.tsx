@@ -757,16 +757,6 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
           </Button>
         </div>
 
-{(() => {
-          console.log('🔍 [RENDER DEBUG] Rendering state check:');
-          console.log('🔍 [RENDER DEBUG] isLoading:', isLoading);
-          console.log('🔍 [RENDER DEBUG] error:', error);
-          console.log('🔍 [RENDER DEBUG] courses.length:', courses.length);
-          console.log('🔍 [RENDER DEBUG] courses array:', courses);
-          console.log('🔍 [RENDER DEBUG] isMobile:', isMobile);
-          console.log('🔍 [RENDER DEBUG] window.innerWidth:', window.innerWidth);
-          return null;
-        })()}
         
         {isLoading ? (
           <div className="text-center py-8">
@@ -786,18 +776,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
           </div>
         ) : (
           // Responsive rendering: Simple list for desktop, drag-drop for mobile
-          <>
-            {(() => {
-              console.log('🔍 [RENDER DEBUG] About to render courses - isMobile:', isMobile);
-              if (isMobile) {
-                console.log('🔍 [RENDER DEBUG] Taking MOBILE path');
-              } else {
-                console.log('🔍 [RENDER DEBUG] Taking DESKTOP path');
-              }
-              return null;
-            })()}
-            
-            {isMobile ? (
+          isMobile ? (
             // Mobile: Keep drag-and-drop functionality
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="courses">
@@ -875,29 +854,26 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
               </Droppable>
             </DragDropContext>
           ) : (
-            // Desktop: Simple list without drag-and-drop
+            // Desktop: Simple list without drag-and-drop, using original card design
             <div className="space-y-2">
               {(courses as Course[]).map((course: Course) => (
                 <Card
                   key={course.id}
                   className={`bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors ${
-                    selectedCourse?.id === course.id ? 'ring-2 ring-purple-500' : ''
+                    selectedCourse?.id === course.id ? 'bg-gray-800' : ''
                   }`}
                   onClick={() => setSelectedCourse(course)}
                 >
                   <CardContent className="p-3">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        <span className="text-2xl">{course.emoji || '📚'}</span>
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-lg">{course.emoji || '📚'}</span>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-white text-base">{course.title}</h3>
-                          <p className="text-sm text-gray-400">{course.lesson_count} lessons</p>
-                          {course.description && (
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{course.description}</p>
-                          )}
+                          <h3 className="font-medium text-white text-sm">{course.title}</h3>
+                          <p className="text-xs text-gray-400">{course.lesson_count} lessons</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 ml-2">
+                      <div className="flex items-center gap-2">
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -905,7 +881,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
                           }}
                           size="sm"
                           variant="ghost"
-                          className="h-7 w-7 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
@@ -924,8 +900,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
                 </Card>
               ))}
             </div>
-            )}
-          </>
+            )
         )}
       </div>
 
