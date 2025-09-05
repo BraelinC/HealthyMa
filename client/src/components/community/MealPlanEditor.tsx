@@ -722,7 +722,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[10000]" data-meal-plan-editor>
-      <div className="fixed inset-0 bg-gray-900 flex relative"
+      <div className="fixed inset-0 bg-gray-900 flex relative w-full h-full"
            onClick={(e) => {
              // Close sidebar when clicking on overlay area (only on mobile)
              if (window.innerWidth <= 768 && e.target === e.currentTarget) {
@@ -733,7 +733,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
              }
            }}>
         {/* Left Sidebar - Course List */}
-        <div className="w-80 min-h-screen bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
+        <div className="w-80 flex-shrink-0 h-full bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-white mb-4">Meal Plan Courses</h2>
           <Button
@@ -850,7 +850,7 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
         </Button>
 
         {/* Main Content Area */}
-        <div className="flex-1 min-h-screen p-6 overflow-y-auto bg-gray-900">
+        <div className="flex-1 h-full p-6 overflow-y-auto bg-gray-900 min-w-0">
         {selectedCourse ? (
           <CourseEditor
             course={selectedCourse}
@@ -864,8 +864,8 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             selectedCourse={selectedCourse}
           />
         ) : (
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
+          <div className="flex items-center justify-center h-full w-full">
+            <div className="text-center max-w-md">
               <ChefHat className="h-16 w-16 text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-white mb-2">Select a Course</h3>
               <p className="text-gray-400">Choose a course from the sidebar or create a new one to get started</p>
