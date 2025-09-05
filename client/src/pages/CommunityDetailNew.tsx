@@ -240,16 +240,16 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
           )}
         </div>
       ) : (
-        // Course Cards Grid - Skool Style
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        // Course Cards Grid - Better Desktop Layout  
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4 max-w-5xl mx-auto">
           {courses.map((course: any) => (
             <Card 
               key={course.id}
-              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-200 cursor-pointer group overflow-hidden"
+              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-200 cursor-pointer group overflow-hidden w-full"
               onClick={() => toggleCourseExpansion(course.id)}
             >
               {/* Course Cover Image */}
-              <div className="relative h-32 bg-gradient-to-br from-purple-600 via-blue-600 to-emerald-600 overflow-hidden">
+              <div className="relative h-40 lg:h-48 bg-gradient-to-br from-purple-600 via-blue-600 to-emerald-600 overflow-hidden">
                 {course.cover_image ? (
                   <img 
                     src={course.cover_image} 
@@ -287,14 +287,14 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
               </div>
 
               {/* Course Content */}
-              <CardContent className="p-4">
+              <CardContent className="p-4 lg:p-6">
                 <div className="space-y-3">
                   {/* Title and Stats */}
                   <div>
-                    <h3 className="font-semibold text-white text-lg leading-tight group-hover:text-purple-300 transition-colors">
+                    <h3 className="font-semibold text-white text-lg lg:text-xl leading-tight group-hover:text-purple-300 transition-colors">
                       {course.title}
                     </h3>
-                    <p className="text-gray-400 text-sm mt-1 line-clamp-2">
+                    <p className="text-gray-400 text-sm lg:text-base mt-1 line-clamp-2">
                       {course.description || "Comprehensive meal planning course with practical lessons"}
                     </p>
                   </div>
