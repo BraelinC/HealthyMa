@@ -161,6 +161,7 @@ function AppTabBar() {
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation(); // Move this to the top to avoid hook order issues
   const [showAuth, setShowAuth] = useState(false);
   const [checkoutState, setCheckoutState] = useState<{
     show: boolean;
@@ -251,6 +252,11 @@ function Router() {
   if (!isAuthenticated) {
     console.log('Not authenticated. Checkout state:', checkoutState);
     
+    // Check if we're on the register-payment page - allow access without auth
+    if (location.startsWith('/register-payment')) {
+      return <PostPaymentRegistration />;
+    }
+    
     if (!showAuth) {
       // Use the toggle to control whether to show landing page or go directly to auth
       if (SHOW_LANDING_PAGE) {
@@ -308,7 +314,7 @@ function Router() {
         )} />
         {/* Full-screen lesson editor without header/footer */}
         <Route path="/community/:communityId/lesson/:lessonId" component={LessonEditor} />
-        {/* Post-payment registration page */}
+        {/* Post-payment registration page - handle without authentication wrapper */}
         <Route path="/register-payment" component={PostPaymentRegistration} />
         <Route component={() => (
           <>
