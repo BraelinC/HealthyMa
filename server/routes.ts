@@ -4832,41 +4832,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete a community post (creator only)
-  app.delete("/api/communities/:id/posts/:postId", authenticateToken, async (req: any, res) => {
-    try {
-      const communityId = Number(req.params.id);
-      const postId = Number(req.params.postId);
-      const userId = req.user?.id;
-
-      if (!userId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-
-      // Check if user is a creator of the community
-      const community = await communityService.getCommunityById(communityId);
-      if (!community) {
-        return res.status(404).json({ message: "Community not found" });
-      }
-
-      if (community.creator_id !== userId) {
-        return res.status(403).json({ message: "Only creators can delete posts" });
-      }
-
-      // Delete the post
-      const result = await communityService.deletePost(postId, communityId);
-      
-      if (!result) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-
-      res.json({ message: "Post deleted successfully" });
-    } catch (error: any) {
-      console.error("Error deleting community post:", error);
-      res.status(500).json({ message: "Failed to delete community post" });
-    }
-  });
-
   // Toggle like on a community post
   app.post("/api/communities/:communityId/posts/:postId/like", authenticateToken, async (req: any, res) => {
     try {
