@@ -11,9 +11,11 @@ import { Loader2, ArrowLeft, Mail } from "lucide-react";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_live_51RgC3eIyKcXnVVhnxdPrEwkv7OjMZZAB97v7vKLCOLLPUB41C2D6mDHbHSSXkErmBZlKDAyLNvPZHCErhWbCGLEy00C5hwOBRs';
+// Force use the correct LIVE public key that matches the backend LIVE secret key
+const STRIPE_PUBLIC_KEY = 'pk_live_51RgC3eIyKcXnVVhnxdPrEwkv7OjMZZAB97v7vKLCOLLPUB41C2D6mDHbHSSXkErmBZlKDAyLNvPZHCErhWbCGLEy00C5hwOBRs';
 
-console.log('Stripe Public Key:', STRIPE_PUBLIC_KEY ? 'Key loaded' : 'No key found');
+console.log('🔍 STRIPE DEBUG - Public Key:', STRIPE_PUBLIC_KEY.substring(0, 20) + '...');
+console.log('🔍 STRIPE DEBUG - Key Type:', STRIPE_PUBLIC_KEY.startsWith('pk_live') ? 'LIVE' : 'TEST');
 
 const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
 
@@ -228,6 +230,8 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
             })
           });
           console.log('🔍 GUEST CHECKOUT - Trial setup intent created:', data);
+        console.log('🔍 STRIPE DEBUG - Backend secret key type:', data.customerId ? 'LIVE (has customer)' : 'TEST (no customer)');
+        console.log('🔍 STRIPE DEBUG - Client secret type:', data.clientSecret?.startsWith('seti_') ? 'SetupIntent' : 'PaymentIntent');
           
           if (!data.clientSecret) {
             throw new Error('No client secret received from server');
@@ -366,15 +370,22 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
               </div>
             </div>
           ) : clientSecret ? (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <CheckoutForm 
-                paymentType={paymentType} 
-                onSuccess={onSuccess} 
-                onCancel={onCancel}
-                guestEmail={guestEmail}
-                guestName={guestName}
-              />
-            </Elements>
+            <div>
+              <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded">
+                <h4 className="text-sm font-medium text-blue-800">Debug Info:</h4>
+                <p className="text-xs text-blue-600">Client Secret: {clientSecret.substring(0, 20)}...</p>
+                <p className="text-xs text-blue-600">Stripe Key: {STRIPE_PUBLIC_KEY.substring(0, 20)}...</p>
+              </div>
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <CheckoutForm 
+                  paymentType={paymentType} 
+                  onSuccess={onSuccess} 
+                  onCancel={onCancel}
+                  guestEmail={guestEmail}
+                  guestName={guestName}
+                />
+              </Elements>
+            </div>
           ) : (
             <div className="text-center p-4">
               <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
