@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, Mail } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
@@ -150,6 +151,7 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
   const [clientSecret, setClientSecret] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const createPaymentIntent = async () => {
@@ -178,8 +180,8 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           const data = await apiRequest("/api/create-setup-intent", {
             method: 'POST',
             body: JSON.stringify({
-              email: "user@example.com", // This will need to come from user context
-              name: "User Name",
+              email: (user as any)?.email || "user@example.com",
+              name: (user as any)?.full_name || (user as any)?.firstName || "User",
               paymentType: 'monthly'
             })
           });
@@ -194,8 +196,8 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           const data = await apiRequest("/api/create-setup-intent", {
             method: 'POST',
             body: JSON.stringify({
-              email: "user@example.com", // This will need to come from user context
-              name: "User Name",
+              email: (user as any)?.email || "user@example.com",
+              name: (user as any)?.full_name || (user as any)?.firstName || "User",
               paymentType: 'trial'
             })
           });
