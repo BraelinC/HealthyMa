@@ -11,13 +11,16 @@ import { Loader2, ArrowLeft, Mail } from "lucide-react";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-// Force use the correct LIVE public key that matches the backend LIVE secret key
-const STRIPE_PUBLIC_KEY = 'pk_live_51RgC3eIyKcXnVVhnxdPrEwkv7OjMZZAB97v7vKLCOLLPUB41C2D6mDHbHSSXkErmBZlKDAyLNvPZHCErhWbCGLEy00C5hwOBRs';
+// Use the environment variable or fallback to test key - the live key was invalid
+const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_51RgC3eIyKcXnVVhnNxQ7u66KVmiBKa7QFJyHD45Q3eDBlU8aU8FooPyQhPWBoBx5yfB307nEM6C0QqNO5kB2eF9100IbcgF2IL';
 
 console.log('🔍 STRIPE DEBUG - Public Key:', STRIPE_PUBLIC_KEY.substring(0, 20) + '...');
 console.log('🔍 STRIPE DEBUG - Key Type:', STRIPE_PUBLIC_KEY.startsWith('pk_live') ? 'LIVE' : 'TEST');
+console.log('🔍 STRIPE DEBUG - Full Key Length:', STRIPE_PUBLIC_KEY.length);
+console.log('🔍 STRIPE DEBUG - Key Valid Format:', /^pk_(test|live)_/.test(STRIPE_PUBLIC_KEY));
 
 const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
+console.log('🔍 STRIPE DEBUG - Stripe Promise Created:', !!stripePromise);
 
 interface CheckoutFormProps {
   paymentType: 'founders' | 'trial' | 'monthly';
@@ -32,6 +35,9 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel, guestEmail, guestName 
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Debug Stripe Elements loading
+  console.log('🔧 CheckoutForm render:', { hasStripe: !!stripe, hasElements: !!elements });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,13 +137,37 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel, guestEmail, guestName 
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="p-4 border border-gray-200 rounded-lg">
         <h3 className="text-sm font-medium mb-4">Payment Information</h3>
-        <PaymentElement 
-          options={{
-            layout: "tabs"
-          }}
-        />
-        {!stripe && <p className="text-red-500 text-sm mt-2">⚠️ Stripe not loaded</p>}
-        {!elements && <p className="text-red-500 text-sm mt-2">⚠️ Elements not loaded</p>}
+        <div className="min-h-[200px] relative">
+          <PaymentElement 
+            onReady={() => console.log('✅ PaymentElement ready!')}
+            onLoadError={(error) => console.error('❌ PaymentElement load error:', error)}
+            onLoaderStart={() => console.log('🔄 PaymentElement loading...')}
+            options={{
+              layout: {
+                type: 'tabs',
+                defaultCollapsed: false,
+              },
+              fields: {
+                billingDetails: {
+                  name: 'auto',
+                  email: 'auto'
+                }
+              }
+            }}
+          />
+          {!stripe && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Loading payment system...</p>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-2 space-y-1">
+          <p className="text-xs text-gray-500">Stripe Status: {stripe ? '✅ Loaded' : '❌ Loading...'}</p>
+          <p className="text-xs text-gray-500">Elements Status: {elements ? '✅ Loaded' : '❌ Loading...'}</p>
+        </div>
       </div>
       <div className="flex gap-3">
         <Button
