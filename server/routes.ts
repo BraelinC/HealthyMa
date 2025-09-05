@@ -50,9 +50,7 @@ const YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
-// Temporarily use test key to match frontend test key
-const STRIPE_SECRET_KEY = 'sk_test_51RgC3eIyKcXnVVhnLiO8gJv9YHgxH2WmKzCa0v4VlBQ0kgOuRh85dCxJ6YiXNs5LyUXaMKO2g2B7v1v0eCiZs0FJ00n2ZqPhYZ';
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-08-27.basil",
 });
 
