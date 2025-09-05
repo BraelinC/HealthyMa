@@ -11,7 +11,7 @@ import { Loader2, ArrowLeft, Mail } from "lucide-react";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_51RgC3eIyKcXnVVhnNxQ7u66KVmiBKa7QFJyHD45Q3eDBlU8aU8FooPyQhPWBoBx5yfB307nEM6C0QqNO5kB2eF9100IbcgF2IL';
+const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_live_51RgC3eIyKcXnVVhnxdPrEwkv7OjMZZAB97v7vKLCOLLPUB41C2D6mDHbHSSXkErmBZlKDAyLNvPZHCErhWbCGLEy00C5hwOBRs';
 
 console.log('Stripe Public Key:', STRIPE_PUBLIC_KEY ? 'Key loaded' : 'No key found');
 
