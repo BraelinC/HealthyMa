@@ -51,7 +51,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-08-27.basil",
+  apiVersion: "2025-07-30.basil",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -130,68 +130,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", registerUser);
   app.post("/api/auth/login", loginUser);
   app.get("/api/auth/user", authenticateToken, getCurrentUser);
-
-  // Guest registration with payment linking
-  app.post("/api/auth/register-with-payment", async (req, res) => {
-    try {
-      const { email, password, fullName, stripeCustomerId } = req.body;
-      
-      // Validate required fields
-      if (!email || !password || !fullName) {
-        return res.status(400).json({ message: "Email, password, and full name are required" });
-      }
-
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists with this email" });
-      }
-
-      // Hash password
-      const bcrypt = await import("bcryptjs");
-      const hashedPassword = await bcrypt.hash(password, 10);
-      
-      // Generate unique user ID  
-      const { v4: uuidv4 } = await import("uuid");
-      const userId = uuidv4();
-
-      // Create user with Stripe customer ID
-      const user = await storage.createUser({
-        id: userId,
-        email: email,
-        password_hash: hashedPassword,
-        full_name: fullName,
-        stripe_customer_id: stripeCustomerId || null,
-        is_creator: false,
-        is_admin: false,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      // Generate JWT token
-      const { generateToken } = await import("./auth");
-      const token = generateToken(userId, false);
-
-      // Return user without password
-      const userWithoutPassword = {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        stripe_customer_id: user.stripe_customer_id,
-        is_creator: user.is_creator,
-        is_admin: user.is_admin
-      };
-
-      res.status(201).json({
-        message: "User created successfully with payment information",
-        user: userWithoutPassword,
-        token
-      });
-    } catch (error: any) {
-      console.error("Registration with payment error:", error);
-      res.status(500).json({ message: "Failed to create user account" });
-    }
-  });
 
   // Toggle creator status endpoint (for testing)
   app.post("/api/user/toggle-creator", authenticateToken, async (req: any, res) => {
@@ -350,13 +288,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe configuration endpoint
-  app.get("/api/stripe-config", (req, res) => {
-    res.json({
-      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY
-    });
-  });
-
   // Stripe payment routes
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
@@ -419,26 +350,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      // First create a product
-      const product = await stripe.products.create({
-        name: 'Healthy Mama Monthly',
-        description: 'Monthly subscription for meal planning',
-      });
-      
-      // Create a price for the product
-      const price = await stripe.prices.create({
-        product: product.id,
-        unit_amount: 2000, // $20.00 in cents
-        currency: 'usd',
-        recurring: {
-          interval: 'month',
-        },
-      });
-      
       // Create subscription for $20/month
       const subscription = await stripe.subscriptions.create({
         customer: customer.id,
-        items: [{ price: price.id }],
+        items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Healthy Mama Monthly',
+              description: 'Monthly subscription for meal planning',
+            },
+            unit_amount: 2000, // $20.00 in cents
+            recurring: {
+              interval: 'month',
+            },
+          },
+        }],
         payment_settings: {
           payment_method_types: ['card'],
           save_default_payment_method: 'on_subscription',
@@ -588,26 +515,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const customer = await stripe.customers.retrieve(setupIntent.customer as string) as any;
             
             if (customer.metadata?.pendingSubscription === 'true') {
-              // First create a product
-              const product = await stripe.products.create({
-                name: 'Healthy Mama Monthly',
-                description: 'Monthly subscription for meal planning',
-              });
-              
-              // Create a price for the product
-              const price = await stripe.prices.create({
-                product: product.id,
-                unit_amount: 2000, // $20 in cents
-                currency: 'usd',
-                recurring: {
-                  interval: 'month',
-                },
-              });
-              
               // Create the subscription
               const subscription = await stripe.subscriptions.create({
                 customer: customer.id,
-                items: [{ price: price.id }],
+                items: [{
+                  price_data: {
+                    currency: 'usd',
+                    product_data: {
+                      name: 'Healthy Mama Monthly',
+                      description: 'Monthly subscription for meal planning',
+                    },
+                    unit_amount: 2000, // $20 in cents
+                    recurring: {
+                      interval: 'month',
+                    },
+                  },
+                }],
                 default_payment_method: setupIntent.payment_method,
               });
               
@@ -630,25 +553,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const customer = await stripe.customers.retrieve(setupIntent.customer as string) as any;
             
-            // First create a product
-            const product = await stripe.products.create({
-              name: 'Healthy Mama Monthly',
-              description: 'Monthly subscription after 30-day trial',
-            });
-            
-            // Create a price for the product
-            const price = await stripe.prices.create({
-              product: product.id,
-              unit_amount: 2000, // $20 in cents
-              currency: 'usd',
-              recurring: {
-                interval: 'month',
-              },
-            });
-            
             const subscription = await stripe.subscriptions.create({
               customer: customer.id,
-              items: [{ price: price.id }],
+              items: [{
+                price_data: {
+                  currency: 'usd',
+                  product_data: {
+                    name: 'Healthy Mama Monthly',
+                    description: 'Monthly subscription after 30-day trial',
+                  },
+                  unit_amount: 2000, // $20 in cents
+                  recurring: {
+                    interval: 'month',
+                  },
+                },
+              }],
               default_payment_method: setupIntent.payment_method,
               trial_period_days: 30, // 30-day free trial
             });

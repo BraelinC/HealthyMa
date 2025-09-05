@@ -14,27 +14,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  // Fetch user data with JWT token authentication
+  // Fetch user data with session-based authentication
   const { data: userData, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        return null; // No token, user not authenticated
-      }
-
       const response = await fetch("/api/auth/user", {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include', // Include cookies for session-based auth
       });
       
       if (!response.ok) {
         // If not authenticated, return null (don't throw error)
-        if (response.status === 401 || response.status === 403) {
-          // Token might be expired, remove it
-          localStorage.removeItem('auth_token');
+        if (response.status === 401) {
           return null;
         }
         throw new Error("Failed to fetch user");
@@ -77,9 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    // Remove JWT token and refresh the page
-    localStorage.removeItem('auth_token');
-    window.location.href = "/";
+    // Redirect to logout endpoint which handles session cleanup
+    window.location.href = "/api/logout";
   };
 
   const value = {
