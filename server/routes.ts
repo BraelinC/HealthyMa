@@ -4832,7 +4832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete a community post
+  // Delete a community post (creator only)
   app.delete("/api/communities/:id/posts/:postId", authenticateToken, async (req: any, res) => {
     try {
       const communityId = Number(req.params.id);
@@ -4843,28 +4843,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      // Check if user is the author of the post or a creator/admin
-      const post = await db.query('SELECT author_id FROM community_posts WHERE id = $1 AND community_id = $2', [postId, communityId]);
+      // Check if user is a creator of the community
+      const community = await communityService.getCommunityById(communityId);
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+
+      if (community.creator_id !== userId) {
+        return res.status(403).json({ message: "Only creators can delete posts" });
+      }
+
+      // Delete the post
+      const result = await communityService.deletePost(postId, communityId);
       
-      if (post.rows.length === 0) {
+      if (!result) {
         return res.status(404).json({ message: "Post not found" });
       }
 
-      const community = await db.query('SELECT creator_id FROM communities WHERE id = $1', [communityId]);
-      const isCreator = community.rows[0]?.creator_id === userId;
-      const isAuthor = post.rows[0].author_id === userId;
-
-      if (!isAuthor && !isCreator) {
-        return res.status(403).json({ message: "You can only delete your own posts or posts in your community" });
-      }
-
-      // Delete the post (this will cascade delete comments and likes)
-      await db.query('DELETE FROM community_posts WHERE id = $1', [postId]);
-
       res.json({ message: "Post deleted successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting community post:", error);
-      res.status(500).json({ message: "Failed to delete post" });
+      res.status(500).json({ message: "Failed to delete community post" });
     }
   });
 
