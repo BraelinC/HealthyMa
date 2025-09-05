@@ -167,7 +167,17 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
   const [guestEmail, setGuestEmail] = useState("");
   const [guestName, setGuestName] = useState("");
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+
+  console.log('🔍 CHECKOUT DEBUG - Component rendered:', {
+    paymentType,
+    isLoading,
+    authLoading,
+    user: user ? 'authenticated' : 'not authenticated',
+    clientSecret: clientSecret ? 'has client secret' : 'no client secret',
+    guestEmail,
+    guestName
+  });
 
   const createPaymentIntent = async () => {
     try {
@@ -244,16 +254,38 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
     };
 
   useEffect(() => {
+    console.log('🔍 CHECKOUT DEBUG - useEffect triggered:', {
+      user: user ? 'authenticated' : 'not authenticated',
+      authLoading,
+      paymentType,
+      currentIsLoading: isLoading
+    });
+    
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('🔍 CHECKOUT DEBUG - Auth still loading, waiting...');
+      return;
+    }
+    
     // Only auto-create payment intent if user is already authenticated
     if (user) {
+      console.log('🔍 CHECKOUT DEBUG - User authenticated, creating payment intent');
       createPaymentIntent();
     } else {
+      console.log('🔍 CHECKOUT DEBUG - No user, setting loading to false to show guest form');
       // For guest users, stop loading and show the email form
       setIsLoading(false);
     }
-  }, [paymentType, user]);
+  }, [paymentType, user, authLoading]);
+
+  console.log('🔍 CHECKOUT DEBUG - Before render decision:', {
+    isLoading,
+    user: user ? 'authenticated' : 'not authenticated',
+    clientSecret: clientSecret ? 'has client secret' : 'no client secret'
+  });
 
   if (isLoading) {
+    console.log('🔍 CHECKOUT DEBUG - Rendering loading screen');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-emerald-50">
         <Card className="w-full max-w-md">
