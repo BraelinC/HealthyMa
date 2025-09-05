@@ -1078,31 +1078,32 @@ export default function CommunityDetailNew() {
                         </div>
                       )}
                       {/* Creator-only dropdown menu */}
-                      {isCreator ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-1">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                            <DropdownMenuItem
-                              className="text-red-400 hover:text-red-300 hover:bg-gray-700 cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeletePost(post.id);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete Post
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <Button variant="ghost" size="sm" className="text-gray-400 p-1">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      )}
+                      {/* Debug: Force show dropdown for now */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-gray-400 hover:text-white p-1"
+                            onClick={() => console.log('🔍 Dropdown trigger clicked!')}
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-gray-800 border-gray-700" align="end">
+                          <DropdownMenuItem
+                            className="text-red-400 hover:text-red-300 hover:bg-gray-700 cursor-pointer"
+                            onClick={(e) => {
+                              console.log('🔍 Delete clicked for post:', post.id);
+                              e.stopPropagation();
+                              handleDeletePost(post.id);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Post
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
 
