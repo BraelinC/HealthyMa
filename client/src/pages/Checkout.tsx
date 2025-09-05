@@ -158,6 +158,9 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
       try {
         setIsLoading(true);
         console.log('Creating payment intent for:', paymentType);
+        console.log('Current user:', user);
+        console.log('User email:', (user as any)?.email);
+        console.log('User name:', (user as any)?.full_name || (user as any)?.firstName);
         
         if (paymentType === 'founders') {
           // Create payment intent for $100 founders offer
