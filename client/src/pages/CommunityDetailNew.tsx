@@ -1092,7 +1092,15 @@ export default function CommunityDetailNew() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : (
-                        <Button variant="ghost" size="sm" className="text-gray-400 p-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-gray-400 hover:text-white p-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toast({ title: "Button clicked", description: "Three dots menu button was clicked!" });
+                          }}
+                        >
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       )}
