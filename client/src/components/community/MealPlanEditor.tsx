@@ -756,12 +756,14 @@ export function MealPlanEditor({ communityId, onClose }: MealPlanEditorProps) {
             <p className="text-gray-400 text-sm mt-1">{error instanceof Error ? error.message : 'Unknown error'}</p>
           </div>
         ) : courses.length === 0 ? (
+          console.log('Courses array is empty:', courses),
           <div className="text-center py-8">
             <ChefHat className="h-12 w-12 text-gray-600 mx-auto mb-2" />
             <p className="text-gray-400">No courses yet</p>
             <p className="text-gray-500 text-sm mt-1">Create your first course to get started</p>
           </div>
         ) : (
+          console.log('About to render courses, courses array:', courses, 'length:', courses.length),
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="courses">
               {(provided) => (
