@@ -129,7 +129,16 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel, guestEmail, guestName 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
+      <div className="p-4 border border-gray-200 rounded-lg">
+        <h3 className="text-sm font-medium mb-4">Payment Information</h3>
+        <PaymentElement 
+          options={{
+            layout: "tabs"
+          }}
+        />
+        {!stripe && <p className="text-red-500 text-sm mt-2">⚠️ Stripe not loaded</p>}
+        {!elements && <p className="text-red-500 text-sm mt-2">⚠️ Elements not loaded</p>}
+      </div>
       <div className="flex gap-3">
         <Button
           type="button"
