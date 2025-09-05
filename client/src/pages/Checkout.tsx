@@ -108,9 +108,18 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel, guestEmail, guestName 
         }
       }
     } catch (err) {
+      console.error('🚨 PAYMENT SUBMISSION ERROR:', err);
+      console.error('Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : null,
+        paymentType,
+        hasStripe: !!stripe,
+        hasElements: !!elements
+      });
+      
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Payment Error",
+        description: err instanceof Error ? err.message : "An unexpected error occurred during payment processing",
         variant: "destructive",
       });
     } finally {
