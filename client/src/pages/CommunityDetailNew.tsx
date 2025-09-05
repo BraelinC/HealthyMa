@@ -9,11 +9,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Users, Calendar, MessageSquare, Heart, ChefHat, ArrowLeft, Settings,
   Pin, ThumbsUp, MessageCircle, Share2, Camera, Plus, Search,
   Clock, TrendingUp, User, MoreHorizontal, Send, Menu, X,
-  ChevronDown, CheckCircle, Play, BookOpen, Share, Eye, ChevronLeft, ChevronRight
+  ChevronDown, CheckCircle, Play, BookOpen, Share, Eye, ChevronLeft, ChevronRight, Trash2
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -701,6 +707,35 @@ export default function CommunityDetailNew() {
     setExtractorUrl("");
   };
 
+  // Handle delete post
+  const deletePost = async (postId: number) => {
+    if (!id) return;
+    
+    try {
+      await apiRequest(`/api/communities/${id}/posts/${postId}`, {
+        method: 'DELETE'
+      });
+      
+      // Remove from local cache immediately
+      const currentCache = getCommunityPostsCache(id);
+      const updatedCache = currentCache.filter(p => p.id !== postId);
+      queryClient.setQueryData(getPostsCacheKey(id), updatedCache);
+      setCachedPosts(updatedCache as CommunityPost[]);
+      
+      toast({ 
+        title: "Post deleted", 
+        description: "The post has been removed from the community." 
+      });
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({ 
+        title: "Error", 
+        description: "Failed to delete the post. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Share extracted recipe to community
   const shareExtractedRecipe = async () => {
     if (!extractedRecipe) return;
@@ -993,9 +1028,22 @@ export default function CommunityDetailNew() {
                           </Button>
                         </div>
                       )}
-                      <Button variant="ghost" size="sm" className="text-gray-400 p-1">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-gray-400 p-1">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                          <DropdownMenuItem 
+                            onClick={() => deletePost(post.id)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20 cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Post
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
 
