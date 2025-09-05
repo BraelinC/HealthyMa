@@ -528,7 +528,7 @@ export default function MealPlanner() {
                 <CustomCalendar
                   selected={dateRange}
                   onSelect={updateDateRange}
-                  numberOfMonths={window.innerWidth < 768 ? 1 : 2}
+                  numberOfMonths={1}
                   disabled={(date) => {
                     const yesterday = new Date();
                     yesterday.setHours(0, 0, 0, 0);
