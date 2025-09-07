@@ -107,12 +107,21 @@ interface MealPlan {
 }
 
 // Meal Plans Classroom Component (Skool-style)
-function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; isCreator: boolean }) {
+function MealPlansClassroom({ 
+  communityId, 
+  isCreator, 
+  isStudentViewMode, 
+  setIsStudentViewMode 
+}: { 
+  communityId?: string; 
+  isCreator: boolean;
+  isStudentViewMode: boolean;
+  setIsStudentViewMode: (value: boolean) => void;
+}) {
   const [showCreateCourseForm, setShowCreateCourseForm] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [showLessonView, setShowLessonView] = useState(false);
-  const [isStudentViewMode, setIsStudentViewMode] = useState(false);
   const [showMealPlanEditor, setShowMealPlanEditor] = useState(false);
   const [expandedCourses, setExpandedCourses] = useState<number[]>([]);
   const { toast } = useToast();
@@ -179,28 +188,15 @@ function MealPlansClassroom({ communityId, isCreator }: { communityId?: string; 
 
   return (
     <div className="space-y-3">
-      {/* Creator Course Management and Student View Toggle */}
+      {/* Creator Course Management */}
       {isCreator && (
-        <div className="flex items-center justify-between -mt-2 gap-4">
-          <div className="flex justify-center flex-1">
-            <Button
-              onClick={() => setShowMealPlanEditor(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Courses
-            </Button>
-          </div>
-          
-          {/* User View Toggle */}
+        <div className="flex justify-center -mt-2">
           <Button
-            onClick={() => setIsStudentViewMode(!isStudentViewMode)}
-            variant={isStudentViewMode ? "secondary" : "outline"}
-            className={isStudentViewMode ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" : "border-gray-600 text-gray-300 hover:bg-gray-700"}
-            size="sm"
+            onClick={() => setShowMealPlanEditor(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2"
           >
-            <Eye className="w-4 h-4 mr-2" />
-            {isStudentViewMode ? "Exit User View" : "User View"}
+            <Plus className="h-4 w-4 mr-2" />
+            Create Courses
           </Button>
         </div>
       )}
@@ -439,12 +435,22 @@ export default function CommunityDetailNew() {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [showMealPlanEditorMain, setShowMealPlanEditorMain] = useState(false);
   
+  // Meal Plans state
+  const [isStudentViewMode, setIsStudentViewMode] = useState(false);
+  
   // Extractor state variables
   const [extractorUrl, setExtractorUrl] = useState("");
   const [extractedRecipe, setExtractedRecipe] = useState<any>(null);
   const [allExtractedRecipes, setAllExtractedRecipes] = useState<any[]>([]);
   const [selectedRecipeIndex, setSelectedRecipeIndex] = useState(0);
   const [extractionInProgress, setExtractionInProgress] = useState(false);
+  
+  // My Meal Plans Carousel state
+  const mealPlanFilters = ["Recent", "Breakfast", "Lunch", "Dinner", "Baking", "Sweets"];
+  const [userMealPlans, setUserMealPlans] = useState<MealPlan[]>([]);
+  const [selectedMealPlanIndex, setSelectedMealPlanIndex] = useState(0);
+  const [mealPlanFilter, setMealPlanFilter] = useState("Recent");
+  const [filteredMealPlans, setFilteredMealPlans] = useState<MealPlan[]>([]);
   
   // Delete post state
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
@@ -467,9 +473,47 @@ export default function CommunityDetailNew() {
     enabled: !!id && isAuthenticated,
   });
 
+  // Fetch user's meal plans
+  const { data: fetchedMealPlans = [] } = useQuery({
+    queryKey: ["/api/meal-plans"],
+    queryFn: async () => {
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest("/api/meal-plans", {
+        method: "GET",
+      });
+    },
+    enabled: !!user && isAuthenticated,
+  });
+
   // Smart posts loading with 50-post cache for instant loading
   const [cachedPosts, setCachedPosts] = useState<CommunityPost[]>([]);
   const [showCachedData, setShowCachedData] = useState(false);
+
+  // Update meal plans state when fetched data changes
+  useEffect(() => {
+    if (fetchedMealPlans) {
+      setUserMealPlans(fetchedMealPlans);
+    }
+  }, [fetchedMealPlans]);
+
+  // Filter meal plans based on selected filter
+  useEffect(() => {
+    let filtered = userMealPlans;
+    
+    if (mealPlanFilter === "Recent") {
+      // Sort by most recent
+      filtered = [...userMealPlans].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    } else {
+      // Filter by category (this would need category data from meal plans)
+      // For now, we'll show all meal plans for other filters
+      filtered = userMealPlans;
+    }
+    
+    setFilteredMealPlans(filtered);
+    setSelectedMealPlanIndex(0); // Reset to first plan when filter changes
+  }, [userMealPlans, mealPlanFilter]);
 
   // Check cache immediately when component loads
   useEffect(() => {
@@ -787,6 +831,216 @@ export default function CommunityDetailNew() {
     setAllExtractedRecipes([]);
     setSelectedRecipeIndex(0);
     setExtractorUrl("");
+  };
+
+  // Meal plan carousel navigation functions
+  const selectMealPlan = (index: number) => {
+    setSelectedMealPlanIndex(index);
+  };
+
+  const nextMealPlan = () => {
+    if (selectedMealPlanIndex < filteredMealPlans.length - 1) {
+      setSelectedMealPlanIndex(selectedMealPlanIndex + 1);
+    }
+  };
+
+  const prevMealPlan = () => {
+    if (selectedMealPlanIndex > 0) {
+      setSelectedMealPlanIndex(selectedMealPlanIndex - 1);
+    }
+  };
+
+  // MyMealPlansCarousel Component
+  const MyMealPlansCarousel = () => {
+    const currentMealPlan = filteredMealPlans[selectedMealPlanIndex];
+
+    if (filteredMealPlans.length === 0) {
+      return (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-white">My Meal Plans</h2>
+          </div>
+          
+          {/* Filter Tabs */}
+          <div className="flex gap-2 mb-4 overflow-x-auto">
+            {mealPlanFilters.map((filter) => (
+              <Button
+                key={filter}
+                onClick={() => setMealPlanFilter(filter)}
+                variant={mealPlanFilter === filter ? "default" : "outline"}
+                size="sm"
+                className={
+                  mealPlanFilter === filter
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                    : "border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
+                }
+              >
+                {filter}
+              </Button>
+            ))}
+          </div>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-8 text-center">
+              <ChefHat className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-semibold text-white mb-2">No Meal Plans Yet</h3>
+              <p className="text-gray-400 mb-4">Create your first meal plan to get started!</p>
+              <Button className="bg-emerald-600 hover:bg-emerald-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Meal Plan
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-white">My Meal Plans</h2>
+          <Badge className="bg-emerald-600 text-white">
+            {filteredMealPlans.length} Plans
+          </Badge>
+        </div>
+        
+        {/* Filter Tabs */}
+        <div className="flex gap-2 mb-4 overflow-x-auto">
+          {mealPlanFilters.map((filter) => (
+            <Button
+              key={filter}
+              onClick={() => setMealPlanFilter(filter)}
+              variant={mealPlanFilter === filter ? "default" : "outline"}
+              size="sm"
+              className={
+                mealPlanFilter === filter
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                  : "border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
+              }
+            >
+              {filter}
+            </Button>
+          ))}
+        </div>
+
+        {/* Carousel */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
+            {/* Navigation Controls */}
+            {filteredMealPlans.length > 1 && (
+              <div className="flex items-center justify-center gap-4 mb-4">
+                {/* Previous Button */}
+                {selectedMealPlanIndex > 0 && (
+                  <Button
+                    onClick={prevMealPlan}
+                    variant="outline"
+                    size="sm"
+                    className="hidden sm:flex border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="hidden md:inline ml-1">Previous</span>
+                  </Button>
+                )}
+                
+                {/* Dot Navigation */}
+                <div className="flex items-center gap-2 flex-1 justify-center">
+                  {filteredMealPlans.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => selectMealPlan(index)}
+                      className={`w-3 h-3 rounded-full transition-colors shrink-0 ${
+                        index === selectedMealPlanIndex 
+                          ? 'bg-emerald-500' 
+                          : 'bg-gray-600 hover:bg-gray-500'
+                      }`}
+                    />
+                  ))}
+                </div>
+                
+                {/* Next Button */}
+                {selectedMealPlanIndex < filteredMealPlans.length - 1 && (
+                  <Button
+                    onClick={nextMealPlan}
+                    variant="outline"
+                    size="sm"
+                    className="hidden sm:flex border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
+                  >
+                    <span className="hidden md:inline mr-1">Next</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Mobile Navigation Info */}
+            {filteredMealPlans.length > 1 && (
+              <div className="text-center mb-4 text-sm text-gray-400">
+                Meal Plan {selectedMealPlanIndex + 1} of {filteredMealPlans.length}
+              </div>
+            )}
+
+            {/* Current Meal Plan Display */}
+            {currentMealPlan && (
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-start gap-4">
+                  {/* Meal Plan Image */}
+                  <div className="w-20 h-20 bg-gray-600 rounded-lg flex items-center justify-center shrink-0">
+                    {currentMealPlan.image_url ? (
+                      <img 
+                        src={currentMealPlan.image_url} 
+                        alt={currentMealPlan.title}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <ChefHat className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+
+                  {/* Meal Plan Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-white mb-1 truncate">
+                      {currentMealPlan.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm mb-2 line-clamp-2">
+                      {currentMealPlan.description}
+                    </p>
+                    
+                    {/* Stats */}
+                    <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {currentMealPlan.prep_time || 30}min prep
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <ChefHat className="w-3 h-3" />
+                        {currentMealPlan.servings || 4} servings
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <Button 
+                      size="sm" 
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      View Plan
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-600"
+                    >
+                      Share
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
   };
 
   // Share extracted recipe to community
@@ -1343,7 +1597,29 @@ export default function CommunityDetailNew() {
 
         {/* Meal Plans Tab - Classroom Style */}
         <TabsContent value="meals" className="p-4 space-y-4 mt-2 pt-2 bg-gray-900">
-          <MealPlansClassroom communityId={id} isCreator={isCreator} />
+          {/* Header with User View Toggle */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-white">My Meal Plans</h2>
+            {isCreator && (
+              <Button
+                onClick={() => setIsStudentViewMode(!isStudentViewMode)}
+                variant={isStudentViewMode ? "secondary" : "outline"}
+                className={isStudentViewMode ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" : "border-gray-600 text-gray-300 hover:bg-gray-700"}
+                size="sm"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                {isStudentViewMode ? "Exit User View" : "User View"}
+              </Button>
+            )}
+          </div>
+          
+          <MyMealPlansCarousel />
+          <MealPlansClassroom 
+            communityId={id} 
+            isCreator={isCreator}
+            isStudentViewMode={isStudentViewMode}
+            setIsStudentViewMode={setIsStudentViewMode}
+          />
         </TabsContent>
 
 

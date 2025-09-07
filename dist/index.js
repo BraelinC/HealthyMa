@@ -3619,6 +3619,21 @@ var init_communityService = __esm({
           author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
         };
       }
+      // Delete a community post
+      async deletePost(postId, communityId) {
+        try {
+          await db.delete(communityPostLikes).where(eq2(communityPostLikes.post_id, postId));
+          await db.delete(communityPostComments).where(eq2(communityPostComments.post_id, postId));
+          const [deletedPost] = await db.delete(communityPosts).where(and2(
+            eq2(communityPosts.id, postId),
+            eq2(communityPosts.community_id, communityId)
+          )).returning();
+          return !!deletedPost;
+        } catch (error) {
+          console.error("Error deleting post:", error);
+          return false;
+        }
+      }
       // Get community posts with pagination and filtering
       async getCommunityPosts(communityId, options = {}) {
         const { limit = 20, offset = 0, type, userId } = options;
@@ -13132,6 +13147,1990 @@ var init_intelligentMealBaseSelector = __esm({
   }
 });
 
+// server/services/urlDetectionService.js
+var UrlDetectionService, urlDetectionService_default;
+var init_urlDetectionService = __esm({
+  "server/services/urlDetectionService.js"() {
+    "use strict";
+    UrlDetectionService = class {
+      constructor() {
+        this.homepagePatterns = [
+          /^https?:\/\/[^\/]+\/?$/,
+          // domain.com or domain.com/
+          /^https?:\/\/[^\/]+\/index\.html?$/,
+          // domain.com/index.html
+          /^https?:\/\/[^\/]+\/home\/?$/,
+          // domain.com/home
+          /^https?:\/\/[^\/]+\/main\/?$/,
+          // domain.com/main
+          /^https?:\/\/[^\/]+\/default\/?$/
+          // domain.com/default
+        ];
+        this.recipePagePatterns = [
+          /\/recipe\//i,
+          // /recipe/something
+          /\/recipes\//i,
+          // /recipes/something  
+          /\/cooking\//i,
+          // /cooking/something
+          /\/food\//i,
+          // /food/something
+          /\/dish\//i,
+          // /dish/something
+          /\/meal\//i,
+          // /meal/something
+          /\/[^\/]+-recipe\/?$/i,
+          // something-recipe
+          /\/[^\/]+-cookies?\/?$/i,
+          // something-cookie(s)
+          /\/[^\/]+-cake\/?$/i,
+          // something-cake
+          /\/[^\/]+-bread\/?$/i,
+          // something-bread
+          /\/[^\/]+-soup\/?$/i,
+          // something-soup
+          /\/[^\/]+-salad\/?$/i,
+          // something-salad
+          /\/[^\/]+-pasta\/?$/i,
+          // something-pasta
+          /\/[^\/]+-pizza\/?$/i,
+          // something-pizza
+          /\/[^\/]+-chicken\/?$/i,
+          // something-chicken
+          /\/[^\/]+-beef\/?$/i,
+          // something-beef
+          /\/[^\/]+-fish\/?$/i,
+          // something-fish
+          /\/[^\/]+-dessert\/?$/i,
+          // something-dessert
+          /\/[^\/]+-breakfast\/?$/i,
+          // something-breakfast
+          /\/[^\/]+-lunch\/?$/i,
+          // something-lunch
+          /\/[^\/]+-dinner\/?$/i,
+          // something-dinner
+          /\/[^\/]+-appetizer\/?$/i,
+          // something-appetizer
+          /\/[^\/]+-smoothie\/?$/i,
+          // something-smoothie
+          /\/[^\/]+-drink\/?$/i,
+          // something-drink
+          /\/[^\/]+-bake\/?$/i,
+          // something-bake
+          /\/[^\/]+-grill\/?$/i,
+          // something-grill
+          /\/[^\/]+-roast\/?$/i
+          // something-roast
+        ];
+        this.categoryPagePatterns = [
+          /\/recipes\/?$/i,
+          // /recipes (listing)
+          /\/recipe-category\//i,
+          // /recipe-category/
+          /\/categories?\//i,
+          // /category/ or /categories/
+          /\/cuisine\//i,
+          // /cuisine/italian
+          /\/diet\//i,
+          // /diet/vegetarian
+          /\/course\//i,
+          // /course/appetizer
+          /\/ingredient\//i,
+          // /ingredient/chicken
+          /\/tag\//i,
+          // /tag/quick-meals
+          /\/tags\//i,
+          // /tags/easy
+          /\/collection\//i,
+          // /collection/holiday
+          /\/search\//i,
+          // /search/results
+          /\/browse\//i
+          // /browse/recent
+        ];
+      }
+      // Main function to determine URL type
+      detectUrlType(url) {
+        try {
+          const cleanUrl = url.trim();
+          console.log(`\u{1F50D} Analyzing URL: ${cleanUrl}`);
+          if (this.isHomepage(cleanUrl)) {
+            console.log(`\u{1F3E0} Detected: HOMEPAGE`);
+            return {
+              type: "homepage",
+              action: "discovery",
+              reason: "URL matches homepage patterns"
+            };
+          }
+          if (this.isCategoryPage(cleanUrl)) {
+            console.log(`\u{1F4CB} Detected: CATEGORY PAGE`);
+            return {
+              type: "category",
+              action: "discovery",
+              reason: "URL appears to be a recipe category or listing page"
+            };
+          }
+          if (this.isRecipePage(cleanUrl)) {
+            console.log(`\u{1F373} Detected: RECIPE PAGE`);
+            return {
+              type: "recipe",
+              action: "extract",
+              reason: "URL matches recipe page patterns"
+            };
+          }
+          console.log(`\u2753 Detected: UNKNOWN (treating as recipe page)`);
+          return {
+            type: "unknown",
+            action: "extract",
+            reason: "URL doesn't match known patterns, attempting direct extraction"
+          };
+        } catch (error) {
+          console.error("\u274C URL detection error:", error);
+          return {
+            type: "error",
+            action: "extract",
+            reason: "Error analyzing URL, defaulting to extraction"
+          };
+        }
+      }
+      // Check if URL is a homepage
+      isHomepage(url) {
+        return this.homepagePatterns.some((pattern) => pattern.test(url));
+      }
+      // Check if URL is a specific recipe page
+      isRecipePage(url) {
+        return this.recipePagePatterns.some((pattern) => pattern.test(url));
+      }
+      // Check if URL is a category/listing page
+      isCategoryPage(url) {
+        return this.categoryPagePatterns.some((pattern) => pattern.test(url));
+      }
+      // Get domain from URL
+      getDomain(url) {
+        try {
+          return new URL(url).hostname;
+        } catch (e) {
+          return null;
+        }
+      }
+      // Get path from URL
+      getPath(url) {
+        try {
+          return new URL(url).pathname;
+        } catch (e) {
+          return null;
+        }
+      }
+      // Analyze URL structure for debugging
+      analyzeUrl(url) {
+        try {
+          const urlObj = new URL(url);
+          return {
+            domain: urlObj.hostname,
+            path: urlObj.pathname,
+            hasTrailingSlash: urlObj.pathname.endsWith("/"),
+            pathSegments: urlObj.pathname.split("/").filter((seg) => seg.length > 0),
+            isRoot: urlObj.pathname === "/" || urlObj.pathname === "",
+            hasFileExtension: /\.[a-zA-Z]{2,4}$/.test(urlObj.pathname)
+          };
+        } catch (e) {
+          return null;
+        }
+      }
+      // Test multiple URLs for debugging
+      testUrls(urls) {
+        console.log("\n\u{1F9EA} URL Detection Test Results:");
+        console.log("=".repeat(50));
+        urls.forEach((url) => {
+          const result = this.detectUrlType(url);
+          const analysis = this.analyzeUrl(url);
+          console.log(`
+URL: ${url}`);
+          console.log(`Type: ${result.type.toUpperCase()}`);
+          console.log(`Action: ${result.action.toUpperCase()}`);
+          console.log(`Reason: ${result.reason}`);
+          if (analysis) {
+            console.log(`Domain: ${analysis.domain}`);
+            console.log(`Path: ${analysis.path}`);
+            console.log(`Segments: [${analysis.pathSegments.join(", ")}]`);
+          }
+        });
+        console.log("=".repeat(50));
+      }
+    };
+    urlDetectionService_default = UrlDetectionService;
+  }
+});
+
+// server/services/urlDiscoveryService.js
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+var UrlDiscoveryService, urlDiscoveryService_default;
+var init_urlDiscoveryService = __esm({
+  "server/services/urlDiscoveryService.js"() {
+    "use strict";
+    puppeteer.use(StealthPlugin());
+    UrlDiscoveryService = class {
+      constructor() {
+        this.discoveredUrls = /* @__PURE__ */ new Set();
+        this.processed = /* @__PURE__ */ new Set();
+      }
+      // Main discovery method - tries multiple strategies
+      async discoverRecipeUrls(homepageUrl) {
+        console.log(`\u{1F50D} Starting URL discovery for: ${homepageUrl}`);
+        const browser = await puppeteer.launch({
+          headless: true,
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-accelerated-2d-canvas",
+            "--no-first-run",
+            "--no-zygote",
+            "--single-process",
+            "--disable-gpu",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding"
+          ]
+        });
+        try {
+          const discoveryPromises = [
+            this.discoverFromSitemap(homepageUrl),
+            this.discoverFromHomepage(browser, homepageUrl),
+            this.discoverFromNavigation(browser, homepageUrl)
+          ];
+          const results = await Promise.allSettled(discoveryPromises);
+          const allUrls = /* @__PURE__ */ new Set();
+          results.forEach((result, index2) => {
+            if (result.status === "fulfilled") {
+              result.value.forEach((url) => allUrls.add(url));
+              console.log(`\u2705 Method ${index2 + 1} found ${result.value.length} URLs`);
+            } else {
+              console.log(`\u26A0\uFE0F Method ${index2 + 1} failed: ${result.reason.message}`);
+            }
+          });
+          const finalUrls = Array.from(allUrls);
+          console.log(`\u{1F3AF} Total unique recipe URLs discovered: ${finalUrls.length}`);
+          return finalUrls;
+        } catch (error) {
+          console.error("\u{1F6A8} URL discovery error:", error);
+          throw error;
+        } finally {
+          await browser.close();
+        }
+      }
+      // Method 1: Try to find sitemap.xml
+      async discoverFromSitemap(baseUrl) {
+        console.log("\u{1F4CB} Method 1: Checking sitemap...");
+        try {
+          const sitemapUrls = [
+            `${baseUrl}/sitemap.xml`,
+            `${baseUrl}/sitemap_index.xml`,
+            `${baseUrl}/recipe-sitemap.xml`,
+            `${baseUrl}/wp-sitemap-posts-post-1.xml`
+          ];
+          for (const sitemapUrl of sitemapUrls) {
+            try {
+              const response = await fetch(sitemapUrl);
+              if (response.ok) {
+                const sitemapText = await response.text();
+                const urls = this.extractUrlsFromSitemap(sitemapText);
+                if (urls.length > 0) {
+                  console.log(`\u2705 Found sitemap at ${sitemapUrl} with ${urls.length} URLs`);
+                  return urls;
+                }
+              }
+            } catch (e) {
+            }
+          }
+          console.log("\u26A0\uFE0F No accessible sitemap found");
+          return [];
+        } catch (error) {
+          console.log("\u26A0\uFE0F Sitemap discovery failed:", error.message);
+          return [];
+        }
+      }
+      // Method 2: Analyze homepage structure with enhanced recipe detection
+      async discoverFromHomepage(browser, homepageUrl) {
+        console.log("\u{1F3E0} Method 2: Analyzing homepage...");
+        const page = await browser.newPage();
+        try {
+          await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+          await page.setViewport({ width: 1366, height: 768 });
+          await page.goto(homepageUrl, {
+            waitUntil: "domcontentloaded",
+            timeout: 3e4
+          });
+          await new Promise((resolve) => setTimeout(resolve, 3e3));
+          await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight / 2);
+          });
+          await new Promise((resolve) => setTimeout(resolve, 2e3));
+          await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+          });
+          await new Promise((resolve) => setTimeout(resolve, 2e3));
+          const urls = await page.evaluate((baseUrl) => {
+            const recipeUrls = /* @__PURE__ */ new Set();
+            const recipePatterns = [
+              /\/recipe\//i,
+              /\/recipes\//i,
+              /\/cooking\//i,
+              /\/food\//i,
+              /\/dish\//i,
+              /\/meal\//i,
+              /-recipe\/?$/i,
+              // ends with -recipe
+              /-cookies?\/?$/i,
+              // ends with -cookie(s)
+              /-cake\/?$/i,
+              // ends with -cake
+              /-bread\/?$/i,
+              // ends with -bread
+              /-soup\/?$/i,
+              // ends with -soup
+              /-salad\/?$/i,
+              // ends with -salad
+              /-pasta\/?$/i,
+              // ends with -pasta
+              /-pizza\/?$/i,
+              // ends with -pizza
+              /-chicken\/?$/i,
+              // ends with -chicken
+              /-beef\/?$/i,
+              // ends with -beef
+              /-dessert\/?$/i,
+              // ends with -dessert
+              /-treats?\/?$/i,
+              // ends with -treat(s)
+              /-smoothie\/?$/i,
+              // ends with -smoothie
+              /-bars?\/?$/i,
+              // ends with -bar(s)
+              /-muffins?\/?$/i,
+              // ends with -muffin(s)
+              /-pancakes?\/?$/i,
+              // ends with -pancake(s)
+              /-waffles?\/?$/i
+              // ends with -waffle(s)
+            ];
+            const recipeTextPatterns = [
+              /recipe/i,
+              /cook/i,
+              /bake/i,
+              /dish/i,
+              /meal/i,
+              /food/i,
+              /kitchen/i,
+              /ingredient/i,
+              /delicious/i,
+              /tasty/i,
+              /yummy/i
+            ];
+            const links = Array.from(document.querySelectorAll("a[href]"));
+            links.forEach((link) => {
+              const href = link.href;
+              const linkText = link.textContent.toLowerCase().trim();
+              const linkTitle = (link.title || "").toLowerCase();
+              const linkAlt = (link.querySelector("img")?.alt || "").toLowerCase();
+              const matchesUrlPattern = recipePatterns.some((pattern) => pattern.test(href));
+              const matchesTextPattern = recipeTextPatterns.some(
+                (pattern) => pattern.test(linkText) || pattern.test(linkTitle) || pattern.test(linkAlt)
+              );
+              const hasRecipeKeywords = linkText.includes("recipe") || linkText.includes("cook") || linkText.includes("bake") || linkTitle.includes("recipe") || linkAlt.includes("recipe");
+              if (matchesUrlPattern || matchesTextPattern || hasRecipeKeywords) {
+                try {
+                  const linkUrl = new URL(href);
+                  const baseUrlObj = new URL(baseUrl);
+                  if (linkUrl.hostname === baseUrlObj.hostname) {
+                    const excludePatterns = [
+                      /\/about/i,
+                      /\/contact/i,
+                      /\/privacy/i,
+                      /\/terms/i,
+                      /\/search/i,
+                      /\/category/i,
+                      /\/tag/i,
+                      /\/author/i,
+                      /\/wp-admin/i,
+                      /\/admin/i,
+                      /\.(jpg|jpeg|png|gif|pdf|doc|docx)$/i
+                    ];
+                    const isExcluded = excludePatterns.some((pattern) => pattern.test(href));
+                    if (!isExcluded) {
+                      recipeUrls.add(href);
+                    }
+                  }
+                } catch (e) {
+                }
+              }
+            });
+            const recipeCards = document.querySelectorAll([
+              ".recipe-card",
+              ".recipe-item",
+              ".post-item",
+              ".entry-item",
+              ".food-item",
+              ".dish-item",
+              "[data-recipe]",
+              ".wp-block-latest-posts__post"
+            ].join(", "));
+            recipeCards.forEach((card) => {
+              const cardLinks = card.querySelectorAll("a[href]");
+              cardLinks.forEach((link) => {
+                const href = link.href;
+                try {
+                  const linkUrl = new URL(href);
+                  const baseUrlObj = new URL(baseUrl);
+                  if (linkUrl.hostname === baseUrlObj.hostname) {
+                    recipeUrls.add(href);
+                  }
+                } catch (e) {
+                }
+              });
+            });
+            return Array.from(recipeUrls);
+          }, homepageUrl);
+          console.log(`\u{1F3E0} Enhanced homepage analysis found ${urls.length} potential recipe URLs`);
+          return urls;
+        } catch (error) {
+          console.log("\u26A0\uFE0F Homepage analysis failed:", error.message);
+          return [];
+        } finally {
+          await page.close();
+        }
+      }
+      // Method 3: Navigate through recipe sections
+      async discoverFromNavigation(browser, homepageUrl) {
+        console.log("\u{1F9ED} Method 3: Navigation discovery...");
+        const page = await browser.newPage();
+        try {
+          await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+          await page.setViewport({ width: 1366, height: 768 });
+          await page.goto(homepageUrl, {
+            waitUntil: "domcontentloaded",
+            timeout: 3e4
+          });
+          await new Promise((resolve) => setTimeout(resolve, 3e3));
+          const urls = await page.evaluate((baseUrl) => {
+            const recipeUrls = /* @__PURE__ */ new Set();
+            const categorySelectors = [
+              'a[href*="recipe"]',
+              'a[href*="cooking"]',
+              'a[href*="food"]',
+              "nav a",
+              ".menu a",
+              ".navigation a",
+              ".recipe-categories a",
+              ".category a"
+            ];
+            categorySelectors.forEach((selector) => {
+              try {
+                const links = Array.from(document.querySelectorAll(selector));
+                links.forEach((link) => {
+                  const href = link.href;
+                  if (href && href.includes(new URL(baseUrl).hostname)) {
+                    const text2 = link.textContent.toLowerCase();
+                    if (text2.includes("recipe") || text2.includes("cooking") || text2.includes("food") || text2.includes("meal") || text2.includes("appetizer") || text2.includes("main") || text2.includes("dessert") || text2.includes("breakfast")) {
+                      recipeUrls.add(href);
+                    }
+                  }
+                });
+              } catch (e) {
+              }
+            });
+            return Array.from(recipeUrls);
+          }, homepageUrl);
+          console.log(`\u{1F9ED} Navigation discovery found ${urls.length} category URLs`);
+          return urls;
+        } catch (error) {
+          console.log("\u26A0\uFE0F Navigation discovery failed:", error.message);
+          return [];
+        } finally {
+          await page.close();
+        }
+      }
+      // Helper: Extract URLs from sitemap XML
+      extractUrlsFromSitemap(sitemapText) {
+        const urls = [];
+        const urlMatches = sitemapText.match(/<loc>(.*?)<\/loc>/g);
+        if (urlMatches) {
+          urlMatches.forEach((match) => {
+            const url = match.replace(/<\/?loc>/g, "");
+            if (this.isRecipeUrl(url)) {
+              urls.push(url);
+            }
+          });
+        }
+        return urls;
+      }
+      // Helper: Check if URL looks like a recipe
+      isRecipeUrl(url) {
+        const lowercaseUrl = url.toLowerCase();
+        const excludePatterns = [
+          "/recipe-index",
+          "/recipes-index",
+          "/recipe-collection",
+          "/recipes-collection",
+          "/recipe-ebook",
+          "/recipes-ebook",
+          "/holiday-recipe",
+          "/about",
+          "/contact",
+          "/privacy",
+          "/terms",
+          "/category",
+          "/tag",
+          "/author",
+          "/page/",
+          "/wp-admin",
+          "/wp-content",
+          ".pdf",
+          ".jpg",
+          ".png",
+          ".gif",
+          "/sitemap",
+          "/feed",
+          "/rss"
+        ];
+        if (excludePatterns.some((pattern) => lowercaseUrl.includes(pattern))) {
+          return false;
+        }
+        const recipeIndicators = [
+          "/recipe/",
+          "/recipes/",
+          "/cooking/",
+          "/food/",
+          "/dish/",
+          "/meal/"
+        ];
+        const hasRecipeIndicator = recipeIndicators.some((indicator) => lowercaseUrl.includes(indicator));
+        const looksSpecific = hasRecipeIndicator && (lowercaseUrl.split("/").length >= 4 || // Has path segments
+        /recipe.*[a-z]{3,}/.test(lowercaseUrl));
+        return looksSpecific;
+      }
+      // Get domain from URL
+      getDomain(url) {
+        try {
+          return new URL(url).hostname;
+        } catch (e) {
+          return null;
+        }
+      }
+    };
+    urlDiscoveryService_default = UrlDiscoveryService;
+  }
+});
+
+// server/services/webScraper.js
+import puppeteer2 from "puppeteer-extra";
+import StealthPlugin2 from "puppeteer-extra-plugin-stealth";
+var WebScraperService, webScraper_default;
+var init_webScraper = __esm({
+  "server/services/webScraper.js"() {
+    "use strict";
+    puppeteer2.use(StealthPlugin2());
+    WebScraperService = class {
+      // Extract JSON-LD structured data from page
+      async extractJsonLd(page) {
+        console.log("\u{1F50D} Checking for JSON-LD recipe schema...");
+        const jsonLdData = await page.evaluate(() => {
+          const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+          const recipeSchemas = [];
+          for (const script of scripts) {
+            try {
+              const data = JSON.parse(script.textContent);
+              const items = Array.isArray(data) ? data : [data];
+              for (const item of items) {
+                if (item["@type"] === "Recipe" || item["@graph"] && item["@graph"].some((g) => g["@type"] === "Recipe")) {
+                  const recipe = item["@type"] === "Recipe" ? item : item["@graph"].find((g) => g["@type"] === "Recipe");
+                  if (recipe) {
+                    recipeSchemas.push(recipe);
+                  }
+                }
+              }
+            } catch (e) {
+              continue;
+            }
+          }
+          return recipeSchemas;
+        });
+        console.log(`\u{1F4CB} Found ${jsonLdData.length} JSON-LD recipe schemas`);
+        return jsonLdData;
+      }
+      // Check if JSON-LD recipe data is complete
+      validateRecipeCompleteness(recipeData) {
+        if (!recipeData || recipeData.length === 0) {
+          return { isComplete: false, reason: "No JSON-LD recipe data found" };
+        }
+        const recipe = recipeData[0];
+        const hasName = recipe.name && recipe.name.trim().length > 0;
+        const hasIngredients = recipe.recipeIngredient && recipe.recipeIngredient.length > 0;
+        const hasInstructions = recipe.recipeInstructions && recipe.recipeInstructions.length > 0;
+        if (!hasName) {
+          return { isComplete: false, reason: "Missing recipe name" };
+        }
+        if (!hasIngredients) {
+          return { isComplete: false, reason: "Missing ingredients list" };
+        }
+        if (!hasInstructions) {
+          return { isComplete: false, reason: "Missing instructions" };
+        }
+        console.log("\u2705 JSON-LD recipe data is complete");
+        return { isComplete: true, recipe };
+      }
+      // Transform JSON-LD to our format
+      transformJsonLdRecipe(jsonLdRecipe) {
+        const ingredients = jsonLdRecipe.recipeIngredient || [];
+        const instructions = jsonLdRecipe.recipeInstructions || [];
+        const instructionTexts = instructions.map((instruction) => {
+          if (typeof instruction === "string") return instruction;
+          if (instruction.text) return instruction.text;
+          if (instruction.name) return instruction.name;
+          return String(instruction);
+        });
+        return {
+          title: jsonLdRecipe.name || "Unknown Recipe",
+          description: jsonLdRecipe.description || "",
+          ingredients,
+          instructions: instructionTexts,
+          image: jsonLdRecipe.image?.[0]?.url || jsonLdRecipe.image?.url || jsonLdRecipe.image,
+          prepTime: jsonLdRecipe.prepTime,
+          cookTime: jsonLdRecipe.cookTime,
+          totalTime: jsonLdRecipe.totalTime,
+          servings: jsonLdRecipe.recipeYield,
+          difficulty: jsonLdRecipe.difficulty,
+          cuisine: jsonLdRecipe.recipeCuisine,
+          category: jsonLdRecipe.recipeCategory
+        };
+      }
+      // Smart content loading with network idle waiting
+      async smartContentLoading(page) {
+        console.log("\u{1F3AF} Step 1: Wait for initial page load and network to settle");
+        await new Promise((resolve) => setTimeout(resolve, 2e3));
+        try {
+          await page.waitForNetworkIdle({ idleTime: 1e3, timeout: 1e4 });
+          console.log("\u2705 Network settled after initial load");
+        } catch (e) {
+          console.log("\u23F0 Network idle timeout on initial load, continuing...");
+        }
+        console.log("\u{1F53D} Step 2: Scroll to ingredients section and wait for content");
+        await page.evaluate(() => {
+          const ingredientsSelectors = [
+            '[class*="ingredient"]',
+            '[id*="ingredient"]',
+            ".recipe-ingredients",
+            "#ingredients",
+            "h2",
+            "h3",
+            ".ingredients-section",
+            '[data-module="ingredients"]'
+          ];
+          for (const selector of ingredientsSelectors) {
+            const element = document.querySelector(selector);
+            if (element) {
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
+              console.log(`Found ingredients at: ${selector}`);
+              return;
+            }
+          }
+          window.scrollTo({ top: window.innerHeight * 1.5, behavior: "smooth" });
+        });
+        try {
+          await page.waitForNetworkIdle({ idleTime: 500, timeout: 5e3 });
+          console.log("\u2705 Network settled after scrolling");
+        } catch (e) {
+          console.log("\u23F0 Network idle timeout after scrolling, continuing...");
+        }
+        console.log("\u{1F4CA} Step 3: Check if content loaded");
+        const hasIngredients = await page.evaluate(() => {
+          const text2 = document.body.innerText.toLowerCase();
+          const ingredientKeywords = ["cup", "tablespoon", "teaspoon", "tsp", "tbsp", "flour", "sugar", "egg"];
+          return ingredientKeywords.some((keyword) => text2.includes(keyword));
+        });
+        if (!hasIngredients) {
+          console.log("\u274C No ingredients found, scrolling more...");
+          await page.evaluate(() => {
+            window.scrollTo({ top: window.innerHeight * 2, behavior: "smooth" });
+          });
+          await new Promise((resolve) => setTimeout(resolve, 2e3));
+          try {
+            await page.waitForNetworkIdle({ idleTime: 500, timeout: 3e3 });
+          } catch (e) {
+            console.log("\u23F0 No additional network activity detected");
+          }
+        }
+        console.log("\u{1F53D} Step 4: Scroll to instructions and wait for content");
+        await page.evaluate(() => {
+          const instructionsSelectors = [
+            '[class*="instruction"]',
+            '[id*="instruction"]',
+            ".recipe-instructions",
+            "#instructions",
+            "#directions",
+            "h2",
+            "h3",
+            ".instructions-section",
+            '[data-module="instructions"]'
+          ];
+          for (const selector of instructionsSelectors) {
+            const element = document.querySelector(selector);
+            if (element) {
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
+              console.log(`Found instructions at: ${selector}`);
+              return;
+            }
+          }
+          window.scrollTo({ top: window.innerHeight * 3, behavior: "smooth" });
+        });
+        try {
+          await page.waitForNetworkIdle({ idleTime: 500, timeout: 5e3 });
+          console.log("\u2705 Network settled after scrolling to instructions");
+        } catch (e) {
+          console.log("\u23F0 Network idle timeout after instructions scroll, continuing...");
+        }
+        console.log("\u{1F4CA} Step 5: Final content check");
+        const contentStats = await page.evaluate(() => {
+          const text2 = document.body.innerText;
+          const ingredientCount = (text2.match(/\b(cup|tablespoon|teaspoon|tsp|tbsp)\b/gi) || []).length;
+          const stepCount = (text2.match(/\b(step|preheat|mix|add|bake|cook)\b/gi) || []).length;
+          return {
+            textLength: text2.length,
+            ingredientCount,
+            stepCount,
+            hasRecipeContent: ingredientCount > 0 && stepCount > 0
+          };
+        });
+        if (!contentStats.hasRecipeContent && contentStats.textLength < 1e3) {
+          console.log("\u23F0 Content still loading, waiting 5 more seconds...");
+          await new Promise((resolve) => setTimeout(resolve, 5e3));
+        }
+        console.log(`\u2705 Smart loading complete: ${contentStats.textLength} chars, ${contentStats.ingredientCount} ingredients, ${contentStats.stepCount} steps`);
+      }
+      async scrapeRecipePage(url) {
+        const browser = await puppeteer2.launch({
+          headless: true,
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-accelerated-2d-canvas",
+            "--no-first-run",
+            "--no-zygote",
+            "--single-process",
+            "--disable-gpu",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding"
+          ]
+          // Enhanced for Replit environment
+        });
+        const page = await browser.newPage();
+        try {
+          console.log(`\u{1F50D} Scraping recipe from: ${url}`);
+          await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+          await page.setExtraHTTPHeaders({
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Cache-Control": "max-age=0"
+          });
+          await page.setViewport({ width: 1366, height: 768 });
+          await page.goto(url, {
+            waitUntil: "domcontentloaded",
+            timeout: 3e4
+          });
+          console.log("\u{1F512} Stealth mode active, enhanced headers set, waiting for content...");
+          console.log("\u{1F680} Method 1: Fast JSON-LD extraction");
+          try {
+            await page.waitForSelector("body", { timeout: 5e3 });
+          } catch (e) {
+          }
+          const jsonLdData = await this.extractJsonLd(page);
+          const validation = this.validateRecipeCompleteness(jsonLdData);
+          if (validation.isComplete) {
+            console.log("\u2705 JSON-LD extraction successful - using fast method");
+            const imageUrls2 = await this.extractImages(page);
+            const transformedRecipe = this.transformJsonLdRecipe(validation.recipe);
+            return {
+              method: "json-ld",
+              jsonLdRecipe: transformedRecipe,
+              textContent: "",
+              // Empty since we have structured data
+              imageUrls: imageUrls2,
+              pdfUrls: [],
+              originalUrl: url
+            };
+          }
+          console.log(`\u26A0\uFE0F JSON-LD incomplete: ${validation.reason}`);
+          console.log("\u{1F504} Method 2: Enhanced HTML scraping with smart scrolling");
+          await this.smartContentLoading(page);
+          const textContent = await this.extractTextContent(page);
+          const imageUrls = await this.extractImages(page);
+          const pdfUrls = await this.extractPdfUrls(page);
+          console.log(`\u{1F4C4} Extracted ${textContent.length} characters of text`);
+          console.log(`\u{1F5BC}\uFE0F Found ${imageUrls.length} potential recipe images`);
+          console.log(`\u{1F4CB} Found ${pdfUrls.length} PDF documents`);
+          return {
+            method: "html-scraping",
+            textContent: textContent.trim(),
+            imageUrls,
+            pdfUrls,
+            originalUrl: url
+          };
+        } catch (error) {
+          console.error("\u{1F6A8} Scraping error:", error);
+          throw new Error(`Failed to scrape ${url}: ${error.message}`);
+        } finally {
+          await browser.close();
+        }
+      }
+      // Helper method to extract images
+      async extractImages(page) {
+        return await page.evaluate(() => {
+          const images = Array.from(document.querySelectorAll("img"));
+          return images.filter((img) => {
+            if (img.naturalWidth < 200 || img.naturalHeight < 150) return false;
+            const src = img.src.toLowerCase();
+            const alt = (img.alt || "").toLowerCase();
+            const excludePatterns = [
+              "logo",
+              "icon",
+              "avatar",
+              "profile",
+              "social",
+              "share",
+              "advertisement",
+              "banner",
+              "header",
+              "footer",
+              "sidebar"
+            ];
+            return !excludePatterns.some(
+              (pattern) => src.includes(pattern) || alt.includes(pattern)
+            );
+          }).map((img) => img.src).filter((src) => src && src.startsWith("http"));
+        });
+      }
+      // Helper method to extract text content
+      async extractTextContent(page) {
+        return await page.evaluate(() => {
+          const elementsToRemove = document.querySelectorAll("script, style, nav, header, footer, .ad, .advertisement, .social-share, .newsletter");
+          elementsToRemove.forEach((el) => el.remove());
+          const recipeSelectors = [
+            ".recipe",
+            ".recipe-content",
+            ".recipe-container",
+            ".recipe-card",
+            '[itemtype*="Recipe"]',
+            ".post-content",
+            ".entry-content",
+            "main"
+          ];
+          let recipeContent = "";
+          for (const selector of recipeSelectors) {
+            const element = document.querySelector(selector);
+            if (element) {
+              recipeContent = element.innerText;
+              break;
+            }
+          }
+          return recipeContent || document.body.innerText;
+        });
+      }
+      // Helper method to extract PDF URLs
+      async extractPdfUrls(page) {
+        return await page.evaluate(() => {
+          const links = Array.from(document.querySelectorAll('a[href$=".pdf"], a[href*=".pdf"]'));
+          return links.map((link) => link.href).filter((href) => href);
+        });
+      }
+      async downloadPdf(pdfUrl) {
+        console.log(`\u{1F4E5} Downloading PDF: ${pdfUrl}`);
+        try {
+          const response = await fetch(pdfUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to download PDF: ${response.statusText}`);
+          }
+          const buffer = await response.arrayBuffer();
+          return Buffer.from(buffer);
+        } catch (error) {
+          console.error("\u{1F6A8} PDF download error:", error);
+          throw error;
+        }
+      }
+    };
+    webScraper_default = WebScraperService;
+  }
+});
+
+// server/services/geminiVision.js
+import { GoogleGenerativeAI } from "@google/generative-ai";
+var GeminiVisionService, geminiVision_default;
+var init_geminiVision = __esm({
+  "server/services/geminiVision.js"() {
+    "use strict";
+    GeminiVisionService = class {
+      constructor() {
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        if (!apiKey) {
+          throw new Error("GOOGLE_AI_API_KEY environment variable is required");
+        }
+        this.genAI = new GoogleGenerativeAI(apiKey);
+        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      }
+      async identifyMainRecipeImage(imageUrls) {
+        if (!imageUrls || imageUrls.length === 0) {
+          console.log("\u{1F441}\uFE0F No images provided for analysis");
+          return null;
+        }
+        console.log(`\u{1F441}\uFE0F Analyzing ${imageUrls.length} images to find main recipe image`);
+        const prompt = `
+You are analyzing images from a recipe webpage to identify the main recipe image.
+
+Image URLs to analyze:
+${imageUrls.map((url, i) => `${i + 1}. ${url}`).join("\n")}
+
+TASK: Identify which URL points to the main recipe image showing the finished dish.
+
+CRITERIA:
+- Look for images that show completed, prepared food/dishes
+- Ignore logos, advertisements, social media icons, author photos, or generic stock photos  
+- Ignore small thumbnails, banners, or UI elements
+- Choose the most prominent image of the actual prepared recipe/meal
+
+RESPONSE FORMAT:
+Return ONLY the complete URL of the best main recipe image.
+If no suitable recipe image is found, return exactly: "none"
+
+Example good response: https://example.com/images/finished-pasta-dish.jpg
+Example bad response: none
+`;
+        try {
+          const result = await this.model.generateContent(prompt);
+          const response = result.response.text().trim();
+          console.log(`\u{1F441}\uFE0F Gemini identified main image: ${response}`);
+          if (response === "none") {
+            return null;
+          }
+          if (imageUrls.includes(response)) {
+            return response;
+          }
+          const matchedUrl = imageUrls.find((url) => url.includes(response) || response.includes(url));
+          return matchedUrl || null;
+        } catch (error) {
+          console.error("\u{1F6A8} Gemini vision error:", error);
+          return imageUrls.length > 0 ? imageUrls[0] : null;
+        }
+      }
+      async extractPdfText(pdfBuffer) {
+        console.log(`\u{1F441}\uFE0F Extracting text from PDF using OCR (${pdfBuffer.length} bytes)`);
+        const prompt = `
+Extract all readable text from this PDF document. 
+
+INSTRUCTIONS:
+- Extract ALL text content that is readable
+- Maintain the general structure and formatting where possible
+- If this is an image-only PDF with no selectable text, extract text using OCR
+- If no text is found or readable, return exactly: "NO_TEXT_FOUND"
+
+Return only the extracted text content.
+`;
+        try {
+          const imagePart = {
+            inlineData: {
+              data: pdfBuffer.toString("base64"),
+              mimeType: "application/pdf"
+            }
+          };
+          const result = await this.model.generateContent([prompt, imagePart]);
+          const extractedText = result.response.text().trim();
+          if (extractedText === "NO_TEXT_FOUND") {
+            console.log("\u{1F441}\uFE0F No text found in PDF");
+            return "";
+          }
+          console.log(`\u{1F441}\uFE0F Extracted ${extractedText.length} characters from PDF`);
+          return extractedText;
+        } catch (error) {
+          console.error("\u{1F6A8} PDF OCR error:", error);
+          return "";
+        }
+      }
+      async analyzeRecipeImage(imageUrl) {
+        console.log(`\u{1F441}\uFE0F Analyzing recipe image for additional context: ${imageUrl}`);
+        const prompt = `
+Analyze this recipe image and extract any visible text or useful information.
+
+LOOK FOR:
+- Recipe names/titles visible in the image
+- Ingredient lists or labels
+- Cooking instructions or steps
+- Any text overlays or captions
+- Visual clues about the dish type, cuisine, or cooking method
+
+RESPONSE FORMAT:
+Return any extracted text or useful descriptions about what you see in the image.
+If no useful text or information is visible, return: "NO_ADDITIONAL_INFO"
+`;
+        try {
+          const result = await this.model.generateContent([
+            prompt,
+            {
+              inlineData: {
+                data: await this.fetchImageAsBase64(imageUrl),
+                mimeType: "image/jpeg"
+              }
+            }
+          ]);
+          const analysis = result.response.text().trim();
+          console.log(`\u{1F441}\uFE0F Image analysis result: ${analysis.substring(0, 100)}...`);
+          return analysis === "NO_ADDITIONAL_INFO" ? "" : analysis;
+        } catch (error) {
+          console.error("\u{1F6A8} Image analysis error:", error);
+          return "";
+        }
+      }
+      async fetchImageAsBase64(imageUrl) {
+        try {
+          const response = await fetch(imageUrl);
+          const buffer = await response.arrayBuffer();
+          return Buffer.from(buffer).toString("base64");
+        } catch (error) {
+          console.error("\u{1F6A8} Image fetch error:", error);
+          throw error;
+        }
+      }
+    };
+    geminiVision_default = GeminiVisionService;
+  }
+});
+
+// server/services/groqService.js
+import Groq5 from "groq-sdk";
+var GroqService, groqService_default;
+var init_groqService = __esm({
+  "server/services/groqService.js"() {
+    "use strict";
+    GroqService = class {
+      constructor() {
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+          throw new Error("GROQ_API_KEY environment variable is required");
+        }
+        this.client = new Groq5({
+          apiKey
+        });
+      }
+      async extractStructuredRecipe(cleanedText, imageUrl = null) {
+        console.log(`\u{1F9E0} Using GPT-OSS-120B to extract structured recipe data`);
+        const schema = {
+          title: "string",
+          category: "main|soup|dessert|snack|drink|other",
+          ingredients: [{ "item": "string", "quantity": "string" }],
+          instructions: ["step 1", "step 2", "..."],
+          image_url: "string",
+          notes: "string"
+        };
+        const prompt = `You are a recipe extraction specialist. Extract recipe information from the provided text and format it as JSON according to this EXACT schema:
+
+${JSON.stringify(schema, null, 2)}
+
+EXTRACTION RULES:
+1. Extract the recipe title from the text
+2. Categorize as: main, soup, dessert, snack, drink, or other
+3. Extract ingredients with proper quantities (e.g., "2 cups flour", "1 tbsp salt")
+4. Break instructions into clear, numbered steps
+5. Use the provided image URL if available, otherwise set to null
+6. Include any cooking tips or notes in the notes field
+
+TEXT TO EXTRACT FROM:
+${cleanedText}
+
+${imageUrl ? `RECIPE IMAGE URL: ${imageUrl}` : "NO IMAGE PROVIDED"}
+
+IMPORTANT: 
+- Return ONLY valid JSON, no additional text or explanation
+- Ensure all fields are present in the response
+- If information is missing, use reasonable defaults
+- For quantities, be specific (e.g., "2 cups", "1 tablespoon", "1/2 teaspoon")
+
+JSON Response:`;
+        try {
+          const completion = await this.client.chat.completions.create({
+            model: "openai/gpt-oss-120b",
+            messages: [
+              { "role": "user", "content": prompt }
+            ],
+            temperature: 0,
+            max_tokens: 2e3
+          });
+          const response = completion.choices[0].message.content.trim();
+          console.log(`\u{1F9E0} GPT-OSS-120B response length: ${response.length} characters`);
+          try {
+            const parsed = JSON.parse(response);
+            console.log(`\u{1F9E0} Successfully parsed JSON recipe: "${parsed.title}"`);
+            return this.validateAndTransform(parsed, imageUrl);
+          } catch (parseError) {
+            console.log(`\u{1F9E0} JSON parse failed, attempting to fix...`);
+            return await this.retryExtraction(cleanedText, imageUrl, response);
+          }
+        } catch (error) {
+          console.error("\u{1F6A8} Groq API error:", error);
+          throw new Error(`Failed to extract recipe with AI: ${error.message}`);
+        }
+      }
+      async retryExtraction(cleanedText, imageUrl, previousResponse) {
+        console.log(`\u{1F504} Retrying extraction with correction prompt`);
+        const correctionPrompt = `The previous response was not valid JSON. Please fix this response to be valid JSON according to the recipe schema:
+
+PREVIOUS RESPONSE:
+${previousResponse}
+
+Fix the JSON syntax errors and ensure it follows this exact schema:
+{
+  "title": "string",
+  "category": "main|soup|dessert|snack|drink|other",
+  "ingredients": [{"item": "string", "quantity": "string"}],
+  "instructions": ["step 1", "step 2", "..."],
+  "image_url": "string",
+  "notes": "string"
+}
+
+Return ONLY the corrected JSON:`;
+        try {
+          const completion = await this.client.chat.completions.create({
+            model: "openai/gpt-oss-120b",
+            messages: [
+              { "role": "user", "content": correctionPrompt }
+            ],
+            temperature: 0,
+            max_tokens: 2e3
+          });
+          const correctedResponse = completion.choices[0].message.content.trim();
+          const parsed = JSON.parse(correctedResponse);
+          console.log(`\u{1F504} Successfully corrected and parsed JSON`);
+          return this.validateAndTransform(parsed, imageUrl);
+        } catch (error) {
+          console.error("\u{1F6A8} Retry failed:", error);
+          return this.createFallbackRecipe(cleanedText, imageUrl);
+        }
+      }
+      validateAndTransform(data, imageUrl) {
+        console.log(`\u2705 Validating and transforming recipe data`);
+        const title = data.title || "Extracted Recipe";
+        const category = data.category || "other";
+        const ingredients = Array.isArray(data.ingredients) ? data.ingredients : [];
+        const instructions = Array.isArray(data.instructions) ? data.instructions : [];
+        const notes = data.notes || "";
+        const transformedRecipe = {
+          id: Math.random().toString(36).substr(2, 9),
+          title,
+          description: notes,
+          image_url: imageUrl || data.image_url || null,
+          ingredients: ingredients.map((ing) => {
+            if (typeof ing === "string") {
+              return {
+                name: ing,
+                display_text: ing,
+                measurements: []
+              };
+            } else {
+              const quantity = ing.quantity || "";
+              const item = ing.item || ing.name || "";
+              return {
+                name: item,
+                display_text: quantity ? `${quantity} ${item}` : item,
+                measurements: quantity ? [{
+                  quantity: this.parseQuantity(quantity),
+                  unit: this.parseUnit(quantity)
+                }] : []
+              };
+            }
+          }),
+          instructions: instructions.map((instruction, index2) => {
+            if (typeof instruction !== "string") {
+              return `Step ${index2 + 1}: ${String(instruction)}`;
+            }
+            return instruction.startsWith("Step") ? instruction : `Step ${index2 + 1}: ${instruction}`;
+          }),
+          nutrition_info: null,
+          prep_time: 30,
+          // Default
+          cook_time: null,
+          difficulty: "Medium",
+          cuisine: "",
+          diet: "",
+          video_id: null,
+          video_title: null,
+          video_channel: null,
+          category
+        };
+        console.log(`\u2705 Transformed recipe: "${transformedRecipe.title}" with ${transformedRecipe.ingredients.length} ingredients and ${transformedRecipe.instructions.length} steps`);
+        return transformedRecipe;
+      }
+      parseQuantity(quantityString) {
+        if (!quantityString) return 1;
+        const numericMatch = quantityString.match(/(\d+(?:\.\d+)?(?:\/\d+)?)/);
+        if (numericMatch) {
+          const value = numericMatch[1];
+          if (value.includes("/")) {
+            const [num, den] = value.split("/");
+            return parseFloat(num) / parseFloat(den);
+          }
+          return parseFloat(value);
+        }
+        return 1;
+      }
+      parseUnit(quantityString) {
+        if (!quantityString) return "";
+        const unitPatterns = [
+          "cups?",
+          "cup",
+          "c",
+          "tablespoons?",
+          "tbsp",
+          "tbs",
+          "teaspoons?",
+          "tsp",
+          "ts",
+          "ounces?",
+          "oz",
+          "pounds?",
+          "lbs?",
+          "lb",
+          "grams?",
+          "g",
+          "kilograms?",
+          "kg",
+          "milliliters?",
+          "ml",
+          "liters?",
+          "l",
+          "pieces?",
+          "piece",
+          "cloves?",
+          "clove",
+          "slices?",
+          "slice"
+        ];
+        for (const pattern of unitPatterns) {
+          const regex = new RegExp(`\\b(${pattern})\\b`, "i");
+          const match = quantityString.match(regex);
+          if (match) {
+            return match[1].toLowerCase();
+          }
+        }
+        return "";
+      }
+      createFallbackRecipe(text2, imageUrl) {
+        console.log(`\u{1F198} Creating fallback recipe from raw text`);
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          title: "Extracted Recipe (Manual Review Needed)",
+          description: "This recipe was extracted but may need manual review for accuracy.",
+          image_url: imageUrl,
+          ingredients: [
+            {
+              name: "Raw extracted content",
+              display_text: "Please review the extracted content below",
+              measurements: []
+            }
+          ],
+          instructions: [
+            "Step 1: Review the raw extracted content",
+            "Step 2: Manually format the recipe as needed",
+            `Raw content: ${text2.substring(0, 500)}...`
+          ],
+          nutrition_info: null,
+          prep_time: null,
+          cook_time: null,
+          difficulty: "Unknown",
+          cuisine: "",
+          diet: "",
+          video_id: null,
+          video_title: null,
+          video_channel: null,
+          category: "other"
+        };
+      }
+    };
+    groqService_default = GroqService;
+  }
+});
+
+// server/services/textProcessor.js
+var TextProcessor, textProcessor_default;
+var init_textProcessor = __esm({
+  "server/services/textProcessor.js"() {
+    "use strict";
+    TextProcessor = class {
+      static clean(rawText) {
+        if (!rawText || typeof rawText !== "string") {
+          return "";
+        }
+        console.log(`\u{1F9F9} Cleaning text (${rawText.length} characters)`);
+        let cleaned = rawText;
+        const boilerplatePatterns = [
+          /print\s+recipe/gi,
+          /share\s+on\s+facebook/gi,
+          /pin\s+to\s+pinterest/gi,
+          /tweet\s+this/gi,
+          /share\s+on\s+twitter/gi,
+          /subscribe\s+to\s+newsletter/gi,
+          /sign\s+up\s+for\s+newsletter/gi,
+          /advertisement/gi,
+          /sponsored\s+content/gi,
+          /follow\s+us\s+on/gi,
+          /like\s+us\s+on/gi,
+          /get\s+our\s+app/gi,
+          /download\s+our\s+app/gi,
+          /privacy\s+policy/gi,
+          /terms\s+of\s+service/gi,
+          /cookie\s+policy/gi,
+          /all\s+rights\s+reserved/gi,
+          /copyright\s+\d{4}/gi,
+          /\d{4}\s+copyright/gi,
+          /related\s+recipes/gi,
+          /more\s+recipes/gi,
+          /you\s+might\s+also\s+like/gi,
+          /recommended\s+for\s+you/gi,
+          /popular\s+recipes/gi,
+          /trending\s+now/gi,
+          /leave\s+a\s+comment/gi,
+          /rate\s+this\s+recipe/gi,
+          /save\s+recipe/gi,
+          /add\s+to\s+favorites/gi,
+          /jump\s+to\s+recipe/gi,
+          /print\s+friendly/gi,
+          /nutrition\s+facts/gi,
+          /calories\s+per\s+serving/gi,
+          /prep\s+time:/gi,
+          /cook\s+time:/gi,
+          /total\s+time:/gi,
+          /serves:\s*\d+/gi,
+          /difficulty:\s*\w+/gi
+        ];
+        boilerplatePatterns.forEach((pattern) => {
+          cleaned = cleaned.replace(pattern, " ");
+        });
+        cleaned = cleaned.replace(/[^\w\s\-.,;:()\[\]]/g, " ");
+        cleaned = cleaned.replace(/\s+/g, " ");
+        const lines = cleaned.split("\n").map((line) => line.trim()).filter((line) => line.length > 3);
+        const uniqueLines = [];
+        const seenLines = /* @__PURE__ */ new Set();
+        for (const line of lines) {
+          const normalizedLine = line.toLowerCase().replace(/\s+/g, " ");
+          if (!seenLines.has(normalizedLine)) {
+            seenLines.add(normalizedLine);
+            uniqueLines.push(line);
+          }
+        }
+        cleaned = uniqueLines.join("\n").trim();
+        cleaned = cleaned.replace(/\n\s*\n/g, "\n").trim();
+        console.log(`\u{1F9F9} Cleaned text: ${cleaned.length} characters (${rawText.length - cleaned.length} removed)`);
+        return cleaned;
+      }
+      static extractRecipeStructure(text2) {
+        console.log(`\u{1F50D} Extracting recipe structure from text`);
+        const result = {
+          title: "",
+          ingredients: [],
+          instructions: [],
+          notes: ""
+        };
+        const lines = text2.split("\n").map((line) => line.trim()).filter((line) => line);
+        let currentSection = "unknown";
+        let ingredientLines = [];
+        let instructionLines = [];
+        let titleCandidates = [];
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].toLowerCase();
+          if (line.includes("ingredient") || line.includes("what you need")) {
+            currentSection = "ingredients";
+            continue;
+          } else if (line.includes("instruction") || line.includes("method") || line.includes("direction") || line.includes("steps") || line.includes("how to make")) {
+            currentSection = "instructions";
+            continue;
+          }
+          if (i < 5 && lines[i].length < 100 && lines[i].length > 5) {
+            titleCandidates.push(lines[i]);
+          }
+          if (currentSection === "ingredients" || this.looksLikeIngredient(lines[i])) {
+            ingredientLines.push(lines[i]);
+          }
+          if (currentSection === "instructions" || this.looksLikeInstruction(lines[i])) {
+            instructionLines.push(lines[i]);
+          }
+        }
+        result.title = titleCandidates.length > 0 ? titleCandidates[0] : "Extracted Recipe";
+        result.ingredients = ingredientLines;
+        result.instructions = instructionLines;
+        console.log(`\u{1F50D} Extracted: title="${result.title}", ${result.ingredients.length} ingredients, ${result.instructions.length} instructions`);
+        return result;
+      }
+      static looksLikeIngredient(line) {
+        const measurementPatterns = [
+          /\d+\s*(cup|cups|tsp|tbsp|teaspoon|tablespoon|oz|ounce|lb|pound|g|gram|kg|ml|liter)/i,
+          /\d+\/\d+/,
+          // Fractions
+          /\d+\s*(to|or|-)\s*\d+/,
+          // Ranges
+          /^\d+\s+/,
+          // Starts with number
+          /\d+\s*(clove|cloves|piece|pieces|slice|slices)/i
+        ];
+        return measurementPatterns.some((pattern) => pattern.test(line)) && line.length < 200;
+      }
+      static looksLikeInstruction(line) {
+        const instructionPatterns = [
+          /^\d+\./,
+          // Numbered steps
+          /^step\s+\d+/i,
+          /^(heat|cook|add|mix|stir|combine|place|put|set|bake|fry|boil)/i,
+          /^(preheat|prepare|wash|chop|dice|slice|mince)/i
+        ];
+        return instructionPatterns.some((pattern) => pattern.test(line)) || line.length > 20 && line.length < 500 && line.includes(" ");
+      }
+      static combineTexts(webText, pdfText, imageText = "") {
+        console.log(`\u{1F517} Combining texts: web(${webText.length}), pdf(${pdfText.length}), image(${imageText.length})`);
+        const combined = [webText, pdfText, imageText].filter((text2) => text2 && text2.trim()).join("\n\n---\n\n");
+        return this.clean(combined);
+      }
+    };
+    textProcessor_default = TextProcessor;
+  }
+});
+
+// server/services/smartExtractionRouter.js
+var smartExtractionRouter_exports = {};
+__export(smartExtractionRouter_exports, {
+  default: () => smartExtractionRouter_default
+});
+var SmartExtractionRouter, smartExtractionRouter_default;
+var init_smartExtractionRouter = __esm({
+  "server/services/smartExtractionRouter.js"() {
+    "use strict";
+    init_urlDetectionService();
+    init_urlDiscoveryService();
+    init_webScraper();
+    init_geminiVision();
+    init_groqService();
+    init_textProcessor();
+    SmartExtractionRouter = class {
+      constructor() {
+        console.log("\u{1F3D7}\uFE0F [ROUTER DEBUG] SmartExtractionRouter constructor called");
+        this.urlDetector = new urlDetectionService_default();
+        this.urlDiscovery = new urlDiscoveryService_default();
+        console.log("\u{1F3D7}\uFE0F [ROUTER DEBUG] SmartExtractionRouter initialized successfully");
+      }
+      // Main routing function that determines the extraction strategy
+      async extractFromUrl(url, options = {}) {
+        console.log(`\u{1F3AF} [ROUTER DEBUG] SmartRouter: Starting extraction for ${url}`);
+        console.log(`\u{1F3AF} [ROUTER DEBUG] Options:`, options);
+        try {
+          console.log(`\u{1F50D} [ROUTER DEBUG] Analyzing URL type...`);
+          const urlAnalysis = this.urlDetector.detectUrlType(url);
+          console.log(`\u{1F4CA} [ROUTER DEBUG] URL Analysis:`, urlAnalysis);
+          console.log(`\u{1F4CA} [ROUTER DEBUG] URL Analysis: ${urlAnalysis.type} \u2192 ${urlAnalysis.action}`);
+          console.log(`\u{1F4A1} [ROUTER DEBUG] Reasoning: ${urlAnalysis.reason}`);
+          switch (urlAnalysis.action) {
+            case "discovery":
+              return await this.handleDiscoveryRoute(url, urlAnalysis, options);
+            case "extract":
+              return await this.handleExtractionRoute(url, urlAnalysis, options);
+            default:
+              throw new Error(`Unknown action: ${urlAnalysis.action}`);
+          }
+        } catch (error) {
+          console.error("\u{1F6A8} SmartRouter error:", error);
+          return {
+            success: false,
+            error: error.message,
+            metadata: {
+              originalUrl: url,
+              routerError: true
+            }
+          };
+        }
+      }
+      // Handle discovery route (homepages, category pages)
+      async handleDiscoveryRoute(url, urlAnalysis, options) {
+        console.log(`\u{1F50D} Discovery Route: Finding recipes on ${urlAnalysis.type}`);
+        try {
+          const discoveredUrls = await this.urlDiscovery.discoverRecipeUrls(url);
+          if (discoveredUrls.length === 0) {
+            return {
+              success: false,
+              error: "No recipe URLs found on this page",
+              metadata: {
+                originalUrl: url,
+                urlType: urlAnalysis.type,
+                discoveredUrls: 0
+              }
+            };
+          }
+          console.log(`\u2705 Found ${discoveredUrls.length} recipe URLs`);
+          const maxRecipes = options.maxRecipes || 10;
+          const urlsToExtract = discoveredUrls.slice(0, maxRecipes);
+          console.log(`\u{1F4CB} Extracting from ${urlsToExtract.length} recipe URLs`);
+          const extractionResults = [];
+          const extractionErrors = [];
+          const batchSize = 5;
+          const batches = [];
+          for (let i = 0; i < urlsToExtract.length; i += batchSize) {
+            batches.push(urlsToExtract.slice(i, i + batchSize));
+          }
+          console.log(`\u{1F680} Processing ${urlsToExtract.length} recipes in ${batches.length} parallel batches of ${batchSize}`);
+          for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+            const batch = batches[batchIndex];
+            console.log(`\u26A1 Batch ${batchIndex + 1}/${batches.length}: Processing ${batch.length} recipes in parallel`);
+            const batchPromises = batch.map(async (recipeUrl, index2) => {
+              const globalIndex = batchIndex * batchSize + index2 + 1;
+              console.log(`\u{1F373} [${globalIndex}/${urlsToExtract.length}] Starting: ${recipeUrl}`);
+              try {
+                const result = await this.extractSingleRecipe(recipeUrl);
+                if (result.success) {
+                  console.log(`\u2705 [${globalIndex}/${urlsToExtract.length}] Success: ${result.recipe.title}`);
+                  return {
+                    success: true,
+                    url: recipeUrl,
+                    recipe: result.recipe,
+                    metadata: result.metadata
+                  };
+                } else {
+                  console.log(`\u274C [${globalIndex}/${urlsToExtract.length}] Failed: ${result.error}`);
+                  return {
+                    success: false,
+                    url: recipeUrl,
+                    error: result.error
+                  };
+                }
+              } catch (error) {
+                console.log(`\u{1F6A8} [${globalIndex}/${urlsToExtract.length}] Error: ${error.message}`);
+                return {
+                  success: false,
+                  url: recipeUrl,
+                  error: error.message
+                };
+              }
+            });
+            const batchResults = await Promise.all(batchPromises);
+            batchResults.forEach((result) => {
+              if (result.success) {
+                const recipe = result.recipe;
+                const hasValidTitle = recipe.title && recipe.title !== "Untitled Recipe";
+                const hasIngredients = recipe.ingredients && recipe.ingredients.length > 0;
+                const hasInstructions = recipe.instructions && recipe.instructions.length > 0;
+                if (hasValidTitle && hasIngredients && hasInstructions) {
+                  extractionResults.push({
+                    url: result.url,
+                    recipe: result.recipe,
+                    metadata: result.metadata
+                  });
+                } else {
+                  console.log(`\u{1F6AE} Filtered out invalid recipe from ${result.url}: title="${recipe.title}", ingredients=${recipe.ingredients?.length || 0}, instructions=${recipe.instructions?.length || 0}`);
+                  extractionErrors.push({
+                    url: result.url,
+                    error: "Recipe missing essential content (title, ingredients, or instructions)"
+                  });
+                }
+              } else {
+                extractionErrors.push({
+                  url: result.url,
+                  error: result.error
+                });
+              }
+            });
+            console.log(`\u{1F3AF} Batch ${batchIndex + 1} complete: ${batchResults.filter((r) => r.success).length}/${batch.length} successful`);
+            if (batchIndex < batches.length - 1) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+          }
+          const successCount = extractionResults.length;
+          const failureCount = extractionErrors.length;
+          if (successCount === 0) {
+            return {
+              success: false,
+              error: "Failed to extract any recipes from discovered URLs",
+              metadata: {
+                originalUrl: url,
+                urlType: urlAnalysis.type,
+                discoveredUrls: discoveredUrls.length,
+                attemptedExtractions: urlsToExtract.length,
+                failures: extractionErrors
+              }
+            };
+          }
+          return {
+            success: true,
+            type: "multi-recipe",
+            recipes: extractionResults,
+            summary: {
+              originalUrl: url,
+              urlType: urlAnalysis.type,
+              totalDiscovered: discoveredUrls.length,
+              attempted: urlsToExtract.length,
+              successful: successCount,
+              failed: failureCount,
+              successRate: `${Math.round(successCount / urlsToExtract.length * 100)}%`
+            },
+            errors: extractionErrors.length > 0 ? extractionErrors : void 0
+          };
+        } catch (error) {
+          console.error("\u{1F6A8} Discovery route error:", error);
+          return {
+            success: false,
+            error: `Discovery failed: ${error.message}`,
+            metadata: {
+              originalUrl: url,
+              urlType: urlAnalysis.type,
+              discoveryError: true
+            }
+          };
+        }
+      }
+      // Handle extraction route (specific recipe pages)
+      async handleExtractionRoute(url, urlAnalysis, options) {
+        console.log(`\u{1F373} Extraction Route: Direct recipe extraction from ${urlAnalysis.type}`);
+        try {
+          const result = await this.extractSingleRecipe(url);
+          if (result.success) {
+            return {
+              success: true,
+              type: "single-recipe",
+              recipe: result.recipe,
+              metadata: {
+                ...result.metadata,
+                urlType: urlAnalysis.type,
+                routingReason: urlAnalysis.reason
+              }
+            };
+          } else {
+            return {
+              success: false,
+              error: result.error,
+              metadata: {
+                originalUrl: url,
+                urlType: urlAnalysis.type,
+                extractionError: true
+              }
+            };
+          }
+        } catch (error) {
+          console.error("\u{1F6A8} Extraction route error:", error);
+          return {
+            success: false,
+            error: `Extraction failed: ${error.message}`,
+            metadata: {
+              originalUrl: url,
+              urlType: urlAnalysis.type,
+              extractionError: true
+            }
+          };
+        }
+      }
+      // Single recipe extraction using our proven multi-step pipeline
+      async extractSingleRecipe(url) {
+        try {
+          console.log(`\u{1F527} Using multi-step extractor for: ${url}`);
+          const webScraper = new webScraper_default();
+          const gemini = new geminiVision_default();
+          const groq = new groqService_default();
+          const scrapedData = await webScraper.scrapeRecipePage(url);
+          let extractedRecipe;
+          let mainImageUrl = "";
+          if (scrapedData.method === "json-ld") {
+            console.log(`\u26A1 Using fast JSON-LD extraction`);
+            const imageUrls = scrapedData.imageUrls || [];
+            if (imageUrls.length > 0) {
+              mainImageUrl = await gemini.identifyMainRecipeImage(imageUrls);
+            }
+            const jsonLdText = JSON.stringify(scrapedData.jsonLdRecipe);
+            extractedRecipe = await groq.extractStructuredRecipe(jsonLdText, mainImageUrl);
+          } else {
+            console.log(`\u{1F40C} Using enhanced HTML extraction`);
+            const imageUrls = scrapedData.imageUrls || [];
+            let geminiResponse = null;
+            if (imageUrls.length > 0) {
+              mainImageUrl = await gemini.identifyMainRecipeImage(imageUrls);
+            }
+            const combinedText = textProcessor_default.combineTexts(
+              scrapedData.textContent,
+              "",
+              ""
+            );
+            const cleanedText = textProcessor_default.clean(combinedText);
+            extractedRecipe = await groq.extractStructuredRecipe(cleanedText, mainImageUrl);
+          }
+          return {
+            success: true,
+            recipe: extractedRecipe,
+            metadata: {
+              originalUrl: url,
+              extractionMethod: scrapedData.method,
+              extractedImages: scrapedData.imageUrls?.length || 0,
+              mainImageSelected: !!mainImageUrl,
+              textLength: scrapedData.method === "json-ld" ? JSON.stringify(scrapedData.jsonLdRecipe).length : scrapedData.textContent.length
+            }
+          };
+        } catch (error) {
+          console.error(`\u{1F6A8} Single recipe extraction error for ${url}:`, error);
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+      // Get URL analysis without extraction (for debugging)
+      analyzeUrl(url) {
+        return this.urlDetector.detectUrlType(url);
+      }
+    };
+    smartExtractionRouter_default = SmartExtractionRouter;
+  }
+});
+
+// server/services/batchExtractionService.js
+var batchExtractionService_exports = {};
+__export(batchExtractionService_exports, {
+  default: () => batchExtractionService_default
+});
+var BatchExtractionService, batchExtractionService_default;
+var init_batchExtractionService = __esm({
+  "server/services/batchExtractionService.js"() {
+    "use strict";
+    init_urlDiscoveryService();
+    init_webScraper();
+    init_geminiVision();
+    init_groqService();
+    init_textProcessor();
+    BatchExtractionService = class {
+      constructor() {
+        this.urlDiscovery = new urlDiscoveryService_default();
+        this.maxWorkers = 6;
+        this.activeWorkers = 0;
+        this.extractionQueue = [];
+        this.results = [];
+        this.errors = [];
+        this.progress = {
+          total: 0,
+          completed: 0,
+          failed: 0,
+          inProgress: 0
+        };
+      }
+      // Main batch extraction method
+      async extractRecipesFromSite(homepageUrl, maxRecipes = 50) {
+        console.log(`\u{1F680} Starting batch extraction from: ${homepageUrl}`);
+        console.log(`\u{1F4CA} Configuration: ${this.maxWorkers} workers, max ${maxRecipes} recipes`);
+        this.results = [];
+        this.errors = [];
+        this.progress = { total: 0, completed: 0, failed: 0, inProgress: 0 };
+        try {
+          console.log("\u{1F4CD} Phase 1: URL Discovery");
+          const discoveredUrls = await this.urlDiscovery.discoverRecipeUrls(homepageUrl);
+          if (discoveredUrls.length === 0) {
+            throw new Error("No recipe URLs found on the site");
+          }
+          const urlsToProcess = discoveredUrls.slice(0, maxRecipes);
+          this.progress.total = urlsToProcess.length;
+          console.log(`\u{1F3AF} Found ${discoveredUrls.length} URLs, processing ${urlsToProcess.length}`);
+          console.log("\u26A1 Phase 2: Parallel Recipe Extraction");
+          await this.processUrlsInParallel(urlsToProcess);
+          console.log("\u{1F4CA} Phase 3: Results Summary");
+          const summary = this.generateSummary();
+          return {
+            success: true,
+            summary,
+            results: this.results,
+            errors: this.errors.length > 0 ? this.errors : void 0
+          };
+        } catch (error) {
+          console.error("\u{1F6A8} Batch extraction failed:", error);
+          return {
+            success: false,
+            error: error.message,
+            partialResults: this.results.length > 0 ? this.results : void 0
+          };
+        }
+      }
+      // Process URLs using worker pool
+      async processUrlsInParallel(urls) {
+        return new Promise((resolve) => {
+          this.extractionQueue = [...urls];
+          const workers = [];
+          for (let i = 0; i < Math.min(this.maxWorkers, urls.length); i++) {
+            workers.push(this.startWorker(i + 1));
+          }
+          const checkCompletion = () => {
+            if (this.progress.completed + this.progress.failed >= this.progress.total) {
+              console.log("\u2705 All extractions completed");
+              resolve();
+            } else {
+              setTimeout(checkCompletion, 1e3);
+            }
+          };
+          checkCompletion();
+        });
+      }
+      // Individual worker process
+      async startWorker(workerId) {
+        console.log(`\u{1F527} Worker ${workerId} started`);
+        while (this.extractionQueue.length > 0) {
+          const url = this.extractionQueue.shift();
+          if (!url) break;
+          this.activeWorkers++;
+          this.progress.inProgress++;
+          console.log(`\u{1F477} Worker ${workerId} processing: ${url}`);
+          console.log(`\u{1F4CA} Progress: ${this.progress.completed}/${this.progress.total} completed, ${this.progress.inProgress} in progress`);
+          try {
+            const result = await this.extractSingleRecipe(url);
+            if (result.success) {
+              this.results.push({
+                url,
+                recipe: result.recipe,
+                metadata: result.metadata,
+                extractedAt: (/* @__PURE__ */ new Date()).toISOString(),
+                workerId
+              });
+              this.progress.completed++;
+              console.log(`\u2705 Worker ${workerId} completed: ${result.recipe.title}`);
+            } else {
+              this.errors.push({
+                url,
+                error: result.error || "Unknown extraction error",
+                workerId,
+                failedAt: (/* @__PURE__ */ new Date()).toISOString()
+              });
+              this.progress.failed++;
+              console.log(`\u274C Worker ${workerId} failed: ${url}`);
+            }
+          } catch (error) {
+            this.errors.push({
+              url,
+              error: error.message,
+              workerId,
+              failedAt: (/* @__PURE__ */ new Date()).toISOString()
+            });
+            this.progress.failed++;
+            console.log(`\u{1F6A8} Worker ${workerId} error: ${error.message}`);
+          }
+          this.activeWorkers--;
+          this.progress.inProgress--;
+          await new Promise((resolve) => setTimeout(resolve, 1e3 + Math.random() * 1e3));
+        }
+        console.log(`\u{1F3C1} Worker ${workerId} finished`);
+      }
+      // Use the existing extraction system for each recipe
+      async extractSingleRecipe(url) {
+        try {
+          const webScraper = new webScraper_default();
+          const gemini = new geminiVision_default();
+          const groq = new groqService_default();
+          const textProcessor = new textProcessor_default();
+          const scrapedData = await webScraper.scrapeRecipePage(url);
+          let extractedRecipe;
+          let mainImageUrl = "";
+          if (scrapedData.method === "json-ld") {
+            const imageUrls = scrapedData.imageUrls || [];
+            if (imageUrls.length > 0) {
+              const geminiResponse = await gemini.analyzeImages(imageUrls);
+              mainImageUrl = geminiResponse.mainImageUrl || imageUrls[0];
+            }
+            const jsonLdText = JSON.stringify(scrapedData.jsonLdRecipe);
+            extractedRecipe = await groq.extractStructuredRecipe(jsonLdText, mainImageUrl);
+          } else {
+            const imageUrls = scrapedData.imageUrls || [];
+            let geminiResponse = null;
+            if (imageUrls.length > 0) {
+              geminiResponse = await gemini.analyzeImages(imageUrls);
+              mainImageUrl = geminiResponse.mainImageUrl || imageUrls[0];
+            }
+            const combinedText = textProcessor.combineTexts(
+              scrapedData.textContent,
+              "",
+              geminiResponse?.extractedText || ""
+            );
+            const cleanedText = textProcessor.cleanText(combinedText);
+            extractedRecipe = await groq.extractStructuredRecipe(cleanedText, mainImageUrl);
+          }
+          return {
+            success: true,
+            recipe: extractedRecipe,
+            metadata: {
+              originalUrl: url,
+              extractionMethod: scrapedData.method,
+              extractedImages: scrapedData.imageUrls?.length || 0,
+              mainImageSelected: !!mainImageUrl,
+              textLength: scrapedData.method === "json-ld" ? JSON.stringify(scrapedData.jsonLdRecipe).length : scrapedData.textContent.length
+            }
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+      // Generate extraction summary
+      generateSummary() {
+        const total = this.progress.total;
+        const completed = this.progress.completed;
+        const failed = this.progress.failed;
+        const successRate = total > 0 ? (completed / total * 100).toFixed(1) : 0;
+        return {
+          totalUrls: total,
+          successfulExtractions: completed,
+          failedExtractions: failed,
+          successRate: `${successRate}%`,
+          averageIngredients: this.calculateAverageIngredients(),
+          extractionMethods: this.countExtractionMethods(),
+          topFailureReasons: this.getTopFailureReasons()
+        };
+      }
+      calculateAverageIngredients() {
+        if (this.results.length === 0) return 0;
+        const totalIngredients = this.results.reduce((sum, result) => {
+          return sum + (result.recipe.ingredients?.length || 0);
+        }, 0);
+        return (totalIngredients / this.results.length).toFixed(1);
+      }
+      countExtractionMethods() {
+        const methods = {};
+        this.results.forEach((result) => {
+          const method = result.metadata.extractionMethod;
+          methods[method] = (methods[method] || 0) + 1;
+        });
+        return methods;
+      }
+      getTopFailureReasons() {
+        const reasons = {};
+        this.errors.forEach((error) => {
+          const reason = error.error;
+          reasons[reason] = (reasons[reason] || 0) + 1;
+        });
+        return Object.entries(reasons).sort(([, a], [, b]) => b - a).slice(0, 3).map(([reason, count]) => ({ reason, count }));
+      }
+      // Get current progress
+      getProgress() {
+        return {
+          ...this.progress,
+          successRate: this.progress.total > 0 ? (this.progress.completed / this.progress.total * 100).toFixed(1) + "%" : "0%"
+        };
+      }
+    };
+    batchExtractionService_default = BatchExtractionService;
+  }
+});
+
 // server/index.ts
 import express3 from "express";
 import session from "express-session";
@@ -13142,6 +15141,7 @@ import { fileURLToPath as fileURLToPath6 } from "url";
 
 // server/routes.ts
 init_storage();
+import express from "express";
 import { createServer } from "http";
 import fetch6 from "node-fetch";
 
@@ -18147,6 +20147,8 @@ async function registerRoutes(app2) {
         temperature: 0.7,
         max_tokens: 4096
       });
+      const expectedTotalMeals = numDays * mealsPerDay;
+      console.log(`\u{1F9EE} DYNAMIC CALCULATION: ${numDays} days \xD7 ${mealsPerDay} meals = ${expectedTotalMeals} total expected meals`);
       let buffer = "";
       let mealCount = 0;
       let currentDay = 0;
@@ -18159,61 +20161,101 @@ async function registerRoutes(app2) {
       for await (const chunk of openaiStream) {
         const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
+          console.log("\u{1F30A} STREAM CHUNK received:", content.length, "chars:", content.substring(0, 100));
           buffer += content;
           if (content.includes('"title"')) {
-            console.log("\u{1F4E1} Title found in stream:", content);
+            console.log("\u{1F4E1} TITLE DETECTED in chunk:", content);
           }
           const dayMatches = [...buffer.matchAll(/"day_(\d+)"/g)];
           if (dayMatches.length > 0) {
             currentDay = parseInt(dayMatches[dayMatches.length - 1][1]);
           }
-          const mealRegex = /"title":\s*"([^"]+)"[^}]*"cook_time_minutes":\s*(\d+)[^}]*"difficulty":\s*(\d+)/g;
-          let lastSearchPosition = buffer.length - content.length;
-          mealRegex.lastIndex = Math.max(0, lastSearchPosition - 200);
+          console.log("\u{1F50D} BUFFER SIZE:", buffer.length, "chars - searching for complete titles");
+          const titleRegex = /"title":\s*"([^"]+)"/g;
+          console.log("\u{1F575}\uFE0F SEARCHING entire buffer for titles...");
           let match;
-          while ((match = mealRegex.exec(buffer)) !== null) {
-            const [fullMatch, mealTitle, cookTime2, difficulty2] = match;
-            const mealPosition = buffer.indexOf(fullMatch);
-            const mealKey = `${mealTitle}_${mealPosition}`;
+          titleRegex.lastIndex = 0;
+          while ((match = titleRegex.exec(buffer)) !== null) {
+            const mealTitle = match[1];
+            console.log("\u{1F3AF} REGEX MATCH found title:", mealTitle);
+            const mealKey = `${mealTitle.trim()}`;
             if (processedMeals.has(mealKey)) {
-              console.log(`\u23ED\uFE0F Skipping duplicate meal: ${mealTitle} at position ${mealPosition}`);
+              console.log(`\u23ED\uFE0F DUPLICATE DETECTED: ${mealTitle} (already processed)`);
               continue;
             }
             const mealType = mealTypes[mealCount % 3];
             processedMeals.add(mealKey);
             mealCount++;
-            console.log(`\u{1F37D}\uFE0F NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount}`);
+            console.log(`\u{1F37D}\uFE0F NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount} \u{1F680} SCHEDULING STREAMING!`);
             const mealData = {
               title: mealTitle,
               name: mealTitle,
               // For compatibility
-              cook_time_minutes: parseInt(cookTime2),
-              cook_time: parseInt(cookTime2),
+              cook_time_minutes: 25,
+              // Default cook time
+              cook_time: 25,
               // For compatibility
               prep_time: 10,
               // Default prep time
-              difficulty: parseInt(difficulty2),
+              difficulty: 2,
+              // Default difficulty
               mealType,
               day: currentDay || 1,
-              totalTime: parseInt(cookTime2) + 10,
+              totalTime: 35,
               id: `${mealType}_${mealCount}_${Date.now()}`
             };
-            sendData(JSON.stringify({
+            console.log(`\u{1F4E4} SENDING SSE data IMMEDIATELY for meal ${mealCount}/${expectedTotalMeals}:`, mealTitle);
+            const sseData = JSON.stringify({
               type: "meal",
-              data: mealData
-            }));
+              data: mealData,
+              mealNumber: mealCount,
+              totalMeals: expectedTotalMeals
+            });
+            console.log("\u{1F4E6} SSE payload:", sseData);
+            sendData(sseData);
+            try {
+              if (res.flush) {
+                res.flush();
+              }
+              if (res.socket && res.socket.flush) {
+                res.socket.flush();
+              }
+            } catch (flushError) {
+              console.log("Flush attempt failed (not critical):", flushError.message);
+            }
+            console.log(`\u2728 STREAMED IMMEDIATELY: Meal ${mealCount}/${expectedTotalMeals} - ${mealTitle} sent to frontend at ${(/* @__PURE__ */ new Date()).toISOString()}!`);
+          }
+          if (!titleRegex.test(buffer)) {
+            console.log("\u274C NO TITLES found in this chunk");
           }
         }
       }
-      try {
-        const cleanBuffer = buffer.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const completeMealPlan = JSON.parse(cleanBuffer);
+      console.log(`\u{1F50D} COMPLETION CHECK: Streamed ${mealCount} meals out of ${expectedTotalMeals} expected`);
+      if (mealCount >= expectedTotalMeals) {
+        console.log(`\u2705 ALL ${expectedTotalMeals} MEALS STREAMED! Now sending complete meal plan...`);
+        try {
+          const cleanBuffer = buffer.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          const completeMealPlan = JSON.parse(cleanBuffer);
+          sendData(JSON.stringify({
+            type: "complete",
+            data: completeMealPlan,
+            allMealsStreamed: true,
+            totalMealsStreamed: mealCount,
+            expectedTotalMeals
+          }));
+          console.log(`\u{1F4CB} COMPLETE MEAL PLAN SENT after all ${expectedTotalMeals} meals streamed!`);
+        } catch (e) {
+          console.log("\u274C Failed to parse complete meal plan, sending done signal");
+          sendData(JSON.stringify({ type: "done" }));
+        }
+      } else {
+        console.log(`\u23F3 WAITING for more meals... Only ${mealCount}/${expectedTotalMeals} streamed so far. NOT sending complete plan yet.`);
         sendData(JSON.stringify({
-          type: "complete",
-          data: completeMealPlan
+          type: "partial_complete",
+          streamedMeals: mealCount,
+          totalExpected: expectedTotalMeals,
+          message: "Waiting for all meals to stream before showing complete plan"
         }));
-      } catch (e) {
-        sendData(JSON.stringify({ type: "done" }));
       }
       res.end();
     } catch (error) {
@@ -18909,7 +20951,7 @@ async function registerRoutes(app2) {
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, profileType, questionnaire_answers, questionnaire_selections } = req.body;
       console.log("\u{1F4BE} Creating weight-based profile with data:", {
         profileName,
         familySize,
@@ -18928,7 +20970,7 @@ async function registerRoutes(app2) {
         family_size: familySize,
         members: [],
         // Empty for weight-based approach
-        profile_type: "individual",
+        profile_type: profileType || "individual",
         preferences: dietaryRestrictions,
         goals: goalsArray,
         cultural_background: culturalBackground
@@ -18960,7 +21002,7 @@ async function registerRoutes(app2) {
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, profileType, questionnaire_answers, questionnaire_selections } = req.body;
       console.log("\u{1F4BE} Saving weight-based profile with data:", {
         profileName,
         familySize,
@@ -18980,7 +21022,7 @@ async function registerRoutes(app2) {
           primary_goal: "Weight-Based Planning",
           family_size: familySize || existingProfile.family_size || 2,
           members: existingProfile.members || [],
-          profile_type: "individual",
+          profile_type: profileType || existingProfile.profile_type || "individual",
           preferences: dietaryRestrictions || existingProfile.preferences || [],
           goals: goalsArray,
           cultural_background: culturalBackground || existingProfile.cultural_background || []
@@ -18994,7 +21036,7 @@ async function registerRoutes(app2) {
           primary_goal: "Weight-Based Planning",
           family_size: familySize || 2,
           members: [],
-          profile_type: "individual",
+          profile_type: profileType || "individual",
           preferences: dietaryRestrictions || [],
           goals: goalsArray,
           cultural_background: culturalBackground || []
@@ -19602,6 +21644,31 @@ async function registerRoutes(app2) {
         return res.status(403).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to create community post" });
+    }
+  });
+  app2.delete("/api/communities/:id/posts/:postId", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const community = await communityService.getCommunityById(communityId);
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      if (community.creator_id !== userId) {
+        return res.status(403).json({ message: "Only creators can delete posts" });
+      }
+      const result = await communityService.deletePost(postId, communityId);
+      if (!result) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      res.json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting community post:", error);
+      res.status(500).json({ message: "Failed to delete community post" });
     }
   });
   app2.post("/api/communities/:communityId/posts/:postId/like", authenticateToken2, async (req, res) => {
@@ -20686,6 +22753,139 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error removing from favorites:", error);
       res.status(500).json({ message: "Failed to remove from favorites" });
+    }
+  });
+  app2.post("/api/extract-meal-plan", authenticateToken2, async (req, res) => {
+    try {
+      console.log("\u{1F525} [BACKEND DEBUG] Extract meal plan endpoint hit");
+      const { url } = req.body;
+      const userId = req.user?.id;
+      console.log("\u{1F525} [BACKEND DEBUG] Request details:", {
+        url,
+        userId,
+        hasAuth: !!userId,
+        body: req.body
+      });
+      if (!userId) {
+        console.log("\u274C [BACKEND DEBUG] User not authenticated");
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      if (!url) {
+        console.log("\u274C [BACKEND DEBUG] URL is missing from request");
+        return res.status(400).json({ message: "URL is required" });
+      }
+      console.log(`\u{1F3AF} [BACKEND DEBUG] Starting smart extraction for: ${url}`);
+      console.log("\u{1F4E6} [BACKEND DEBUG] Importing SmartExtractionRouter...");
+      const { default: SmartExtractionRouter2 } = await Promise.resolve().then(() => (init_smartExtractionRouter(), smartExtractionRouter_exports));
+      console.log("\u{1F4E6} [BACKEND DEBUG] SmartExtractionRouter imported successfully");
+      const smartRouter = new SmartExtractionRouter2();
+      console.log("\u{1F527} [BACKEND DEBUG] SmartRouter instance created");
+      console.log("\u{1F680} [BACKEND DEBUG] Calling extractFromUrl...");
+      const result = await smartRouter.extractFromUrl(url, { maxRecipes: 10 });
+      console.log("\u{1F4E4} [BACKEND DEBUG] SmartRouter result:", result);
+      if (!result.success) {
+        console.log("\u274C [BACKEND DEBUG] SmartRouter failed:", result.error);
+        console.log("\u274C [BACKEND DEBUG] Failure metadata:", result.metadata);
+        return res.status(500).json({
+          success: false,
+          error: result.error,
+          metadata: result.metadata
+        });
+      }
+      if (result.type === "single-recipe") {
+        console.log(`\u2705 Single recipe extracted: "${result.recipe.title}"`);
+        res.json({
+          success: true,
+          recipe: result.recipe,
+          metadata: result.metadata
+        });
+      } else if (result.type === "multi-recipe") {
+        console.log(`\u2705 Multiple recipes extracted: ${result.recipes.length} recipes`);
+        const bestRecipe = result.recipes.reduce((best, current) => {
+          const currentScore = (current.recipe.ingredients?.length || 0) + (current.recipe.instructions?.length || 0);
+          const bestScore = (best.recipe.ingredients?.length || 0) + (best.recipe.instructions?.length || 0);
+          return currentScore > bestScore ? current : best;
+        });
+        const primaryRecipe = bestRecipe?.recipe;
+        if (!primaryRecipe) {
+          return res.status(500).json({
+            success: false,
+            error: "No recipes could be extracted from the discovered URLs"
+          });
+        }
+        res.json({
+          success: true,
+          recipe: primaryRecipe,
+          allRecipes: result.recipes.map((r) => r.recipe),
+          // Include all full recipes
+          metadata: {
+            ...bestRecipe?.metadata,
+            multipleRecipesFound: true,
+            totalRecipesExtracted: result.recipes.length,
+            allRecipes: result.recipes.map((r) => ({
+              title: r.recipe.title,
+              url: r.url,
+              ingredients: r.recipe.ingredients?.length || 0,
+              instructions: r.recipe.instructions?.length || 0
+            })),
+            extractionSummary: result.summary
+          }
+        });
+      }
+    } catch (error) {
+      console.error("\u{1F6A8} [BACKEND DEBUG] Meal extraction critical error:", error);
+      console.error("\u{1F6A8} [BACKEND DEBUG] Error stack:", error.stack);
+      console.error("\u{1F6A8} [BACKEND DEBUG] Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      res.status(500).json({
+        success: false,
+        error: "Failed to extract meal plan data",
+        details: error.message
+      });
+    }
+  });
+  app2.post("/api/batch-extract-recipes", authenticateToken2, async (req, res) => {
+    try {
+      const { homepageUrl, maxRecipes = 50 } = req.body;
+      if (!homepageUrl) {
+        return res.status(400).json({
+          success: false,
+          error: "Homepage URL is required"
+        });
+      }
+      console.log(`\u{1F680} Starting batch extraction from: ${homepageUrl}`);
+      console.log(`\u{1F4CA} Max recipes: ${maxRecipes}`);
+      const { default: BatchExtractionService2 } = await Promise.resolve().then(() => (init_batchExtractionService(), batchExtractionService_exports));
+      const batchExtractor = new BatchExtractionService2();
+      const result = await batchExtractor.extractRecipesFromSite(homepageUrl, maxRecipes);
+      if (result.success) {
+        console.log(`\u2705 Batch extraction completed: ${result.summary.successfulExtractions} recipes extracted`);
+        res.json(result);
+      } else {
+        console.log(`\u274C Batch extraction failed: ${result.error}`);
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error("\u{1F6A8} Batch extraction error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to start batch extraction",
+        details: error.message
+      });
+    }
+  });
+  app2.get("/api/batch-extract-progress/:sessionId", authenticateToken2, async (req, res) => {
+    try {
+      res.json({
+        message: "Progress tracking not yet implemented",
+        sessionId: req.params.sessionId
+      });
+    } catch (error) {
+      console.error("Progress tracking error:", error);
+      res.status(500).json({ message: "Failed to get progress" });
     }
   });
   app2.get("/api/favorites/:itemType/:itemId/check", authenticateToken2, async (req, res) => {
