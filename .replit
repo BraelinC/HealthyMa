@@ -88,3 +88,6 @@ task = "shell.exec"
 args = "npm run dev"
 
 [agent]
+
+[objectStorage]
+defaultBucketID = "replit-objstore-1f6068f4-c136-4eeb-af7a-320fe6316ee0"

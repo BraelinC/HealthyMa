@@ -6347,26 +6347,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Smart Meal Plan Extractor API endpoint with intelligent routing
   app.post("/api/extract-meal-plan", authenticateToken, async (req: any, res) => {
     try {
+      console.log("🔥 [BACKEND DEBUG] Extract meal plan endpoint hit");
       const { url } = req.body;
       const userId = req.user?.id;
       
+      console.log("🔥 [BACKEND DEBUG] Request details:", {
+        url: url,
+        userId: userId,
+        hasAuth: !!userId,
+        body: req.body
+      });
+      
       if (!userId) {
+        console.log("❌ [BACKEND DEBUG] User not authenticated");
         return res.status(401).json({ message: "User not authenticated" });
       }
       
       if (!url) {
+        console.log("❌ [BACKEND DEBUG] URL is missing from request");
         return res.status(400).json({ message: "URL is required" });
       }
       
-      console.log(`🎯 Starting smart extraction for: ${url}`);
+      console.log(`🎯 [BACKEND DEBUG] Starting smart extraction for: ${url}`);
       
       // Use the smart router to determine extraction strategy
+      console.log("📦 [BACKEND DEBUG] Importing SmartExtractionRouter...");
       const { default: SmartExtractionRouter } = await import('./services/smartExtractionRouter.js');
-      const smartRouter = new SmartExtractionRouter();
+      console.log("📦 [BACKEND DEBUG] SmartExtractionRouter imported successfully");
       
+      const smartRouter = new SmartExtractionRouter();
+      console.log("🔧 [BACKEND DEBUG] SmartRouter instance created");
+      
+      console.log("🚀 [BACKEND DEBUG] Calling extractFromUrl...");
       const result = await smartRouter.extractFromUrl(url, { maxRecipes: 10 });
+      console.log("📤 [BACKEND DEBUG] SmartRouter result:", result);
       
       if (!result.success) {
+        console.log("❌ [BACKEND DEBUG] SmartRouter failed:", result.error);
+        console.log("❌ [BACKEND DEBUG] Failure metadata:", result.metadata);
         return res.status(500).json({
           success: false,
           error: result.error,
@@ -6426,7 +6444,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
     } catch (error) {
-      console.error('🚨 Meal extraction error:', error);
+      console.error('🚨 [BACKEND DEBUG] Meal extraction critical error:', error);
+      console.error('🚨 [BACKEND DEBUG] Error stack:', error.stack);
+      console.error('🚨 [BACKEND DEBUG] Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       res.status(500).json({ 
         success: false, 
         error: 'Failed to extract meal plan data',

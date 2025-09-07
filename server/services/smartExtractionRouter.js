@@ -7,19 +7,24 @@ import TextProcessor from './textProcessor.js';
 
 class SmartExtractionRouter {
   constructor() {
+    console.log('🏗️ [ROUTER DEBUG] SmartExtractionRouter constructor called');
     this.urlDetector = new UrlDetectionService();
     this.urlDiscovery = new UrlDiscoveryService();
+    console.log('🏗️ [ROUTER DEBUG] SmartExtractionRouter initialized successfully');
   }
 
   // Main routing function that determines the extraction strategy
   async extractFromUrl(url, options = {}) {
-    console.log(`🎯 SmartRouter: Starting extraction for ${url}`);
+    console.log(`🎯 [ROUTER DEBUG] SmartRouter: Starting extraction for ${url}`);
+    console.log(`🎯 [ROUTER DEBUG] Options:`, options);
     
     try {
       // Step 1: Analyze the URL to determine type
+      console.log(`🔍 [ROUTER DEBUG] Analyzing URL type...`);
       const urlAnalysis = this.urlDetector.detectUrlType(url);
-      console.log(`📊 URL Analysis: ${urlAnalysis.type} → ${urlAnalysis.action}`);
-      console.log(`💡 Reasoning: ${urlAnalysis.reason}`);
+      console.log(`📊 [ROUTER DEBUG] URL Analysis:`, urlAnalysis);
+      console.log(`📊 [ROUTER DEBUG] URL Analysis: ${urlAnalysis.type} → ${urlAnalysis.action}`);
+      console.log(`💡 [ROUTER DEBUG] Reasoning: ${urlAnalysis.reason}`);
 
       // Step 2: Route based on URL type
       switch (urlAnalysis.action) {

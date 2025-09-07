@@ -667,14 +667,21 @@ export default function CommunityDetailNew() {
   // Recipe extraction mutation
   const extractRecipeMutation = useMutation({
     mutationFn: async () => {
+      console.log("🚀 [EXTRACTOR DEBUG] Starting extraction for URL:", extractorUrl);
       const { apiRequest } = await import("@/lib/queryClient");
       setExtractionInProgress(true);
-      return await apiRequest("/api/extract-meal-plan", {
+      
+      console.log("📤 [EXTRACTOR DEBUG] Making API request to /api/extract-meal-plan");
+      const result = await apiRequest("/api/extract-meal-plan", {
         method: "POST",
         body: JSON.stringify({ url: extractorUrl }),
       });
+      
+      console.log("📥 [EXTRACTOR DEBUG] API response received:", result);
+      return result;
     },
     onSuccess: (result) => {
+      console.log("✅ [EXTRACTOR DEBUG] Extraction successful:", result);
       setExtractedRecipe(result.recipe);
       setAllExtractedRecipes(result.allRecipes || [result.recipe]);
       setSelectedRecipeIndex(0);
@@ -688,6 +695,14 @@ export default function CommunityDetailNew() {
       });
     },
     onError: (error: any) => {
+      console.error("❌ [EXTRACTOR DEBUG] Extraction failed with error:", error);
+      console.error("❌ [EXTRACTOR DEBUG] Error details:", {
+        message: error.message,
+        status: error.status,
+        stack: error.stack,
+        fullError: error
+      });
+      
       setExtractionInProgress(false);
       
       // Check if it's a rate limit error
