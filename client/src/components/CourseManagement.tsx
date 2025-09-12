@@ -315,9 +315,9 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
           </Button>
         </DialogHeader>
 
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col md:flex-row flex-1 min-h-0">
           {/* Left Sidebar - Course List */}
-          <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
+          <div className="w-full md:w-80 bg-gray-800 md:border-r border-gray-700 flex flex-col">
             <div className="p-4 border-b border-gray-700">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-white">Courses</h3>
@@ -401,7 +401,7 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
           </div>
 
           {/* Right Content - Course Details or Creation Form */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="w-full md:flex-1 p-6 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
