@@ -763,8 +763,8 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                       );
                     })()}
 
-                    {/* Module Creation Form or Empty State */}
-                    {showModuleCreationForm ? (
+                    {/* Module Creation Form */}
+                    {showModuleCreationForm && (
                       <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
                         <div className="space-y-4">
                           <div>
@@ -891,19 +891,6 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 border-2 border-dashed border-gray-700 rounded-lg">
-                        <BookOpen className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                        <h4 className="text-lg font-semibold text-white mb-2">No modules yet</h4>
-                        <p className="text-gray-400 mb-4">Create your first module to organize your course content</p>
-                        <Button 
-                          onClick={() => setShowModuleCreationForm(true)}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create First Module
-                        </Button>
                       </div>
                     )}
                   </div>
