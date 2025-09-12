@@ -348,7 +348,7 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                       })()}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-600">
+                  <SelectContent className="bg-gray-800 border-gray-600 z-[100003]">
                     {courses.map((course: Course) => (
                       <SelectItem key={course.id} value={course.id.toString()} className="text-white hover:bg-gray-700">
                         {course.emoji || '📚'} {course.title}
