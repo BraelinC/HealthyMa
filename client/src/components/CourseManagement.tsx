@@ -677,10 +677,10 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                             </div>
                             
                             {/* Lessons within selected module */}
-                            <div className="p-4 space-y-2">
+                            <div className="p-2 md:p-4 space-y-2">
                               {showLessonCreationForm ? (
                                 // Inline Lesson Creation Form
-                                <div className="min-h-0 flex-1">
+                                <div className="min-h-0 flex-1 -mx-2 md:mx-0">
                                   <LessonEditor
                                     communityId={communityId}
                                     courseId={selectedCourseId!}
@@ -703,32 +703,32 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                               ) : (
                                 <>
                                   {currentModule?.lessons?.map((lesson) => (
-                                    <div key={lesson.id} className="flex items-center justify-between py-2 px-3 bg-gray-700 rounded">
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-sm">{lesson.emoji}</span>
-                                        <span className="text-white">{lesson.title}</span>
+                                    <div key={lesson.id} className="flex items-center justify-between py-3 md:py-2 px-3 md:px-3 bg-gray-700 rounded">
+                                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                                        <span className="text-base md:text-sm">{lesson.emoji}</span>
+                                        <span className="text-white truncate">{lesson.title}</span>
                                       </div>
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-3 md:gap-2">
                                         <Button 
                                           variant="ghost" 
                                           size="sm" 
-                                          className="text-gray-400 hover:text-white h-6 w-6 p-0"
+                                          className="text-gray-400 hover:text-white h-8 w-8 md:h-6 md:w-6 p-0"
                                           onClick={() => handleEditLesson(lesson)}
                                           disabled={loadingLessonId === lesson.id}
                                         >
                                           {loadingLessonId === lesson.id ? (
-                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            <Loader2 className="h-4 w-4 md:h-3 md:w-3 animate-spin" />
                                           ) : (
-                                            <Edit className="h-3 w-3" />
+                                            <Edit className="h-4 w-4 md:h-3 md:w-3" />
                                           )}
                                         </Button>
                                         <Button 
                                           variant="ghost" 
                                           size="sm" 
-                                          className="text-gray-400 hover:text-white h-6 w-6 p-0"
+                                          className="text-gray-400 hover:text-white h-8 w-8 md:h-6 md:w-6 p-0"
                                           onClick={() => handleDeleteLesson(lesson.id)}
                                         >
-                                          <Trash2 className="h-3 w-3" />
+                                          <Trash2 className="h-4 w-4 md:h-3 md:w-3" />
                                         </Button>
                                       </div>
                                     </div>
@@ -741,10 +741,10 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                                   <Button 
                                     variant="outline" 
                                     size="sm" 
-                                    className="w-full border-gray-600 text-gray-300 hover:bg-gray-700"
+                                    className="w-full border-gray-600 text-gray-300 hover:bg-gray-700 py-3 md:py-2"
                                     onClick={() => setShowLessonCreationForm(true)}
                                   >
-                                    <Plus className="h-3 w-3 mr-2" />
+                                    <Plus className="h-4 w-4 md:h-3 md:w-3 mr-2" />
                                     Add Lesson
                                   </Button>
                                 </>
