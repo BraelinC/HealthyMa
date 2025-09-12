@@ -25,6 +25,8 @@ import {
   X,
   ChefHat,
   Plus,
+  Star,
+  Users,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -35,6 +37,42 @@ interface InlineLessonEditorProps {
   isCreator: boolean;
   onClose: () => void;
 }
+
+// Helper functions for rich recipe data support
+const formatIngredientForDisplay = (ingredient: string | any): string => {
+  if (typeof ingredient === 'string') return ingredient;
+  // Rich ingredient object format: {id, amount, unit, name}
+  if (ingredient && typeof ingredient === 'object') {
+    const { amount, unit, name } = ingredient;
+    return `${amount || ''} ${unit || ''} ${name || ''}`.trim();
+  }
+  return String(ingredient || '');
+};
+
+const formatInstructionForDisplay = (instruction: string | any, index: number): { step: number, text: string } => {
+  if (typeof instruction === 'string') {
+    return { step: index + 1, text: instruction };
+  }
+  // Rich instruction object format: {id, step, text}
+  if (instruction && typeof instruction === 'object') {
+    return { 
+      step: instruction.step || index + 1, 
+      text: instruction.text || String(instruction) 
+    };
+  }
+  return { step: index + 1, text: String(instruction || '') };
+};
+
+const isRichRecipeData = (lesson: any): boolean => {
+  // Check if ingredients or instructions contain objects rather than strings
+  const hasRichIngredients = lesson?.ingredients?.length > 0 && 
+    typeof lesson.ingredients[0] === 'object' && 
+    lesson.ingredients[0].hasOwnProperty('amount');
+  const hasRichInstructions = lesson?.instructions?.length > 0 && 
+    typeof lesson.instructions[0] === 'object' && 
+    lesson.instructions[0].hasOwnProperty('step');
+  return hasRichIngredients || hasRichInstructions;
+};
 
 export default function InlineLessonEditor({ 
   lesson, 
@@ -159,12 +197,13 @@ export default function InlineLessonEditor({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Section toggles for lesson components
+  // Section toggles for lesson components - use preview sectionStates if available
   const [sectionToggles, setSectionToggles] = useState({
-    image_enabled: !!(lesson?.image_url),
-    video_enabled: !!(lesson?.youtube_video_id),
-    content_enabled: true, // Always start with content enabled
-    recipe_enabled: !!(lesson?.ingredients?.length || lesson?.instructions?.length),
+    image_enabled: lesson?.sectionStates?.mediaVideo ?? !!(lesson?.image_url),
+    video_enabled: lesson?.sectionStates?.mediaVideo ?? !!(lesson?.youtube_video_id),
+    content_enabled: lesson?.sectionStates?.basicInfo ?? true,
+    recipe_enabled: lesson?.sectionStates?.recipeDetails ?? !!(lesson?.ingredients?.length || lesson?.instructions?.length),
+    lesson_sections_enabled: lesson?.sectionStates?.lessonSections ?? true,
   });
 
   // Interactive feature toggles
@@ -611,7 +650,7 @@ export default function InlineLessonEditor({
                         <div key={index} className="flex items-center gap-2">
                           <input
                             type="text"
-                            value={ingredient}
+                            value={formatIngredientForDisplay(ingredient)}
                             onChange={(e) => {
                               const newIngredients = [...lessonData.ingredients];
                               newIngredients[index] = e.target.value;
@@ -649,22 +688,24 @@ export default function InlineLessonEditor({
 
                   <TabsContent value="instructions" className="p-4 pt-3">
                     <div className="space-y-3">
-                      {lessonData.instructions.map((instruction, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          <span className="flex-shrink-0 w-6 h-6 bg-purple-600 rounded-full text-white flex items-center justify-center text-xs mt-1">
-                            {index + 1}
-                          </span>
-                          <textarea
-                            value={instruction}
-                            onChange={(e) => {
-                              const newInstructions = [...lessonData.instructions];
-                              newInstructions[index] = e.target.value;
-                              setLessonData({...lessonData, instructions: newInstructions});
-                            }}
-                            className="flex-1 bg-gray-700 text-white rounded px-3 py-2 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none resize-none"
-                            placeholder="Enter instruction step..."
-                            rows={2}
-                          />
+                      {lessonData.instructions.map((instruction, index) => {
+                        const formattedInstruction = formatInstructionForDisplay(instruction, index);
+                        return (
+                          <div key={index} className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-6 h-6 bg-purple-600 rounded-full text-white flex items-center justify-center text-xs mt-1">
+                              {formattedInstruction.step}
+                            </span>
+                            <textarea
+                              value={formattedInstruction.text}
+                              onChange={(e) => {
+                                const newInstructions = [...lessonData.instructions];
+                                newInstructions[index] = e.target.value;
+                                setLessonData({...lessonData, instructions: newInstructions});
+                              }}
+                              className="flex-1 bg-gray-700 text-white rounded px-3 py-2 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none resize-none"
+                              placeholder="Enter instruction step..."
+                              rows={2}
+                            />
                           <Button
                             onClick={() => {
                               const newInstructions = lessonData.instructions.filter((_, i) => i !== index);
@@ -677,7 +718,8 @@ export default function InlineLessonEditor({
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
-                      ))}
+                        );
+                      })}
                       <Button
                         onClick={() => {
                           setLessonData({...lessonData, instructions: [...lessonData.instructions, ""]});
@@ -836,6 +878,55 @@ export default function InlineLessonEditor({
                 {/* Recipe Data Display */}
                 {sectionToggles.recipe_enabled && (
                   <div className="mt-6">
+                    {/* Recipe Basics Display */}
+                    {(lessonData.recipe_name || lessonData.meal_type || lessonData.cuisine || lessonData.difficulty_level) && (
+                      <div className="mb-4 p-4 bg-gray-700 rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-lg font-semibold text-white">
+                            {lessonData.recipe_name || lessonData.title}
+                          </h3>
+                          {lessonData.difficulty_level && (
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < lessonData.difficulty_level
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "text-gray-600"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {lessonData.meal_type && (
+                            <Badge variant="outline" className="border-purple-500 text-purple-400">
+                              {lessonData.meal_type}
+                            </Badge>
+                          )}
+                          {lessonData.cuisine && (
+                            <Badge variant="outline" className="border-green-500 text-green-400">
+                              {lessonData.cuisine}
+                            </Badge>
+                          )}
+                          {(lessonData.prep_time || lessonData.cook_time) && (
+                            <Badge variant="outline" className="border-blue-500 text-blue-400">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {((lessonData.prep_time || 0) + (lessonData.cook_time || 0))} min
+                            </Badge>
+                          )}
+                          {lessonData.servings && (
+                            <Badge variant="outline" className="border-orange-500 text-orange-400">
+                              <Users className="w-3 h-3 mr-1" />
+                              {lessonData.servings} servings
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
                     <Tabs defaultValue="ingredients" className="w-full">
                       <TabsList className="w-full grid grid-cols-3 h-10 bg-gray-700 rounded-lg">
                         <TabsTrigger value="ingredients" className="text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-300">Ingredients</TabsTrigger>
@@ -849,7 +940,7 @@ export default function InlineLessonEditor({
                             {lessonData.ingredients.map((ingredient, index) => (
                               <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
                                 <span className="text-purple-400">•</span>
-                                {ingredient}
+                                {formatIngredientForDisplay(ingredient)}
                               </li>
                             ))}
                           </ul>
@@ -861,14 +952,17 @@ export default function InlineLessonEditor({
                       <TabsContent value="instructions" className="p-4 pt-3">
                         {lessonData.instructions.length > 0 ? (
                           <ol className="space-y-3">
-                            {lessonData.instructions.map((step, index) => (
-                              <li key={index} className="flex gap-2 text-sm">
-                                <span className="flex-shrink-0 w-5 h-5 bg-purple-600 rounded-full text-white flex items-center justify-center text-xs">
-                                  {index + 1}
-                                </span>
-                                <span className="text-gray-300">{step}</span>
-                              </li>
-                            ))}
+                            {lessonData.instructions.map((step, index) => {
+                              const formattedInstruction = formatInstructionForDisplay(step, index);
+                              return (
+                                <li key={index} className="flex gap-2 text-sm">
+                                  <span className="flex-shrink-0 w-5 h-5 bg-purple-600 rounded-full text-white flex items-center justify-center text-xs">
+                                    {formattedInstruction.step}
+                                  </span>
+                                  <span className="text-gray-300">{formattedInstruction.text}</span>
+                                </li>
+                              );
+                            })}
                           </ol>
                         ) : (
                           <p className="text-gray-500 text-sm text-center py-4">No instructions added yet</p>
@@ -900,6 +994,28 @@ export default function InlineLessonEditor({
                         )}
                       </TabsContent>
                     </Tabs>
+                  </div>
+                )}
+
+                {/* Lesson Sections Display */}
+                {sectionToggles.lesson_sections_enabled && lessonData.lesson_sections && lessonData.lesson_sections.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Lesson Sections</h3>
+                    <div className="space-y-4">
+                      {lessonData.lesson_sections.map((section: any, index: number) => (
+                        <div key={index} className="bg-gray-700 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-2xl">{section.emoji || '📝'}</span>
+                            <h4 className="text-white font-medium">{section.title || `Section ${index + 1}`}</h4>
+                          </div>
+                          {section.content && (
+                            <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                              {section.content}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

@@ -29,6 +29,7 @@ import PostDetail from "@/pages/PostDetail";
 import CreatorHub from "@/pages/CreatorHub";
 import CommunityManage from "@/pages/CommunityManage";
 import LessonEditor from "@/pages/LessonEditor";
+import LessonPreview from "@/components/community/LessonPreview";
 import Favorites from "@/pages/Favorites";
 import BatchExtractionTest from "@/pages/BatchExtractionTest";
 
@@ -306,6 +307,7 @@ function Router() {
         )} />
         {/* Full-screen lesson editor without header/footer */}
         <Route path="/community/:communityId/lesson/:lessonId" component={LessonEditor} />
+        <Route path="/community/:communityId/lesson/:lessonId/preview" component={LessonPreview} />
         <Route component={() => (
           <>
             <AppHeader />

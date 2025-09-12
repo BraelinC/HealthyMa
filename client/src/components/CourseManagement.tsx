@@ -12,7 +12,8 @@ import {
   ChevronUp,
   GripVertical,
   Edit,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -58,6 +59,11 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [isCreatingModule, setIsCreatingModule] = useState(false);
   const [showLessonCreationForm, setShowLessonCreationForm] = useState(false);
+
+  // Lesson editing state
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [selectedLessonData, setSelectedLessonData] = useState<any>(null);
+  const [loadingLessonId, setLoadingLessonId] = useState<string | null>(null);
 
   // Fetch courses for this community
   const { data: courses = [], isLoading } = useQuery({
@@ -151,6 +157,106 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
       });
     }
   });
+
+  // Lesson editing function
+  const handleEditLesson = async (lesson: any) => {
+    console.log('🔍 Edit button clicked for lesson:', lesson);
+    console.log('🏠 Current communityId:', communityId);
+    console.log('📚 Current courseId:', selectedCourseId);
+    console.log('📖 Current moduleId:', selectedModuleId);
+    
+    // Set loading state
+    setLoadingLessonId(lesson.id);
+    
+    try {
+      // Fetch complete lesson data from API
+      const token = localStorage.getItem('auth_token');
+      console.log('🔐 Token exists:', !!token);
+      
+      const apiUrl = `/api/communities/${communityId}/lessons/${lesson.id}`;
+      console.log('🌐 Making API call to:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📡 API Response status:', response.status);
+      console.log('📡 API Response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('❌ API Error response:', errorText);
+        throw new Error(`Failed to fetch lesson data (${response.status}): ${errorText}`);
+      }
+      
+      const lessonData = await response.json();
+      console.log('✅ Fetched lesson data:', lessonData);
+      
+      // Set selected lesson data and show editor
+      console.log('📝 Setting lesson data and showing form...');
+      setSelectedLessonData(lessonData);
+      setEditingLessonId(lesson.id);
+      setShowLessonCreationForm(true);
+      
+      console.log('✅ Edit lesson process completed');
+      console.log('🎯 showLessonCreationForm should now be:', true);
+      console.log('🎯 selectedLessonData should now be:', lessonData);
+      console.log('🎯 editingLessonId should now be:', lesson.id);
+      
+    } catch (error) {
+      console.error('❌ Error in handleEditLesson:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to load lesson data",
+        variant: "destructive"
+      });
+    } finally {
+      // Clear loading state
+      setLoadingLessonId(null);
+    }
+  };
+
+  // Delete lesson mutation
+  const deleteLessonMutation = useMutation({
+    mutationFn: async (lessonId: string) => {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/communities/${communityId}/lessons/${lessonId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to delete lesson');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Lesson Deleted",
+        description: "The lesson has been deleted successfully."
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/communities/${communityId}/courses`]
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete lesson",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleDeleteLesson = (lessonId: string) => {
+    if (confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
+      deleteLessonMutation.mutate(lessonId);
+    }
+  };
 
 
   const handleDragStart = (course: Course) => {
@@ -535,10 +641,17 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                                     communityId={communityId}
                                     courseId={selectedCourseId!}
                                     moduleId={selectedModuleId!}
+                                    lessonData={selectedLessonData}
                                     isInline={true}
-                                    onClose={() => setShowLessonCreationForm(false)}
+                                    onClose={() => {
+                                      setShowLessonCreationForm(false);
+                                      setEditingLessonId(null);
+                                      setSelectedLessonData(null);
+                                    }}
                                     onSave={() => {
                                       setShowLessonCreationForm(false);
+                                      setEditingLessonId(null);
+                                      setSelectedLessonData(null);
                                       // Cache invalidation is handled by LessonEditor
                                     }}
                                   />
@@ -552,10 +665,25 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                                         <span className="text-white">{lesson.title}</span>
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white h-6 w-6 p-0">
-                                          <Edit className="h-3 w-3" />
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="text-gray-400 hover:text-white h-6 w-6 p-0"
+                                          onClick={() => handleEditLesson(lesson)}
+                                          disabled={loadingLessonId === lesson.id}
+                                        >
+                                          {loadingLessonId === lesson.id ? (
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                          ) : (
+                                            <Edit className="h-3 w-3" />
+                                          )}
                                         </Button>
-                                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white h-6 w-6 p-0">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="text-gray-400 hover:text-white h-6 w-6 p-0"
+                                          onClick={() => handleDeleteLesson(lesson.id)}
+                                        >
                                           <Trash2 className="h-3 w-3" />
                                         </Button>
                                       </div>

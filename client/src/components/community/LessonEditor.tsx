@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus,
   Save,
@@ -43,10 +44,13 @@ import {
   GripVertical,
   Trash2,
   Edit,
+  Eye,
   Video,
   Youtube,
   Image,
   Upload,
+  Star,
+  Minus,
 } from "lucide-react";
 
 interface Lesson {
@@ -59,8 +63,12 @@ interface Lesson {
   video_url?: string;
   youtube_video_id?: string;
   image_url?: string;
-  ingredients: string[];
-  instructions: string[];
+  // Rich recipe data structure
+  recipe_name?: string;
+  meal_type?: string;
+  cuisine?: string;
+  ingredients: Ingredient[];
+  instructions: Instruction[];
   prep_time: number;
   cook_time: number;
   servings: number;
@@ -87,8 +95,22 @@ interface LessonSection {
   is_visible?: boolean;
 }
 
+interface Ingredient {
+  id: string;
+  amount: string;
+  unit: string;
+  name: string;
+}
+
+interface Instruction {
+  id: string;
+  step: number;
+  text: string;
+}
+
 interface LessonEditorProps {
   lesson?: Lesson;
+  lessonData?: any; // For editing existing lessons
   communityId: string;
   courseId: number;
   moduleId?: number;
@@ -96,6 +118,64 @@ interface LessonEditorProps {
   onSave?: (lesson: Lesson) => void;
   isInline?: boolean;
 }
+
+// Smart unit suggestions based on ingredient type
+const getUnitSuggestions = (ingredientName: string): string[] => {
+  const ingredient = ingredientName.toLowerCase();
+  
+  // Liquids
+  if (ingredient.includes('oil') || ingredient.includes('water') || ingredient.includes('milk') || 
+      ingredient.includes('cream') || ingredient.includes('juice') || ingredient.includes('vinegar') ||
+      ingredient.includes('wine') || ingredient.includes('broth') || ingredient.includes('stock') ||
+      ingredient.includes('sauce') || ingredient.includes('syrup')) {
+    return ['cup', 'fl oz', 'tbsp', 'tsp', 'ml'];
+  }
+  
+  // Spices and small amounts
+  if (ingredient.includes('salt') || ingredient.includes('pepper') || ingredient.includes('garlic powder') ||
+      ingredient.includes('onion powder') || ingredient.includes('paprika') || ingredient.includes('cumin') ||
+      ingredient.includes('oregano') || ingredient.includes('basil') || ingredient.includes('thyme') ||
+      ingredient.includes('cinnamon') || ingredient.includes('nutmeg') || ingredient.includes('ginger') ||
+      ingredient.includes('cayenne') || ingredient.includes('chili powder')) {
+    return ['tsp', 'tbsp', 'pinch', 'dash', 'g'];
+  }
+  
+  // Meat and proteins
+  if (ingredient.includes('chicken') || ingredient.includes('beef') || ingredient.includes('pork') ||
+      ingredient.includes('fish') || ingredient.includes('salmon') || ingredient.includes('turkey') ||
+      ingredient.includes('lamb') || ingredient.includes('shrimp') || ingredient.includes('bacon')) {
+    return ['lb', 'oz', 'kg', 'g', 'piece'];
+  }
+  
+  // Vegetables (whole)
+  if (ingredient.includes('onion') || ingredient.includes('potato') || ingredient.includes('tomato') ||
+      ingredient.includes('carrot') || ingredient.includes('bell pepper') || ingredient.includes('cucumber') ||
+      ingredient.includes('avocado') || ingredient.includes('lemon') || ingredient.includes('lime') ||
+      ingredient.includes('apple') || ingredient.includes('banana')) {
+    return ['piece', 'cup', 'lb', 'oz', 'large'];
+  }
+  
+  // Flour and powders
+  if (ingredient.includes('flour') || ingredient.includes('sugar') || ingredient.includes('powder') ||
+      ingredient.includes('cornstarch') || ingredient.includes('cocoa')) {
+    return ['cup', 'tbsp', 'tsp', 'lb', 'oz'];
+  }
+  
+  // Eggs and dairy
+  if (ingredient.includes('egg') || ingredient.includes('butter') || ingredient.includes('cheese') ||
+      ingredient.includes('yogurt') || ingredient.includes('sour cream')) {
+    return ['piece', 'cup', 'tbsp', 'oz', 'lb'];
+  }
+  
+  // Rice, pasta, grains
+  if (ingredient.includes('rice') || ingredient.includes('pasta') || ingredient.includes('quinoa') ||
+      ingredient.includes('oats') || ingredient.includes('barley') || ingredient.includes('noodles')) {
+    return ['cup', 'lb', 'oz', 'pkg', 'g'];
+  }
+  
+  // Default suggestions
+  return ['cup', 'tbsp', 'tsp', 'oz', 'lb'];
+};
 
 // Template content for different section types
 const SECTION_TEMPLATES: Record<string, { title: string; content: string; icon: any }> = {
@@ -237,6 +317,7 @@ const DEFAULT_SECTIONS: LessonSection[] = [
 
 export function LessonEditor({
   lesson,
+  lessonData: existingLessonData,
   communityId,
   courseId,
   moduleId,
@@ -247,7 +328,7 @@ export function LessonEditor({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [lessonData, setLessonData] = useState<Lesson>(
-    lesson || {
+    existingLessonData || lesson || {
       course_id: courseId,
       module_id: moduleId,
       title: "",
@@ -256,8 +337,11 @@ export function LessonEditor({
       video_url: "",
       youtube_video_id: "",
       image_url: "",
-      ingredients: [],
-      instructions: [],
+      recipe_name: "",
+      meal_type: "Dinner",
+      cuisine: "",
+      ingredients: [{ id: '1', amount: '', unit: '', name: '' }],
+      instructions: [{ id: '1', step: 1, text: '' }],
       prep_time: 15,
       cook_time: 30,
       servings: 4,
@@ -270,6 +354,163 @@ export function LessonEditor({
   );
   const [selectedTemplate, setSelectedTemplate] = useState<string>("meal_prep");
   const [editingSection, setEditingSection] = useState<number | null>(null);
+  const [sectionStates, setSectionStates] = useState({
+    basicInfo: true,
+    mediaVideo: true,
+    recipeDetails: true,
+    lessonSections: true,
+  });
+
+  // Recipe tab management
+  const [activeTab, setActiveTab] = useState("basics");
+
+  // Preview window tracking for real-time updates
+  const [previewIsOpen, setPreviewIsOpen] = useState(false);
+
+  // Handle when existing lesson data changes (for editing)
+  useEffect(() => {
+    console.log('🔄 existingLessonData changed:', existingLessonData);
+    if (existingLessonData) {
+      console.log('📝 Updating lesson data with existing data...');
+      setLessonData(prevData => {
+        const updatedData = {
+          ...prevData,
+          ...existingLessonData,
+          // Ensure arrays are properly initialized
+          ingredients: existingLessonData.ingredients?.length > 0 
+            ? existingLessonData.ingredients 
+            : [{ id: '1', amount: '', unit: '', name: '' }],
+          instructions: existingLessonData.instructions?.length > 0 
+            ? existingLessonData.instructions 
+            : [{ id: '1', step: 1, text: '' }],
+          sections: existingLessonData.sections?.length > 0 
+            ? existingLessonData.sections 
+            : DEFAULT_SECTIONS,
+        };
+        console.log('✅ Updated lesson data:', updatedData);
+        return updatedData;
+      });
+
+      // Update section states based on what data exists in the lesson
+      console.log('🎛️ Determining section states based on lesson data...');
+      const newSectionStates = {
+        // Basic Info: Always show if we have title or description
+        basicInfo: !!(existingLessonData.title || existingLessonData.description),
+        
+        // Media & Video: Show if we have image or video
+        mediaVideo: !!(existingLessonData.image_url || existingLessonData.youtube_video_id || existingLessonData.video_url),
+        
+        // Recipe Details: Show if we have recipe data
+        recipeDetails: !!(
+          existingLessonData.recipe_name ||
+          existingLessonData.meal_type ||
+          existingLessonData.cuisine ||
+          existingLessonData.ingredients?.length > 0 ||
+          existingLessonData.instructions?.length > 0 ||
+          existingLessonData.prep_time ||
+          existingLessonData.cook_time ||
+          existingLessonData.servings
+        ),
+        
+        // Lesson Sections: Show if we have lesson sections with actual content
+        lessonSections: !!(existingLessonData.sections?.length > 0 && 
+          existingLessonData.sections.some((section: any) => 
+            section.content && section.content.trim().length > 0
+          ))
+      };
+      
+      console.log('🎛️ New section states:', newSectionStates);
+      setSectionStates(newSectionStates);
+
+      // Set the active tab based on what data exists
+      if (existingLessonData.ingredients?.length > 0 || existingLessonData.instructions?.length > 0) {
+        console.log('📝 Setting active tab to ingredients (has recipe data)');
+        setActiveTab("ingredients");
+      } else if (existingLessonData.recipe_name || existingLessonData.cuisine) {
+        console.log('📝 Setting active tab to basics (has recipe basics)');
+        setActiveTab("basics");
+      } else {
+        console.log('📝 Keeping default active tab (basics)');
+        setActiveTab("basics");
+      }
+    }
+  }, [existingLessonData]);
+
+  // Preview functionality
+  const collectCompletePreviewData = () => {
+    return {
+      // Basic Info
+      title: lessonData.title,
+      description: lessonData.description,
+      emoji: lessonData.emoji,
+      
+      // Media & Video
+      image_url: lessonData.image_url,
+      youtube_video_id: lessonData.youtube_video_id,
+      
+      // Recipe Details (Rich Format)
+      recipe_name: lessonData.recipe_name,
+      meal_type: lessonData.meal_type,
+      cuisine: lessonData.cuisine,
+      difficulty_level: lessonData.difficulty_level,
+      prep_time: lessonData.prep_time,
+      cook_time: lessonData.cook_time,
+      servings: lessonData.servings,
+      
+      // Rich Recipe Data
+      ingredients: lessonData.ingredients,
+      instructions: lessonData.instructions,
+      
+      // Lesson Sections
+      sections: lessonData.sections,
+      
+      // Section Toggle States
+      sectionStates: {
+        basicInfo: sectionStates.basicInfo,
+        mediaVideo: sectionStates.mediaVideo,
+        recipeDetails: sectionStates.recipeDetails,
+        lessonSections: sectionStates.lessonSections,
+      },
+      
+      // Lesson metadata
+      id: lessonData.id,
+      course_id: lessonData.course_id,
+      community_id: communityId,
+    };
+  };
+
+  const handlePreview = () => {
+    const previewData = collectCompletePreviewData();
+    const previewId = lessonData.id || 'new';
+    
+    // Save preview data to sessionStorage
+    sessionStorage.setItem(`lesson-preview-${previewId}`, JSON.stringify(previewData));
+    
+    // Track that preview is open for real-time updates
+    setPreviewIsOpen(true);
+    
+    // Open preview in new tab and focus it
+    const previewUrl = `/community/${communityId}/lesson/${previewId}/preview`;
+    const previewWindow = window.open(previewUrl, '_blank');
+    
+    // Focus the preview window to bring it to front
+    if (previewWindow) {
+      previewWindow.focus();
+    }
+  };
+
+  // Auto-save preview data for real-time updates
+  useEffect(() => {
+    if (previewIsOpen) {
+      const previewData = collectCompletePreviewData();
+      const previewId = lessonData.id || 'new';
+      sessionStorage.setItem(`lesson-preview-${previewId}`, JSON.stringify(previewData));
+      
+      // Also trigger a custom event for cross-tab communication
+      const event = new CustomEvent('lessonPreviewUpdate', { detail: previewData });
+      window.dispatchEvent(event);
+    }
+  }, [lessonData, sectionStates, previewIsOpen]);
 
   // Save lesson mutation
   const saveLessonMutation = useMutation({
@@ -298,6 +539,73 @@ export function LessonEditor({
       onClose();
     },
   });
+
+  // Update section state helper function
+  const updateSectionState = (sectionKey: keyof typeof sectionStates, enabled: boolean) => {
+    setSectionStates(prev => ({
+      ...prev,
+      [sectionKey]: enabled
+    }));
+  };
+
+  // Recipe ingredient management
+  const addIngredient = () => {
+    const newId = (lessonData.ingredients.length + 1).toString();
+    setLessonData({
+      ...lessonData,
+      ingredients: [...lessonData.ingredients, { id: newId, amount: '', unit: '', name: '' }]
+    });
+  };
+
+  const removeIngredient = (id: string) => {
+    if (lessonData.ingredients.length > 1) {
+      setLessonData({
+        ...lessonData,
+        ingredients: lessonData.ingredients.filter(ing => ing.id !== id)
+      });
+    }
+  };
+
+  const updateIngredient = (id: string, field: keyof Ingredient, value: string) => {
+    setLessonData({
+      ...lessonData,
+      ingredients: lessonData.ingredients.map(ing => 
+        ing.id === id ? { ...ing, [field]: value } : ing
+      )
+    });
+  };
+
+  // Recipe instruction management  
+  const addInstruction = () => {
+    const newId = (lessonData.instructions.length + 1).toString();
+    const newStep = lessonData.instructions.length + 1;
+    setLessonData({
+      ...lessonData,
+      instructions: [...lessonData.instructions, { id: newId, step: newStep, text: '' }]
+    });
+  };
+
+  const removeInstruction = (id: string) => {
+    if (lessonData.instructions.length > 1) {
+      const updatedInstructions = lessonData.instructions
+        .filter(inst => inst.id !== id)
+        .map((inst, index) => ({ ...inst, step: index + 1 }));
+      
+      setLessonData({
+        ...lessonData,
+        instructions: updatedInstructions
+      });
+    }
+  };
+
+  const updateInstruction = (id: string, text: string) => {
+    setLessonData({
+      ...lessonData,
+      instructions: lessonData.instructions.map(inst => 
+        inst.id === id ? { ...inst, text } : inst
+      )
+    });
+  };
 
   // Add a new section
   const addSection = (type: "about" | "custom") => {
@@ -344,47 +652,6 @@ export function LessonEditor({
     setLessonData({ ...lessonData, sections });
   };
 
-  // Add ingredient
-  const addIngredient = () => {
-    setLessonData({
-      ...lessonData,
-      ingredients: [...lessonData.ingredients, ""],
-    });
-  };
-
-  // Update ingredient
-  const updateIngredient = (index: number, value: string) => {
-    const ingredients = [...lessonData.ingredients];
-    ingredients[index] = value;
-    setLessonData({ ...lessonData, ingredients });
-  };
-
-  // Delete ingredient
-  const deleteIngredient = (index: number) => {
-    const ingredients = lessonData.ingredients.filter((_, i) => i !== index);
-    setLessonData({ ...lessonData, ingredients });
-  };
-
-  // Add instruction
-  const addInstruction = () => {
-    setLessonData({
-      ...lessonData,
-      instructions: [...lessonData.instructions, ""],
-    });
-  };
-
-  // Update instruction
-  const updateInstruction = (index: number, value: string) => {
-    const instructions = [...lessonData.instructions];
-    instructions[index] = value;
-    setLessonData({ ...lessonData, instructions });
-  };
-
-  // Delete instruction
-  const deleteInstruction = (index: number) => {
-    const instructions = lessonData.instructions.filter((_, i) => i !== index);
-    setLessonData({ ...lessonData, instructions });
-  };
 
   const containerContent = (
     <div className={`bg-gray-800 rounded-lg w-full ${isInline ? 'max-h-[80vh] h-[80vh]' : 'max-w-7xl h-[90vh]'} flex flex-col`}>
@@ -403,6 +670,14 @@ export function LessonEditor({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                onClick={handlePreview}
+                variant="outline"
+                className="border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
               <Button
                 onClick={() => saveLessonMutation.mutate(lessonData)}
                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -424,9 +699,17 @@ export function LessonEditor({
                 {/* Basic Info */}
                 <Card className="bg-gray-900 border-gray-700">
                   <CardHeader>
-                    <CardTitle className="text-white">Basic Information</CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-white">Basic Information</CardTitle>
+                      <Switch
+                        checked={sectionStates.basicInfo}
+                        onCheckedChange={(checked) => updateSectionState('basicInfo', checked)}
+                        className="data-[state=checked]:bg-purple-600"
+                      />
+                    </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  {sectionStates.basicInfo && (
+                    <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -472,126 +755,25 @@ export function LessonEditor({
                         rows={3}
                       />
                     </div>
-                  </CardContent>
+                    </CardContent>
+                  )}
                 </Card>
 
-                {/* Lesson Sections */}
-                <Card className="bg-gray-900 border-gray-700">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-white">Lesson Sections</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                          <SelectTrigger className="bg-gray-700 border-gray-600 text-white w-48">
-                            <SelectValue placeholder="Select template" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-gray-700 border-gray-600" style={{zIndex: 100006}}>
-                            {Object.entries(SECTION_TEMPLATES).map(([key, template]) => (
-                              <SelectItem key={key} value={key} className="text-white">
-                                {template.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          onClick={() => addSection("about")}
-                          size="sm"
-                          className="bg-purple-600 hover:bg-purple-700 text-white"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Section
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {lessonData.sections?.map((section, index) => (
-                      <div
-                        key={index}
-                        className="bg-gray-800 border border-gray-700 rounded-lg p-4"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <GripVertical className="h-4 w-4 text-gray-400" />
-                            {editingSection === index ? (
-                              <Input
-                                value={section.title}
-                                onChange={(e) =>
-                                  updateSection(index, { title: e.target.value })
-                                }
-                                className="bg-gray-700 border-gray-600 text-white"
-                                autoFocus
-                              />
-                            ) : (
-                              <h3 className="font-medium text-white">{section.title}</h3>
-                            )}
-                            {section.template_id && (
-                              <Badge className="bg-purple-600 text-white text-xs">
-                                {SECTION_TEMPLATES[section.template_id]?.title}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              onClick={() => moveSection(index, "up")}
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-400 p-1"
-                              disabled={index === 0}
-                            >
-                              ↑
-                            </Button>
-                            <Button
-                              onClick={() => moveSection(index, "down")}
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-400 p-1"
-                              disabled={index === (lessonData.sections?.length || 0) - 1}
-                            >
-                              ↓
-                            </Button>
-                            <Button
-                              onClick={() => setEditingSection(editingSection === index ? null : index)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-400 p-1"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              onClick={() => deleteSection(index)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-400 p-1"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        {editingSection === index ? (
-                          <Textarea
-                            value={section.content}
-                            onChange={(e) => updateSection(index, { content: e.target.value })}
-                            className="bg-gray-700 border-gray-600 text-white"
-                            rows={6}
-                            placeholder="Enter section content..."
-                          />
-                        ) : (
-                          <div className="text-gray-300 whitespace-pre-wrap text-sm">
-                            {section.content || "No content yet..."}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
 
           {/* 2. Media & Video Section */}
           <Card className="bg-gray-900 border-gray-700">
             <CardHeader>
-              <CardTitle className="text-white">Media & Video</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">Media & Video</CardTitle>
+                <Switch
+                  checked={sectionStates.mediaVideo}
+                  onCheckedChange={(checked) => updateSectionState('mediaVideo', checked)}
+                  className="data-[state=checked]:bg-purple-600"
+                />
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            {sectionStates.mediaVideo && (
+              <CardContent className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   YouTube Video ID
@@ -649,164 +831,253 @@ export function LessonEditor({
                   />
                 </div>
               )}
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
 
-          {/* 3. Recipe Details Section */}
-                {/* Cooking Info */}
-                <Card className="bg-gray-900 border-gray-700">
-                  <CardHeader>
-                    <CardTitle className="text-white">Cooking Information</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-4 gap-4">
+          {/* 3. Recipe Details Section - PLACEHOLDER FOR 3-TAB SYSTEM */}
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">Recipe Details</CardTitle>
+                <Switch
+                  checked={sectionStates.recipeDetails}
+                  onCheckedChange={(checked) => updateSectionState('recipeDetails', checked)}
+                  className="data-[state=checked]:bg-purple-600"
+                />
+              </div>
+            </CardHeader>
+            {sectionStates.recipeDetails && (
+              <CardContent className="p-6">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid grid-cols-3 mb-6 bg-gray-800 border border-gray-600">
+                    <TabsTrigger value="basics" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">Recipe Basics</TabsTrigger>
+                    <TabsTrigger value="ingredients" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">Ingredients</TabsTrigger>
+                    <TabsTrigger value="instructions" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">Instructions</TabsTrigger>
+                  </TabsList>
+
+                  {/* Recipe Basics Tab */}
+                  <TabsContent value="basics" className="space-y-6">
+                    <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Prep Time (min)
+                        <label className="text-sm font-medium text-gray-300 mb-2 block">
+                          Recipe Name
                         </label>
                         <Input
-                          type="number"
-                          value={lessonData.prep_time}
-                          onChange={(e) =>
-                            setLessonData({ ...lessonData, prep_time: parseInt(e.target.value) || 0 })
-                          }
+                          placeholder="Enter recipe name..."
+                          value={lessonData.recipe_name || ""}
+                          onChange={(e) => setLessonData({ ...lessonData, recipe_name: e.target.value })}
                           className="bg-gray-700 border-gray-600 text-white"
                         />
                       </div>
+
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Cook Time (min)
+                        <label className="text-sm font-medium text-gray-300 mb-2 block">
+                          Meal Type
                         </label>
-                        <Input
-                          type="number"
-                          value={lessonData.cook_time}
-                          onChange={(e) =>
-                            setLessonData({ ...lessonData, cook_time: parseInt(e.target.value) || 0 })
-                          }
-                          className="bg-gray-700 border-gray-600 text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Servings
-                        </label>
-                        <Input
-                          type="number"
-                          value={lessonData.servings}
-                          onChange={(e) =>
-                            setLessonData({ ...lessonData, servings: parseInt(e.target.value) || 0 })
-                          }
-                          className="bg-gray-700 border-gray-600 text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Difficulty (1-5)
-                        </label>
-                        <Select
-                          value={lessonData.difficulty_level.toString()}
-                          onValueChange={(value) =>
-                            setLessonData({ ...lessonData, difficulty_level: parseInt(value) })
-                          }
-                        >
+                        <Select value={lessonData.meal_type} onValueChange={(value) => setLessonData({ ...lessonData, meal_type: value })}>
                           <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                            <SelectValue />
+                            <SelectValue placeholder="Select meal type..." />
                           </SelectTrigger>
-                          <SelectContent className="bg-gray-700 border-gray-600" style={{zIndex: 100006}}>
-                            {[1, 2, 3, 4, 5].map((level) => (
-                              <SelectItem key={level} value={level.toString()} className="text-white">
-                                {"⭐".repeat(level)}
-                              </SelectItem>
-                            ))}
+                          <SelectContent className="bg-gray-700 border-gray-600" style={{zIndex: 100008}}>
+                            <SelectItem value="Breakfast" className="text-white">🍳 Breakfast</SelectItem>
+                            <SelectItem value="Lunch" className="text-white">🥗 Lunch</SelectItem>
+                            <SelectItem value="Dinner" className="text-white">🍽️ Dinner</SelectItem>
+                            <SelectItem value="Snack" className="text-white">🍎 Snack</SelectItem>
+                            <SelectItem value="Dessert" className="text-white">🍰 Dessert</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
 
-                {/* Ingredients */}
-                <Card className="bg-gray-900 border-gray-700">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-white">Ingredients</CardTitle>
-                      <Button
-                        onClick={addIngredient}
-                        size="sm"
-                        className="bg-purple-600 hover:bg-purple-700 text-white"
-                      >
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-300 mb-2 block">
+                            <Clock className="h-4 w-4 inline mr-1" />
+                            Prep Time (min)
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="15"
+                            value={lessonData.prep_time}
+                            onChange={(e) => setLessonData({ ...lessonData, prep_time: parseInt(e.target.value) || 0 })}
+                            className="bg-gray-700 border-gray-600 text-white"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium text-gray-300 mb-2 block">
+                            <ChefHat className="h-4 w-4 inline mr-1" />
+                            Cook Time (min)
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="30"
+                            value={lessonData.cook_time}
+                            onChange={(e) => setLessonData({ ...lessonData, cook_time: parseInt(e.target.value) || 0 })}
+                            className="bg-gray-700 border-gray-600 text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-300 mb-2 block">
+                            <Users className="h-4 w-4 inline mr-1" />
+                            Servings
+                          </label>
+                          <Input
+                            type="number"
+                            value={lessonData.servings}
+                            onChange={(e) => setLessonData({ ...lessonData, servings: parseInt(e.target.value) || 0 })}
+                            className="bg-gray-700 border-gray-600 text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-300 mb-2 block">
+                            Cuisine Type
+                          </label>
+                          <Input
+                            placeholder="e.g., Italian, Mexican, Asian..."
+                            value={lessonData.cuisine || ""}
+                            onChange={(e) => setLessonData({ ...lessonData, cuisine: e.target.value })}
+                            className="bg-gray-700 border-gray-600 text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-300 mb-2 block">
+                            <Star className="h-4 w-4 inline mr-1" />
+                            Difficulty (1-5)
+                          </label>
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((level) => (
+                              <Button
+                                key={level}
+                                type="button"
+                                variant={lessonData.difficulty_level >= level ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setLessonData({ ...lessonData, difficulty_level: level })}
+                                className={`
+                                  ${lessonData.difficulty_level >= level 
+                                    ? 'bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-500' 
+                                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 border-gray-600'
+                                  }
+                                `}
+                              >
+                                <Star className={`h-3 w-3 ${lessonData.difficulty_level >= level ? 'fill-current' : ''}`} />
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Ingredients Tab */}
+                  <TabsContent value="ingredients" className="space-y-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-white">Ingredients</h3>
+                      <Button onClick={addIngredient} size="sm" className="bg-purple-600 hover:bg-purple-700">
                         <Plus className="h-4 w-4 mr-1" />
                         Add Ingredient
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {lessonData.ingredients.map((ingredient, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <span className="text-gray-400 w-8">{index + 1}.</span>
-                        <Input
-                          value={ingredient}
-                          onChange={(e) => updateIngredient(index, e.target.value)}
-                          placeholder="e.g., 2 cups all-purpose flour"
-                          className="bg-gray-700 border-gray-600 text-white flex-1"
-                        />
-                        <Button
-                          onClick={() => deleteIngredient(index)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-400 p-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
 
-                {/* Instructions */}
-                <Card className="bg-gray-900 border-gray-700">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-white">Instructions</CardTitle>
-                      <Button
-                        onClick={addInstruction}
-                        size="sm"
-                        className="bg-purple-600 hover:bg-purple-700 text-white"
-                      >
+                    <div className="space-y-3">
+                      {lessonData.ingredients.map((ingredient) => (
+                        <div key={ingredient.id} className="flex gap-2 items-center">
+                          <div className="flex-1">
+                            <Input
+                              placeholder="Ingredient name"
+                              value={ingredient.name}
+                              onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
+                              className="bg-gray-700 border-gray-600 text-white"
+                            />
+                          </div>
+                          <div className="w-20">
+                            <Input
+                              placeholder="1"
+                              value={ingredient.amount}
+                              onChange={(e) => updateIngredient(ingredient.id, 'amount', e.target.value)}
+                              className="bg-gray-700 border-gray-600 text-white"
+                            />
+                          </div>
+                          <div className="w-20">
+                            <Input
+                              placeholder="cup"
+                              value={ingredient.unit}
+                              onChange={(e) => updateIngredient(ingredient.id, 'unit', e.target.value)}
+                              className="bg-gray-700 border-gray-600 text-white"
+                            />
+                          </div>
+                          <Button
+                            onClick={() => removeIngredient(ingredient.id)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 p-1"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  {/* Instructions Tab */}
+                  <TabsContent value="instructions" className="space-y-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-white">Instructions</h3>
+                      <Button onClick={addInstruction} size="sm" className="bg-purple-600 hover:bg-purple-700">
                         <Plus className="h-4 w-4 mr-1" />
                         Add Step
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {lessonData.instructions.map((instruction, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <span className="text-gray-400 w-8 mt-2">{index + 1}.</span>
-                        <Textarea
-                          value={instruction}
-                          onChange={(e) => updateInstruction(index, e.target.value)}
-                          placeholder="Describe this step..."
-                          className="bg-gray-700 border-gray-600 text-white flex-1"
-                          rows={2}
-                        />
-                        <Button
-                          onClick={() => deleteInstruction(index)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-400 p-1 mt-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
+
+                    <div className="space-y-4">
+                      {lessonData.instructions.map((instruction) => (
+                        <div key={instruction.id} className="flex gap-3 items-start">
+                          <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 mt-1">
+                            {instruction.step}
+                          </div>
+                          <div className="flex-1">
+                            <Textarea
+                              placeholder="Describe this step..."
+                              value={instruction.text}
+                              onChange={(e) => updateInstruction(instruction.id, e.target.value)}
+                              rows={2}
+                              className="bg-gray-700 border-gray-600 text-white"
+                            />
+                          </div>
+                          <Button
+                            onClick={() => removeInstruction(instruction.id)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 p-1 mt-1"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            )}
+          </Card>
 
           {/* 4. Lesson Content Sections */}
           <Card className="bg-gray-900 border-gray-700">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Lesson Sections</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-white">Lesson Sections</CardTitle>
+                  <Switch
+                    checked={sectionStates.lessonSections}
+                    onCheckedChange={(checked) => updateSectionState('lessonSections', checked)}
+                    className="data-[state=checked]:bg-purple-600"
+                  />
+                </div>
                 <div className="flex items-center gap-2">
                   <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
                     <SelectTrigger className="bg-gray-700 border-gray-600 text-white w-48">
@@ -831,7 +1102,8 @@ export function LessonEditor({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            {sectionStates.lessonSections && (
+              <CardContent className="space-y-4">
               {lessonData.sections?.map((section, index) => (
                 <div
                   key={index}
@@ -858,16 +1130,7 @@ export function LessonEditor({
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-gray-400">Show:</span>
-                        <Switch
-                          checked={section.is_visible !== false}
-                          onCheckedChange={(checked) => updateSection(index, { is_visible: checked })}
-                          className="data-[state=checked]:bg-green-600"
-                        />
-                      </div>
-                      <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1">
                         <Button
                           onClick={() => moveSection(index, "up")}
                           variant="ghost"
@@ -904,7 +1167,6 @@ export function LessonEditor({
                         </Button>
                       </div>
                     </div>
-                  </div>
                   {editingSection === index ? (
                     <Textarea
                       value={section.content}
@@ -920,7 +1182,8 @@ export function LessonEditor({
                   )}
                 </div>
               ))}
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
         </div>
     </div>

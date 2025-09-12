@@ -3792,9 +3792,19 @@ async function loginUser(req, res) {
 async function getCurrentUser(req, res) {
   try {
     if (!req.user) {
+      console.log("\u{1F50D} [getCurrentUser] No user in request");
       return res.status(401).json({ message: "User not authenticated" });
     }
+    console.log("\u{1F50D} [getCurrentUser] Full user object from req.user:");
+    console.log("\u{1F50D} [getCurrentUser] User ID:", req.user.id);
+    console.log("\u{1F50D} [getCurrentUser] User Email:", req.user.email);
+    console.log("\u{1F50D} [getCurrentUser] User is_creator:", req.user.is_creator);
+    console.log("\u{1F50D} [getCurrentUser] User full_name:", req.user.full_name);
+    console.log("\u{1F50D} [getCurrentUser] Complete user object:", JSON.stringify(req.user, null, 2));
     const { password_hash, ...userWithoutPassword } = req.user;
+    console.log("\u{1F50D} [getCurrentUser] Sending back user object:");
+    console.log("\u{1F50D} [getCurrentUser] userWithoutPassword.is_creator:", userWithoutPassword.is_creator);
+    console.log("\u{1F50D} [getCurrentUser] Complete response object:", JSON.stringify({ user: userWithoutPassword }, null, 2));
     res.json({ user: userWithoutPassword });
   } catch (error) {
     console.error("Get current user error:", error);
@@ -18482,6 +18492,70 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to create recipe" });
     }
   });
+  app2.post("/api/community-recipes/save-as-meal-plan", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const {
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        ingredients,
+        instructions,
+        nutrition_info
+      } = req.body;
+      if (!title?.trim()) {
+        return res.status(400).json({ message: "Recipe title is required" });
+      }
+      if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+        return res.status(400).json({ message: "At least one ingredient is required" });
+      }
+      if (!instructions || !Array.isArray(instructions) || instructions.length === 0) {
+        return res.status(400).json({ message: "At least one instruction is required" });
+      }
+      const mealPlanData = {
+        userId,
+        name: title.trim(),
+        description: description?.trim() || `Delicious ${title.trim()} recipe`,
+        mealPlan: {
+          "Day 1": {
+            "meal": {
+              title: title.trim(),
+              ingredients,
+              instructions,
+              image_url: image_url || null,
+              prep_time: parseInt(time_minutes) || 30,
+              cook_time: parseInt(time_minutes) || 30,
+              servings: 4,
+              cuisine: cuisine?.trim() || "homemade",
+              diet: diet?.trim() || "",
+              nutrition_info: nutrition_info || {
+                calories: 0,
+                protein_g: 0,
+                carbs_g: 0,
+                fat_g: 0
+              }
+            }
+          }
+        },
+        isAutoSaved: false
+      };
+      const savedMealPlan = await storage.saveMealPlan(mealPlanData);
+      console.log(`\u2705 Created meal plan from recipe "${title}" with ID: ${savedMealPlan.id}`);
+      res.json({
+        ...savedMealPlan,
+        message: "Recipe saved as meal plan successfully"
+      });
+    } catch (error) {
+      console.error("Error saving recipe as meal plan:", error);
+      res.status(500).json({ message: "Failed to save recipe as meal plan" });
+    }
+  });
   app2.get("/api/recipes/user", authenticateToken2, async (req, res) => {
     try {
       const userId = req.user?.id;
@@ -22667,7 +22741,7 @@ var vite_config_default = defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "http://localhost:5001",
         changeOrigin: true,
         secure: false
       }
