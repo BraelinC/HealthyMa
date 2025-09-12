@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogOverlay } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +27,7 @@ import { apiRequest } from "@/lib/queryClient";
 interface CreateRecipeProps {
   isOpen: boolean;
   onClose: () => void;
+  saveAsMealPlan?: boolean; // Optional prop to save as meal plan instead of recipe
 }
 
 interface Ingredient {
@@ -100,7 +101,7 @@ const getUnitSuggestions = (ingredientName: string): string[] => {
   return ['cup', 'tbsp', 'tsp', 'oz', 'lb'];
 };
 
-export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
+export function CreateRecipe({ isOpen, onClose, saveAsMealPlan = false }: CreateRecipeProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("basics");
@@ -113,6 +114,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
   const [servings, setServings] = useState("4");
   const [difficulty, setDifficulty] = useState(1);
   const [cuisine, setCuisine] = useState("");
+  const [mealType, setMealType] = useState("Breakfast");
   const [tags, setTags] = useState<string[]>([]);
   const [recipeImage, setRecipeImage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -371,18 +373,27 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
 
   const saveRecipeMutation = useMutation({
     mutationFn: async (recipeData: any) => {
-      return apiRequest('/api/recipes/create', {
+      const endpoint = saveAsMealPlan 
+        ? '/api/community-recipes/save-as-meal-plan'
+        : '/api/recipes/create';
+      
+      return apiRequest(endpoint, {
         method: 'POST',
         body: JSON.stringify(recipeData),
       });
     },
     onSuccess: () => {
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/recipes/user'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      if (saveAsMealPlan) {
+        queryClient.invalidateQueries({ queryKey: ['/api/meal-plans/saved'] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['/api/recipes/user'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      }
+      
       toast({ 
-        title: "Recipe Saved!", 
-        description: `"${recipeName}" has been saved to your meals.` 
+        title: saveAsMealPlan ? "Meal Saved!" : "Recipe Saved!", 
+        description: `"${recipeName}" has been saved${saveAsMealPlan ? ' as a meal plan' : ' to your recipes'}.` 
       });
       handleClose();
     },
@@ -390,13 +401,17 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
       console.error('Error saving recipe:', error);
       toast({
         title: "Error",
-        description: "Failed to save recipe. Please try again.",
+        description: `Failed to save ${saveAsMealPlan ? 'meal' : 'recipe'}. Please try again.`,
         variant: "destructive"
       });
     }
   });
 
   const handleSave = () => {
+    console.log("🍳 CreateRecipe handleSave called");
+    console.log("🍳 saveAsMealPlan prop:", saveAsMealPlan);
+    console.log("🍳 recipeName:", recipeName);
+    
     if (!recipeName.trim()) {
       toast({ 
         title: "Recipe Name Required", 
@@ -447,6 +462,7 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
       time_minutes: parseInt(cookTime) || 0,
       cuisine: cuisine.trim() || 'homemade',
       diet: `Difficulty: ${difficulty}/5`,
+      meal_type: mealType,
       ingredients: validIngredients,
       instructions: validInstructions,
       nutrition_info: {
@@ -480,8 +496,9 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogOverlay className="z-[100000]" />
       <DialogContent 
-        className="max-w-3xl w-[95vw] max-h-[85vh] p-0 mx-auto"
+        className="max-w-3xl w-[95vw] max-h-[85vh] p-0 mx-auto z-[100001]"
         style={{ touchAction: 'auto', height: '85vh', display: 'flex', flexDirection: 'column' }}
       >
         <div className="flex flex-col h-full min-h-0">
@@ -530,6 +547,24 @@ export function CreateRecipe({ isOpen, onClose }: CreateRecipeProps) {
                           onChange={(e) => setRecipeName(e.target.value)}
                           className="text-lg"
                         />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Meal Type *
+                        </label>
+                        <Select value={mealType} onValueChange={setMealType}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select meal type..." />
+                          </SelectTrigger>
+                          <SelectContent className="z-[100002]">
+                            <SelectItem value="Breakfast">🍳 Breakfast</SelectItem>
+                            <SelectItem value="Lunch">🥗 Lunch</SelectItem>
+                            <SelectItem value="Dinner">🍽️ Dinner</SelectItem>
+                            <SelectItem value="Baking">🍞 Baking</SelectItem>
+                            <SelectItem value="Sweets">🍰 Sweets</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Image Upload Section */}

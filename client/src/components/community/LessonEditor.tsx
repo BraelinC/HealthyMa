@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import RecipeCard from "@/components/RecipeCard";
 import {
@@ -23,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Plus,
   Save,
@@ -94,6 +94,7 @@ interface LessonEditorProps {
   moduleId?: number;
   onClose: () => void;
   onSave?: (lesson: Lesson) => void;
+  isInline?: boolean;
 }
 
 // Template content for different section types
@@ -241,10 +242,10 @@ export function LessonEditor({
   moduleId,
   onClose,
   onSave,
+  isInline = false,
 }: LessonEditorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("content");
   const [lessonData, setLessonData] = useState<Lesson>(
     lesson || {
       course_id: courseId,
@@ -385,9 +386,8 @@ export function LessonEditor({
     setLessonData({ ...lessonData, instructions });
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg w-full max-w-7xl h-[90vh] flex flex-col">
+  const containerContent = (
+    <div className={`bg-gray-800 rounded-lg w-full ${isInline ? 'max-h-[80vh] h-[80vh]' : 'max-w-7xl h-[90vh]'} flex flex-col`}>
         {/* Header */}
         <div className="border-b border-gray-700 p-4">
           <div className="flex items-center justify-between">
@@ -419,30 +419,8 @@ export function LessonEditor({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="bg-gray-700 border-b border-gray-600 rounded-none px-4">
-              <TabsTrigger value="content" className="text-gray-300 data-[state=active]:text-white">
-                <FileText className="h-4 w-4 mr-2" />
-                Content & Sections
-              </TabsTrigger>
-              <TabsTrigger value="recipe" className="text-gray-300 data-[state=active]:text-white">
-                <ChefHat className="h-4 w-4 mr-2" />
-                Recipe Details
-              </TabsTrigger>
-              <TabsTrigger value="media" className="text-gray-300 data-[state=active]:text-white">
-                <Video className="h-4 w-4 mr-2" />
-                Media & Video
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="text-gray-300 data-[state=active]:text-white">
-                <Play className="h-4 w-4 mr-2" />
-                Preview
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="flex-1 overflow-y-auto">
-              {/* Content & Sections Tab */}
-              <TabsContent value="content" className="p-6 space-y-6">
+        <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${isInline ? 'min-h-0' : ''}`}>
+          {/* 1. Basic Information Section */}
                 {/* Basic Info */}
                 <Card className="bg-gray-900 border-gray-700">
                   <CardHeader>
@@ -470,7 +448,7 @@ export function LessonEditor({
                           <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectContent className="bg-gray-700 border-gray-600" style={{zIndex: 100006}}>
                             {["🍽️", "🥗", "🍝", "🍜", "🍱", "🍲", "🥘", "🍳", "🥙", "🌮", "🍕", "🍔"].map(
                               (emoji) => (
                                 <SelectItem key={emoji} value={emoji} className="text-white">
@@ -507,7 +485,7 @@ export function LessonEditor({
                           <SelectTrigger className="bg-gray-700 border-gray-600 text-white w-48">
                             <SelectValue placeholder="Select template" />
                           </SelectTrigger>
-                          <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectContent className="bg-gray-700 border-gray-600" style={{zIndex: 100006}}>
                             {Object.entries(SECTION_TEMPLATES).map(([key, template]) => (
                               <SelectItem key={key} value={key} className="text-white">
                                 {template.title}
@@ -607,10 +585,74 @@ export function LessonEditor({
                     ))}
                   </CardContent>
                 </Card>
-              </TabsContent>
 
-              {/* Recipe Details Tab */}
-              <TabsContent value="recipe" className="p-6 space-y-6">
+          {/* 2. Media & Video Section */}
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Media & Video</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  YouTube Video ID
+                </label>
+                <div className="flex items-center gap-2">
+                  <Youtube className="h-5 w-5 text-red-500" />
+                  <Input
+                    value={lessonData.youtube_video_id || ""}
+                    onChange={(e) =>
+                      setLessonData({ ...lessonData, youtube_video_id: e.target.value })
+                    }
+                    placeholder="e.g., dQw4w9WgXcQ"
+                    className="bg-gray-700 border-gray-600 text-white flex-1"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Enter the YouTube video ID (the part after v= in the URL)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Or Direct Video URL
+                </label>
+                <Input
+                  value={lessonData.video_url || ""}
+                  onChange={(e) => setLessonData({ ...lessonData, video_url: e.target.value })}
+                  placeholder="https://example.com/video.mp4"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Cover Image URL
+                </label>
+                <Input
+                  value={lessonData.image_url || ""}
+                  onChange={(e) => setLessonData({ ...lessonData, image_url: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+
+              {lessonData.image_url && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-300 mb-2">Preview:</p>
+                  <img
+                    src={lessonData.image_url}
+                    alt="Cover"
+                    className="w-full max-w-md rounded-lg"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=Invalid+Image";
+                    }}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 3. Recipe Details Section */}
                 {/* Cooking Info */}
                 <Card className="bg-gray-900 border-gray-700">
                   <CardHeader>
@@ -670,7 +712,7 @@ export function LessonEditor({
                           <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectContent className="bg-gray-700 border-gray-600" style={{zIndex: 100006}}>
                             {[1, 2, 3, 4, 5].map((level) => (
                               <SelectItem key={level} value={level.toString()} className="text-white">
                                 {"⭐".repeat(level)}
@@ -759,162 +801,137 @@ export function LessonEditor({
                     ))}
                   </CardContent>
                 </Card>
-              </TabsContent>
 
-              {/* Media Tab */}
-              <TabsContent value="media" className="p-6 space-y-6">
-                <Card className="bg-gray-900 border-gray-700">
-                  <CardHeader>
-                    <CardTitle className="text-white">Video Content</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        YouTube Video ID
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <Youtube className="h-5 w-5 text-red-500" />
-                        <Input
-                          value={lessonData.youtube_video_id || ""}
-                          onChange={(e) =>
-                            setLessonData({ ...lessonData, youtube_video_id: e.target.value })
-                          }
-                          placeholder="e.g., dQw4w9WgXcQ"
-                          className="bg-gray-700 border-gray-600 text-white flex-1"
-                        />
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Enter the YouTube video ID (the part after v= in the URL)
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Or Direct Video URL
-                      </label>
-                      <Input
-                        value={lessonData.video_url || ""}
-                        onChange={(e) => setLessonData({ ...lessonData, video_url: e.target.value })}
-                        placeholder="https://example.com/video.mp4"
-                        className="bg-gray-700 border-gray-600 text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Cover Image URL
-                      </label>
-                      <Input
-                        value={lessonData.image_url || ""}
-                        onChange={(e) => setLessonData({ ...lessonData, image_url: e.target.value })}
-                        placeholder="https://example.com/image.jpg"
-                        className="bg-gray-700 border-gray-600 text-white"
-                      />
-                    </div>
-
-                    {lessonData.image_url && (
-                      <div className="mt-4">
-                        <p className="text-sm text-gray-300 mb-2">Preview:</p>
-                        <img
-                          src={lessonData.image_url}
-                          alt="Cover"
-                          className="w-full max-w-md rounded-lg"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=Invalid+Image";
-                          }}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Preview Tab */}
-              <TabsContent value="preview" className="p-6">
-                <div className="max-w-4xl mx-auto">
-                  <Card className="bg-gray-900 border-gray-700">
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <span className="text-3xl">{lessonData.emoji}</span>
-                        <div className="flex-1">
-                          <CardTitle className="text-white text-2xl">{lessonData.title || "Untitled Lesson"}</CardTitle>
-                          <p className="text-gray-400 mt-1">{lessonData.description}</p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Video Preview */}
-                      {lessonData.youtube_video_id && (
-                        <div className="aspect-video bg-gray-800 rounded-lg flex items-center justify-center">
-                          <div className="text-center">
-                            <Play className="h-12 w-12 text-purple-400 mx-auto mb-2" />
-                            <p className="text-gray-400">YouTube Video: {lessonData.youtube_video_id}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Sections Preview */}
-                      {lessonData.sections?.map((section, index) => (
-                        <div key={index} className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                          <h3 className="font-semibold text-white mb-3">{section.title}</h3>
-                          <div className="text-gray-300 whitespace-pre-wrap">{section.content}</div>
-                        </div>
+          {/* 4. Lesson Content Sections */}
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">Lesson Sections</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white w-48">
+                      <SelectValue placeholder="Select template" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-700 border-gray-600" style={{zIndex: 100006}}>
+                      {Object.entries(SECTION_TEMPLATES).map(([key, template]) => (
+                        <SelectItem key={key} value={key} className="text-white">
+                          {template.title}
+                        </SelectItem>
                       ))}
-
-                      {/* Recipe Card Preview */}
-                      {lessonData.ingredients.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                            <h3 className="font-semibold text-white mb-3">
-                              <ShoppingCart className="inline h-4 w-4 mr-2" />
-                              Ingredients
-                            </h3>
-                            <ul className="space-y-1 text-gray-300">
-                              {lessonData.ingredients.map((ingredient, index) => (
-                                <li key={index}>• {ingredient}</li>
-                              ))}
-                            </ul>
-                          </div>
-                          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                            <h3 className="font-semibold text-white mb-3">
-                              <Clock className="inline h-4 w-4 mr-2" />
-                              Cooking Info
-                            </h3>
-                            <div className="space-y-2 text-gray-300">
-                              <div>Prep: {lessonData.prep_time} minutes</div>
-                              <div>Cook: {lessonData.cook_time} minutes</div>
-                              <div>Servings: {lessonData.servings}</div>
-                              <div>Difficulty: {"⭐".repeat(lessonData.difficulty_level)}</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Instructions Preview */}
-                      {lessonData.instructions.length > 0 && (
-                        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                          <h3 className="font-semibold text-white mb-3">
-                            <ListChecks className="inline h-4 w-4 mr-2" />
-                            Instructions
-                          </h3>
-                          <ol className="space-y-2 text-gray-300">
-                            {lessonData.instructions.map((instruction, index) => (
-                              <li key={index} className="flex gap-3">
-                                <span className="font-medium text-purple-400">{index + 1}.</span>
-                                <span>{instruction}</span>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={() => addSection("about")}
+                    size="sm"
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Section
+                  </Button>
                 </div>
-              </TabsContent>
-            </div>
-          </Tabs>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {lessonData.sections?.map((section, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-800 border border-gray-700 rounded-lg p-4"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="h-4 w-4 text-gray-400" />
+                      {editingSection === index ? (
+                        <Input
+                          value={section.title}
+                          onChange={(e) =>
+                            updateSection(index, { title: e.target.value })
+                          }
+                          className="bg-gray-700 border-gray-600 text-white"
+                          autoFocus
+                        />
+                      ) : (
+                        <h3 className="font-medium text-white">{section.title}</h3>
+                      )}
+                      {section.template_id && (
+                        <Badge className="bg-purple-600 text-white text-xs">
+                          {SECTION_TEMPLATES[section.template_id]?.title}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-gray-400">Show:</span>
+                        <Switch
+                          checked={section.is_visible !== false}
+                          onCheckedChange={(checked) => updateSection(index, { is_visible: checked })}
+                          className="data-[state=checked]:bg-green-600"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          onClick={() => moveSection(index, "up")}
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 p-1"
+                          disabled={index === 0}
+                        >
+                          ↑
+                        </Button>
+                        <Button
+                          onClick={() => moveSection(index, "down")}
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 p-1"
+                          disabled={index === (lessonData.sections?.length || 0) - 1}
+                        >
+                          ↓
+                        </Button>
+                        <Button
+                          onClick={() => setEditingSection(editingSection === index ? null : index)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 p-1"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={() => deleteSection(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 p-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  {editingSection === index ? (
+                    <Textarea
+                      value={section.content}
+                      onChange={(e) => updateSection(index, { content: e.target.value })}
+                      className="bg-gray-700 border-gray-600 text-white"
+                      rows={6}
+                      placeholder="Enter section content..."
+                    />
+                  ) : (
+                    <div className="text-gray-300 whitespace-pre-wrap">
+                      {section.content || "No content yet. Click edit to add content."}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
-      </div>
+    </div>
+  );
+
+  return isInline ? (
+    containerContent
+  ) : (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      {containerContent}
     </div>
   );
 }
+

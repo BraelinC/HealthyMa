@@ -88,8 +88,12 @@ export default function CreatorHub() {
     }
     
     console.log("🔍 Current location before navigation:", window.location.href);
-    setLocation("/create");
-    console.log("🔍 setLocation called with: /create");
+    // TODO: Replace with new course creation flow
+    toast({
+      title: "Coming Soon",
+      description: "Community creation is being redesigned with a new course-based approach!"
+    });
+    console.log("🔍 Community creation temporarily disabled");
   };
 
   // Fetch creator stats
@@ -139,17 +143,10 @@ export default function CreatorHub() {
         console.log("🔄 User data refetched after creator mode toggle");
       }, 100);
       
-      // Check if we came from /community/create and should redirect back
+      // Note: Community creation flow has been removed
       const referrer = document.referrer;
       console.log("🔍 Document referrer:", referrer);
-      if (referrer.includes('/community/create') || referrer.includes('/create')) {
-        console.log("🔄 Came from creation page, redirecting back to /create");
-        setTimeout(() => {
-          setLocation("/create");
-        }, 1000); // Longer delay to ensure user state is updated
-      } else {
-        setShowOnboarding(true);
-      }
+      setShowOnboarding(true);
     },
     onError: (error: Error) => {
       toast({
@@ -354,8 +351,8 @@ export default function CreatorHub() {
                         console.log("🔍 Fresh user is_creator:", freshUser?.is_creator);
                         
                         if (freshUser?.is_creator) {
-                          console.log("✅ Creator status confirmed! Navigating to /create");
-                          setLocation("/create");
+                          console.log("✅ Creator status confirmed!");
+                          // TODO: Navigate to new course creation
                           return true;
                         } else if (attempts < maxAttempts) {
                           console.log("⏳ Creator status not yet updated, retrying in 500ms...");
@@ -378,8 +375,8 @@ export default function CreatorHub() {
                       console.error("❌ Failed to enable creator mode:", error);
                     }
                   } else {
-                    console.log("✅ Already a creator, navigating directly to /create");
-                    setLocation("/create");
+                    console.log("✅ Already a creator");
+                    // TODO: Navigate to new course creation
                   }
                 }}
                 disabled={becomeCreator.isPending}
@@ -502,10 +499,9 @@ export default function CreatorHub() {
                   await handleCreateCommunity();
                   console.log("✅ handleCreateCommunity completed");
                   
-                  // Additional backup navigation
+                  // Additional backup navigation removed
                   setTimeout(() => {
-                    console.log("🔄 Backup navigation to /create");
-                    window.location.href = "/create";
+                    console.log("🔄 Community creation flow updated");
                   }, 2000);
                 }}
               >
@@ -857,7 +853,10 @@ export default function CreatorHub() {
                 <Button 
                   onClick={() => {
                     setShowOnboarding(false);
-                    setLocation("/community/create");
+                    toast({
+                      title: "Coming Soon",
+                      description: "Community creation is being redesigned!"
+                    });
                   }}
                 >
                   Create Community

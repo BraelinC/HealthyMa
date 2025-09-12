@@ -27,7 +27,7 @@ export async function apiRequest(
   // Build full URL if it's a relative path
   const fullUrl = url.startsWith('http') ? url : buildApiUrl(url);
   
-  console.log('API Request:', { url: fullUrl, method: options.method || 'GET', hasBody: !!options.body });
+  // console.log('API Request:', { url: fullUrl, method: options.method || 'GET', hasBody: !!options.body });
 
   try {
     const res = await fetch(fullUrl, {
@@ -46,13 +46,13 @@ export async function apiRequest(
       window.dispatchEvent(new CustomEvent('auth-token-refreshed', { detail: { token: newToken } }));
     }
 
-    console.log('API Response:', { 
-      url: fullUrl, 
-      status: res.status, 
-      ok: res.ok,
-      contentType: res.headers.get('content-type'),
-      hasNewToken: !!newToken
-    });
+    // console.log('API Response:', { 
+    //   url: fullUrl, 
+    //   status: res.status, 
+    //   ok: res.ok,
+    //   contentType: res.headers.get('content-type'),
+    //   hasNewToken: !!newToken
+    // });
 
     // Check if response is JSON
     const contentType = res.headers.get('content-type');
@@ -63,7 +63,7 @@ export async function apiRequest(
     }
 
     const text = await res.text();
-    console.log('API Response Text:', text);
+    // console.log('API Response Text:', text);
 
     if (!text || text.trim() === '') {
       if (!res.ok) {
@@ -85,7 +85,7 @@ export async function apiRequest(
       throw new Error(errorMessage);
     }
 
-    console.log('API Parsed Response:', parsed);
+    // console.log('API Parsed Response:', parsed);
     return parsed;
   } catch (error) {
     console.error('API Request Error:', error);
@@ -133,10 +133,10 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: async ({ queryKey }) => {
         const [url] = queryKey as [string];
-        console.log('Query function called for:', url);
+        // console.log('Query function called for:', url);
         try {
           const result = await apiRequest(url, { method: 'GET' });
-          console.log('Query result:', result);
+          // console.log('Query result:', result);
           return result;
         } catch (error) {
           console.error('Query error for', url, ':', error);
@@ -146,7 +146,7 @@ export const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000, // 5 minutes
       refetchOnWindowFocus: false,
       retry: (failureCount, error: any) => {
-        console.log('Query retry attempt:', failureCount, 'for error:', error);
+        // console.log('Query retry attempt:', failureCount, 'for error:', error);
         // Don't retry on authentication or client errors
         if (error.message?.includes('401') || error.message?.includes('400')) {
           return false;

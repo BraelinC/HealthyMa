@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -43,10 +44,12 @@ import {
   getPostsCacheKey 
 } from "@/lib/postsCache";
 import { MealPlanEditor } from "@/components/community/MealPlanEditor";
+import { CreateRecipe } from "@/components/CreateRecipe";
 import { LessonEditor } from "@/components/community/LessonEditor";
 import EnhancedLessonEditor from "@/components/community/EnhancedLessonEditor";
 import InlineLessonEditor from "@/components/community/InlineLessonEditor";
 import RecipeDisplay from "@/components/RecipeDisplay";
+import CourseManagement from "@/components/CourseManagement";
 
 interface Community {
   id: number;
@@ -192,7 +195,12 @@ function MealPlansClassroom({
       {isCreator && (
         <div className="flex justify-center -mt-2">
           <Button
-            onClick={() => setShowMealPlanEditor(true)}
+            onClick={() => {
+              toast({
+                title: "Course Creation Coming Soon",
+                description: "Use the floating + button to create meals instead!",
+              });
+            }}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -227,7 +235,12 @@ function MealPlansClassroom({
           </p>
           {isCreator && !isStudentViewMode && (
             <Button
-              onClick={() => setShowMealPlanEditor(true)}
+              onClick={() => {
+                toast({
+                  title: "Course Creation Coming Soon",
+                  description: "Use the floating + button to create meals instead!",
+                });
+              }}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -409,8 +422,8 @@ function MealPlansClassroom({
 
 
 
-      {/* Meal Plan Editor Modal for Creators */}
-      {showMealPlanEditor && isCreator && (
+      {/* Meal Plan Editor Modal for Creators - TEMPORARILY DISABLED due to infinite render loop */}
+      {/* {showMealPlanEditor && isCreator && (
         <MealPlanEditor 
           communityId={communityId || ''} 
           onClose={() => {
@@ -419,7 +432,7 @@ function MealPlansClassroom({
             queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
           }}
         />
-      )}
+      )} */}
     </div>
   );
 }
@@ -434,6 +447,10 @@ export default function CommunityDetailNew() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [showMealPlanEditorMain, setShowMealPlanEditorMain] = useState(false);
+  const [showCourseManagement, setShowCourseManagement] = useState(false);
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState("community");
   
   // Meal Plans state
   const [isStudentViewMode, setIsStudentViewMode] = useState(false);
@@ -442,15 +459,13 @@ export default function CommunityDetailNew() {
   const [extractorUrl, setExtractorUrl] = useState("");
   const [extractedRecipe, setExtractedRecipe] = useState<any>(null);
   const [allExtractedRecipes, setAllExtractedRecipes] = useState<any[]>([]);
-  const [selectedRecipeIndex, setSelectedRecipeIndex] = useState(0);
+  const [selectedExtractedRecipeIndex, setSelectedExtractedRecipeIndex] = useState(0);
   const [extractionInProgress, setExtractionInProgress] = useState(false);
   
-  // My Meal Plans Carousel state
-  const mealPlanFilters = ["Recent", "Breakfast", "Lunch", "Dinner", "Baking", "Sweets"];
-  const [userMealPlans, setUserMealPlans] = useState<MealPlan[]>([]);
-  const [selectedMealPlanIndex, setSelectedMealPlanIndex] = useState(0);
-  const [mealPlanFilter, setMealPlanFilter] = useState("Recent");
-  const [filteredMealPlans, setFilteredMealPlans] = useState<MealPlan[]>([]);
+  // My Recipes Carousel state
+  const recipeFilters = ["Recent", "Breakfast", "Lunch", "Dinner", "Baking", "Sweets"];
+  const [selectedUserRecipeIndex, setSelectedUserRecipeIndex] = useState(0);
+  const [recipeFilter, setRecipeFilter] = useState("Recent");
   
   // Delete post state
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
@@ -473,47 +488,48 @@ export default function CommunityDetailNew() {
     enabled: !!id && isAuthenticated,
   });
 
-  // Fetch user's meal plans
-  const { data: fetchedMealPlans = [] } = useQuery({
-    queryKey: ["/api/meal-plans"],
+  // Fetch user's recipes
+  const { data: fetchedRecipes = [] } = useQuery({
+    queryKey: ["/api/recipes/user"],
     queryFn: async () => {
       const { apiRequest } = await import("@/lib/queryClient");
-      return await apiRequest("/api/meal-plans", {
+      return await apiRequest("/api/recipes/user", {
         method: "GET",
       });
     },
     enabled: !!user && isAuthenticated,
   });
 
+  // Use useMemo to compute filtered recipes to prevent infinite renders
+  const filteredRecipes = useMemo(() => {
+    const recipes = fetchedRecipes || [];
+    
+    if (recipeFilter === "Recent") {
+      // Sort by most recent
+      return [...recipes].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    } else if (recipeFilter === "All" || !recipeFilter) {
+      // Show all recipes
+      return recipes;
+    } else {
+      // Filter by meal type
+      return recipes.filter(recipe => 
+        recipe.meal_type === recipeFilter || 
+        recipe.category === recipeFilter ||
+        recipe.cuisine?.toLowerCase().includes(recipeFilter.toLowerCase())
+      );
+    }
+  }, [fetchedRecipes, recipeFilter]);
+
   // Smart posts loading with 50-post cache for instant loading
   const [cachedPosts, setCachedPosts] = useState<CommunityPost[]>([]);
   const [showCachedData, setShowCachedData] = useState(false);
 
-  // Update meal plans state when fetched data changes
+  // Reset selected index when filter changes
   useEffect(() => {
-    if (fetchedMealPlans) {
-      setUserMealPlans(fetchedMealPlans);
-    }
-  }, [fetchedMealPlans]);
-
-  // Filter meal plans based on selected filter
-  useEffect(() => {
-    let filtered = userMealPlans;
-    
-    if (mealPlanFilter === "Recent") {
-      // Sort by most recent
-      filtered = [...userMealPlans].sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-    } else {
-      // Filter by category (this would need category data from meal plans)
-      // For now, we'll show all meal plans for other filters
-      filtered = userMealPlans;
-    }
-    
-    setFilteredMealPlans(filtered);
-    setSelectedMealPlanIndex(0); // Reset to first plan when filter changes
-  }, [userMealPlans, mealPlanFilter]);
+    setSelectedUserRecipeIndex(0);
+  }, [recipeFilter]);
 
   // Check cache immediately when component loads
   useEffect(() => {
@@ -522,7 +538,7 @@ export default function CommunityDetailNew() {
       if (cached.length > 0) {
         setCachedPosts(cached as CommunityPost[]);
         setShowCachedData(true);
-        console.log('⚡ Using cached posts for instant loading:', cached.length, 'posts');
+        // console.log('⚡ Using cached posts for instant loading:', cached.length, 'posts');
       }
     }
   }, [id]);
@@ -711,24 +727,24 @@ export default function CommunityDetailNew() {
   // Recipe extraction mutation
   const extractRecipeMutation = useMutation({
     mutationFn: async () => {
-      console.log("🚀 [EXTRACTOR DEBUG] Starting extraction for URL:", extractorUrl);
+      // console.log("🚀 [EXTRACTOR DEBUG] Starting extraction for URL:", extractorUrl);
       const { apiRequest } = await import("@/lib/queryClient");
       setExtractionInProgress(true);
       
-      console.log("📤 [EXTRACTOR DEBUG] Making API request to /api/extract-meal-plan");
+      // console.log("📤 [EXTRACTOR DEBUG] Making API request to /api/extract-meal-plan");
       const result = await apiRequest("/api/extract-meal-plan", {
         method: "POST",
         body: JSON.stringify({ url: extractorUrl }),
       });
       
-      console.log("📥 [EXTRACTOR DEBUG] API response received:", result);
+      // console.log("📥 [EXTRACTOR DEBUG] API response received:", result);
       return result;
     },
     onSuccess: (result) => {
-      console.log("✅ [EXTRACTOR DEBUG] Extraction successful:", result);
+      // console.log("✅ [EXTRACTOR DEBUG] Extraction successful:", result);
       setExtractedRecipe(result.recipe);
       setAllExtractedRecipes(result.allRecipes || [result.recipe]);
-      setSelectedRecipeIndex(0);
+      setSelectedExtractedRecipeIndex(0);
       setExtractionInProgress(false);
       const totalCount = result.allRecipes?.length || 1;
       toast({
@@ -817,7 +833,7 @@ export default function CommunityDetailNew() {
   const selectRecipe = (index: number) => {
     // Ensure index is within valid range
     const validIndex = Math.max(0, Math.min(index, allExtractedRecipes.length - 1));
-    setSelectedRecipeIndex(validIndex);
+    setSelectedExtractedRecipeIndex(validIndex);
     
     // Ensure we have a valid recipe at this index
     if (allExtractedRecipes[validIndex]) {
@@ -829,48 +845,44 @@ export default function CommunityDetailNew() {
   const clearExtractedRecipes = () => {
     setExtractedRecipe(null);
     setAllExtractedRecipes([]);
-    setSelectedRecipeIndex(0);
+    setSelectedExtractedRecipeIndex(0);
     setExtractorUrl("");
   };
 
-  // Meal plan carousel navigation functions
-  const selectMealPlan = (index: number) => {
-    setSelectedMealPlanIndex(index);
+  // Recipe carousel navigation functions
+  const selectUserRecipe = (index: number) => {
+    setSelectedUserRecipeIndex(index);
   };
 
-  const nextMealPlan = () => {
-    if (selectedMealPlanIndex < filteredMealPlans.length - 1) {
-      setSelectedMealPlanIndex(selectedMealPlanIndex + 1);
+  const nextUserRecipe = () => {
+    if (selectedUserRecipeIndex < filteredRecipes.length - 1) {
+      setSelectedUserRecipeIndex(selectedUserRecipeIndex + 1);
     }
   };
 
-  const prevMealPlan = () => {
-    if (selectedMealPlanIndex > 0) {
-      setSelectedMealPlanIndex(selectedMealPlanIndex - 1);
+  const prevUserRecipe = () => {
+    if (selectedUserRecipeIndex > 0) {
+      setSelectedUserRecipeIndex(selectedUserRecipeIndex - 1);
     }
   };
 
-  // MyMealPlansCarousel Component
-  const MyMealPlansCarousel = () => {
-    const currentMealPlan = filteredMealPlans[selectedMealPlanIndex];
+  // MyRecipesCarousel Component
+  const MyRecipesCarousel = () => {
+    const currentRecipe = filteredRecipes[selectedUserRecipeIndex];
 
-    if (filteredMealPlans.length === 0) {
+    if (filteredRecipes.length === 0) {
       return (
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-white">My Meal Plans</h2>
-          </div>
-          
           {/* Filter Tabs */}
           <div className="flex gap-2 mb-4 overflow-x-auto">
-            {mealPlanFilters.map((filter) => (
+            {recipeFilters.map((filter) => (
               <Button
                 key={filter}
-                onClick={() => setMealPlanFilter(filter)}
-                variant={mealPlanFilter === filter ? "default" : "outline"}
+                onClick={() => setRecipeFilter(filter)}
+                variant={recipeFilter === filter ? "default" : "outline"}
                 size="sm"
                 className={
-                  mealPlanFilter === filter
+                  recipeFilter === filter
                     ? "bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
                     : "border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
                 }
@@ -883,11 +895,11 @@ export default function CommunityDetailNew() {
           <Card className="bg-gray-800 border-gray-700">
             <CardContent className="p-8 text-center">
               <ChefHat className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold text-white mb-2">No Meal Plans Yet</h3>
-              <p className="text-gray-400 mb-4">Create your first meal plan to get started!</p>
+              <h3 className="text-lg font-semibold text-white mb-2">No Recipes Yet</h3>
+              <p className="text-gray-400 mb-4">Create your first recipe to get started!</p>
               <Button className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="w-4 h-4 mr-2" />
-                Create Meal Plan
+                Create Recipe
               </Button>
             </CardContent>
           </Card>
@@ -898,22 +910,21 @@ export default function CommunityDetailNew() {
     return (
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white">My Meal Plans</h2>
           <Badge className="bg-emerald-600 text-white">
-            {filteredMealPlans.length} Plans
+            {filteredRecipes.length} Recipes
           </Badge>
         </div>
         
         {/* Filter Tabs */}
         <div className="flex gap-2 mb-4 overflow-x-auto">
-          {mealPlanFilters.map((filter) => (
+          {recipeFilters.map((filter) => (
             <Button
               key={filter}
-              onClick={() => setMealPlanFilter(filter)}
-              variant={mealPlanFilter === filter ? "default" : "outline"}
+              onClick={() => setRecipeFilter(filter)}
+              variant={recipeFilter === filter ? "default" : "outline"}
               size="sm"
               className={
-                mealPlanFilter === filter
+                recipeFilter === filter
                   ? "bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
                   : "border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
               }
@@ -927,12 +938,12 @@ export default function CommunityDetailNew() {
         <Card className="bg-gray-800 border-gray-700">
           <CardContent className="p-4">
             {/* Navigation Controls */}
-            {filteredMealPlans.length > 1 && (
+            {filteredRecipes.length > 1 && (
               <div className="flex items-center justify-center gap-4 mb-4">
                 {/* Previous Button */}
-                {selectedMealPlanIndex > 0 && (
+                {selectedUserRecipeIndex > 0 && (
                   <Button
-                    onClick={prevMealPlan}
+                    onClick={prevUserRecipe}
                     variant="outline"
                     size="sm"
                     className="hidden sm:flex border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
@@ -944,12 +955,12 @@ export default function CommunityDetailNew() {
                 
                 {/* Dot Navigation */}
                 <div className="flex items-center gap-2 flex-1 justify-center">
-                  {filteredMealPlans.map((_, index) => (
+                  {filteredRecipes.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => selectMealPlan(index)}
+                      onClick={() => selectUserRecipe(index)}
                       className={`w-3 h-3 rounded-full transition-colors shrink-0 ${
-                        index === selectedMealPlanIndex 
+                        index === selectedUserRecipeIndex 
                           ? 'bg-emerald-500' 
                           : 'bg-gray-600 hover:bg-gray-500'
                       }`}
@@ -958,9 +969,9 @@ export default function CommunityDetailNew() {
                 </div>
                 
                 {/* Next Button */}
-                {selectedMealPlanIndex < filteredMealPlans.length - 1 && (
+                {selectedUserRecipeIndex < filteredRecipes.length - 1 && (
                   <Button
-                    onClick={nextMealPlan}
+                    onClick={nextUserRecipe}
                     variant="outline"
                     size="sm"
                     className="hidden sm:flex border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
@@ -973,68 +984,105 @@ export default function CommunityDetailNew() {
             )}
 
             {/* Mobile Navigation Info */}
-            {filteredMealPlans.length > 1 && (
+            {filteredRecipes.length > 1 && (
               <div className="text-center mb-4 text-sm text-gray-400">
-                Meal Plan {selectedMealPlanIndex + 1} of {filteredMealPlans.length}
+                Recipe {selectedUserRecipeIndex + 1} of {filteredRecipes.length}
               </div>
             )}
 
-            {/* Current Meal Plan Display */}
-            {currentMealPlan && (
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-start gap-4">
-                  {/* Meal Plan Image */}
-                  <div className="w-20 h-20 bg-gray-600 rounded-lg flex items-center justify-center shrink-0">
-                    {currentMealPlan.image_url ? (
-                      <img 
-                        src={currentMealPlan.image_url} 
-                        alt={currentMealPlan.title}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    ) : (
-                      <ChefHat className="w-8 h-8 text-gray-400" />
-                    )}
-                  </div>
+            {/* Current Recipe Display */}
+            {currentRecipe && (
+              <div className="bg-gray-700 rounded-lg">
+                <Tabs defaultValue="ingredients" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 bg-gray-600">
+                    <TabsTrigger value="ingredients" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Ingredients</TabsTrigger>
+                    <TabsTrigger value="instructions" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Instructions</TabsTrigger>
+                    <TabsTrigger value="nutrition" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Nutrition</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="p-4">
+                    {/* Recipe Header */}
+                    <div className="flex items-start gap-4 mb-4">
+                      {/* Recipe Image */}
+                      <div className="w-20 h-20 bg-gray-600 rounded-lg flex items-center justify-center shrink-0">
+                        {currentRecipe.image_url ? (
+                          <img 
+                            src={currentRecipe.image_url} 
+                            alt={currentRecipe.title}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <ChefHat className="w-8 h-8 text-gray-400" />
+                        )}
+                      </div>
 
-                  {/* Meal Plan Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-white mb-1 truncate">
-                      {currentMealPlan.title}
-                    </h3>
-                    <p className="text-gray-400 text-sm mb-2 line-clamp-2">
-                      {currentMealPlan.description}
-                    </p>
-                    
-                    {/* Stats */}
-                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {currentMealPlan.prep_time || 30}min prep
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <ChefHat className="w-3 h-3" />
-                        {currentMealPlan.servings || 4} servings
-                      </span>
+                      {/* Recipe Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-white mb-1 truncate">
+                          {currentRecipe.title}
+                        </h3>
+                        <p className="text-gray-400 text-sm mb-2 line-clamp-2">
+                          {currentRecipe.description}
+                        </p>
+                        
+                        {/* Stats */}
+                        <div className="flex items-center gap-4 text-sm text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {currentRecipe.prep_time || currentRecipe.time_minutes || 30}min prep
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <ChefHat className="w-3 h-3" />
+                            {currentRecipe.servings || 4} servings
+                          </span>
+                        </div>
+                      </div>
                     </div>
+                    
+                    <TabsContent value="ingredients" className="mt-0">
+                      <div className="space-y-2">
+                        {currentRecipe.ingredients?.length > 0 ? (
+                          currentRecipe.ingredients.map((ingredient: any, index: number) => (
+                            <div key={index} className="flex items-center gap-2 p-2 bg-gray-600 rounded">
+                              <Checkbox id={`ingredient-${index}`} className="border-gray-400" />
+                              <label 
+                                htmlFor={`ingredient-${index}`} 
+                                className="text-sm text-gray-200 cursor-pointer flex-1"
+                              >
+                                {ingredient.display_text || ingredient.name || ingredient}
+                              </label>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-400 text-sm">No ingredients available</p>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="instructions" className="mt-0">
+                      <div className="space-y-3">
+                        {currentRecipe.instructions?.length > 0 ? (
+                          currentRecipe.instructions.map((instruction: string, index: number) => (
+                            <div key={index} className="flex gap-3">
+                              <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium shrink-0">
+                                {index + 1}
+                              </div>
+                              <p className="text-gray-200 text-sm leading-relaxed">{instruction}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-400 text-sm">No instructions available</p>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="nutrition" className="mt-0">
+                      <div className="text-center py-8">
+                        <p className="text-gray-400 text-sm">Nutrition information coming soon...</p>
+                      </div>
+                    </TabsContent>
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-2 shrink-0">
-                    <Button 
-                      size="sm" 
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      View Plan
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="border-gray-600 text-gray-300 hover:bg-gray-600"
-                    >
-                      Share
-                    </Button>
-                  </div>
-                </div>
+                </Tabs>
               </div>
             )}
           </CardContent>
@@ -1061,7 +1109,7 @@ export default function CommunityDetailNew() {
       // Clear extracted recipe and reset form
       setExtractedRecipe(null);
       setAllExtractedRecipes([]);
-      setSelectedRecipeIndex(0);
+      setSelectedExtractedRecipeIndex(0);
       setExtractorUrl("");
       
       // Refresh posts
@@ -1162,7 +1210,7 @@ export default function CommunityDetailNew() {
       </header>
 
       {/* Tab Navigation - Sticky position */}
-      <Tabs defaultValue="community" className="w-full bg-gray-900">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full bg-gray-900">
         <TabsList className="sticky top-0 z-40 w-full bg-gray-800 border-b border-gray-700 rounded-none h-12">
           <TabsTrigger value="community" className="flex-1 bg-gray-800 text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white hover:bg-gray-700 hover:text-white">
             Community
@@ -1367,9 +1415,9 @@ export default function CommunityDetailNew() {
                           className="text-gray-400 hover:text-white p-1"
                           onClick={(e) => {
                             e.stopPropagation();
-                            console.log("🔴 THREE DOTS BUTTON CLICKED! Post ID:", post.id);
-                            console.log("🔴 BUTTON CLICK EVENT:", e);
-                            console.log("🔴 POST DATA:", post);
+                            // console.log("🔴 THREE DOTS BUTTON CLICKED! Post ID:", post.id);
+                            // console.log("🔴 BUTTON CLICK EVENT:", e);
+                            // console.log("🔴 POST DATA:", post);
                             toast({ title: "Button clicked", description: "Three dots menu button was clicked!" });
                           }}
                         >
@@ -1438,28 +1486,28 @@ export default function CommunityDetailNew() {
                                   const mealPlan = post.meal_plan?.meal_plan;
                                   
                                   // Debug: Log the entire meal plan structure
-                                  console.log('=== DEBUG: Full meal plan data ===', {
-                                    meal_plan: post.meal_plan,
-                                    mealPlan: mealPlan
-                                  });
+                                  // console.log('=== DEBUG: Full meal plan data ===', {
+                                  //   meal_plan: post.meal_plan,
+                                  //   mealPlan: mealPlan
+                                  // });
                                   
                                   const firstDay = mealPlan?.day_1 || mealPlan?.days?.day1;
                                   const firstMeal = firstDay?.breakfast || firstDay?.lunch || firstDay?.dinner;
                                   
                                   // Debug: Log the extracted meal
-                                  console.log('=== DEBUG: Extracted meal ===', {
-                                    firstDay,
-                                    firstMeal,
-                                    ingredients: firstMeal?.ingredients,
-                                    ingredientsType: Array.isArray(firstMeal?.ingredients) ? 'array' : typeof firstMeal?.ingredients,
-                                    hasVideoId: !!firstMeal?.video_id,
-                                    video_id: firstMeal?.video_id,
-                                    video_title: firstMeal?.video_title,
-                                    video_channel: firstMeal?.video_channel
-                                  });
+                                  // console.log('=== DEBUG: Extracted meal ===', {
+                                  //   firstDay,
+                                  //   firstMeal,
+                                  //   ingredients: firstMeal?.ingredients,
+                                  //   ingredientsType: Array.isArray(firstMeal?.ingredients) ? 'array' : typeof firstMeal?.ingredients,
+                                  //   hasVideoId: !!firstMeal?.video_id,
+                                  //   video_id: firstMeal?.video_id,
+                                  //   video_title: firstMeal?.video_title,
+                                  //   video_channel: firstMeal?.video_channel
+                                  // });
                                   
                                   if (!firstMeal) {
-                                    console.log('=== DEBUG: No meal found, returning default ===');
+                                    // console.log('=== DEBUG: No meal found, returning default ===');
                                     return {
                                       id: post.meal_plan?.id,
                                       title: post.meal_plan?.name || 'Shared Recipe',
@@ -1478,7 +1526,7 @@ export default function CommunityDetailNew() {
                                   if (Array.isArray(firstMeal.ingredients)) {
                                     processedIngredients = firstMeal.ingredients.map((ing: any, index: number) => {
                                       // Debug each ingredient
-                                      console.log(`=== DEBUG: Ingredient ${index} ===`, ing);
+                                      // console.log(`=== DEBUG: Ingredient ${index} ===`, ing);
                                       
                                       // Handle different ingredient formats
                                       if (typeof ing === 'string') {
@@ -1503,7 +1551,7 @@ export default function CommunityDetailNew() {
                                     }).filter(Boolean);
                                   }
                                   
-                                  console.log('=== DEBUG: Processed ingredients ===', processedIngredients);
+                                  // console.log('=== DEBUG: Processed ingredients ===', processedIngredients);
                                   
                                   const recipeData = {
                                     id: post.meal_plan?.id,
@@ -1521,7 +1569,7 @@ export default function CommunityDetailNew() {
                                     video_channel: firstMeal.video_channel || null
                                   };
                                   
-                                  console.log('=== DEBUG: Final recipe data ===', recipeData);
+                                  // console.log('=== DEBUG: Final recipe data ===', recipeData);
                                   
                                   return recipeData;
                                   })()}
@@ -1613,7 +1661,7 @@ export default function CommunityDetailNew() {
             )}
           </div>
           
-          <MyMealPlansCarousel />
+          <MyRecipesCarousel />
           <MealPlansClassroom 
             communityId={id} 
             isCreator={isCreator}
@@ -1732,7 +1780,7 @@ export default function CommunityDetailNew() {
                           <h4 className="text-white font-medium">Extracted Recipe Preview</h4>
                           {allExtractedRecipes.length > 1 && (
                             <Badge variant="secondary" className="bg-blue-600 text-white">
-                              {selectedRecipeIndex + 1} of {allExtractedRecipes.length}
+                              {selectedExtractedRecipeIndex + 1} of {allExtractedRecipes.length}
                             </Badge>
                           )}
                         </div>
@@ -1747,9 +1795,9 @@ export default function CommunityDetailNew() {
                           {/* Mobile-first: Dots with optional arrow buttons */}
                           <div className="flex items-center justify-center gap-4">
                             {/* Previous Button - Hidden on small screens or when disabled */}
-                            {selectedRecipeIndex > 0 && (
+                            {selectedExtractedRecipeIndex > 0 && (
                               <Button
-                                onClick={() => selectRecipe(selectedRecipeIndex - 1)}
+                                onClick={() => selectRecipe(selectedExtractedRecipeIndex - 1)}
                                 variant="outline"
                                 size="sm"
                                 className="hidden sm:flex border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
@@ -1766,7 +1814,7 @@ export default function CommunityDetailNew() {
                                   key={index}
                                   onClick={() => selectRecipe(index)}
                                   className={`w-3 h-3 rounded-full transition-colors shrink-0 ${
-                                    index === selectedRecipeIndex 
+                                    index === selectedExtractedRecipeIndex 
                                       ? 'bg-emerald-500' 
                                       : 'bg-gray-600 hover:bg-gray-500'
                                   }`}
@@ -1775,9 +1823,9 @@ export default function CommunityDetailNew() {
                             </div>
                             
                             {/* Next Button - Hidden on small screens or when disabled */}
-                            {selectedRecipeIndex < allExtractedRecipes.length - 1 && (
+                            {selectedExtractedRecipeIndex < allExtractedRecipes.length - 1 && (
                               <Button
-                                onClick={() => selectRecipe(selectedRecipeIndex + 1)}
+                                onClick={() => selectRecipe(selectedExtractedRecipeIndex + 1)}
                                 variant="outline"
                                 size="sm"
                                 className="hidden sm:flex border-gray-600 text-gray-300 hover:bg-gray-700 shrink-0"
@@ -1790,14 +1838,14 @@ export default function CommunityDetailNew() {
                           
                           {/* Mobile Navigation Info */}
                           <div className="text-center mt-2 text-sm text-gray-400">
-                            Recipe {selectedRecipeIndex + 1} of {allExtractedRecipes.length}
+                            Recipe {selectedExtractedRecipeIndex + 1} of {allExtractedRecipes.length}
                           </div>
                         </div>
                       )}
                       
                       <div className="bg-gray-700 rounded-lg p-4">
                         <RecipeDisplay
-                          key={`recipe-${selectedRecipeIndex}-${extractedRecipe?.id || 'default'}`}
+                          key={`recipe-${selectedExtractedRecipeIndex}-${extractedRecipe?.id || 'default'}`}
                           recipe={extractedRecipe}
                           onRegenerateClick={() => {}}
                         />
@@ -1844,17 +1892,18 @@ export default function CommunityDetailNew() {
         </TabsContent>
       </Tabs>
 
-      {/* Global Meal Plan Editor Modal for Creators */}
-      {showMealPlanEditorMain && isCreator && (
-        <MealPlanEditor 
-          communityId={id || ''} 
-          onClose={() => {
-            setShowMealPlanEditorMain(false);
-            // Refresh the courses list
-            queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/courses`] });
-          }}
-        />
-      )}
+      {/* Create Recipe Modal for Creators */}
+      {console.log("🍽️ CreateRecipe render - isOpen:", showMealPlanEditorMain && isCreator, "showMealPlanEditorMain:", showMealPlanEditorMain, "isCreator:", isCreator)}
+      <CreateRecipe 
+        isOpen={showMealPlanEditorMain && isCreator}
+        onClose={() => {
+          console.log("🍽️ CreateRecipe onClose called");
+          setShowMealPlanEditorMain(false);
+          // Refresh the recipes list for carousel
+          queryClient.invalidateQueries({ queryKey: [`/api/recipes/saved`] });
+        }}
+        saveAsMealPlan={false}
+      />
 
       {/* Delete Post Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -1889,6 +1938,112 @@ export default function CommunityDetailNew() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Course Management Modal */}
+      <CourseManagement
+        isOpen={showCourseManagement}
+        onClose={() => setShowCourseManagement(false)}
+        communityId={id || ''}
+      />
+
+      {/* Floating Action Button - Creator Only */}
+      {isCreator && (
+        <div className="fixed bottom-6 right-6 z-[99999]">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="h-14 w-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105"
+                size="icon"
+              >
+                <Plus className="w-6 h-6 transition-transform duration-200" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 mb-2 z-[99999]">
+              {/* Show meal plan page specific options when on meals tab */}
+              {activeTab === "meals" ? (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      console.log("🍽️ Add Meal clicked - meals tab");
+                      console.log("🍽️ Current showMealPlanEditorMain state:", showMealPlanEditorMain);
+                      console.log("🍽️ Current isCreator state:", isCreator);
+                      setShowMealPlanEditorMain(true);
+                      console.log("🍽️ Called setShowMealPlanEditorMain(true)");
+                    }}
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-emerald-50"
+                  >
+                    <ChefHat className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <div className="font-medium">Add Meal</div>
+                      <div className="text-sm text-gray-500">Create a new meal</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setShowCourseManagement(true);
+                    }}
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-blue-50"
+                  >
+                    <BookOpen className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <div className="font-medium">Edit Course</div>
+                      <div className="text-sm text-gray-500">Manage your courses</div>
+                    </div>
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                /* Default options for other tabs */
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      console.log("🍽️ Add Meal clicked - other tab");
+                      console.log("🍽️ Current showMealPlanEditorMain state:", showMealPlanEditorMain);
+                      console.log("🍽️ Current isCreator state:", isCreator);
+                      setShowMealPlanEditorMain(true);
+                      console.log("🍽️ Called setShowMealPlanEditorMain(true)");
+                    }}
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-emerald-50"
+                  >
+                    <ChefHat className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <div className="font-medium">Add Meal</div>
+                      <div className="text-sm text-gray-500">Create a new meal</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setShowCourseManagement(true);
+                    }}
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-blue-50"
+                  >
+                    <BookOpen className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <div className="font-medium">Edit Course</div>
+                      <div className="text-sm text-gray-500">Manage your courses</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      // Future: Add content creation functionality
+                      toast({
+                        title: "Coming Soon", 
+                        description: "Content creation will be available soon!"
+                      });
+                    }}
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-purple-50"
+                  >
+                    <MessageSquare className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <div className="font-medium">Add Content</div>
+                      <div className="text-sm text-gray-500">Create new content</div>
+                    </div>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
     </div>
   );
 }

@@ -288,10 +288,23 @@ export async function loginUser(req: Request, res: Response) {
 export async function getCurrentUser(req: AuthRequest, res: Response) {
   try {
     if (!req.user) {
+      console.log("🔍 [getCurrentUser] No user in request");
       return res.status(401).json({ message: "User not authenticated" });
     }
 
+    console.log("🔍 [getCurrentUser] Full user object from req.user:");
+    console.log("🔍 [getCurrentUser] User ID:", req.user.id);
+    console.log("🔍 [getCurrentUser] User Email:", req.user.email);
+    console.log("🔍 [getCurrentUser] User is_creator:", req.user.is_creator);
+    console.log("🔍 [getCurrentUser] User full_name:", req.user.full_name);
+    console.log("🔍 [getCurrentUser] Complete user object:", JSON.stringify(req.user, null, 2));
+
     const { password_hash, ...userWithoutPassword } = req.user;
+    
+    console.log("🔍 [getCurrentUser] Sending back user object:");
+    console.log("🔍 [getCurrentUser] userWithoutPassword.is_creator:", userWithoutPassword.is_creator);
+    console.log("🔍 [getCurrentUser] Complete response object:", JSON.stringify({ user: userWithoutPassword }, null, 2));
+    
     res.json({ user: userWithoutPassword });
   } catch (error) {
     console.error("Get current user error:", error);

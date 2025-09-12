@@ -27,7 +27,6 @@ import CommunityDetail from "@/pages/CommunityDetail";
 import CommunityDetailNew from "@/pages/CommunityDetailNew";
 import PostDetail from "@/pages/PostDetail";
 import CreatorHub from "@/pages/CreatorHub";
-import CreateCommunity from "@/pages/CreateCommunity";
 import CommunityManage from "@/pages/CommunityManage";
 import LessonEditor from "@/pages/LessonEditor";
 import Favorites from "@/pages/Favorites";
@@ -316,8 +315,6 @@ function Router() {
                 <Route path="/search" component={Search} />
                 <Route path="/meal-planner" component={MealPlanner} />
                 <Route path="/communities" component={Communities} />
-                <Route path="/community/create" component={CreateCommunity} />
-                <Route path="/create" component={CreateCommunity} />
                 <Route path="/creator-hub" component={CreatorHub} />
                 <Route path="/community/:id/manage" component={CommunityManage} />
                 <Route path="/community/:communityId/post/:postId" component={PostDetail} />

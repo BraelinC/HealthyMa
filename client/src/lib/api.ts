@@ -12,9 +12,9 @@ import { apiRequest, safeApiRequest } from "./queryClient";
  * @returns Recipe data with video details if available
  */
 export const enhanceRecipeWithVideo = async (recipe: any) => {
-  console.log("Checking recipe video data");
-  console.log("Recipe video_id:", recipe.video_id);
-  console.log("Recipe video_title:", recipe.video_title);
+  // console.log("Checking recipe video data");
+  // console.log("Recipe video_id:", recipe.video_id);
+  // console.log("Recipe video_title:", recipe.video_title);
 
   // Simply return the recipe with whatever video data it already has
   // The backend should have already captured video information during generation
@@ -34,7 +34,7 @@ export const enhanceRecipeWithVideo = async (recipe: any) => {
  * @returns Promise with generated recipe
  */
 export const generateRecipe = async (data: any, mode: string = "detailed") => {
-  console.log("Generating recipe with mode:", mode);
+  // console.log("Generating recipe with mode:", mode);
   return apiRequest("/api/recipes/generate", {
     method: "POST",
     body: JSON.stringify({ ...data, mode })

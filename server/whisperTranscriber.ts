@@ -4,8 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { promisify } from 'util';
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+// import ffmpeg from 'fluent-ffmpeg';
+// import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import dotenv from 'dotenv';
 
 // Get __dirname equivalent for ES modules
@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // Set FFmpeg path
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+// ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const unlink = promisify(fs.unlink);
 const mkdir = promisify(fs.mkdir);
@@ -83,6 +83,11 @@ export class WhisperTranscriber {
       
       return new Promise((resolve, reject) => {
         // Convert to MP3 using FFmpeg
+        // TEMPORARILY DISABLED - FFmpeg functionality commented out
+        console.log('❌ [WHISPER] FFmpeg functionality disabled');
+        reject(new Error('FFmpeg functionality is currently disabled'));
+        
+        /* 
         const command = ffmpeg(audioStream)
           .audioBitrate(128)
           .audioCodec('libmp3lame')
@@ -102,6 +107,7 @@ export class WhisperTranscriber {
           });
         
         command.save(tempFilePath);
+        */
       });
       
     } catch (error: any) {
@@ -131,6 +137,12 @@ export class WhisperTranscriber {
       const maxDurationSeconds = maxDurationMinutes * 60;
       
       // Get audio duration first
+      // TEMPORARILY DISABLED - FFmpeg ffprobe functionality commented out
+      console.log('❌ [WHISPER] FFmpeg ffprobe disabled');
+      reject(new Error('FFmpeg ffprobe functionality is currently disabled'));
+      return;
+      
+      /* 
       ffmpeg.ffprobe(audioPath, (err, metadata) => {
         if (err) {
           reject(err);
@@ -174,6 +186,7 @@ export class WhisperTranscriber {
           .then(() => resolve(chunks))
           .catch(reject);
       });
+      */
     });
   }
   
@@ -303,6 +316,12 @@ export class WhisperTranscriber {
    */
   private async getAudioDuration(audioPath: string): Promise<number> {
     return new Promise((resolve, reject) => {
+      // TEMPORARILY DISABLED - FFmpeg ffprobe functionality commented out
+      console.log('❌ [WHISPER] FFmpeg ffprobe disabled');
+      reject(new Error('FFmpeg ffprobe functionality is currently disabled'));
+      return;
+      
+      /*
       ffmpeg.ffprobe(audioPath, (err, metadata) => {
         if (err) {
           reject(err);
@@ -310,6 +329,7 @@ export class WhisperTranscriber {
           resolve(metadata.format.duration || 0);
         }
       });
+      */
     });
   }
   

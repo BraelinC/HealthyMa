@@ -97,5 +97,5 @@ export function isPostsCacheFresh(communityId: string | number): boolean {
 
 // Initialize posts cache (call on app startup)
 export function initializePostsCache(): void {
-  console.log('🔧 Posts Cache: Initialized');
+  // console.log('🔧 Posts Cache: Initialized');
 }

@@ -84,6 +84,42 @@ export default function Communities() {
   // Use actual creator status from user account - fix nested user object
   const isCreator = user?.user?.is_creator || user?.is_creator;
   
+  // Debug logging to check user data structure
+  console.log('🔍 [Communities Debug] Complete User data:', JSON.stringify(user, null, 2));
+  console.log('🔍 [Communities Debug] isCreator:', isCreator);
+  console.log('🔍 [Communities Debug] user?.user?.is_creator:', user?.user?.is_creator);
+  console.log('🔍 [Communities Debug] user?.is_creator:', user?.is_creator);
+  console.log('🔍 [Communities Debug] isAuthenticated:', isAuthenticated);
+  console.log('🔍 [Communities Debug] typeof user?.user?.is_creator:', typeof user?.user?.is_creator);
+  console.log('🔍 [Communities Debug] typeof user?.is_creator:', typeof user?.is_creator);
+
+  // Creator toggle mutation
+  const toggleCreatorMutation = useMutation({
+    mutationFn: async () => {
+      const { apiRequest } = await import("@/lib/queryClient");
+      return await apiRequest("/api/user/toggle-creator", {
+        method: "POST",
+      });
+    },
+    onSuccess: (data) => {
+      console.log('🔍 [Creator Toggle] Success:', data);
+      toast({
+        title: "Creator Status Updated",
+        description: `Creator status toggled successfully. New status: ${data.is_creator}`,
+      });
+      // Invalidate and refetch user data
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+    onError: (error) => {
+      console.error('🔍 [Creator Toggle] Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle creator status",
+        variant: "destructive",
+      });
+    },
+  });
+  
 
 
   // Fetch communities - only when authenticated
@@ -167,6 +203,78 @@ export default function Communities() {
 
           </div>
         </div>
+
+        {/* DEBUG PANEL - TEMPORARY */}
+        {isAuthenticated && (
+          <Card className="mb-6 border-2 border-yellow-300 bg-yellow-50">
+            <CardHeader>
+              <CardTitle className="text-lg text-yellow-800">🐛 Creator Debug Panel (Temporary)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <strong>User ID:</strong> {user?.user?.id || user?.id || 'Not found'}
+                  </div>
+                  <div>
+                    <strong>Email:</strong> {user?.user?.email || user?.email || 'Not found'}
+                  </div>
+                  <div>
+                    <strong>Is Creator (nested):</strong> 
+                    <span className={`ml-2 px-2 py-1 rounded ${user?.user?.is_creator ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {String(user?.user?.is_creator)} ({typeof user?.user?.is_creator})
+                    </span>
+                  </div>
+                  <div>
+                    <strong>Is Creator (direct):</strong> 
+                    <span className={`ml-2 px-2 py-1 rounded ${user?.is_creator ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {String(user?.is_creator)} ({typeof user?.is_creator})
+                    </span>
+                  </div>
+                  <div>
+                    <strong>Computed isCreator:</strong>
+                    <span className={`ml-2 px-2 py-1 rounded ${isCreator ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {String(isCreator)}
+                    </span>
+                  </div>
+                  <div>
+                    <strong>Should Show Button:</strong>
+                    <span className={`ml-2 px-2 py-1 rounded ${(isAuthenticated && isCreator) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {String(isAuthenticated && isCreator)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-3">
+                  <div className="text-xs text-gray-600 mb-2">
+                    <strong>Complete User Object:</strong>
+                  </div>
+                  <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
+                    {JSON.stringify(user, null, 2)}
+                  </pre>
+                </div>
+                
+                <div className="border-t pt-3 flex gap-3">
+                  <Button
+                    onClick={() => toggleCreatorMutation.mutate()}
+                    disabled={toggleCreatorMutation.isPending}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {toggleCreatorMutation.isPending ? "Toggling..." : "Toggle Creator Status"}
+                  </Button>
+                  <Button
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] })}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Refresh User Data
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Search and Filters */}
         <div className="mb-6 space-y-4">
@@ -310,9 +418,9 @@ export default function Communities() {
                     <p className="text-gray-600 max-w-xs">
                       Start sharing your meal plans and build a following
                     </p>
-                    <Link href="/community/create">
-                      <Button>Create Community</Button>
-                    </Link>
+                    <Button disabled className="opacity-50">
+                      Create Community (Coming Soon)
+                    </Button>
                   </div>
                 </Card>
               </div>

@@ -13,7 +13,7 @@ import { Loader2, ArrowLeft, Mail } from "lucide-react";
 // recreating the `Stripe` object on every render.
 const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_51RgC3eIyKcXnVVhnNxQ7u66KVmiBKa7QFJyHD45Q3eDBlU8aU8FooPyQhPWBoBx5yfB307nEM6C0QqNO5kB2eF9100IbcgF2IL';
 
-console.log('Stripe Public Key:', STRIPE_PUBLIC_KEY ? 'Key loaded' : 'No key found');
+// console.log('Stripe Public Key:', STRIPE_PUBLIC_KEY ? 'Key loaded' : 'No key found');
 
 const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
 

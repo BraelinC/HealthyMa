@@ -118,7 +118,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  console.log('🔧 [SERVER DEBUG] Registering API routes...');
   const server = await registerRoutes(app);
+  console.log('✅ [SERVER DEBUG] API routes registered successfully');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -132,9 +134,12 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
+    console.log('🔧 [SERVER DEBUG] Setting up Vite development middleware...');
     await setupVite(app, server);
   } else {
+    console.log('🔧 [SERVER DEBUG] Setting up static file serving...');
     serveStatic(app);
+    console.log('✅ [SERVER DEBUG] Static file serving configured');
   }
 
   // Use PORT env variable or default to 5000

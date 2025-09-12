@@ -1116,6 +1116,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Save recipe as meal plan for community display
+  app.post("/api/community-recipes/save-as-meal-plan", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const {
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        ingredients,
+        instructions,
+        nutrition_info
+      } = req.body;
+
+      if (!title?.trim()) {
+        return res.status(400).json({ message: "Recipe title is required" });
+      }
+
+      if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+        return res.status(400).json({ message: "At least one ingredient is required" });
+      }
+
+      if (!instructions || !Array.isArray(instructions) || instructions.length === 0) {
+        return res.status(400).json({ message: "At least one instruction is required" });
+      }
+
+      // Transform recipe data to meal plan format
+      const mealPlanData = {
+        userId: userId,
+        name: title.trim(),
+        description: description?.trim() || `Delicious ${title.trim()} recipe`,
+        mealPlan: {
+          "Day 1": {
+            "meal": {
+              title: title.trim(),
+              ingredients: ingredients,
+              instructions: instructions,
+              image_url: image_url || null,
+              prep_time: parseInt(time_minutes) || 30,
+              cook_time: parseInt(time_minutes) || 30,
+              servings: 4,
+              cuisine: cuisine?.trim() || "homemade",
+              diet: diet?.trim() || "",
+              nutrition_info: nutrition_info || {
+                calories: 0,
+                protein_g: 0,
+                carbs_g: 0,
+                fat_g: 0
+              }
+            }
+          }
+        },
+        isAutoSaved: false
+      };
+
+      // Save using the existing meal plan save functionality
+      const savedMealPlan = await storage.saveMealPlan(mealPlanData);
+
+      console.log(`✅ Created meal plan from recipe "${title}" with ID: ${savedMealPlan.id}`);
+      res.json({
+        ...savedMealPlan,
+        message: "Recipe saved as meal plan successfully"
+      });
+    } catch (error) {
+      console.error("Error saving recipe as meal plan:", error);
+      res.status(500).json({ message: "Failed to save recipe as meal plan" });
+    }
+  });
+
   // Get user's created recipes
   app.get("/api/recipes/user", authenticateToken, async (req: any, res) => {
     try {

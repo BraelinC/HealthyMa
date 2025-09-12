@@ -195,6 +195,6 @@ export const achievementService = new AchievementService()
 // Make available for testing in browser console
 if (typeof window !== 'undefined') {
   ;(window as any).achievementService = achievementService
-  console.log('🎮 Achievement service available in console as window.achievementService')
-  console.log('📚 Available methods: trackMealPlanCreated(), getAchievements()')
+  // console.log('🎮 Achievement service available in console as window.achievementService')
+  // console.log('📚 Available methods: trackMealPlanCreated(), getAchievements()')
 }

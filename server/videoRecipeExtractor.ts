@@ -1139,16 +1139,23 @@ export async function getRecipeFromYouTube(query: string, filters?: {
     let transcript = '';
     try {
       // Import Whisper transcriber
-      const { whisperTranscriber } = await import('./whisperTranscriber');
+      // TEMPORARILY DISABLED - Whisper functionality commented out
+      // const { whisperTranscriber } = await import('./whisperTranscriber');
       
       console.log('🎙️ [YOUTUBE] Checking for transcript...');
       const videoUrl = `https://www.youtube.com/watch?v=${videoInfo.id}`;
       
       // Try to get transcript (will use Whisper V3 Turbo if no native transcript exists)
+      // TEMPORARILY DISABLED - Whisper functionality commented out
+      console.log('❌ [YOUTUBE] Whisper transcription disabled');
+      transcript = videoInfo.description || ''; // Use description as fallback only
+      
+      /*
       transcript = await whisperTranscriber.getTranscriptWithFallback(
         videoUrl,
         videoInfo.description // Use description as potential existing transcript
       );
+      */
       
       if (transcript && transcript.length > 50) {
         console.log(`✅ [YOUTUBE] Got transcript (${transcript.length} chars)`);

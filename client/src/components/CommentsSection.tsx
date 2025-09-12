@@ -47,7 +47,7 @@ function CommentItem({ comment, communityId, onReply }: {
   const { user } = useAuth();
   
   // Check if current user is the comment author
-  const isOwnComment = user?.id === comment.author_id;
+  const isOwnComment = (user as any)?.id === comment.author_id;
 
   const commentLikeMutation = useMutation({
     mutationFn: async () => {
@@ -93,7 +93,7 @@ function CommentItem({ comment, communityId, onReply }: {
       <div className="flex gap-3">
         <Avatar className="w-8 h-8 flex-shrink-0">
           <AvatarFallback className="bg-purple-600 text-white text-sm">
-            {comment.author?.firstName?.[0] || comment.author?.full_name?.[0] || 'U'}
+            {comment.author?.firstName?.[0] || (comment.author as any)?.full_name?.[0] || 'U'}
           </AvatarFallback>
         </Avatar>
         
@@ -101,7 +101,7 @@ function CommentItem({ comment, communityId, onReply }: {
           <div className="bg-gray-800 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium text-white text-sm">
-                {comment.author?.firstName || comment.author?.full_name || 'Unknown User'}
+                {comment.author?.firstName || (comment.author as any)?.full_name || 'Unknown User'}
               </span>
               <span className="text-gray-400 text-xs">
                 {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}

@@ -42,7 +42,7 @@ export function MealPlanDebugger() {
             user: userResponse.ok ? await userResponse.json() : null
           };
         } catch (error) {
-          results.apiTests.authCheck = { error: error.message };
+          results.apiTests.authCheck = { error: (error as Error).message };
         }
 
         // Test saved meal plans fetch
@@ -63,7 +63,7 @@ export function MealPlanDebugger() {
             })) || []
           };
         } catch (error) {
-          results.apiTests.savedPlans = { error: error.message };
+          results.apiTests.savedPlans = { error: (error as Error).message };
         }
 
         // Test saving a minimal meal plan
@@ -98,7 +98,7 @@ export function MealPlanDebugger() {
             data: saveResponse.ok ? await saveResponse.json() : await saveResponse.text()
           };
         } catch (error) {
-          results.apiTests.saveTest = { error: error.message };
+          results.apiTests.saveTest = { error: (error as Error).message };
         }
       } else {
         results.apiTests.authCheck = { error: 'No auth token found' };
@@ -112,12 +112,12 @@ export function MealPlanDebugger() {
       });
 
     } catch (error) {
-      results.globalError = error.message;
+      results.globalError = (error as Error).message;
       setDebugInfo(results);
       
       toast({
         title: "Diagnostics Failed",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive"
       });
     } finally {

@@ -421,13 +421,13 @@ const Search = () => {
       <div className="container mx-auto px-4 py-6 md:py-10">
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recipe Generator */}
+          {/* Recipe Search */}
           <div className="lg:col-span-2">
             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm rounded-xl">
               <CardHeader className="border-b text-white rounded-t-xl" style={{ background: 'linear-gradient(to right, #14b8a6, #0d9488)' }}>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5" />
-                  Recipe Generator
+                  Recipe Search
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">

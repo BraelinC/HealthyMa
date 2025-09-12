@@ -2498,296 +2498,23 @@ var init_instacart = __esm({
   }
 });
 
-// server/whisperTranscriber.ts
-var whisperTranscriber_exports = {};
-__export(whisperTranscriber_exports, {
-  WhisperTranscriber: () => WhisperTranscriber,
-  whisperTranscriber: () => whisperTranscriber
-});
-import Groq from "groq-sdk";
-import ytdl from "@distube/ytdl-core";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { promisify } from "util";
-import ffmpeg from "fluent-ffmpeg";
-import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
-import dotenv from "dotenv";
-var __filename, __dirname2, unlink, mkdir, WhisperTranscriber, whisperTranscriber;
-var init_whisperTranscriber = __esm({
-  "server/whisperTranscriber.ts"() {
-    "use strict";
-    __filename = fileURLToPath(import.meta.url);
-    __dirname2 = path.dirname(__filename);
-    dotenv.config({ path: path.join(__dirname2, "..", ".env") });
-    ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-    unlink = promisify(fs.unlink);
-    mkdir = promisify(fs.mkdir);
-    WhisperTranscriber = class {
-      client = null;
-      tempDir = path.join(__dirname2, "../temp/audio");
-      constructor() {
-        const groqApiKey = process.env.GROQ_API_KEY;
-        if (groqApiKey) {
-          console.log("\u{1F399}\uFE0F [WHISPER] Initializing with Whisper V3 Turbo");
-          console.log("\u2705 [WHISPER] API key loaded successfully");
-          this.client = new Groq({
-            apiKey: groqApiKey
-          });
-          this.ensureTempDir();
-        } else {
-          console.error("\u274C [WHISPER] GROQ_API_KEY not found in environment");
-        }
-      }
-      async ensureTempDir() {
-        try {
-          await mkdir(this.tempDir, { recursive: true });
-        } catch (error) {
-          console.error("Failed to create temp directory:", error);
-        }
-      }
-      /**
-       * Download audio from YouTube video
-       */
-      async downloadAudio(videoUrl) {
-        console.log("\u{1F4E5} [WHISPER] Downloading audio from YouTube...");
-        try {
-          const videoInfo = await ytdl.getInfo(videoUrl);
-          const videoId = videoInfo.videoDetails.videoId;
-          const duration = parseInt(videoInfo.videoDetails.lengthSeconds);
-          console.log(`\u{1F4FA} [WHISPER] Video: ${videoInfo.videoDetails.title}`);
-          console.log(`\u23F1\uFE0F [WHISPER] Duration: ${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, "0")}`);
-          const tempFilePath = path.join(this.tempDir, `${videoId}_${Date.now()}.mp3`);
-          console.log("\u{1F3B5} [WHISPER] Creating audio stream...");
-          const audioStream = ytdl(videoUrl, {
-            filter: "audioonly",
-            quality: "lowestaudio",
-            requestOptions: {
-              headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-              }
-            }
-          });
-          return new Promise((resolve, reject) => {
-            const command = ffmpeg(audioStream).audioBitrate(128).audioCodec("libmp3lame").format("mp3").on("error", (error) => {
-              console.error("\u274C [WHISPER] FFmpeg error:", error);
-              reject(error);
-            }).on("end", () => {
-              console.log("\u2705 [WHISPER] Audio downloaded successfully");
-              resolve(tempFilePath);
-            }).on("progress", (progress) => {
-              if (progress.percent) {
-                console.log(`\u23F3 [WHISPER] Processing: ${Math.round(progress.percent)}%`);
-              }
-            });
-            command.save(tempFilePath);
-          });
-        } catch (error) {
-          console.error("\u274C [WHISPER] Download failed:", error.message);
-          if (error.message?.includes("403") || error.message?.includes("Status code: 403")) {
-            console.log("\u26A0\uFE0F [WHISPER] YouTube blocked the download (403 Forbidden)");
-            console.log("\u{1F4A1} [WHISPER] This can happen with copyrighted content or age-restricted videos");
-          } else if (error.message?.includes("404")) {
-            console.log("\u26A0\uFE0F [WHISPER] Video not found (404)");
-          } else {
-            console.log("\u26A0\uFE0F [WHISPER] Unknown download error");
-          }
-          return null;
-        }
-      }
-      /**
-       * Split audio file into chunks for parallel processing
-       */
-      async splitAudioIntoChunks(audioPath, maxDurationMinutes = 5) {
-        console.log(`\u2702\uFE0F [WHISPER] Splitting audio into ${maxDurationMinutes}-minute chunks...`);
-        return new Promise((resolve, reject) => {
-          const chunks = [];
-          const maxDurationSeconds = maxDurationMinutes * 60;
-          ffmpeg.ffprobe(audioPath, (err, metadata) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            const duration = metadata.format.duration || 0;
-            const numChunks = Math.ceil(duration / maxDurationSeconds);
-            if (numChunks <= 1) {
-              console.log("\u{1F4DD} [WHISPER] Audio is short enough, no splitting needed");
-              resolve([audioPath]);
-              return;
-            }
-            console.log(`\u{1F4DD} [WHISPER] Splitting into ${numChunks} chunks`);
-            const promises = [];
-            for (let i = 0; i < numChunks; i++) {
-              const startTime = i * maxDurationSeconds;
-              const chunkPath = audioPath.replace(".mp3", `_chunk${i}.mp3`);
-              chunks.push(chunkPath);
-              promises.push(new Promise((resolveChunk, rejectChunk) => {
-                ffmpeg(audioPath).setStartTime(startTime).setDuration(maxDurationSeconds).audioCodec("libmp3lame").on("end", () => {
-                  console.log(`\u2705 [WHISPER] Chunk ${i + 1}/${numChunks} created`);
-                  resolveChunk(chunkPath);
-                }).on("error", rejectChunk).save(chunkPath);
-              }));
-            }
-            Promise.all(promises).then(() => resolve(chunks)).catch(reject);
-          });
-        });
-      }
-      /**
-       * Transcribe audio file using Whisper V3 Turbo
-       */
-      async transcribeAudio(audioPath, chunkIndex) {
-        if (!this.client) {
-          console.log("\u26A0\uFE0F [WHISPER] No client available");
-          return "";
-        }
-        try {
-          const chunkLabel = chunkIndex !== void 0 ? ` (chunk ${chunkIndex + 1})` : "";
-          console.log(`\u{1F399}\uFE0F [WHISPER] Transcribing audio${chunkLabel} with Whisper V3 Turbo...`);
-          const startTime = Date.now();
-          const audioBuffer = fs.readFileSync(audioPath);
-          const fileName = path.basename(audioPath);
-          const fileSizeMB = audioBuffer.length / (1024 * 1024);
-          console.log(`\u{1F4CA} [WHISPER] File size: ${fileSizeMB.toFixed(2)} MB`);
-          const transcription = await this.client.audio.transcriptions.create({
-            file: new File([audioBuffer], fileName, { type: "audio/mpeg" }),
-            model: "whisper-large-v3-turbo",
-            // Using V3 Turbo for fast transcription
-            response_format: "verbose_json",
-            language: "en",
-            // Specify English for better accuracy
-            temperature: 0.2
-            // Lower temperature for more accurate transcription
-          });
-          const timeTaken = Date.now() - startTime;
-          console.log(`\u2705 [WHISPER] Transcription complete${chunkLabel} in ${timeTaken}ms`);
-          if (transcription.segments) {
-            const segments = transcription.segments;
-            console.log(`\u{1F4DD} [WHISPER] Transcribed ${segments.length} segments`);
-          }
-          return transcription.text || "";
-        } catch (error) {
-          console.error("\u274C [WHISPER] Transcription failed:", error);
-          return "";
-        }
-      }
-      /**
-       * Transcribe YouTube video with automatic audio download
-       */
-      async transcribeYouTubeVideo(videoUrl) {
-        console.log("\u{1F680} [WHISPER] Starting YouTube video transcription...");
-        let audioPath = null;
-        let chunkPaths = [];
-        try {
-          audioPath = await this.downloadAudio(videoUrl);
-          if (!audioPath) {
-            console.error("\u274C [WHISPER] Failed to download audio");
-            return null;
-          }
-          const duration = await this.getAudioDuration(audioPath);
-          console.log(`\u23F1\uFE0F [WHISPER] Total duration: ${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, "0")}`);
-          if (duration > 300) {
-            console.log("\u{1F4CA} [WHISPER] Audio is longer than 5 minutes, splitting for parallel processing...");
-            chunkPaths = await this.splitAudioIntoChunks(audioPath, 5);
-            console.log(`\u{1F680} [WHISPER] Transcribing ${chunkPaths.length} chunks in parallel...`);
-            const transcriptionPromises = chunkPaths.map(
-              (chunkPath, index2) => this.transcribeAudio(chunkPath, index2)
-            );
-            const transcriptions = await Promise.all(transcriptionPromises);
-            const fullTranscript = transcriptions.join(" ");
-            await this.cleanupFiles(chunkPaths);
-            return {
-              transcript: fullTranscript,
-              duration,
-              chunks: chunkPaths.length
-            };
-          } else {
-            const transcript = await this.transcribeAudio(audioPath);
-            return {
-              transcript,
-              duration,
-              chunks: 1
-            };
-          }
-        } catch (error) {
-          console.error("\u274C [WHISPER] YouTube transcription failed:", error);
-          return null;
-        } finally {
-          if (audioPath) {
-            await this.cleanupFiles([audioPath]);
-          }
-        }
-      }
-      /**
-       * Get audio duration in seconds
-       */
-      async getAudioDuration(audioPath) {
-        return new Promise((resolve, reject) => {
-          ffmpeg.ffprobe(audioPath, (err, metadata) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(metadata.format.duration || 0);
-            }
-          });
-        });
-      }
-      /**
-       * Clean up temporary files
-       */
-      async cleanupFiles(filePaths) {
-        for (const filePath of filePaths) {
-          try {
-            if (fs.existsSync(filePath)) {
-              await unlink(filePath);
-              console.log(`\u{1F9F9} [WHISPER] Cleaned up: ${path.basename(filePath)}`);
-            }
-          } catch (error) {
-            console.error(`Failed to delete ${filePath}:`, error);
-          }
-        }
-      }
-      /**
-       * Transcribe with automatic fallback to Whisper if no transcript exists
-       */
-      async getTranscriptWithFallback(videoUrl, existingTranscript) {
-        if (existingTranscript && existingTranscript.length > 50) {
-          console.log("\u2705 [WHISPER] Using existing transcript");
-          return existingTranscript;
-        }
-        console.log("\u{1F504} [WHISPER] No transcript found, using Whisper V3 Turbo...");
-        const result = await this.transcribeYouTubeVideo(videoUrl);
-        if (result && result.transcript) {
-          console.log(`\u2705 [WHISPER] Generated transcript (${result.transcript.length} chars)`);
-          if (result.chunks && result.chunks > 1) {
-            console.log(`\u{1F4CA} [WHISPER] Processed ${result.chunks} chunks in parallel`);
-          }
-          return result.transcript;
-        }
-        console.log("\u274C [WHISPER] Failed to generate transcript");
-        return "";
-      }
-    };
-    whisperTranscriber = new WhisperTranscriber();
-  }
-});
-
 // server/groqInstructionGenerator.ts
 var groqInstructionGenerator_exports = {};
 __export(groqInstructionGenerator_exports, {
   GroqInstructionGenerator: () => GroqInstructionGenerator,
   groqInstructionGenerator: () => groqInstructionGenerator
 });
-import Groq2 from "groq-sdk";
-import dotenv2 from "dotenv";
-import path2 from "path";
-import { fileURLToPath as fileURLToPath2 } from "url";
-var __filename2, __dirname3, GroqInstructionGenerator, groqInstructionGenerator;
+import Groq from "groq-sdk";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+var __filename, __dirname2, GroqInstructionGenerator, groqInstructionGenerator;
 var init_groqInstructionGenerator = __esm({
   "server/groqInstructionGenerator.ts"() {
     "use strict";
-    __filename2 = fileURLToPath2(import.meta.url);
-    __dirname3 = path2.dirname(__filename2);
-    dotenv2.config({ path: path2.join(__dirname3, "..", ".env") });
+    __filename = fileURLToPath(import.meta.url);
+    __dirname2 = path.dirname(__filename);
+    dotenv.config({ path: path.join(__dirname2, "..", ".env") });
     GroqInstructionGenerator = class {
       client = null;
       constructor() {
@@ -2795,7 +2522,7 @@ var init_groqInstructionGenerator = __esm({
         if (groqApiKey) {
           console.log("\u{1F680} [GROQ INSTRUCTION GEN] Initializing with GPT-OSS-120B");
           console.log("\u2705 [GROQ INSTRUCTION GEN] API key loaded successfully");
-          this.client = new Groq2({
+          this.client = new Groq({
             apiKey: groqApiKey
           });
         } else {
@@ -5797,8 +5524,8 @@ __export(perplexitySearchLogger_exports, {
   logPerplexitySearch: () => logPerplexitySearch,
   perplexityLogger: () => perplexityLogger
 });
-import fs2 from "fs/promises";
-import path6 from "path";
+import fs from "fs/promises";
+import path5 from "path";
 async function logPerplexitySearch(query, response, category = "general", cached = false, userId, executionTime) {
   return perplexityLogger.logSearch(query, response, category, cached, userId, executionTime);
 }
@@ -5812,13 +5539,13 @@ var init_perplexitySearchLogger = __esm({
       maxFileSize = 10 * 1024 * 1024;
       // 10MB
       constructor() {
-        this.logFile = path6.join(__dirname, "../logs/perplexity-searches.json");
+        this.logFile = path5.join(__dirname, "../logs/perplexity-searches.json");
         this.ensureLogDirectory();
       }
       async ensureLogDirectory() {
-        const logDir = path6.dirname(this.logFile);
+        const logDir = path5.dirname(this.logFile);
         try {
-          await fs2.mkdir(logDir, { recursive: true });
+          await fs.mkdir(logDir, { recursive: true });
         } catch (error) {
           console.error("Failed to create log directory:", error);
         }
@@ -5872,7 +5599,7 @@ var init_perplexitySearchLogger = __esm({
       async saveEntry(entry) {
         let existingEntries = [];
         try {
-          const fileContent = await fs2.readFile(this.logFile, "utf-8");
+          const fileContent = await fs.readFile(this.logFile, "utf-8");
           existingEntries = JSON.parse(fileContent);
         } catch (error) {
           existingEntries = [];
@@ -5886,13 +5613,13 @@ var init_perplexitySearchLogger = __esm({
           await this.rotateLog();
           existingEntries = existingEntries.slice(0, Math.floor(this.maxEntries / 2));
         }
-        await fs2.writeFile(this.logFile, content, "utf-8");
+        await fs.writeFile(this.logFile, content, "utf-8");
       }
       async rotateLog() {
         const timestamp2 = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
         const rotatedFile = this.logFile.replace(".json", `-${timestamp2}.json`);
         try {
-          await fs2.rename(this.logFile, rotatedFile);
+          await fs.rename(this.logFile, rotatedFile);
           console.log(`\u{1F4E6} Rotated Perplexity log to: ${rotatedFile}`);
         } catch (error) {
           console.error("Failed to rotate log file:", error);
@@ -5900,7 +5627,7 @@ var init_perplexitySearchLogger = __esm({
       }
       async getSearchHistory(limit = 50) {
         try {
-          const fileContent = await fs2.readFile(this.logFile, "utf-8");
+          const fileContent = await fs.readFile(this.logFile, "utf-8");
           const entries = JSON.parse(fileContent);
           return entries.slice(0, limit);
         } catch (error) {
@@ -5910,7 +5637,7 @@ var init_perplexitySearchLogger = __esm({
       }
       async clearSearchHistory() {
         try {
-          await fs2.writeFile(this.logFile, JSON.stringify([], null, 2), "utf-8");
+          await fs.writeFile(this.logFile, JSON.stringify([], null, 2), "utf-8");
           console.log("\u{1F9F9} Cleared Perplexity search history");
         } catch (error) {
           console.error("Failed to clear search history:", error);
@@ -11640,21 +11367,21 @@ var init_intelligentPromptBuilder = __esm({
 });
 
 // server/cuisineMasterlistMigration.ts
-import fs3 from "fs";
-import path7 from "path";
+import fs2 from "fs";
+import path6 from "path";
 async function loadMasterlist(preferV2 = true) {
-  const basePath = path7.join(process.cwd(), "client", "src", "data");
+  const basePath = path6.join(process.cwd(), "client", "src", "data");
   if (preferV2) {
     try {
-      const v2Path = path7.join(basePath, "cultural_cuisine_masterlist_v2.json");
-      const v2Data = await fs3.promises.readFile(v2Path, "utf-8");
+      const v2Path = path6.join(basePath, "cultural_cuisine_masterlist_v2.json");
+      const v2Data = await fs2.promises.readFile(v2Path, "utf-8");
       return JSON.parse(v2Data);
     } catch (error) {
       console.log("\u{1F4C4} V2 masterlist not found, falling back to legacy format");
     }
   }
-  const legacyPath = path7.join(basePath, "cultural_cuisine_masterlist.json");
-  const legacyData = await fs3.promises.readFile(legacyPath, "utf-8");
+  const legacyPath = path6.join(basePath, "cultural_cuisine_masterlist.json");
+  const legacyData = await fs2.promises.readFile(legacyPath, "utf-8");
   return JSON.parse(legacyData);
 }
 var init_cuisineMasterlistMigration = __esm({
@@ -14214,7 +13941,7 @@ If no useful text or information is visible, return: "NO_ADDITIONAL_INFO"
 });
 
 // server/services/groqService.js
-import Groq5 from "groq-sdk";
+import Groq4 from "groq-sdk";
 var GroqService, groqService_default;
 var init_groqService = __esm({
   "server/services/groqService.js"() {
@@ -14225,7 +13952,7 @@ var init_groqService = __esm({
         if (!apiKey) {
           throw new Error("GROQ_API_KEY environment variable is required");
         }
-        this.client = new Groq5({
+        this.client = new Groq4({
           apiKey
         });
       }
@@ -15135,9 +14862,9 @@ var init_batchExtractionService = __esm({
 import express3 from "express";
 import session from "express-session";
 import cors from "cors";
-import dotenv6 from "dotenv";
-import path10 from "path";
-import { fileURLToPath as fileURLToPath6 } from "url";
+import dotenv5 from "dotenv";
+import path9 from "path";
+import { fileURLToPath as fileURLToPath5 } from "url";
 
 // server/routes.ts
 init_storage();
@@ -16210,14 +15937,10 @@ async function getRecipeFromYouTube(query, filters) {
     console.log(`\u{1F517} [YOUTUBE] Video URL: https://www.youtube.com/watch?v=${videoInfo.id}`);
     let transcript = "";
     try {
-      const { whisperTranscriber: whisperTranscriber2 } = await Promise.resolve().then(() => (init_whisperTranscriber(), whisperTranscriber_exports));
       console.log("\u{1F399}\uFE0F [YOUTUBE] Checking for transcript...");
       const videoUrl = `https://www.youtube.com/watch?v=${videoInfo.id}`;
-      transcript = await whisperTranscriber2.getTranscriptWithFallback(
-        videoUrl,
-        videoInfo.description
-        // Use description as potential existing transcript
-      );
+      console.log("\u274C [YOUTUBE] Whisper transcription disabled");
+      transcript = videoInfo.description || "";
       if (transcript && transcript.length > 50) {
         console.log(`\u2705 [YOUTUBE] Got transcript (${transcript.length} chars)`);
         console.log(`\u{1F4DD} [YOUTUBE] Transcript preview: ${transcript.substring(0, 150)}...`);
@@ -17016,13 +16739,13 @@ var MealPlanSharingService = class {
 var mealPlanSharingService = new MealPlanSharingService();
 
 // server/groqValidator.ts
-import Groq3 from "groq-sdk";
-import dotenv3 from "dotenv";
-import path3 from "path";
-import { fileURLToPath as fileURLToPath3 } from "url";
-var __filename3 = fileURLToPath3(import.meta.url);
-var __dirname4 = path3.dirname(__filename3);
-dotenv3.config({ path: path3.join(__dirname4, "..", ".env") });
+import Groq2 from "groq-sdk";
+import dotenv2 from "dotenv";
+import path2 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
+var __filename2 = fileURLToPath2(import.meta.url);
+var __dirname3 = path2.dirname(__filename2);
+dotenv2.config({ path: path2.join(__dirname3, "..", ".env") });
 var GroqRecipeValidator = class {
   client = null;
   constructor() {
@@ -17030,7 +16753,7 @@ var GroqRecipeValidator = class {
     if (groqApiKey) {
       console.log("\u{1F680} [GROQ VALIDATOR] Initializing with API key:", groqApiKey.substring(0, 10) + "...");
       console.log("\u2705 [GROQ VALIDATOR] API key loaded successfully");
-      this.client = new Groq3({
+      this.client = new Groq2({
         apiKey: groqApiKey
       });
     } else {
@@ -17126,13 +16849,13 @@ var GroqRecipeValidator = class {
 var groqValidator = new GroqRecipeValidator();
 
 // server/groqIngredientParser.ts
-import Groq4 from "groq-sdk";
-import dotenv4 from "dotenv";
-import path4 from "path";
-import { fileURLToPath as fileURLToPath4 } from "url";
-var __filename4 = fileURLToPath4(import.meta.url);
-var __dirname5 = path4.dirname(__filename4);
-dotenv4.config({ path: path4.join(__dirname5, "..", ".env") });
+import Groq3 from "groq-sdk";
+import dotenv3 from "dotenv";
+import path3 from "path";
+import { fileURLToPath as fileURLToPath3 } from "url";
+var __filename3 = fileURLToPath3(import.meta.url);
+var __dirname4 = path3.dirname(__filename3);
+dotenv3.config({ path: path3.join(__dirname4, "..", ".env") });
 var GroqIngredientParser = class {
   client = null;
   constructor() {
@@ -17140,7 +16863,7 @@ var GroqIngredientParser = class {
     if (groqApiKey) {
       console.log("\u{1F680} [GROQ INGREDIENT PARSER] Initializing with GPT-OSS-20B");
       console.log("\u2705 [GROQ INGREDIENT PARSER] API key loaded successfully");
-      this.client = new Groq4({
+      this.client = new Groq3({
         apiKey: groqApiKey
       });
     } else {
@@ -17260,12 +16983,12 @@ var groqIngredientParser = new GroqIngredientParser();
 
 // server/usdaNutritionService.ts
 import fetch4 from "node-fetch";
-import dotenv5 from "dotenv";
-import path5 from "path";
-import { fileURLToPath as fileURLToPath5 } from "url";
-var __filename5 = fileURLToPath5(import.meta.url);
-var __dirname6 = path5.dirname(__filename5);
-dotenv5.config({ path: path5.join(__dirname6, "..", ".env") });
+import dotenv4 from "dotenv";
+import path4 from "path";
+import { fileURLToPath as fileURLToPath4 } from "url";
+var __filename4 = fileURLToPath4(import.meta.url);
+var __dirname5 = path4.dirname(__filename4);
+dotenv4.config({ path: path4.join(__dirname5, "..", ".env") });
 var USDANutritionService = class {
   apiKey;
   baseUrl = "https://api.nal.usda.gov/fdc/v1";
@@ -17758,7 +17481,7 @@ var ObjectStorageService = class {
     const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
     const paths = Array.from(
       new Set(
-        pathsStr.split(",").map((path11) => path11.trim()).filter((path11) => path11.length > 0)
+        pathsStr.split(",").map((path10) => path10.trim()).filter((path10) => path10.length > 0)
       )
     );
     if (paths.length === 0) {
@@ -17887,11 +17610,11 @@ var ObjectStorageService = class {
     }
   }
 };
-function parseObjectPath(path11) {
-  if (!path11.startsWith("/")) {
-    path11 = `/${path11}`;
+function parseObjectPath(path10) {
+  if (!path10.startsWith("/")) {
+    path10 = `/${path10}`;
   }
-  const pathParts = path11.split("/");
+  const pathParts = path10.split("/");
   if (pathParts.length < 3) {
     throw new Error("Invalid path: must contain at least a bucket name");
   }
@@ -22908,14 +22631,14 @@ async function registerRoutes(app2) {
 
 // server/vite.ts
 import express2 from "express";
-import fs4 from "fs";
-import path9 from "path";
+import fs3 from "fs";
+import path8 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path8 from "path";
+import path7 from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
   plugins: [
@@ -22929,14 +22652,14 @@ var vite_config_default = defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path8.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path8.resolve(import.meta.dirname, "shared"),
-      "@assets": path8.resolve(import.meta.dirname, "attached_assets")
+      "@": path7.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path7.resolve(import.meta.dirname, "shared"),
+      "@assets": path7.resolve(import.meta.dirname, "attached_assets")
     }
   },
-  root: path8.resolve(import.meta.dirname, "client"),
+  root: path7.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path8.resolve(import.meta.dirname, "dist/public"),
+    outDir: path7.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true
   },
   server: {
@@ -22990,13 +22713,13 @@ async function setupVite(app2, server) {
     }
     const url = req.originalUrl;
     try {
-      const clientTemplate = path9.resolve(
+      const clientTemplate = path8.resolve(
         import.meta.dirname,
         "..",
         "client",
         "index.html"
       );
-      let template = await fs4.promises.readFile(clientTemplate, "utf-8");
+      let template = await fs3.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
@@ -23010,23 +22733,26 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path9.resolve(import.meta.dirname, "public");
-  if (!fs4.existsSync(distPath)) {
+  const distPath = path8.resolve(import.meta.dirname, "..", "dist", "public");
+  if (!fs3.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
   app2.use(express2.static(distPath));
-  app2.use("*", (_req, res) => {
-    res.sendFile(path9.resolve(distPath, "index.html"));
+  app2.use("*", (req, res) => {
+    if (req.originalUrl.startsWith("/api/")) {
+      return res.status(404).json({ error: "API endpoint not found" });
+    }
+    res.sendFile(path8.resolve(distPath, "index.html"));
   });
 }
 
 // server/index.ts
 init_googleAuth();
-var __filename6 = fileURLToPath6(import.meta.url);
-var __dirname7 = path10.dirname(__filename6);
-dotenv6.config({ path: path10.join(__dirname7, "..", ".env") });
+var __filename5 = fileURLToPath5(import.meta.url);
+var __dirname6 = path9.dirname(__filename5);
+dotenv5.config({ path: path9.join(__dirname6, "..", ".env") });
 var app = express3();
 var corsOptions = {
   origin: function(origin, callback) {
@@ -23094,7 +22820,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use((req, res, next) => {
   const start = Date.now();
-  const path11 = req.path;
+  const path10 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -23103,8 +22829,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path11.startsWith("/api")) {
-      let logLine = `${req.method} ${path11} ${res.statusCode} in ${duration}ms`;
+    if (path10.startsWith("/api")) {
+      let logLine = `${req.method} ${path10} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -23117,7 +22843,9 @@ app.use((req, res, next) => {
   next();
 });
 (async () => {
+  console.log("\u{1F527} [SERVER DEBUG] Registering API routes...");
   const server = await registerRoutes(app);
+  console.log("\u2705 [SERVER DEBUG] API routes registered successfully");
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -23125,9 +22853,12 @@ app.use((req, res, next) => {
     throw err;
   });
   if (app.get("env") === "development") {
+    console.log("\u{1F527} [SERVER DEBUG] Setting up Vite development middleware...");
     await setupVite(app, server);
   } else {
+    console.log("\u{1F527} [SERVER DEBUG] Setting up static file serving...");
     serveStatic(app);
+    console.log("\u2705 [SERVER DEBUG] Static file serving configured");
   }
   const port = process.env.PORT ? parseInt(process.env.PORT) : 5e3;
   server.on("error", (error) => {

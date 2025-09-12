@@ -37,4 +37,4 @@ export function buildApiUrl(path: string): string {
   return `${API_BASE_URL}${normalizedPath}`;
 }
 
-console.log('API Base URL configured:', API_BASE_URL);
+// console.log('API Base URL configured:', API_BASE_URL);
