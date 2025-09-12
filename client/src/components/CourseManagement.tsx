@@ -65,6 +65,20 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
   const [selectedLessonData, setSelectedLessonData] = useState<any>(null);
   const [loadingLessonId, setLoadingLessonId] = useState<string | null>(null);
 
+  // Mobile detection state
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
   // Fetch courses for this community
   const { data: courses = [], isLoading } = useQuery({
     queryKey: [`/api/communities/${communityId}/courses`],
@@ -318,27 +332,55 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
         <div className="flex flex-col md:flex-row flex-1 min-h-0">
           {/* Left Sidebar - Course List */}
           <div className="w-full md:w-80 bg-gray-800 md:border-r border-gray-700 flex flex-col">
-            <div className="p-4 border-b border-gray-700">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-white">Courses</h3>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setShowCourseCreationForm(true);
-                    setSelectedCourseId(null); // Clear selected course to show form
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700"
+            {/* Mobile: Compact dropdown when course selected, full list otherwise */}
+            {isMobile && selectedCourseId ? (
+              // Compact Dropdown for Mobile
+              <div className="p-4 border-b border-gray-700">
+                <Select 
+                  value={selectedCourseId.toString()} 
+                  onValueChange={(value) => setSelectedCourseId(parseInt(value))}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Course
-                </Button>
+                  <SelectTrigger className="w-full bg-gray-700 border-gray-600 text-white">
+                    <SelectValue>
+                      {(() => {
+                        const selectedCourse = courses.find((c: Course) => c.id === selectedCourseId);
+                        return selectedCourse ? `${selectedCourse.emoji || '📚'} ${selectedCourse.title}` : 'Select Course';
+                      })()}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-600">
+                    {courses.map((course: Course) => (
+                      <SelectItem key={course.id} value={course.id.toString()} className="text-white hover:bg-gray-700">
+                        {course.emoji || '📚'} {course.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            ) : (
+              // Full Course List Header (Desktop or Mobile without selection)
+              <div className="p-4 border-b border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-white">Courses</h3>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setShowCourseCreationForm(true);
+                      setSelectedCourseId(null); // Clear selected course to show form
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Course
+                  </Button>
+                </div>
+              </div>
+            )}
 
-            </div>
-
-            {/* Draggable Course List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {courses.map((course: Course) => (
+            {/* Draggable Course List - Only show if not mobile-compact mode */}
+            {!(isMobile && selectedCourseId) && (
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {courses.map((course: Course) => (
                 <div
                   key={course.id}
                   draggable
@@ -395,13 +437,15 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                     </div>
                   </div>
                 </div>
-              ))}
-
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right Content - Course Details or Creation Form */}
-          <div className="w-full md:flex-1 p-6 overflow-y-auto">
+          <div className={`w-full md:flex-1 p-6 overflow-y-auto ${
+            isMobile && selectedCourseId ? 'flex-1' : 'h-2/3 md:flex-1'
+          }`}>
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
