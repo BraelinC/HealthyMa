@@ -40,9 +40,6 @@ export default defineConfig(async ({ mode }) => {
           secure: false,
         }
       }
-    },
-    define: {
-      'import.meta.env.STRIPE_PUBLISHABLE_KEY': JSON.stringify(process.env.STRIPE_PUBLISHABLE_KEY ?? ''),
     }
   };
 });

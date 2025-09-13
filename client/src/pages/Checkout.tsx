@@ -11,30 +11,8 @@ import { Loader2, ArrowLeft, Mail } from "lucide-react";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-let STRIPE_PUBLISHABLE_KEY = import.meta.env.STRIPE_PUBLISHABLE_KEY || '';
-if (!STRIPE_PUBLISHABLE_KEY) {
-  // eslint-disable-next-line no-console
-  console.warn('Stripe publishable key not injected. Attempting to fetch from /api/stripe-publishable-key');
-}
-
-// console.log('Stripe Public Key:', STRIPE_PUBLISHABLE_KEY ? 'Key loaded' : 'No key found');
-
-let stripePromise: Promise<import('@stripe/stripe-js').Stripe | null> | null = null;
-if (STRIPE_PUBLISHABLE_KEY) {
-  stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
-} else {
-  stripePromise = fetch('/api/stripe-publishable-key', { credentials: 'include' })
-    .then(async (res) => {
-      if (!res.ok) return null;
-      const json = await res.json();
-      if (json?.publishableKey) {
-        STRIPE_PUBLISHABLE_KEY = json.publishableKey;
-        return loadStripe(json.publishableKey);
-      }
-      return null;
-    })
-    .catch(() => null);
-}
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 interface CheckoutFormProps {
   paymentType: 'founders' | 'trial' | 'monthly';
@@ -294,9 +272,7 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           ) : (
             <div className="text-center p-4">
               <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-              <p className="text-sm text-gray-600">
-                {STRIPE_PUBLISHABLE_KEY ? 'Initializing payment...' : 'Stripe publishable key missing. Configure STRIPE_PUBLISHABLE_KEY and restart.'}
-              </p>
+              <p className="text-sm text-gray-600">{STRIPE_PUBLISHABLE_KEY ? 'Initializing payment...' : 'Stripe publishable key missing. Set VITE_STRIPE_PUBLISHABLE_KEY and restart.'}</p>
             </div>
           )}
         </CardContent>
