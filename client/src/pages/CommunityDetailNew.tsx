@@ -129,6 +129,15 @@ function MealPlansClassroom({
   const [expandedCourses, setExpandedCourses] = useState<number[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  // Detect mobile for overlay preview behavior
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // Fetch courses from API
   const { data: courses = [], isLoading: coursesLoading } = useQuery({
@@ -158,11 +167,76 @@ function MealPlansClassroom({
 
   // Toggle course expansion
   const toggleCourseExpansion = (courseId: number) => {
-    setExpandedCourses(prev => 
-      prev.includes(courseId) 
-        ? prev.filter(id => id !== courseId)
-        : [...prev, courseId]
-    );
+    setExpandedCourses(prev => {
+      const isExpanded = prev.includes(courseId);
+      const next = isExpanded ? prev.filter(id => id !== courseId) : [...prev, courseId];
+
+      // When expanding, kick off background preload of lesson preview data
+      if (!isExpanded) {
+        const course = (courses as any[]).find((c: any) => c.id === courseId);
+        if (course) {
+          preloadCourseLessons(course);
+        }
+      }
+      return next;
+    });
+  };
+
+  // Background preloading of lesson preview data for faster mobile overlay
+  const preloadCourseLessons = async (course: any) => {
+    try {
+      const gatherLessons = () => {
+        const moduleLessons = (course.modules || []).flatMap((m: any) => m.lessons || []);
+        const topLessons = (course.lessons || []).filter((l: any) => !l.module_id);
+        return [...moduleLessons, ...topLessons];
+      };
+
+      const lessons = gatherLessons();
+      if (!lessons || lessons.length === 0) return;
+
+      // Stagger requests slightly to avoid burst
+      for (let i = 0; i < lessons.length; i++) {
+        const lesson = lessons[i];
+        // If already in sessionStorage, skip
+        if (sessionStorage.getItem(`lesson-preview-${lesson.id}`)) continue;
+
+        // Small delay between fetches
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(res => setTimeout(res, 75));
+
+        // Build a lightweight preview payload from already-loaded course data
+        const previewData = {
+          title: lesson.title,
+          description: lesson.description,
+          emoji: lesson.emoji,
+          image_url: lesson.image_url,
+          youtube_video_id: lesson.youtube_video_id,
+          recipe_name: lesson.recipe_name,
+          meal_type: lesson.meal_type,
+          cuisine: lesson.cuisine,
+          difficulty_level: lesson.difficulty_level,
+          prep_time: lesson.prep_time,
+          cook_time: lesson.cook_time,
+          servings: lesson.servings,
+          ingredients: lesson.ingredients || [],
+          instructions: lesson.instructions || [],
+          sections: lesson.sections || [],
+          sectionStates: {
+            basicInfo: true,
+            mediaVideo: true,
+            recipeDetails: true,
+            lessonSections: true,
+          },
+          id: lesson.id,
+          course_id: course.id,
+          community_id: communityId,
+        } as any;
+
+        sessionStorage.setItem(`lesson-preview-${lesson.id}`, JSON.stringify(previewData));
+      }
+    } catch (err) {
+      console.warn('Preload lessons failed:', err);
+    }
   };
 
   // Loading state
@@ -178,6 +252,25 @@ function MealPlansClassroom({
   }
 
   if (showLessonView && selectedLesson) {
+    if (isMobile) {
+      const previewUrl = `/community/${communityId}/lesson/${selectedLesson.id || 'new'}/preview`;
+      return (
+        <div className="fixed inset-0 z-[100000] bg-black/90 backdrop-blur-sm">
+          <button
+            className="absolute top-3 left-3 z-[100001] text-white bg-gray-800/90 hover:bg-gray-700 rounded px-3 py-1"
+            onClick={() => setShowLessonView(false)}
+            aria-label="Back"
+          >
+            ← Back
+          </button>
+          <iframe
+            src={previewUrl}
+            className="absolute inset-0 w-full h-full border-0"
+            title="Lesson Preview"
+          />
+        </div>
+      );
+    }
     return (
       <InlineLessonEditor
         lesson={selectedLesson}

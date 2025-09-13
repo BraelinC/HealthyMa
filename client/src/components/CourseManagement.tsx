@@ -59,6 +59,8 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [isCreatingModule, setIsCreatingModule] = useState(false);
   const [showLessonCreationForm, setShowLessonCreationForm] = useState(false);
+  // Course picker overlay (shown first when dialog opens)
+  const [showCoursePicker, setShowCoursePicker] = useState<boolean>(false);
 
   // Lesson editing state
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
@@ -79,6 +81,16 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  // When dialog opens, show picker first if no course is selected yet
+  useEffect(() => {
+    if (isOpen) {
+      // Show the course picker immediately; it will collapse once chosen
+      setShowCoursePicker(true);
+    } else {
+      setShowCoursePicker(false);
+    }
+  }, [isOpen]);
+
   // Fetch courses for this community
   const { data: courses = [], isLoading } = useQuery({
     queryKey: [`/api/communities/${communityId}/courses`],
@@ -97,7 +109,7 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
   });
 
   // Get modules for the currently selected course
-  const selectedCourse = courses.find(course => course.id === selectedCourseId);
+  const selectedCourse = courses.find((course: any) => course.id === selectedCourseId);
   const modules = selectedCourse?.modules || [];
 
   // Auto-select first course if none selected
@@ -158,6 +170,7 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
       clearForm();
       setShowCourseCreationForm(false);
       setSelectedCourseId(newCourse.id); // Select the new course
+      setShowCoursePicker(false); // jump straight to editor view
       toast({
         title: "Course Created",
         description: "Your new course has been created successfully!"
@@ -178,18 +191,17 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
     console.log('🏠 Current communityId:', communityId);
     console.log('📚 Current courseId:', selectedCourseId);
     console.log('📖 Current moduleId:', selectedModuleId);
-    
-    // Set loading state
+
+    // Optimistic open with existing lesson object so UI shows immediately
+    setSelectedLessonData(lesson);
+    setEditingLessonId(lesson.id);
+    setShowLessonCreationForm(true);
+
+    // Background fetch to hydrate with full data when available
     setLoadingLessonId(lesson.id);
-    
     try {
-      // Fetch complete lesson data from API
       const token = localStorage.getItem('auth_token');
-      console.log('🔐 Token exists:', !!token);
-      
       const apiUrl = `/api/communities/${communityId}/lessons/${lesson.id}`;
-      console.log('🌐 Making API call to:', apiUrl);
-      
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -197,39 +209,16 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
           'Content-Type': 'application/json'
         }
       });
-      
-      console.log('📡 API Response status:', response.status);
-      console.log('📡 API Response ok:', response.ok);
-      
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('❌ API Error response:', errorText);
-        throw new Error(`Failed to fetch lesson data (${response.status}): ${errorText}`);
+        console.warn('Background fetch failed; continuing with optimistic data:', errorText);
+        return; // keep optimistic data if fetch fails
       }
-      
       const lessonData = await response.json();
-      console.log('✅ Fetched lesson data:', lessonData);
-      
-      // Set selected lesson data and show editor
-      console.log('📝 Setting lesson data and showing form...');
       setSelectedLessonData(lessonData);
-      setEditingLessonId(lesson.id);
-      setShowLessonCreationForm(true);
-      
-      console.log('✅ Edit lesson process completed');
-      console.log('🎯 showLessonCreationForm should now be:', true);
-      console.log('🎯 selectedLessonData should now be:', lessonData);
-      console.log('🎯 editingLessonId should now be:', lesson.id);
-      
     } catch (error) {
-      console.error('❌ Error in handleEditLesson:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to load lesson data",
-        variant: "destructive"
-      });
+      console.warn('Background lesson fetch failed, using optimistic data');
     } finally {
-      // Clear loading state
       setLoadingLessonId(null);
     }
   };
@@ -316,20 +305,58 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogOverlay className="bg-black/80 z-[100000]" />
-      <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] bg-gray-900 border-gray-700 text-white z-[100001] flex flex-col">
+      <DialogContent className="max-w-7xl w-[98vw] max-h-[95vh] bg-gray-900 border-gray-700 text-white z-[100001] flex flex-col">
         <DialogHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-gray-700">
           <DialogTitle className="text-2xl font-bold text-white">Course Management</DialogTitle>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onClose}
-            className="text-gray-400 hover:text-white"
-          >
-            <X className="h-6 w-6" />
-          </Button>
         </DialogHeader>
 
         <div className="flex flex-col md:flex-row flex-1 min-h-0">
+          {/* Initial Course Picker Overlay */}
+          {showCoursePicker && (
+            <div className="absolute inset-0 z-[2000001] bg-gray-900/95 backdrop-blur-sm">
+              <div className="max-w-2xl mx-auto p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">Courses</h3>
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => {
+                      setShowCourseCreationForm(true);
+                      setShowCoursePicker(false);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add Course
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {courses.map((course: Course) => (
+                    <div
+                      key={course.id}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        course.id === selectedCourseId 
+                          ? 'bg-blue-600/20 border-blue-500' 
+                          : 'bg-gray-800 border-gray-700 hover:bg-gray-700'
+                      }`}
+                      onClick={() => {
+                        setSelectedCourseId(course.id);
+                        setShowCoursePicker(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{course.emoji || '📚'}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white font-medium truncate">{course.title}</div>
+                          <div className="text-xs text-gray-400">
+                            {course.lesson_count} lessons • {course.category}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-400">Beginner</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           {/* Left Sidebar - Course List */}
           <div className="w-full md:w-80 bg-gray-800 md:border-r border-gray-700 flex flex-col">
             {/* Mobile: Compact dropdown when course selected, full list otherwise */}
@@ -525,13 +552,18 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                     
                     <div>
                       <label className="block text-sm font-medium text-white mb-2">Course Emoji (Optional)</label>
-                      <Input
-                        placeholder="📚 Pick an emoji"
-                        value={courseEmoji}
-                        onChange={(e) => setCourseEmoji(e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white"
-                        maxLength={2}
-                      />
+                      <Select value={courseEmoji} onValueChange={(v) => setCourseEmoji(v)}>
+                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                          <SelectValue placeholder="Pick an emoji" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-700 z-[100004]">
+                          {['📚','🍽️','🔥','⭐','🥗','🍝','⚡','💪','🧠','🍔','🥑','🍱','🍜','🍩','🧁'].map((e) => (
+                            <SelectItem key={e} value={e} className="text-white hover:bg-gray-700">
+                              {e}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     <div className="flex gap-3 pt-6">
@@ -606,8 +638,29 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                     <div className="text-sm text-gray-400">Modules</div>
                   </div>
                   <div className="bg-gray-800 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-purple-400">{selectedCourse.is_published ? 'Published' : 'Draft'}</div>
-                    <div className="text-sm text-gray-400">Status</div>
+                    <Button
+                      className={`${selectedCourse.is_published ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-700 hover:bg-gray-600'} text-white w-full`}
+                      onClick={async () => {
+                        try {
+                          const token = localStorage.getItem('auth_token');
+                          const resp = await fetch(`/api/communities/${communityId}/courses/${selectedCourse.id}`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({ is_published: !selectedCourse.is_published })
+                          });
+                          if (!resp.ok) throw new Error('Failed to update publish status');
+                          await queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/courses`] });
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }}
+                    >
+                      {selectedCourse.is_published ? 'Unpost' : 'Post'}
+                    </Button>
+                    <div className="text-sm text-gray-400 mt-2">Status</div>
                   </div>
                 </div>
 
@@ -625,11 +678,11 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                   </div>
 
                   {/* Modules and Lessons */}
-                  <div className="space-y-3">
+                  <div className="space-y-3 -mx-3 md:mx-0">
                     {/* Module Selection and Display */}
                     {(() => {
                       // Get current module from real API data
-                      const currentModule = modules.find(m => m.id === selectedModuleId) || modules[0];
+                      const currentModule = modules.find((m: any) => m.id === selectedModuleId) || modules[0];
 
                       // Show modules UI if modules exist
                       if (modules.length > 0) {
@@ -637,47 +690,29 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                           <div className="bg-gray-800 rounded-lg border border-gray-700">
                             {/* Module Selection Dropdown */}
                             <div className="p-4 border-b border-gray-700">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 flex-1">
-                                  <span className="text-lg">{currentModule?.emoji || '📚'}</span>
-                                  <div className="flex-1">
-                                    <Select 
-                                      value={selectedModuleId?.toString() || ""} 
-                                      onValueChange={(value) => setSelectedModuleId(Number(value))}
+                              <Select 
+                                value={selectedModuleId?.toString() || ""} 
+                                onValueChange={(value) => setSelectedModuleId(Number(value))}
+                              >
+                                <SelectTrigger className="w-full bg-gray-700 border-gray-600 text-white h-12 px-4 rounded-lg text-left">
+                                  <SelectValue placeholder="Select a module" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-800 border-gray-700" style={{zIndex: 100005}}>
+                                  {modules.map((module: any) => (
+                                    <SelectItem 
+                                      key={module.id} 
+                                      value={module.id.toString()}
+                                      className="text-white hover:bg-gray-700 focus:bg-gray-700"
                                     >
-                                      <SelectTrigger className="w-full bg-transparent border-0 p-0 h-auto text-white font-medium focus:ring-0 shadow-none">
-                                        <SelectValue placeholder="Select a module" />
-                                      </SelectTrigger>
-                                      <SelectContent className="bg-gray-800 border-gray-700" style={{zIndex: 100005}}>
-                                        {modules.map((module) => (
-                                          <SelectItem 
-                                            key={module.id} 
-                                            value={module.id.toString()}
-                                            className="text-white hover:bg-gray-700 focus:bg-gray-700"
-                                          >
-                                            {module.emoji} {module.title}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    <p className="text-sm text-gray-400 mt-1">
-                                      {currentModule?.lessons?.length || 0} lessons • {(currentModule?.lessons?.length || 0) * 15} min
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
+                                      {module.emoji} {module.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                             
                             {/* Lessons within selected module */}
-                            <div className="p-2 md:p-4 space-y-2">
+                            <div className="p-1 md:p-4 space-y-2">
                               {showLessonCreationForm ? (
                                 // Inline Lesson Creation Form
                                 <div className="min-h-0 flex-1 -mx-2 md:mx-0">
@@ -702,7 +737,7 @@ export default function CourseManagement({ isOpen, onClose, communityId }: Cours
                                 </div>
                               ) : (
                                 <>
-                                  {currentModule?.lessons?.map((lesson) => (
+                                  {currentModule?.lessons?.map((lesson: any) => (
                                     <div key={lesson.id} className="flex items-center justify-between py-3 md:py-2 px-3 md:px-3 bg-gray-700 rounded">
                                       <div className="flex items-center gap-3 flex-1 min-w-0">
                                         <span className="text-base md:text-sm">{lesson.emoji}</span>

@@ -289,6 +289,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe payment routes
+  app.get('/api/stripe-publishable-key', (req, res) => {
+    try {
+      const pk = process.env.STRIPE_PUBLISHABLE_KEY || '';
+      if (!pk) {
+        return res.status(404).json({ message: 'Publishable key not configured' });
+      }
+      return res.json({ publishableKey: pk });
+    } catch (err) {
+      return res.status(500).json({ message: 'Failed to retrieve publishable key' });
+    }
+  });
+
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
       const { amount, paymentType } = req.body;

@@ -29,6 +29,7 @@ import {
   Users,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import RecipeDisplay from "@/components/RecipeDisplay";
 
 interface InlineLessonEditorProps {
   lesson: any;
@@ -81,99 +82,62 @@ export default function InlineLessonEditor({
   isCreator, 
   onClose 
 }: InlineLessonEditorProps) {
+  const normalizeYoutubeId = (input: string): string => {
+    if (!input) return "";
+    const match = input.match(/(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:shorts\/|watch\?v=|embed\/|v\/)?([\w-]{11})/i);
+    if (match && match[1]) return match[1];
+    return input;
+  };
+
+  const buildYoutubeEmbedUrl = (input: string): string => {
+    const id = normalizeYoutubeId(input);
+    return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1` : "";
+  };
+
+  const mapLessonToRecipe = (src: any) => {
+    const safeIngredients = Array.isArray(src?.ingredients) ? src.ingredients : [];
+    const safeInstructions = Array.isArray(src?.instructions) ? src.instructions : [];
+    return {
+      id: src?.id,
+      title: src?.title || src?.recipe_name || "Lesson",
+      description: src?.description || "",
+      image_url: src?.image_url || "",
+      time_minutes: (src?.prep_time || 0) + (src?.cook_time || 0) || undefined,
+      cuisine: src?.cuisine || undefined,
+      diet: src?.meal_type || undefined,
+      video_id: normalizeYoutubeId(src?.youtube_video_id || "") || undefined,
+      ingredients: safeIngredients.map((ing: any) => {
+        if (typeof ing === 'string') {
+          return { name: ing, display_text: ing, measurements: [] };
+        }
+        const display = `${ing?.amount ?? ''} ${ing?.unit ?? ''} ${ing?.name ?? ''}`.trim();
+        return {
+          name: ing?.name || display,
+          display_text: display || ing?.name || '',
+          measurements: ing?.amount || ing?.unit ? [{ quantity: ing?.amount || '', unit: ing?.unit || '' }] : []
+        };
+      }),
+      instructions: safeInstructions.map((step: any, idx: number) => {
+        if (typeof step === 'string') return step;
+        return step?.text || `Step ${step?.step || idx + 1}`;
+      }),
+      nutrition_info: src?.nutrition_info || undefined,
+    } as any;
+  };
   // If not a creator, show simple student view
   if (!isCreator) {
     return (
-      <div className="bg-gray-900 min-h-screen">
-        {/* Simple Student Header */}
-        <div className="bg-gray-800 border-b border-gray-700 p-4">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
-            <div className="flex items-center gap-4">
-              <Button 
-                onClick={onClose}
-                variant="ghost" 
-                className="text-gray-400 hover:text-white p-2"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{lesson?.emoji || '📝'}</span>
-                <div>
-                  <h1 className="text-xl font-bold text-white">{lesson?.title || "Lesson"}</h1>
-                  <p className="text-sm text-gray-400">Course Lesson</p>
-                </div>
-              </div>
-            </div>
+      <div className="bg-gray-100 min-h-screen">
+        <div className="bg-white border-b border-gray-200 p-3 sticky top-0 z-50">
+          <div className="max-w-md mx-auto flex items-center">
+            <Button onClick={onClose} variant="ghost" className="text-gray-600 px-2">
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-base font-semibold ml-1">Preview</h1>
           </div>
         </div>
-
-        {/* Student Lesson Content */}
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-4xl">{lesson?.emoji || '📝'}</span>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white">{lesson?.title || "Lesson"}</h2>
-                  <p className="text-gray-400 text-sm mt-1">
-                    {lesson?.prep_time && lesson?.cook_time
-                      ? `${lesson.prep_time + lesson.cook_time} minutes`
-                      : 'Quick lesson'
-                    }
-                  </p>
-                </div>
-              </div>
-
-              {lesson?.image_url && (
-                <div className="mb-6">
-                  <img 
-                    src={lesson.image_url} 
-                    alt="Lesson" 
-                    className="w-full h-48 object-cover rounded-lg border border-gray-600"
-                  />
-                </div>
-              )}
-
-              {lesson?.youtube_video_id && (
-                <div className="mb-6">
-                  <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-600">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${lesson.youtube_video_id}`}
-                      title="Lesson video"
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-              )}
-
-              {lesson?.description && (
-                <div className="prose prose-sm prose-invert max-w-none">
-                  <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                    {lesson.description.split('\n').map((line: string, index: number) => {
-                      if (line.startsWith('##')) {
-                        return <h3 key={index} className="text-white font-semibold mt-6 mb-3 text-xl">{line.replace('##', '').trim()}</h3>;
-                      }
-                      if (line.startsWith('•')) {
-                        return <li key={index} className="ml-6 list-disc mb-1">{line.replace('•', '').trim()}</li>;
-                      }
-                      if (line.match(/^\d+\./)) {
-                        return <li key={index} className="ml-6 list-decimal mb-1">{line.replace(/^\d+\./, '').trim()}</li>;
-                      }
-                      if (line.startsWith('---')) {
-                        return <hr key={index} className="my-6 border-gray-600" />;
-                      }
-                      if (line.trim()) {
-                        return <p key={index} className="mb-3">{line}</p>;
-                      }
-                      return <br key={index} />;
-                    })}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="max-w-md mx-auto p-3">
+          <RecipeDisplay recipe={mapLessonToRecipe(lesson)} />
         </div>
       </div>
     );
@@ -551,7 +515,7 @@ export default function InlineLessonEditor({
                   <div className="space-y-2">
                     <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-600">
                       <iframe
-                        src={`https://www.youtube.com/embed/${lessonData.youtube_video_id}`}
+                        src={buildYoutubeEmbedUrl(lessonData.youtube_video_id)}
                         title="YouTube video preview"
                         className="w-full h-full"
                         frameBorder="0"
@@ -840,7 +804,7 @@ export default function InlineLessonEditor({
                   <div className="mb-6">
                     <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-600">
                       <iframe
-                        src={`https://www.youtube.com/embed/${lessonData.youtube_video_id}`}
+                        src={buildYoutubeEmbedUrl(lessonData.youtube_video_id)}
                         title="Lesson video"
                         className="w-full h-full"
                         frameBorder="0"
