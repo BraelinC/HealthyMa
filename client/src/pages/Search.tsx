@@ -31,6 +31,7 @@ import { MealPlanSelectionModal } from "@/components/MealPlanSelectionModal";
 import { apiRequest, safeApiRequest } from "@/lib/queryClient";
 import ReactPlayer from "react-player";
 import RecipeCard from "@/components/RecipeCard";
+import { useAuth } from "@/hooks/useAuth";
 
 interface GeneratedRecipe {
   id?: number;
@@ -181,6 +182,7 @@ const transformGeneratedRecipe = (genRecipe: any): GeneratedRecipe => {
 };
 
 const Search = () => {
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [generatedRecipe, setGeneratedRecipe] = useState<GeneratedRecipe | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -207,6 +209,9 @@ const Search = () => {
   const [isAutoLoading, setIsAutoLoading] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [itemToShare, setItemToShare] = useState<any>(null);
+  // Client-side recent generated cache (most recent first, max 3)
+  const [recentGenerated, setRecentGenerated] = useState<GeneratedRecipe[]>([]);
+  const recentsKey = `recentGenerated:${(user as any)?.id || 'anon'}`;
 
   const { toast } = useToast();
 
@@ -218,6 +223,15 @@ const Search = () => {
 
   // STEP 1.3: Enhanced URL parameter handling - works on first page load
   useEffect(() => {
+    // Load client-side recents on mount
+    try {
+      const raw = localStorage.getItem(recentsKey);
+      if (raw) {
+        const list: GeneratedRecipe[] = JSON.parse(raw);
+        setRecentGenerated(Array.isArray(list) ? list : []);
+      }
+    } catch {}
+
     const params = new URLSearchParams(window.location.search);
     const urlQuery = params.get('q');
     const urlMode = params.get('mode');
@@ -263,6 +277,16 @@ const Search = () => {
     },
     onSuccess: (data: any) => {
       setGeneratedRecipe(data);
+      // Push into client-side recent cache (dedupe by id or title), keep max 3
+      try {
+        const newItem: GeneratedRecipe = transformGeneratedRecipe(data);
+        setRecentGenerated(prev => {
+          const filtered = prev.filter(r => (r.id && newItem.id ? r.id !== newItem.id : r.title !== newItem.title));
+          const next = [newItem, ...filtered].slice(0, 3);
+          try { localStorage.setItem(recentsKey, JSON.stringify(next)); } catch {}
+          return next;
+        });
+      } catch {}
       toast({
         title: "Recipe Generated!",
         description: `Your ${data?.title || 'recipe'} is ready with ${data?.video_id ? 'video instructions' : 'detailed steps'}.`,
@@ -675,7 +699,7 @@ const Search = () => {
                               <span className="flex-shrink-0 w-5 h-5 bg-purple-600 rounded-full text-white flex items-center justify-center text-xs">
                                 {index + 1}
                               </span>
-                              <span className="text-gray-700">{step}</span>
+                              <span className="text-gray-700">{String(step).replace(/^Step\s*\d+[:\.)]\s*/i, '')}</span>
                             </li>
                           ))}
                         </ol>
@@ -752,64 +776,52 @@ const Search = () => {
                     <TabsTrigger value="generated">Generated</TabsTrigger>
                     <TabsTrigger value="saved">Saved</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="generated" className="space-y-4 mt-4">
-                    {isLoadingGenerated ? (
+                  <TabsContent value="generated" className="mt-4">
+                    {isLoadingGenerated && recentGenerated.length === 0 ? (
                       <div className="flex items-center justify-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin" />
                       </div>
-                    ) : generatedRecipes && Array.isArray(generatedRecipes) && generatedRecipes.length > 0 ? (
-                      generatedRecipes.slice(0, 3).map((recipe: any) => (
-                        <RecipeCard 
-                          key={recipe.id} 
-                          title={recipe.title || 'Untitled Recipe'}
-                          description={recipe.description || 'No description available'}
-                          imageUrl={recipe.image_url || ''}
-                          timeMinutes={recipe.time_minutes || 0}
-                          tags={[recipe.cuisine, recipe.diet].filter(Boolean)}
-                          onClick={() => {
-                            console.log('🔍 CLICKING GENERATED RECIPE:', recipe);
-                            console.log('Raw recipe data:', JSON.stringify(recipe, null, 2));
-                            const transformedRecipe = transformGeneratedRecipe(recipe);
-                            console.log('🔄 TRANSFORMED RECIPE:', transformedRecipe);
-                            console.log('Nutrition fields check:', {
-                              id: transformedRecipe.id,
-                              hasNutrition: !!transformedRecipe.nutrition,
-                              hasNutritionInfo: !!transformedRecipe.nutrition_info,
-                              nutritionCalories: transformedRecipe.nutrition?.calories,
-                              nutritionInfoCalories: transformedRecipe.nutrition_info?.calories,
-                              protein: transformedRecipe.nutrition?.protein_g,
-                              proteinInfo: transformedRecipe.nutrition_info?.protein_g
-                            });
-                            setGeneratedRecipe(transformedRecipe);
-                          }}
-                        />
-                      ))
                     ) : (
-                      <p className="text-sm text-gray-500 text-center py-8">
-                        No generated recipes yet
-                      </p>
+                      <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                        {(recentGenerated.length > 0 ? recentGenerated : (Array.isArray(generatedRecipes) ? generatedRecipes : [])).map((recipe: any, idx: number) => (
+                          <RecipeCard 
+                            key={(recipe as any).id ?? `recent-${idx}`} 
+                            title={recipe.title || 'Untitled Recipe'}
+                            description={recipe.description || 'No description available'}
+                            imageUrl={recipe.image_url || ''}
+                            timeMinutes={recipe.time_minutes || 0}
+                            tags={[recipe.cuisine, recipe.diet].filter(Boolean)}
+                            onClick={() => {
+                              const transformedRecipe = transformGeneratedRecipe(recipe);
+                              setGeneratedRecipe(transformedRecipe);
+                            }}
+                          />
+                        ))}
+                      </div>
                     )}
                   </TabsContent>
-                  <TabsContent value="saved" className="space-y-4 mt-4">
+                  <TabsContent value="saved" className="mt-4">
                     {isLoadingSaved ? (
                       <div className="flex items-center justify-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin" />
                       </div>
                     ) : savedRecipes && Array.isArray(savedRecipes) && savedRecipes.length > 0 ? (
-                      savedRecipes.slice(0, 3).map((recipe: any) => (
-                        <RecipeCard 
-                          key={recipe.id} 
-                          title={recipe.title || 'Untitled Recipe'}
-                          description={recipe.description || 'No description available'}
-                          imageUrl={recipe.image_url || ''}
-                          timeMinutes={recipe.time_minutes || 0}
-                          tags={[recipe.cuisine, recipe.diet].filter(Boolean)}
-                          onClick={() => {
-                            const transformedRecipe = transformSavedRecipe(recipe);
-                            setGeneratedRecipe(transformedRecipe);
-                          }}
-                        />
-                      ))
+                      <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                        {savedRecipes.map((recipe: any) => (
+                          <RecipeCard 
+                            key={recipe.id} 
+                            title={recipe.title || 'Untitled Recipe'}
+                            description={recipe.description || 'No description available'}
+                            imageUrl={recipe.image_url || ''}
+                            timeMinutes={recipe.time_minutes || 0}
+                            tags={[recipe.cuisine, recipe.diet].filter(Boolean)}
+                            onClick={() => {
+                              const transformedRecipe = transformSavedRecipe(recipe);
+                              setGeneratedRecipe(transformedRecipe);
+                            }}
+                          />
+                        ))}
+                      </div>
                     ) : (
                       <p className="text-sm text-gray-500 text-center py-8">
                         No saved recipes yet

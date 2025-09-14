@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Eye, EyeOff, Mail, Phone, User } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 
 interface AuthFormProps {
   onSuccess: (user: any, token: string) => void;
@@ -300,6 +301,26 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
             </form>
           )}
           
+          {/* Divider */}
+          <div className="mt-6 flex items-center">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="px-3 text-xs text-gray-500">OR</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          {/* Google OAuth */}
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2"
+              onClick={() => { window.location.href = "/api/auth/google"; }}
+            >
+              <FcGoogle className="h-5 w-5" />
+              {isLogin ? "Sign in with Google" : "Sign up with Google"}
+            </Button>
+          </div>
+
           <div className="mt-4 text-center">
             <Button
               variant="link"

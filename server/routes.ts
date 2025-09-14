@@ -301,9 +301,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/create-payment-intent", async (req, res) => {
+  app.post("/api/create-payment-intent", authenticateToken, async (req: any, res) => {
     try {
       const { amount, paymentType } = req.body;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
       // Set amount based on payment type
       let paymentAmount;
@@ -323,9 +331,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description = "Healthy Mama Payment";
       }
 
+      // Ensure a Stripe customer and link it to this user
+      let customerId = user.stripe_customer_id as string | undefined;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          name: user.full_name || undefined,
+          metadata: { appUserId: String(user.id) },
+        });
+        customerId = customer.id;
+        await storage.updateUser(String(user.id), { stripe_customer_id: customerId });
+      }
+
       const paymentIntent = await stripe.paymentIntents.create({
         amount: paymentAmount,
         currency: "usd",
+        customer: customerId,
         description: description,
         metadata: {
           paymentType: paymentType || 'general'
@@ -400,49 +421,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create setup intent for collecting payment method (monthly or trial)
-  app.post('/api/create-setup-intent', async (req, res) => {
+  app.post('/api/create-setup-intent', authenticateToken, async (req: any, res) => {
     try {
-      const { email, name, paymentType } = req.body;
-
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required' });
+      const { paymentType } = req.body;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
       }
 
-      // Create customer
-      const customer = await stripe.customers.create({
-        email: email,
-        name: name || '',
-        metadata: {
-          paymentType: paymentType || 'trial'
-        }
-      });
+      // Ensure customer exists for this user
+      let customerId = user.stripe_customer_id as string | undefined;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          name: user.full_name || undefined,
+          metadata: { appUserId: String(user.id) }
+        });
+        customerId = customer.id;
+        await storage.updateUser(String(user.id), { stripe_customer_id: customerId });
+      }
 
       // Create setup intent for collecting payment method
       const setupIntent = await stripe.setupIntents.create({
-        customer: customer.id,
+        customer: customerId,
         payment_method_types: ['card'],
         usage: 'off_session',
         metadata: {
           type: paymentType || 'trial',
-          email: email
+          appUserId: String(user.id)
         }
       });
 
       // If monthly, we'll create the subscription after payment method is confirmed
       // Store the plan details in metadata for later use
       if (paymentType === 'monthly') {
-        await stripe.customers.update(customer.id, {
+        await stripe.customers.update(customerId, {
           metadata: {
             paymentType: 'monthly',
             pendingSubscription: 'true',
             priceAmount: '2000', // $20 in cents
-            email: email
+            appUserId: String(user.id)
           }
         });
       }
 
       res.json({
-        customerId: customer.id,
+        customerId,
         clientSecret: setupIntent.client_secret,
         paymentType: paymentType,
         message: `${paymentType === 'monthly' ? 'Monthly subscription' : 'Trial'} setup created successfully`
@@ -613,11 +641,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
-      case 'customer.subscription.deleted':
+      case 'customer.subscription.deleted': {
         const subscription = event.data.object as any;
         console.log(`Subscription ${event.type}:`, subscription.id);
-        // Update user subscription status in database
+        const customerId = subscription.customer as string;
+        try {
+          const user = await storage.getUserByStripeCustomerId(customerId as string);
+          if (user) {
+            await storage.updateUser(String(user.id), {
+              subscription_status: subscription.status,
+            });
+          }
+        } catch (e) {
+          console.error('Failed to persist subscription status:', e);
+        }
         break;
+      }
         
       default:
         console.log(`Unhandled event type ${event.type}`);
@@ -767,19 +806,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log("Successfully extracted recipe data from YouTube");
             console.log(`Recipe has ${youtubeRecipe.ingredients.length} ingredients and ${youtubeRecipe.instructions.length} instructions`);
             
-            // Check for empty instructions immediately
-            if (Array.isArray(youtubeRecipe.instructions) && youtubeRecipe.instructions.length === 0) {
-              console.log('⚠️ [YOUTUBE EXTRACTION] Empty instructions array detected, will be fixed during validation');
-              // Don't fix here, let validation handle it
-            } else if (!youtubeRecipe.instructions) {
-              console.log('⚠️ [YOUTUBE EXTRACTION] No instructions field detected');
-              youtubeRecipe.instructions = [];
-            }
-
             // Add any additional user preferences and ensure image URL is set
             youtubeRecipe.cuisine = cuisine || youtubeRecipe.cuisine;
             youtubeRecipe.diet = dietRestrictions || youtubeRecipe.diet;
             youtubeRecipe.image_url = youtubeRecipe.thumbnailUrl || youtubeRecipe.image_url;
+
+            // If ingredients look like a placeholder (single string without measurements), try GROQ transcript extraction
+            const lacksStructuredIngredients = Array.isArray(youtubeRecipe.ingredients)
+              && youtubeRecipe.ingredients.length <= 2
+              && youtubeRecipe.ingredients.every((ing: any) => typeof ing === 'string');
+
+            if (lacksStructuredIngredients && (youtubeRecipe.transcript || youtubeRecipe.description)) {
+              try {
+                const { groqIngredientExtractor } = await import('./groqIngredientExtractor');
+                const extracted = await groqIngredientExtractor.extractFromTranscript(
+                  youtubeRecipe.transcript || youtubeRecipe.description,
+                  youtubeRecipe.title
+                );
+                if (Array.isArray(extracted) && extracted.length > 0) {
+                  console.log(`✅ [ING PARSER] Replaced loose ingredients with ${extracted.length} structured items from transcript`);
+                  youtubeRecipe.ingredients = extracted;
+                } else {
+                  console.log('⚠️ [ING PARSER] Transcript extraction returned no items; keeping original list');
+                }
+              } catch (e) {
+                console.error('[ING PARSER] transcript extraction failed:', e);
+              }
+            }
+
+            // Ensure instructions are generated AFTER ingredient finalization
+            if (!youtubeRecipe.instructions || (Array.isArray(youtubeRecipe.instructions) && youtubeRecipe.instructions.length === 0)) {
+              try {
+                const { groqInstructionGenerator } = await import('./groqInstructionGenerator');
+                const textToUse = youtubeRecipe.transcript || youtubeRecipe.description || '';
+                const ingredientNames = (youtubeRecipe.ingredients || []).map((ing: any) =>
+                  typeof ing === 'string' ? ing : ing.name || ing.display_text
+                );
+                if (textToUse.length > 50) {
+                  const generated = await groqInstructionGenerator.generateInstructionsFromTranscript(
+                    textToUse,
+                    youtubeRecipe.title,
+                    ingredientNames
+                  );
+                  if (generated.length > 0) {
+                    console.log(`✅ [INSTR GEN] Generated ${generated.length} instructions after ingredient finalization`);
+                    youtubeRecipe.instructions = generated;
+                  } else {
+                    youtubeRecipe.instructions = [];
+                  }
+                }
+              } catch (e) {
+                console.error('[INSTR GEN] post-ingredient generation failed:', e);
+                youtubeRecipe.instructions = youtubeRecipe.instructions || [];
+              }
+            }
 
             recipe = youtubeRecipe;
           } else {

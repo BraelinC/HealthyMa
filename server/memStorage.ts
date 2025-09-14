@@ -82,6 +82,7 @@ export class MemStorage implements IStorage {
       phone: userData.phone || null,
       password_hash: userData.password_hash,
       full_name: userData.full_name,
+      google_id: null,
       account_type: userData.account_type || 'free_trial',
       trial_ends_at: userData.trial_ends_at || null,
       subscription_status: userData.subscription_status || 'active',
@@ -93,6 +94,25 @@ export class MemStorage implements IStorage {
     this.users.set(user.id, user);
     this.usersByEmail.set(user.email, user);
     return user;
+  }
+
+  async updateUserGoogleId(id: string, googleId: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      (user as any).google_id = googleId;
+      user.updated_at = new Date();
+      this.users.set(id, user);
+      if (user.email) {
+        this.usersByEmail.set(user.email.toLowerCase(), user);
+      }
+    }
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    for (const user of this.users.values()) {
+      if (user.stripe_customer_id === customerId) return user;
+    }
+    return undefined;
   }
 
   // Recipe methods

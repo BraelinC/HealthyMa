@@ -62,6 +62,18 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateUserGoogleId(id: string, googleId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ google_id: googleId, updatedAt: new Date() })
+      .where(eq(users.id, id));
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripe_customer_id, customerId));
+    return user;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     try {
       // First, check if user exists by email (since email is unique and stable)

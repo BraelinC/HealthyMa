@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation } from "@tanstack/react-query";
 import { safeApiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Ingredient {
   name: string;
@@ -120,6 +121,9 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  const cacheKey = user && mealPlan ? `grocery:${(user as any).id}:${mealPlan.id}` : null;
 
   // Handle checkbox changes
   const handleItemCheck = (itemKey: string, checked: boolean) => {
@@ -169,6 +173,9 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
           description: "Your optimized Instacart shopping list has been created!",
         });
       }
+      if (cacheKey) {
+        try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch {}
+      }
     },
     onError: (error) => {
       toast({
@@ -179,14 +186,30 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
     },
   });
 
+  // Read from local cache on open for instant render
+  useEffect(() => {
+    if (!isOpen || !cacheKey) return;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const json = JSON.parse(cached);
+        processGroceryData(json);
+        setIsLoading(false);
+      }
+    } catch {}
+  }, [isOpen, cacheKey]);
+  
   // Update data when prefetchedData changes
   useEffect(() => {
     if (prefetchedData && prefetchedData.consolidatedIngredients) {
       console.log('Updating with prefetched grocery data');
       processGroceryData(prefetchedData);
       setIsLoading(false);
+      if (cacheKey) {
+        try { localStorage.setItem(cacheKey, JSON.stringify(prefetchedData)); } catch {}
+      }
     }
-  }, [prefetchedData]);
+  }, [prefetchedData, cacheKey]);
   
   // Fetch data if not prefetched when panel opens
   useEffect(() => {
@@ -205,6 +228,9 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
           });
           
           processGroceryData(response);
+          if (cacheKey) {
+            try { localStorage.setItem(cacheKey, JSON.stringify(response)); } catch {}
+          }
           
           // Update the parent component with fresh data
           if (onDataRefreshed) {
@@ -218,7 +244,7 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
       
       fetchConsolidatedList();
     }
-  }, [mealPlan?.id, isOpen, ingredients.length]); // Check if we already have ingredients
+  }, [mealPlan?.id, isOpen, ingredients.length, prefetchedData, cacheKey]); // Check if we already have ingredients
   
   // Helper function to process grocery data
   const processGroceryData = (response: any) => {

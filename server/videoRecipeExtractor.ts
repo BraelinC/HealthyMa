@@ -1,4 +1,6 @@
 import fetch from 'node-fetch';
+import { groqValidator } from './groqValidator';
+import { parseIngredientsWithGPT } from './gptIngredientParser';
 import { deduplicateIngredients, cleanIngredientList } from "./ingredientDeduplicator";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -1172,7 +1174,7 @@ export async function getRecipeFromYouTube(query: string, filters?: {
     console.log('💬 [YOUTUBE] Fetching video comments...');
     videoInfo.comments = await getVideoComments(videoInfo.id);
     
-    // Step 4: Extract ingredients from description, transcript, and comments
+    // Step 4: Extract ingredients with simplified pipeline (initial -> transcript-only fallback)
     let ingredients: string[] = [];
     
     console.log('🥗 [YOUTUBE] Extracting ingredients...');
@@ -1216,6 +1218,19 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       }
     }
     
+    // Replace with minimal measured list using dedicated helper
+    try {
+      const { ensureMeasuredIngredients } = await import('./ingredientSimple');
+      ingredients = await ensureMeasuredIngredients({
+        transcript: transcript || '',
+        description: videoInfo.description || '',
+        initial: ingredients,
+        title: videoInfo.title,
+      });
+    } catch (e) {
+      console.error('[ING SIMPLE] pipeline failed:', e);
+    }
+
     // Apply advanced deduplication and cleaning to all extracted ingredients
     if (ingredients.length > 0) {
       console.log(`Before deduplication: ${ingredients.length} ingredients`);
@@ -1259,26 +1274,11 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       instructions = fallbackInstructionExtraction(videoInfo.description);
     }
     
-    // Step 6: If we couldn't extract ingredients, use Grok to generate them from video title
-    if (ingredients.length === 0) {
-      console.log("⚠️ [YOUTUBE] No ingredients found, generating from video title using Grok...");
-      try {
-        const grokIngredients = await generateIngredientsFromTitle(videoInfo.title);
-        if (grokIngredients.length > 0) {
-          console.log(`Grok generated ${grokIngredients.length} ingredients from video title`);
-          ingredients = grokIngredients;
-        } else {
-          console.log("Grok could not generate ingredients from title");
-          ingredients = [];
-        }
-      } catch (error) {
-        console.error("Error generating ingredients with Grok:", error);
-        ingredients = [];
-      }
-    }
-    
-    // Step 7: If no instructions found, try to generate them with GPT-OSS-120B
-    if (instructions.length === 0) {
+    // Ingredient pipeline simplified above; no further upgrades here
+
+    // Step 7: Validate instructions; if missing or invalid, generate with GPT-OSS-120B
+    const areValid = await groqValidator.validateInstructions(instructions);
+    if (instructions.length === 0 || !areValid) {
       console.log("⚠️ [YOUTUBE] No instructions extracted, attempting GPT-OSS-120B generation...");
       console.log(`📊 [YOUTUBE] Available text sources:`);
       console.log(`  - Transcript: ${transcript ? `${transcript.length} chars` : 'NOT AVAILABLE'}`);

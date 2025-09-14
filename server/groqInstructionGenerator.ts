@@ -51,13 +51,13 @@ export class GroqInstructionGenerator {
       
       const ingredientList = ingredients?.join(', ') || 'standard ingredients';
       
-      const prompt = `You are a cooking expert. Convert this video transcript into clear step-by-step cooking instructions.
+      const prompt = `You are a cooking expert. Convert this video transcript into clear, complete step-by-step cooking instructions for a home cook.
 
 Recipe: ${recipeName}
 Ingredients mentioned: ${ingredientList}
 
 Transcript:
-${transcript.substring(0, 3000)} 
+${transcript.substring(0, 12000)} 
 
 Create numbered cooking instructions in this EXACT format:
 Step 1: [First action]
@@ -70,8 +70,10 @@ Rules:
 - Keep each step clear and concise
 - Include specific times, temperatures, and measurements when mentioned
 - If transcript is unclear, use standard cooking logic
-- Generate between 4-10 steps
+- Generate between 6-12 steps (no fewer than 6)
 - Make instructions actionable and easy to follow
+- Always include: prep, any marinades/dredging, cooking method and timing, sauce reduction (if present), combining/tossing, and a final plating/serving step
+- End with a plating/serving step that mentions garnish if applicable
 
 Return ONLY the numbered steps, nothing else.`;
 
@@ -82,7 +84,7 @@ Return ONLY the numbered steps, nothing else.`;
           content: prompt
         }],
         temperature: 0.3,
-        max_tokens: 500,
+        max_tokens: 1800,
         reasoning_effort: "medium"  // Add reasoning for better instruction generation
       });
 
@@ -93,7 +95,18 @@ Return ONLY the numbered steps, nothing else.`;
       console.log('📝 [GROQ INSTRUCTION GEN] Raw response:', response.substring(0, 200) + '...');
       
       // Parse the response into an array of instructions
-      const instructions = this.parseInstructions(response);
+      let instructions = this.parseInstructions(response);
+      // Ensure a proper finishing step exists
+      if (instructions.length > 0) {
+        const last = instructions[instructions.length - 1].toLowerCase();
+        const hasFinish = /serve|plate|garnish|enjoy/.test(last);
+        if (!hasFinish) {
+          instructions = [
+            ...instructions,
+            `Step ${instructions.length + 1}: Plate and serve immediately. Garnish to taste (e.g., sliced green onions or sesame).`
+          ];
+        }
+      }
       
       if (instructions.length === 0) {
         console.log('⚠️ [GROQ INSTRUCTION GEN] Failed to parse instructions, trying fallback');

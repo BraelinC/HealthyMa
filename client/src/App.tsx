@@ -169,6 +169,21 @@ function Router() {
   // Check for URL parameters that might indicate a successful auth or login request
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    // If Google OAuth redirected back with a token, persist it immediately
+    const incomingToken = urlParams.get('token');
+    const incomingUser = urlParams.get('user');
+    const incomingSuccess = urlParams.get('success');
+    if (incomingToken && incomingSuccess === 'google') {
+      localStorage.setItem('auth_token', incomingToken);
+      if (incomingUser) {
+        sessionStorage.setItem('oauth_user_boot', incomingUser);
+      }
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+      window.location.reload();
+      return;
+    }
+
     const hasAuthParams = urlParams.has('token') || urlParams.has('success') || window.location.pathname === '/';
     const hasLoginParam = urlParams.has('login');
     const hasPaymentParam = urlParams.get('payment');

@@ -175,8 +175,6 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           const data = await apiRequest("/api/create-setup-intent", {
             method: 'POST',
             body: JSON.stringify({
-              email: "user@example.com", // This will need to come from user context
-              name: "User Name",
               paymentType: 'monthly'
             })
           });
@@ -191,8 +189,6 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
           const data = await apiRequest("/api/create-setup-intent", {
             method: 'POST',
             body: JSON.stringify({
-              email: "user@example.com", // This will need to come from user context
-              name: "User Name",
               paymentType: 'trial'
             })
           });

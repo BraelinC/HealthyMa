@@ -143,8 +143,12 @@ export const queryClient = new QueryClient({
           throw error;
         }
       },
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false,
+      // Disable client caching while we debug: always consider data stale
+      staleTime: 0,
+      cacheTime: 0,
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
       retry: (failureCount, error: any) => {
         // console.log('Query retry attempt:', failureCount, 'for error:', error);
         // Don't retry on authentication or client errors
