@@ -108,6 +108,7 @@ task = "shell.exec"
 args = "npm run dev"
 
 [agent]
+integrations = ["javascript_stripe:1.0.0"]
 
 [objectStorage]
 defaultBucketID = "replit-objstore-1f6068f4-c136-4eeb-af7a-320fe6316ee0"
