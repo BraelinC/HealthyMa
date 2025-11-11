@@ -1,0 +1,84 @@
+chunk-276SZO74.js?v=c915f5e3:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-20T17:48:54.628Z"}}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:136 Query function called for: /api/profile
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"id":33,"user_id":"user_1755468147872_11","profile_name":"My Profile","primary_goal":"Save Money","family_size":1,"members":[],"profile_type":"individual","preferences":[],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":[],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-18T15:43:04.693Z","updated_at":"2025-08-19T00:50:04.899Z"}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"id":3,"community_id":2,"user_id":"user_1755468147872_11","role":"member","points":0,"level":1,"joined_at":"2025-08-20T18:11:25.967Z"}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:30 API Request: Object
+api/communities/2/join:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Already a member of this community"}
+queryClient.ts:91 API Request Error: Error: Already a member of this community
+    at apiRequest (queryClient.ts:85:13)
+    at async Object.mutationFn (Communities.tsx:125:14)
+apiRequest @ queryClient.ts:91
+queryClient.ts:30 API Request: Object
+api/communities/2/join:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Already a member of this community"}
+queryClient.ts:91 API Request Error: Error: Already a member of this community
+    at apiRequest (queryClient.ts:85:13)
+    at async Object.mutationFn (Communities.tsx:125:14)
+apiRequest @ queryClient.ts:91
+queryClient.ts:30 API Request: Object
+api/communities/2/join:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Already a member of this community"}
+queryClient.ts:91 API Request Error: Error: Already a member of this community
+    at apiRequest (queryClient.ts:85:13)
+    at async Object.mutationFn (Communities.tsx:125:14)
+apiRequest @ queryClient.ts:91
+queryClient.ts:30 API Request: Object
+api/communities/2/join:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Already a member of this community"}
+queryClient.ts:91 API Request Error: Error: Already a member of this community
+    at apiRequest (queryClient.ts:85:13)
+    at async Object.mutationFn (Communities.tsx:125:14)
+apiRequest @ queryClient.ts:91
+queryClient.ts:30 API Request: Object
+api/communities/2/join:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Already a member of this community"}
+queryClient.ts:91 API Request Error: Error: Already a member of this community
+    at apiRequest (queryClient.ts:85:13)
+    at async Object.mutationFn (Communities.tsx:125:14)
+apiRequest @ queryClient.ts:91
+queryClient.ts:30 API Request: Object
+api/communities/2/join:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Already a member of this community"}
+queryClient.ts:91 API Request Error: Error: Already a member of this community
+    at apiRequest (queryClient.ts:85:13)
+    at async Object.mutationFn (Communities.tsx:125:14)
+apiRequest @ queryClient.ts:91
+queryClient.ts:30 API Request: Object
+api/communities/2/join:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Already a member of this community"}
+queryClient.ts:91 API Request Error: Error: Already a member of this community
+    at apiRequest (queryClient.ts:85:13)
+    at async Object.mutationFn (Communities.tsx:125:14)
+apiRequest @ queryClient.ts:91
+queryClient.ts:30 API Request: Object
+api/communities/2/join:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Already a member of this community"}
+queryClient.ts:91 API Request Error: Error: Already a member of this community
+    at apiRequest (queryClient.ts:85:13)
+    at async Object.mutationFn (Communities.tsx:125:14)
+apiRequest @ queryClient.ts:91

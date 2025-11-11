@@ -187,39 +187,15 @@ export default function AIPoweredMealPlanGenerator() {
 
   return (
     <div className="space-y-6">
-      {/* Header with AI branding */}
-      <Card className="bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50 border-0 shadow-lg">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <Bot className="h-8 w-8 text-purple-600" />
-                🤖 AI-Powered Meal Plan Generator
-              </CardTitle>
-              <p className="text-gray-600 mt-2 text-lg">
-                Take a smart questionnaire to determine your meal planning priorities, then get an intelligent meal plan tailored to your preferences using advanced AI ranking.
-              </p>
-            </div>
-            <Button 
-              onClick={() => setShowQuestionnaire(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0"
-            >
-              <Zap className="w-4 h-4" />
-              Configure AI
-            </Button>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Questionnaire Modal */}
-      {showQuestionnaire && (
-        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
+      {/* Show questionnaire when active, otherwise show main card */}
+      {showQuestionnaire ? (
+        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50 border-0 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-purple-600" />
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <Bot className="h-8 w-8 text-purple-600" />
               AI Intelligence Configuration
             </CardTitle>
-            <p className="text-sm text-gray-600">
+            <p className="text-gray-600 mt-2 text-lg">
               Answer a few questions to train your AI meal planning assistant
             </p>
           </CardHeader>
@@ -234,6 +210,29 @@ export default function AIPoweredMealPlanGenerator() {
               </Button>
             </div>
           </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-gradient-to-br from-purple-50 via-blue-50 to-emerald-50 border-0 shadow-lg">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <Bot className="h-8 w-8 text-purple-600" />
+                  🤖 AI-Powered Meal Plan Generator
+                </CardTitle>
+                <p className="text-gray-600 mt-2 text-lg">
+                  Take a smart questionnaire to determine your meal planning priorities, then get an intelligent meal plan tailored to your preferences using advanced AI ranking.
+                </p>
+              </div>
+              <Button 
+                onClick={() => setShowQuestionnaire(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-emerald-500 hover:from-purple-600 hover:to-emerald-600 text-white border-0"
+              >
+                <Zap className="w-4 h-4" />
+                Configure AI
+              </Button>
+            </div>
+          </CardHeader>
         </Card>
       )}
 

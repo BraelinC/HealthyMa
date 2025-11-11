@@ -2,12 +2,6 @@ var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -15,11 +9,11 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc2) => {
+var __copyProps = (to, from, except, desc7) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc2 = __getOwnPropDesc(from, key)) || desc2.enumerable });
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc7 = __getOwnPropDesc(from, key)) || desc7.enumerable });
   }
   return to;
 };
@@ -28,6 +22,20 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // shared/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
+  communities: () => communities,
+  communityChallenges: () => communityChallenges,
+  communityCommentLikes: () => communityCommentLikes,
+  communityDiscussions: () => communityDiscussions,
+  communityMealCourseModules: () => communityMealCourseModules,
+  communityMealCourses: () => communityMealCourses,
+  communityMealLessonSections: () => communityMealLessonSections,
+  communityMealLessons: () => communityMealLessons,
+  communityMembers: () => communityMembers,
+  communityPostComments: () => communityPostComments,
+  communityPostLikes: () => communityPostLikes,
+  communityPosts: () => communityPosts,
+  creatorFollowers: () => creatorFollowers,
+  creatorProfiles: () => creatorProfiles,
   culturalCuisineCache: () => culturalCuisineCache,
   familyMemberSchema: () => familyMemberSchema,
   foodDatabase: () => foodDatabase,
@@ -42,16 +50,24 @@ __export(schema_exports, {
   insertProfileSchema: () => insertProfileSchema,
   insertRecipeSchema: () => insertRecipeSchema,
   insertUserAchievementSchema: () => insertUserAchievementSchema,
+  insertUserFavoriteSchema: () => insertUserFavoriteSchema,
+  insertUserRecipeSchema: () => insertUserRecipeSchema,
   insertUserSavedCulturalMealsSchema: () => insertUserSavedCulturalMealsSchema,
   mealCompletions: () => mealCompletions,
+  mealPlanRemixes: () => mealPlanRemixes,
   mealPlanRequestSchema: () => mealPlanRequestSchema,
+  mealPlanReviews: () => mealPlanReviews,
   mealPlans: () => mealPlans,
   mergeFamilyDietaryRestrictions: () => mergeFamilyDietaryRestrictions,
   profiles: () => profiles,
   recipes: () => recipes,
   sessions: () => sessions,
+  sharedMealPlans: () => sharedMealPlans,
   simplifiedUserProfileSchema: () => simplifiedUserProfileSchema,
   userAchievements: () => userAchievements,
+  userFavorites: () => userFavorites,
+  userMealCourseProgress: () => userMealCourseProgress,
+  userRecipes: () => userRecipes,
   userSavedCulturalMeals: () => userSavedCulturalMeals,
   users: () => users,
   weightBasedMealSchema: () => weightBasedMealSchema
@@ -90,7 +106,7 @@ function mergeFamilyDietaryRestrictions(members) {
   console.log("\u{1F517} Final merged restrictions:", finalRestrictions);
   return finalRestrictions;
 }
-var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, mealPlans, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema, groceryListCache, insertGroceryListCacheSchema, foodLogs, insertFoodLogSchema, foodDatabase, insertFoodDatabaseSchema;
+var sessions, users, profiles, familyMemberSchema, insertProfileSchema, goalWeightsSchema, simplifiedUserProfileSchema, mealPlanRequestSchema, weightBasedMealSchema, recipes, insertRecipeSchema, userRecipes, insertUserRecipeSchema, mealPlans, userFavorites, insertUserFavoriteSchema, culturalCuisineCache, insertCulturalCuisineCacheSchema, userSavedCulturalMeals, insertUserSavedCulturalMealsSchema, userAchievements, insertUserAchievementSchema, mealCompletions, insertMealCompletionSchema, groceryListCache, insertGroceryListCacheSchema, foodLogs, insertFoodLogSchema, foodDatabase, insertFoodDatabaseSchema, communities, communityMembers, sharedMealPlans, mealPlanReviews, mealPlanRemixes, communityDiscussions, creatorProfiles, creatorFollowers, communityChallenges, communityPosts, communityPostComments, communityPostLikes, communityCommentLikes, communityMealCourses, communityMealLessons, communityMealCourseModules, communityMealLessonSections, userMealCourseProgress;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -113,6 +129,17 @@ var init_schema = __esm({
       password_hash: varchar("password_hash", { length: 255 }),
       full_name: varchar("full_name", { length: 255 }),
       google_id: varchar("google_id"),
+      is_creator: boolean("is_creator").default(false),
+      // Dynamic creator status
+      // Subscription/Trial fields
+      account_type: varchar("account_type", { length: 50 }).default("free_trial"),
+      // "free_trial", "monthly", "lifetime"
+      trial_ends_at: timestamp("trial_ends_at"),
+      // When the free trial ends
+      subscription_status: varchar("subscription_status", { length: 50 }).default("active"),
+      // "active", "cancelled", "expired"
+      stripe_customer_id: varchar("stripe_customer_id", { length: 255 }),
+      // Stripe customer ID for billing
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -277,6 +304,35 @@ var init_schema = __esm({
       is_saved: true,
       user_id: true
     });
+    userRecipes = pgTable("user_recipes", {
+      id: serial("id").primaryKey(),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      title: text("title").notNull(),
+      description: text("description"),
+      image_url: text("image_url"),
+      time_minutes: integer("time_minutes"),
+      cuisine: text("cuisine"),
+      diet: text("diet"),
+      ingredients: json("ingredients").notNull(),
+      instructions: json("instructions").notNull(),
+      nutrition_info: json("nutrition_info"),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      userIdx: index("user_recipes_user_idx").on(table.user_id)
+    }));
+    insertUserRecipeSchema = createInsertSchema(userRecipes).pick({
+      user_id: true,
+      title: true,
+      description: true,
+      image_url: true,
+      time_minutes: true,
+      cuisine: true,
+      diet: true,
+      ingredients: true,
+      instructions: true,
+      nutrition_info: true
+    });
     mealPlans = pgTable("meal_plans", {
       id: serial("id").primaryKey(),
       userId: varchar("user_id").notNull().references(() => users.id),
@@ -286,6 +342,45 @@ var init_schema = __esm({
       isAutoSaved: boolean("is_auto_saved").default(false),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
+    });
+    userFavorites = pgTable("user_favorites", {
+      id: serial("id").primaryKey(),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      item_type: varchar("item_type").notNull(),
+      // "recipe", "meal_plan", "youtube_video"
+      item_id: varchar("item_id").notNull(),
+      // Foreign key to the item being favorited
+      title: text("title").notNull(),
+      description: text("description"),
+      image_url: text("image_url"),
+      time_minutes: integer("time_minutes"),
+      cuisine: text("cuisine"),
+      diet: text("diet"),
+      video_id: text("video_id"),
+      // For YouTube videos
+      video_title: text("video_title"),
+      video_channel: text("video_channel"),
+      metadata: json("metadata"),
+      // Additional data specific to the item type
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      userItemIdx: index("user_favorites_user_item_idx").on(table.user_id, table.item_type, table.item_id),
+      userIdx: index("user_favorites_user_idx").on(table.user_id)
+    }));
+    insertUserFavoriteSchema = createInsertSchema(userFavorites).pick({
+      user_id: true,
+      item_type: true,
+      item_id: true,
+      title: true,
+      description: true,
+      image_url: true,
+      time_minutes: true,
+      cuisine: true,
+      diet: true,
+      video_id: true,
+      video_title: true,
+      video_channel: true,
+      metadata: true
     });
     culturalCuisineCache = pgTable("cultural_cuisine_cache", {
       id: serial("id").primaryKey(),
@@ -473,6 +568,322 @@ var init_schema = __esm({
       common_portion: true,
       category: true
     });
+    communities = pgTable("communities", {
+      id: serial("id").primaryKey(),
+      name: varchar("name", { length: 255 }).notNull(),
+      description: text("description").notNull(),
+      creator_id: varchar("creator_id").notNull().references(() => users.id),
+      cover_image: text("cover_image"),
+      category: text("category").notNull(),
+      // "budget", "family", "cultural", "health", etc.
+      member_count: integer("member_count").default(0),
+      is_public: boolean("is_public").default(true),
+      settings: json("settings").default({}),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      creatorIdx: index("communities_creator_idx").on(table.creator_id),
+      categoryIdx: index("communities_category_idx").on(table.category)
+    }));
+    communityMembers = pgTable("community_members", {
+      id: serial("id").primaryKey(),
+      community_id: integer("community_id").notNull().references(() => communities.id),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      role: text("role").notNull().default("member"),
+      // "creator", "moderator", "member"
+      points: integer("points").default(0),
+      level: integer("level").default(1),
+      joined_at: timestamp("joined_at").defaultNow()
+    }, (table) => ({
+      communityUserIdx: index("community_user_idx").on(table.community_id, table.user_id),
+      userIdx: index("community_members_user_idx").on(table.user_id)
+    }));
+    sharedMealPlans = pgTable("shared_meal_plans", {
+      id: serial("id").primaryKey(),
+      community_id: integer("community_id").notNull().references(() => communities.id),
+      meal_plan_id: integer("meal_plan_id").notNull().references(() => mealPlans.id),
+      sharer_id: varchar("sharer_id").notNull().references(() => users.id),
+      title: varchar("title", { length: 255 }).notNull(),
+      description: text("description"),
+      tags: json("tags").default([]),
+      // ["budget-friendly", "quick", "family", etc.]
+      preview_images: json("preview_images").default([]),
+      // Array of image URLs
+      metrics: json("metrics").default({}),
+      // {cost_per_serving, prep_time, difficulty, nutrition_score}
+      likes: integer("likes").default(0),
+      tries: integer("tries").default(0),
+      success_rate: integer("success_rate"),
+      // percentage 0-100
+      is_featured: boolean("is_featured").default(false),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      communityIdx: index("shared_plans_community_idx").on(table.community_id),
+      sharerIdx: index("shared_plans_sharer_idx").on(table.sharer_id),
+      featuredIdx: index("shared_plans_featured_idx").on(table.is_featured)
+    }));
+    mealPlanReviews = pgTable("meal_plan_reviews", {
+      id: serial("id").primaryKey(),
+      shared_plan_id: integer("shared_plan_id").notNull().references(() => sharedMealPlans.id),
+      reviewer_id: varchar("reviewer_id").notNull().references(() => users.id),
+      rating: integer("rating").notNull(),
+      // 1-5 stars
+      comment: text("comment"),
+      images: json("images").default([]),
+      // Array of result photo URLs
+      tried_it: boolean("tried_it").default(false),
+      modifications: text("modifications"),
+      // What they changed
+      helpful_count: integer("helpful_count").default(0),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      planIdx: index("reviews_plan_idx").on(table.shared_plan_id),
+      reviewerIdx: index("reviews_reviewer_idx").on(table.reviewer_id)
+    }));
+    mealPlanRemixes = pgTable("meal_plan_remixes", {
+      id: serial("id").primaryKey(),
+      original_plan_id: integer("original_plan_id").notNull().references(() => sharedMealPlans.id),
+      remixer_id: varchar("remixer_id").notNull().references(() => users.id),
+      remixed_plan_id: integer("remixed_plan_id").notNull().references(() => mealPlans.id),
+      community_id: integer("community_id").references(() => communities.id),
+      changes_made: json("changes_made").notNull(),
+      // Description of modifications
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      originalIdx: index("remixes_original_idx").on(table.original_plan_id),
+      remixerIdx: index("remixes_remixer_idx").on(table.remixer_id)
+    }));
+    communityDiscussions = pgTable("community_discussions", {
+      id: serial("id").primaryKey(),
+      community_id: integer("community_id").notNull().references(() => communities.id),
+      meal_plan_id: integer("meal_plan_id").references(() => sharedMealPlans.id),
+      author_id: varchar("author_id").notNull().references(() => users.id),
+      parent_id: integer("parent_id"),
+      // For threaded discussions
+      content: text("content").notNull(),
+      likes: integer("likes").default(0),
+      is_pinned: boolean("is_pinned").default(false),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      communityIdx: index("discussions_community_idx").on(table.community_id),
+      planIdx: index("discussions_plan_idx").on(table.meal_plan_id),
+      authorIdx: index("discussions_author_idx").on(table.author_id)
+    }));
+    creatorProfiles = pgTable("creator_profiles", {
+      id: serial("id").primaryKey(),
+      user_id: varchar("user_id").notNull().references(() => users.id).unique(),
+      bio: text("bio"),
+      specialties: json("specialties").default([]),
+      // ["budget meals", "family cooking", etc.]
+      certifications: json("certifications").default([]),
+      // Professional credentials
+      follower_count: integer("follower_count").default(0),
+      total_plans_shared: integer("total_plans_shared").default(0),
+      average_rating: integer("average_rating"),
+      // Out of 5
+      verified_nutritionist: boolean("verified_nutritionist").default(false),
+      social_links: json("social_links").default({}),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      userIdx: index("creator_profiles_user_idx").on(table.user_id)
+    }));
+    creatorFollowers = pgTable("creator_followers", {
+      id: serial("id").primaryKey(),
+      creator_id: varchar("creator_id").notNull().references(() => users.id),
+      follower_id: varchar("follower_id").notNull().references(() => users.id),
+      followed_at: timestamp("followed_at").defaultNow()
+    }, (table) => ({
+      creatorFollowerIdx: index("creator_follower_idx").on(table.creator_id, table.follower_id),
+      followerIdx: index("followers_follower_idx").on(table.follower_id)
+    }));
+    communityChallenges = pgTable("community_challenges", {
+      id: serial("id").primaryKey(),
+      community_id: integer("community_id").notNull().references(() => communities.id),
+      title: varchar("title", { length: 255 }).notNull(),
+      description: text("description").notNull(),
+      requirements: json("requirements").notNull(),
+      // Challenge criteria
+      start_date: timestamp("start_date").notNull(),
+      end_date: timestamp("end_date").notNull(),
+      prize_description: text("prize_description"),
+      submissions: json("submissions").default([]),
+      // Array of submission IDs
+      winner_id: varchar("winner_id").references(() => users.id),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      communityIdx: index("challenges_community_idx").on(table.community_id),
+      dateIdx: index("challenges_date_idx").on(table.start_date, table.end_date)
+    }));
+    communityPosts = pgTable("community_posts", {
+      id: serial("id").primaryKey(),
+      community_id: integer("community_id").notNull().references(() => communities.id),
+      author_id: varchar("author_id").notNull().references(() => users.id),
+      content: text("content").notNull(),
+      post_type: text("post_type").notNull().default("discussion"),
+      // "discussion", "question", "announcement", "meal_share"
+      meal_plan_id: integer("meal_plan_id").references(() => mealPlans.id),
+      // For meal share posts
+      recipe_data: text("recipe_data"),
+      // JSON string of recipe data for meal_share posts
+      images: text("images"),
+      // JSON string of image URLs
+      likes: integer("likes").default(0),
+      comments_count: integer("comments_count").default(0),
+      is_pinned: boolean("is_pinned").default(false),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      communityIdx: index("community_posts_community_idx").on(table.community_id),
+      authorIdx: index("community_posts_author_idx").on(table.author_id),
+      typeIdx: index("community_posts_type_idx").on(table.post_type),
+      createdIdx: index("community_posts_created_idx").on(table.created_at)
+    }));
+    communityPostComments = pgTable("community_post_comments", {
+      id: serial("id").primaryKey(),
+      post_id: integer("post_id").notNull().references(() => communityPosts.id, { onDelete: "cascade" }),
+      author_id: varchar("author_id").notNull().references(() => users.id),
+      content: text("content").notNull(),
+      parent_id: integer("parent_id"),
+      // For nested replies
+      images: text("images"),
+      // JSON string of image URLs (same as posts)
+      likes: integer("likes").default(0),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      postIdx: index("post_comments_post_idx").on(table.post_id),
+      authorIdx: index("post_comments_author_idx").on(table.author_id),
+      parentIdx: index("post_comments_parent_idx").on(table.parent_id)
+    }));
+    communityPostLikes = pgTable("community_post_likes", {
+      id: serial("id").primaryKey(),
+      post_id: integer("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      postUserIdx: index("post_likes_post_user_idx").on(table.post_id, table.user_id)
+    }));
+    communityCommentLikes = pgTable("community_comment_likes", {
+      id: serial("id").primaryKey(),
+      comment_id: integer("comment_id").notNull().references(() => communityPostComments.id, { onDelete: "cascade" }),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      commentUserIdx: index("comment_likes_comment_user_idx").on(table.comment_id, table.user_id)
+    }));
+    communityMealCourses = pgTable("community_meal_courses", {
+      id: serial("id").primaryKey(),
+      community_id: integer("community_id").notNull().references(() => communities.id),
+      creator_id: varchar("creator_id").notNull().references(() => users.id),
+      title: varchar("title", { length: 255 }).notNull(),
+      emoji: varchar("emoji", { length: 10 }),
+      // Optional emoji for the course
+      description: text("description"),
+      cover_image: text("cover_image"),
+      category: varchar("category", { length: 100 }),
+      // "beginner", "intermediate", "advanced"
+      lesson_count: integer("lesson_count").default(0),
+      total_duration: integer("total_duration").default(0),
+      // total cook time in minutes
+      is_published: boolean("is_published").default(false),
+      display_order: integer("display_order").default(0),
+      drip_enabled: boolean("drip_enabled").default(false),
+      // Enable drip content
+      drip_days: json("drip_days").default([]),
+      // Days after enrollment when lessons unlock
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      communityIdx: index("meal_courses_community_idx").on(table.community_id),
+      creatorIdx: index("meal_courses_creator_idx").on(table.creator_id),
+      publishedIdx: index("meal_courses_published_idx").on(table.is_published)
+    }));
+    communityMealLessons = pgTable("community_meal_lessons", {
+      id: serial("id").primaryKey(),
+      course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+      module_id: integer("module_id").references(() => communityMealCourseModules.id, { onDelete: "set null" }),
+      // Optional module grouping
+      title: varchar("title", { length: 255 }).notNull(),
+      emoji: varchar("emoji", { length: 10 }),
+      // Optional emoji for the lesson
+      description: text("description"),
+      video_url: text("video_url"),
+      // Direct video URL for lesson
+      ingredients: json("ingredients").notNull().default([]),
+      // Array of ingredient strings
+      instructions: json("instructions").notNull().default([]),
+      // Array of instruction strings
+      image_url: text("image_url"),
+      youtube_video_id: varchar("youtube_video_id", { length: 50 }),
+      prep_time: integer("prep_time").default(0),
+      // minutes
+      cook_time: integer("cook_time").default(0),
+      // minutes
+      servings: integer("servings").default(4),
+      difficulty_level: integer("difficulty_level").default(1),
+      // 1-5
+      nutrition_info: json("nutrition_info").default({}),
+      // {calories, protein, carbs, fat}
+      lesson_order: integer("lesson_order").notNull(),
+      is_published: boolean("is_published").default(false),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      courseIdx: index("meal_lessons_course_idx").on(table.course_id),
+      orderIdx: index("meal_lessons_order_idx").on(table.course_id, table.lesson_order),
+      publishedIdx: index("meal_lessons_published_idx").on(table.is_published)
+    }));
+    communityMealCourseModules = pgTable("community_meal_course_modules", {
+      id: serial("id").primaryKey(),
+      course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+      title: varchar("title", { length: 255 }).notNull(),
+      emoji: varchar("emoji", { length: 10 }),
+      // Optional emoji for the module
+      description: text("description"),
+      cover_image: text("cover_image"),
+      // Optional cover image URL for the module
+      module_order: integer("module_order").notNull(),
+      is_expanded: boolean("is_expanded").default(false),
+      // Whether module is expanded by default
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      courseIdx: index("meal_modules_course_idx").on(table.course_id),
+      orderIdx: index("meal_modules_order_idx").on(table.course_id, table.module_order)
+    }));
+    communityMealLessonSections = pgTable("community_meal_lesson_sections", {
+      id: serial("id").primaryKey(),
+      lesson_id: integer("lesson_id").notNull().references(() => communityMealLessons.id, { onDelete: "cascade" }),
+      section_type: varchar("section_type", { length: 50 }).notNull(),
+      // "about", "key_takeaways", "action_steps", "custom"
+      title: varchar("title", { length: 255 }).notNull(),
+      content: text("content").notNull(),
+      template_id: varchar("template_id", { length: 50 }),
+      // "meal_prep", "shopping_guide", "techniques", "nutrition", "time_management", "cultural"
+      display_order: integer("display_order").notNull(),
+      is_visible: boolean("is_visible").default(true),
+      created_at: timestamp("created_at").defaultNow(),
+      updated_at: timestamp("updated_at").defaultNow()
+    }, (table) => ({
+      lessonIdx: index("lesson_sections_lesson_idx").on(table.lesson_id),
+      orderIdx: index("lesson_sections_order_idx").on(table.lesson_id, table.display_order)
+    }));
+    userMealCourseProgress = pgTable("user_meal_course_progress", {
+      id: serial("id").primaryKey(),
+      user_id: varchar("user_id").notNull().references(() => users.id),
+      course_id: integer("course_id").notNull().references(() => communityMealCourses.id, { onDelete: "cascade" }),
+      completed_lessons: json("completed_lessons").default([]),
+      // Array of lesson IDs
+      current_lesson_id: integer("current_lesson_id"),
+      progress_percentage: integer("progress_percentage").default(0),
+      // 0-100
+      started_at: timestamp("started_at").defaultNow(),
+      last_accessed: timestamp("last_accessed").defaultNow()
+    }, (table) => ({
+      userCourseIdx: index("progress_user_course_idx").on(table.user_id, table.course_id),
+      userIdx: index("progress_user_idx").on(table.user_id)
+    }));
   }
 });
 
@@ -526,7 +937,11 @@ var init_dbStorage = __esm({
           password_hash: userData.password_hash,
           full_name: userData.full_name,
           firstName: userData.full_name.split(" ")[0],
-          lastName: userData.full_name.split(" ").slice(1).join(" ") || null
+          lastName: userData.full_name.split(" ").slice(1).join(" ") || null,
+          account_type: userData.account_type || "free_trial",
+          trial_ends_at: userData.trial_ends_at,
+          subscription_status: userData.subscription_status || "active",
+          stripe_customer_id: userData.stripe_customer_id
         }).returning();
         return user;
       }
@@ -630,6 +1045,17 @@ var init_dbStorage = __esm({
         }
         return await db.select().from(recipes).where(eq(recipes.is_saved, false)).orderBy(desc(recipes.created_at));
       }
+      async getUserCreatedRecipes(userId) {
+        return await db.select().from(userRecipes).where(eq(userRecipes.user_id, userId)).orderBy(desc(userRecipes.created_at));
+      }
+      async createUserRecipe(recipe) {
+        const [createdRecipe] = await db.insert(userRecipes).values(recipe).returning();
+        return createdRecipe;
+      }
+      async deleteUserRecipe(recipeId, userId) {
+        const result = await db.delete(userRecipes).where(and(eq(userRecipes.id, recipeId), eq(userRecipes.user_id, userId)));
+        return result.rowCount > 0;
+      }
       async getRecipeById(recipeId) {
         try {
           const recipe = await db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
@@ -670,7 +1096,7 @@ var init_dbStorage = __esm({
       // Meal plan operations
       async getSavedMealPlans(userId) {
         try {
-          const plans = await db.select().from(mealPlans).where(eq(mealPlans.userId, userId)).orderBy(desc(mealPlans.updatedAt));
+          const plans = await db.select().from(mealPlans).where(eq(mealPlans.userId, userId)).orderBy(desc(mealPlans.updatedAt)).limit(50);
           console.log("Database returned meal plans:", plans?.length || 0);
           return Array.isArray(plans) ? plans : [];
         } catch (error) {
@@ -1066,6 +1492,52 @@ var init_dbStorage = __esm({
           throw error;
         }
       }
+      // Favorites methods
+      async getUserFavorites(userId) {
+        try {
+          return await db.select().from(userFavorites).where(eq(userFavorites.user_id, userId)).orderBy(desc(userFavorites.created_at)).limit(100);
+        } catch (error) {
+          console.error("Error getting user favorites:", error);
+          return [];
+        }
+      }
+      async addToFavorites(data) {
+        try {
+          const [favorite] = await db.insert(userFavorites).values(data).returning();
+          console.log("\u2705 Added to favorites:", favorite.title);
+          return favorite;
+        } catch (error) {
+          console.error("Error adding to favorites:", error);
+          throw error;
+        }
+      }
+      async removeFromFavorites(userId, itemType, itemId) {
+        try {
+          await db.delete(userFavorites).where(and(
+            eq(userFavorites.user_id, userId),
+            eq(userFavorites.item_type, itemType),
+            eq(userFavorites.item_id, itemId)
+          ));
+          console.log("\u2705 Removed from favorites:", itemType, itemId);
+          return true;
+        } catch (error) {
+          console.error("Error removing from favorites:", error);
+          return false;
+        }
+      }
+      async isFavorited(userId, itemType, itemId) {
+        try {
+          const [favorite] = await db.select().from(userFavorites).where(and(
+            eq(userFavorites.user_id, userId),
+            eq(userFavorites.item_type, itemType),
+            eq(userFavorites.item_id, itemId)
+          )).limit(1);
+          return !!favorite;
+        } catch (error) {
+          console.error("Error checking if favorited:", error);
+          return false;
+        }
+      }
     };
   }
 });
@@ -1077,6 +1549,422 @@ var init_storage = __esm({
     "use strict";
     init_dbStorage();
     storage = new DatabaseStorage();
+  }
+});
+
+// server/instacartQuantityMapper.ts
+var instacartQuantityMapper_exports = {};
+__export(instacartQuantityMapper_exports, {
+  handleEdgeCases: () => handleEdgeCases,
+  mapToStoreQuantities: () => mapToStoreQuantities,
+  smartQuantityRounding: () => smartQuantityRounding
+});
+function mapToStoreQuantities(ingredient) {
+  const normalized = ingredient.toLowerCase().trim();
+  const parsed = parseIngredientText(normalized);
+  const category = categorizeIngredient(parsed.name);
+  switch (category) {
+    case "spices":
+      return mapSpices(parsed);
+    case "produce":
+      return mapProduce(parsed);
+    case "dairy":
+      return mapDairy(parsed);
+    case "meat":
+      return mapMeat(parsed);
+    case "pantry":
+      return mapPantry(parsed);
+    default:
+      return createDefaultMapping(parsed);
+  }
+}
+function parseIngredientText(text2) {
+  const quantityPattern = /^(\d+(?:\/\d+)?(?:\.\d+)?)\s*(?:to\s*)?(\d+(?:\/\d+)?(?:\.\d+)?)?\s*(\w+)?\s+(.+)/;
+  const match = text2.match(quantityPattern);
+  if (match) {
+    const quantity = match[1];
+    const quantityMax = match[2];
+    const unit = match[3] || "";
+    const name = match[4];
+    return {
+      quantity: quantityMax || quantity,
+      unit: unit.toLowerCase(),
+      name,
+      originalText: text2
+    };
+  }
+  if (text2.includes("to taste")) {
+    const name = text2.replace("to taste", "").trim();
+    return {
+      quantity: "1",
+      unit: "container",
+      name,
+      originalText: text2
+    };
+  }
+  return {
+    quantity: "1",
+    unit: "item",
+    name: text2,
+    originalText: text2
+  };
+}
+function categorizeIngredient(ingredient) {
+  const lower = ingredient.toLowerCase();
+  const spices = [
+    "salt",
+    "pepper",
+    "paprika",
+    "cumin",
+    "coriander",
+    "turmeric",
+    "cinnamon",
+    "nutmeg",
+    "clove",
+    "cardamom",
+    "saffron",
+    "vanilla",
+    "oregano",
+    "basil",
+    "thyme",
+    "rosemary",
+    "sage",
+    "parsley",
+    "garlic powder",
+    "onion powder",
+    "chili powder",
+    "cayenne",
+    "ginger",
+    "mustard",
+    "bay leaf",
+    "dill",
+    "fennel",
+    "tarragon"
+  ];
+  if (spices.some((spice) => lower.includes(spice))) {
+    return "spices";
+  }
+  const produce = [
+    "apple",
+    "banana",
+    "orange",
+    "lemon",
+    "lime",
+    "grape",
+    "berry",
+    "tomato",
+    "onion",
+    "garlic",
+    "potato",
+    "carrot",
+    "celery",
+    "lettuce",
+    "spinach",
+    "kale",
+    "cabbage",
+    "broccoli",
+    "cauliflower",
+    "pepper",
+    "cucumber",
+    "zucchini",
+    "squash",
+    "corn",
+    "bean"
+  ];
+  if (produce.some((item) => lower.includes(item) && !lower.includes("powder"))) {
+    return "produce";
+  }
+  if (lower.includes("milk") || lower.includes("cheese") || lower.includes("yogurt") || lower.includes("butter") || lower.includes("cream") || lower.includes("egg")) {
+    return "dairy";
+  }
+  if (lower.includes("chicken") || lower.includes("beef") || lower.includes("pork") || lower.includes("turkey") || lower.includes("lamb") || lower.includes("fish") || lower.includes("salmon") || lower.includes("shrimp")) {
+    return "meat";
+  }
+  if (lower.includes("flour") || lower.includes("sugar") || lower.includes("rice") || lower.includes("pasta") || lower.includes("oil") || lower.includes("vinegar")) {
+    return "pantry";
+  }
+  return "general";
+}
+function mapSpices(parsed) {
+  return {
+    name: parsed.name,
+    displayText: `1 container ${parsed.name}`,
+    quantity: 1,
+    unit: "container",
+    category: "spices",
+    originalText: parsed.originalText
+  };
+}
+function mapProduce(parsed) {
+  const quantity = parseFloat(parsed.quantity) || 1;
+  const unit = parsed.unit;
+  if (unit === "" || unit === "item" || unit === "piece") {
+    let pounds = 1;
+    if (quantity <= 2) {
+      pounds = 1;
+    } else if (quantity <= 5) {
+      pounds = 2;
+    } else {
+      pounds = 3;
+    }
+    return {
+      name: parsed.name,
+      displayText: `${pounds} lb ${parsed.name}`,
+      quantity: pounds,
+      unit: "pound",
+      category: "produce",
+      originalText: parsed.originalText
+    };
+  }
+  if (unit === "lb" || unit === "pound" || unit === "kg") {
+    const roundedQty = Math.ceil(quantity);
+    return {
+      name: parsed.name,
+      displayText: `${roundedQty} lb ${parsed.name}`,
+      quantity: roundedQty,
+      unit: "pound",
+      category: "produce",
+      originalText: parsed.originalText
+    };
+  }
+  return {
+    name: parsed.name,
+    displayText: `2 lb ${parsed.name}`,
+    quantity: 2,
+    unit: "pound",
+    category: "produce",
+    originalText: parsed.originalText
+  };
+}
+function mapDairy(parsed) {
+  const name = parsed.name.toLowerCase();
+  const quantity = parseFloat(parsed.quantity) || 1;
+  if (name.includes("egg")) {
+    const dozens = quantity <= 6 ? 1 : Math.ceil(quantity / 12);
+    return {
+      name: "eggs",
+      displayText: `${dozens} dozen eggs`,
+      quantity: dozens * 12,
+      unit: "eggs",
+      category: "dairy",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("milk")) {
+    const unit = parsed.unit;
+    let displayText = "";
+    let finalQty = 1;
+    let finalUnit = "quart";
+    if (unit === "cup" || unit === "cups") {
+      if (quantity <= 2) {
+        displayText = "1 pint milk";
+        finalQty = 1;
+        finalUnit = "pint";
+      } else if (quantity <= 4) {
+        displayText = "1 quart milk";
+        finalQty = 1;
+        finalUnit = "quart";
+      } else {
+        displayText = "1 half gallon milk";
+        finalQty = 0.5;
+        finalUnit = "gallon";
+      }
+    } else {
+      displayText = "1 quart milk";
+    }
+    return {
+      name: "milk",
+      displayText,
+      quantity: finalQty,
+      unit: finalUnit,
+      category: "dairy",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("cheese")) {
+    const pounds = Math.ceil(quantity / 4);
+    return {
+      name: parsed.name,
+      displayText: `${pounds} lb ${parsed.name}`,
+      quantity: pounds,
+      unit: "pound",
+      category: "dairy",
+      originalText: parsed.originalText
+    };
+  }
+  return {
+    name: parsed.name,
+    displayText: `1 container ${parsed.name}`,
+    quantity: 1,
+    unit: "container",
+    category: "dairy",
+    originalText: parsed.originalText
+  };
+}
+function mapMeat(parsed) {
+  const quantity = parseFloat(parsed.quantity) || 1;
+  const unit = parsed.unit;
+  if (unit === "" || unit === "piece" || unit === "breast" || unit === "thigh") {
+    const pounds = Math.ceil(quantity * 0.5);
+    return {
+      name: parsed.name,
+      displayText: `${pounds} lb ${parsed.name}`,
+      quantity: pounds,
+      unit: "pound",
+      category: "meat",
+      originalText: parsed.originalText
+    };
+  }
+  if (unit === "lb" || unit === "pound") {
+    const rounded = Math.ceil(quantity);
+    return {
+      name: parsed.name,
+      displayText: `${rounded} lb ${parsed.name}`,
+      quantity: rounded,
+      unit: "pound",
+      category: "meat",
+      originalText: parsed.originalText
+    };
+  }
+  return {
+    name: parsed.name,
+    displayText: `1 lb ${parsed.name}`,
+    quantity: 1,
+    unit: "pound",
+    category: "meat",
+    originalText: parsed.originalText
+  };
+}
+function mapPantry(parsed) {
+  const name = parsed.name.toLowerCase();
+  const quantity = parseFloat(parsed.quantity) || 1;
+  const unit = parsed.unit;
+  if (name.includes("flour")) {
+    let bagSize = "2 lb";
+    if (unit === "cup" || unit === "cups") {
+      if (quantity <= 3) {
+        bagSize = "2 lb";
+      } else if (quantity <= 6) {
+        bagSize = "5 lb";
+      } else {
+        bagSize = "10 lb";
+      }
+    }
+    return {
+      name: "all-purpose flour",
+      displayText: `1 bag (${bagSize}) all-purpose flour`,
+      quantity: 1,
+      unit: "bag",
+      category: "pantry",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("sugar")) {
+    let bagSize = "2 lb";
+    if (unit === "cup" || unit === "cups") {
+      bagSize = quantity <= 3 ? "2 lb" : "5 lb";
+    }
+    return {
+      name: parsed.name,
+      displayText: `1 bag (${bagSize}) ${parsed.name}`,
+      quantity: 1,
+      unit: "bag",
+      category: "pantry",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("oil") || name.includes("vinegar")) {
+    return {
+      name: parsed.name,
+      displayText: `1 bottle ${parsed.name}`,
+      quantity: 1,
+      unit: "bottle",
+      category: "pantry",
+      originalText: parsed.originalText
+    };
+  }
+  if (name.includes("rice") || name.includes("pasta")) {
+    const pounds = Math.ceil(quantity);
+    return {
+      name: parsed.name,
+      displayText: `${pounds} lb ${parsed.name}`,
+      quantity: pounds,
+      unit: "pound",
+      category: "pantry",
+      originalText: parsed.originalText
+    };
+  }
+  return {
+    name: parsed.name,
+    displayText: `1 package ${parsed.name}`,
+    quantity: 1,
+    unit: "package",
+    category: "pantry",
+    originalText: parsed.originalText
+  };
+}
+function createDefaultMapping(parsed) {
+  return {
+    name: parsed.name,
+    displayText: `1 ${parsed.name}`,
+    quantity: 1,
+    unit: "item",
+    category: "general",
+    originalText: parsed.originalText
+  };
+}
+function smartQuantityRounding(quantity, category) {
+  switch (category) {
+    case "produce":
+      return Math.ceil(quantity * 2) / 2;
+    case "meat":
+      return Math.ceil(quantity);
+    case "dairy":
+      return Math.ceil(quantity);
+    default:
+      return Math.ceil(quantity);
+  }
+}
+function handleEdgeCases(ingredient) {
+  const lower = ingredient.toLowerCase();
+  if (lower.includes("to taste")) {
+    const name = lower.replace("to taste", "").trim();
+    return {
+      name,
+      displayText: `1 container ${name}`,
+      quantity: 1,
+      unit: "container",
+      category: "spices",
+      originalText: ingredient
+    };
+  }
+  if (lower.includes("pinch of") || lower.includes("dash of")) {
+    const name = lower.replace(/pinch of|dash of/, "").trim();
+    return {
+      name,
+      displayText: `1 container ${name}`,
+      quantity: 1,
+      unit: "container",
+      category: "spices",
+      originalText: ingredient
+    };
+  }
+  if (lower.includes("fresh") && (lower.includes("basil") || lower.includes("parsley") || lower.includes("cilantro") || lower.includes("mint"))) {
+    const herb = lower.replace("fresh", "").trim();
+    return {
+      name: `fresh ${herb}`,
+      displayText: `1 bunch fresh ${herb}`,
+      quantity: 1,
+      unit: "bunch",
+      category: "produce",
+      originalText: ingredient
+    };
+  }
+  return null;
+}
+var init_instacartQuantityMapper = __esm({
+  "server/instacartQuantityMapper.ts"() {
+    "use strict";
   }
 });
 
@@ -1448,7 +2336,7 @@ async function createInstacartRecipePage(recipeData) {
     image_url: recipeData.image_url,
     link_type: "recipe",
     instructions: recipeData.instructions,
-    ingredients: formatIngredientsForInstacart(recipeData.ingredients),
+    ingredients: await formatIngredientsForInstacart(recipeData.ingredients),
     landing_page_configuration: {
       partner_linkback_url: process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(",")[0] : "https://example.com",
       enable_pantry_items: true
@@ -1505,64 +2393,53 @@ async function getNearbyRetailers(postalCode, countryCode = "US") {
     throw new Error(`Failed to get nearby retailers: ${error.message}`);
   }
 }
-function formatIngredientsForInstacart(ingredients) {
+async function formatIngredientsForInstacart(ingredients) {
+  const { mapToStoreQuantities: mapToStoreQuantities2, handleEdgeCases: handleEdgeCases2 } = await Promise.resolve().then(() => (init_instacartQuantityMapper(), instacartQuantityMapper_exports));
   return ingredients.map((ingredient) => {
     if (typeof ingredient === "string") {
-      const parsed = parseIngredientString(ingredient);
+      const edgeCase = handleEdgeCases2(ingredient);
+      if (edgeCase) {
+        return {
+          name: edgeCase.name,
+          display_text: edgeCase.displayText,
+          measurements: [{
+            quantity: edgeCase.quantity,
+            unit: normalizeUnit(edgeCase.unit)
+          }]
+        };
+      }
+      const mapped = mapToStoreQuantities2(ingredient);
       return {
-        name: parsed.ingredient,
-        display_text: ingredient,
-        measurements: parsed.quantity && parsed.unit ? [{
-          quantity: parseFloat(parsed.quantity) || 1,
-          unit: normalizeUnit(parsed.unit)
-        }] : []
+        name: mapped.name,
+        display_text: mapped.displayText,
+        measurements: [{
+          quantity: mapped.quantity,
+          unit: normalizeUnit(mapped.unit)
+        }]
       };
     } else if (ingredient.display_text) {
-      return ingredient;
-    } else {
+      const mapped = mapToStoreQuantities2(ingredient.display_text);
       return {
-        name: ingredient.name || "Unknown ingredient",
-        display_text: ingredient.display_text || ingredient.name || "Unknown ingredient",
-        measurements: ingredient.measurements || []
+        name: mapped.name,
+        display_text: mapped.displayText,
+        measurements: [{
+          quantity: mapped.quantity,
+          unit: normalizeUnit(mapped.unit)
+        }]
+      };
+    } else {
+      const displayText = ingredient.display_text || ingredient.name || "Unknown ingredient";
+      const mapped = mapToStoreQuantities2(displayText);
+      return {
+        name: mapped.name,
+        display_text: mapped.displayText,
+        measurements: [{
+          quantity: mapped.quantity,
+          unit: normalizeUnit(mapped.unit)
+        }]
       };
     }
   });
-}
-function parseIngredientString(ingredientStr) {
-  const cleaned = ingredientStr.trim();
-  const patterns = [
-    // "2 cups flour" or "1/2 cup milk"
-    /^(\d+(?:\/\d+)?(?:\.\d+)?)\s+(\w+)\s+(.+?)(?:,\s*(.+))?$/,
-    // "1 large onion, diced"
-    /^(\d+)\s+(\w+)\s+(.+?)(?:,\s*(.+))?$/,
-    // "Salt and pepper to taste"
-    /^(.+?)\s+to\s+taste$/
-  ];
-  for (const pattern of patterns) {
-    const match = cleaned.match(pattern);
-    if (match) {
-      if (pattern.source.includes("to\\s+taste")) {
-        return {
-          quantity: "",
-          unit: "",
-          ingredient: match[1],
-          preparation: "to taste"
-        };
-      } else {
-        return {
-          quantity: match[1] || "",
-          unit: match[2] || "",
-          ingredient: match[3] || "",
-          preparation: match[4] || void 0
-        };
-      }
-    }
-  }
-  return {
-    quantity: "",
-    unit: "",
-    ingredient: cleaned
-  };
 }
 function normalizeUnit(unit) {
   const unitMap = {
@@ -1621,6 +2498,1106 @@ var init_instacart = __esm({
   }
 });
 
+// server/groqInstructionGenerator.ts
+var groqInstructionGenerator_exports = {};
+__export(groqInstructionGenerator_exports, {
+  GroqInstructionGenerator: () => GroqInstructionGenerator,
+  groqInstructionGenerator: () => groqInstructionGenerator
+});
+import Groq from "groq-sdk";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+var __filename, __dirname2, GroqInstructionGenerator, groqInstructionGenerator;
+var init_groqInstructionGenerator = __esm({
+  "server/groqInstructionGenerator.ts"() {
+    "use strict";
+    __filename = fileURLToPath(import.meta.url);
+    __dirname2 = path.dirname(__filename);
+    dotenv.config({ path: path.join(__dirname2, "..", ".env") });
+    GroqInstructionGenerator = class {
+      client = null;
+      constructor() {
+        const groqApiKey = process.env.GROQ_API_KEY;
+        if (groqApiKey) {
+          console.log("\u{1F680} [GROQ INSTRUCTION GEN] Initializing with GPT-OSS-120B");
+          console.log("\u2705 [GROQ INSTRUCTION GEN] API key loaded successfully");
+          this.client = new Groq({
+            apiKey: groqApiKey
+          });
+        } else {
+          console.error("\u274C [GROQ INSTRUCTION GEN] GROQ_API_KEY not found in environment");
+        }
+      }
+      async generateInstructionsFromTranscript(transcript, recipeName, ingredients) {
+        console.log("\u{1F3AF} [GROQ INSTRUCTION GEN] Generating instructions for:", recipeName);
+        if (!this.client) {
+          console.log("\u26A0\uFE0F [GROQ INSTRUCTION GEN] No client available, returning empty");
+          return [];
+        }
+        if (!transcript || transcript.length < 50) {
+          console.log("\u274C [GROQ INSTRUCTION GEN] Transcript too short or missing");
+          return [];
+        }
+        try {
+          console.log("\u{1F4E1} [GROQ INSTRUCTION GEN] Calling GPT-OSS-120B to generate instructions...");
+          const startTime = Date.now();
+          const ingredientList = ingredients?.join(", ") || "standard ingredients";
+          const prompt = `You are a cooking expert. Convert this video transcript into clear step-by-step cooking instructions.
+
+Recipe: ${recipeName}
+Ingredients mentioned: ${ingredientList}
+
+Transcript:
+${transcript.substring(0, 3e3)} 
+
+Create numbered cooking instructions in this EXACT format:
+Step 1: [First action]
+Step 2: [Second action]
+Step 3: [Third action]
+...
+
+Rules:
+- Each step must start with "Step N:" where N is the step number
+- Keep each step clear and concise
+- Include specific times, temperatures, and measurements when mentioned
+- If transcript is unclear, use standard cooking logic
+- Generate between 4-10 steps
+- Make instructions actionable and easy to follow
+
+Return ONLY the numbered steps, nothing else.`;
+          const completion = await this.client.chat.completions.create({
+            model: "openai/gpt-oss-120b",
+            // Using the larger 120B model for better quality
+            messages: [{
+              role: "user",
+              content: prompt
+            }],
+            temperature: 0.3,
+            max_tokens: 500,
+            reasoning_effort: "medium"
+            // Add reasoning for better instruction generation
+          });
+          const response = completion.choices[0]?.message?.content || "";
+          const timeTaken = Date.now() - startTime;
+          console.log(`\u2705 [GROQ INSTRUCTION GEN] Generated in ${timeTaken}ms`);
+          console.log("\u{1F4DD} [GROQ INSTRUCTION GEN] Raw response:", response.substring(0, 200) + "...");
+          const instructions = this.parseInstructions(response);
+          if (instructions.length === 0) {
+            console.log("\u26A0\uFE0F [GROQ INSTRUCTION GEN] Failed to parse instructions, trying fallback");
+            return this.generateFallbackInstructions(recipeName, ingredients);
+          }
+          console.log(`\u2705 [GROQ INSTRUCTION GEN] Generated ${instructions.length} instructions`);
+          return instructions;
+        } catch (error) {
+          console.error("\u{1F525} [GROQ INSTRUCTION GEN] Error generating instructions:", error);
+          return this.generateFallbackInstructions(recipeName, ingredients);
+        }
+      }
+      parseInstructions(response) {
+        const lines = response.split(/Step \d+:|^\d+\.|^\d+\)/gm).map((line) => line.trim()).filter((line) => line.length > 10);
+        if (lines.length > 0) {
+          return lines.map((instruction, index2) => {
+            const cleaned = instruction.replace(/^[:\-\s]+/, "").replace(/^\d+[\.\)]\s*/, "").trim();
+            return `Step ${index2 + 1}: ${cleaned}`;
+          });
+        }
+        const altLines = response.split("\n").filter((line) => line.trim().length > 10).filter((line) => /step|cook|heat|mix|add|bake|boil|fry/i.test(line));
+        if (altLines.length > 0) {
+          return altLines.map((line, index2) => {
+            const cleaned = line.replace(/^[-\*\s]+/, "").replace(/^step\s*\d+[:\.\)]\s*/i, "").replace(/^\d+[\.\)]\s*/, "").trim();
+            return `Step ${index2 + 1}: ${cleaned}`;
+          });
+        }
+        return [];
+      }
+      generateFallbackInstructions(recipeName, ingredients) {
+        console.log("\u{1F527} [GROQ INSTRUCTION GEN] Generating fallback instructions");
+        const fallbackSteps = [
+          `Step 1: Gather all ingredients and prepare your workspace`,
+          `Step 2: Prep ingredients as needed (wash, chop, measure)`,
+          `Step 3: Follow standard cooking method for ${recipeName}`,
+          `Step 4: Cook until done according to recipe requirements`,
+          `Step 5: Season to taste and serve hot`
+        ];
+        if (recipeName.toLowerCase().includes("sandwich")) {
+          return [
+            `Step 1: Prepare all ingredients and have them ready`,
+            `Step 2: Toast bread slices if desired`,
+            `Step 3: Prepare the filling according to recipe`,
+            `Step 4: Assemble sandwich with prepared ingredients`,
+            `Step 5: Cut diagonally and serve immediately`
+          ];
+        } else if (recipeName.toLowerCase().includes("egg")) {
+          return [
+            `Step 1: Crack eggs into a bowl`,
+            `Step 2: Season with salt and pepper`,
+            `Step 3: Whisk eggs until well combined`,
+            `Step 4: Cook eggs in a pan over medium heat`,
+            `Step 5: Serve hot with chosen accompaniments`
+          ];
+        }
+        return fallbackSteps;
+      }
+      async enhanceInstructions(existingInstructions, recipeName) {
+        if (existingInstructions && existingInstructions.length > 0) {
+          const needsFormatting = !existingInstructions[0].toLowerCase().startsWith("step");
+          if (needsFormatting) {
+            console.log("\u{1F504} [GROQ INSTRUCTION GEN] Reformatting existing instructions");
+            return existingInstructions.map((instruction, index2) => {
+              if (instruction.toLowerCase().startsWith("step")) {
+                return instruction;
+              }
+              return `Step ${index2 + 1}: ${instruction}`;
+            });
+          }
+        }
+        return existingInstructions;
+      }
+    };
+    groqInstructionGenerator = new GroqInstructionGenerator();
+  }
+});
+
+// server/logmealEndpoint.ts
+var logmealEndpoint_exports = {};
+__export(logmealEndpoint_exports, {
+  MAX_DAILY_CALLS: () => MAX_DAILY_CALLS,
+  dailyCallCount: () => dailyCallCount,
+  handleLogMealDetection: () => handleLogMealDetection,
+  lastResetDate: () => lastResetDate
+});
+import axios from "axios";
+import FormData from "form-data";
+import crypto from "crypto";
+async function handleLogMealDetection(req, res) {
+  try {
+    console.log("\u{1F354} === LOGMEAL API ENDPOINT CALLED ===");
+    const { image } = req.body;
+    const today = (/* @__PURE__ */ new Date()).toDateString();
+    if (today !== lastResetDate) {
+      dailyCallCount = 0;
+      lastResetDate = today;
+      console.log("\u{1F504} Daily API call counter reset");
+    }
+    if (dailyCallCount >= MAX_DAILY_CALLS) {
+      console.log(`\u26A0\uFE0F Daily API call limit reached: ${dailyCallCount}/${MAX_DAILY_CALLS}`);
+      return res.status(429).json({
+        error: "Daily API call limit reached. Please try again tomorrow.",
+        callsUsed: dailyCallCount,
+        maxCalls: MAX_DAILY_CALLS
+      });
+    }
+    const imageHash = crypto.createHash("md5").update(image).digest("hex");
+    const cacheKey = `logmeal_${imageHash}`;
+    const cached = detectionCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log("\u{1F4BE} Returning cached detection result");
+      return res.json(cached.data);
+    }
+    if (!image) {
+      console.error("\u274C No image data provided");
+      return res.status(400).json({ error: "Image data is required" });
+    }
+    console.log("\u{1F4CA} Received image data:", {
+      length: image.length,
+      isBase64: image.includes("base64"),
+      prefix: image.substring(0, 50)
+    });
+    const LOGMEAL_API_KEY = "79cbe9badc6d24d77ffbcd536692c6fd697de89d";
+    const LOGMEAL_API_URL = "https://api.logmeal.es/v2";
+    console.log("\u{1F511} Using LogMeal API");
+    console.log(`   API Key: ${LOGMEAL_API_KEY.substring(0, 10)}...${LOGMEAL_API_KEY.slice(-4)}`);
+    console.log(`   Base URL: ${LOGMEAL_API_URL}`);
+    const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
+    const imageBuffer = Buffer.from(base64Image, "base64");
+    console.log("\u{1F4E6} Image buffer size:", imageBuffer.length);
+    const getUnitForFood = (foodName) => {
+      const lowerName = foodName.toLowerCase();
+      if (lowerName.includes("rice") || lowerName.includes("pasta") || lowerName.includes("grain")) return "cup";
+      if (lowerName.includes("chicken") || lowerName.includes("beef") || lowerName.includes("pork") || lowerName.includes("steak") || lowerName.includes("meat") || lowerName.includes("fish")) return "oz";
+      if (lowerName.includes("milk") || lowerName.includes("juice") || lowerName.includes("soup") || lowerName.includes("stew") || lowerName.includes("sauce")) return "cup";
+      if (lowerName.includes("bread") || lowerName.includes("toast") || lowerName.includes("slice")) return "slice";
+      if (lowerName.includes("egg")) return "egg";
+      if (lowerName.includes("apple") || lowerName.includes("banana") || lowerName.includes("orange") || lowerName.includes("fruit")) return "piece";
+      if (lowerName.includes("vegetable") || lowerName.includes("carrot") || lowerName.includes("broccoli")) return "cup";
+      return "serving";
+    };
+    const getMeasureType = (unit) => {
+      if (unit === "cup" || unit === "tbsp" || unit === "tsp" || unit === "ml") return "volume";
+      if (unit === "oz" || unit === "g" || unit === "lb") return "weight";
+      return "count";
+    };
+    const processLogMealResponse = (data, endpointName, getUnitForFood2, getMeasureType2) => {
+      const detections = [];
+      const timestamp2 = Date.now();
+      console.log(`\u{1F50D} Processing ${endpointName} response...`);
+      if (data.food_types && Array.isArray(data.food_types)) {
+        console.log(`\u{1F4CD} Found ${data.food_types.length} food types`);
+        for (const foodType of data.food_types) {
+          const name = foodType.name;
+          const prob = foodType.probs || foodType.prob || 0.5;
+          const genericTerms2 = ["food", "non-food", "drink", "ingredients", "meal", "dish", "cuisine", "ingredient", "meals", "dishes", "foods"];
+          const isGeneric = genericTerms2.some((term) => name?.toLowerCase().trim() === term);
+          if (name && !isGeneric && prob >= 0.15) {
+            const unit = getUnitForFood2(name);
+            detections.push({
+              id: `type-${timestamp2}-${Math.random()}`,
+              name,
+              confidence: prob,
+              amount: 1,
+              unit,
+              measureType: getMeasureType2(unit),
+              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-type`
+            });
+            console.log(`  \u2705 Added food type: ${name} (${(prob * 100).toFixed(1)}%)`);
+          } else if (name && isGeneric) {
+            console.log(`  \u26A0\uFE0F Skipped generic term: ${name} (${(prob * 100).toFixed(1)}%)`);
+          }
+        }
+      }
+      if (data.recognition_results && Array.isArray(data.recognition_results)) {
+        console.log(`\u{1F4CD} Found ${data.recognition_results.length} recognition results`);
+        for (const result of data.recognition_results) {
+          if (result.recognition_results && Array.isArray(result.recognition_results)) {
+            console.log(`  \u{1F4E6} Processing nested recognition results`);
+            for (const nestedResult of result.recognition_results) {
+              const name2 = nestedResult.name || nestedResult.food_name || nestedResult.class;
+              const prob2 = nestedResult.prob || nestedResult.probability || 0.5;
+              if (name2 && prob2 >= 0.15 && !["food", "non-food", "drink", "ingredients", "unknown"].includes(name2.toLowerCase())) {
+                const unit = getUnitForFood2(name2);
+                detections.push({
+                  id: `nested-${timestamp2}-${Math.random()}`,
+                  name: name2,
+                  confidence: prob2,
+                  amount: 1,
+                  unit,
+                  measureType: getMeasureType2(unit),
+                  source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-segmented`
+                });
+                console.log(`    \u2705 Added segmented food: ${name2} (${(prob2 * 100).toFixed(1)}%)`);
+              }
+            }
+          }
+          const name = result.name || result.food_name || result.class;
+          const prob = result.prob || result.probability || result.score || 0.5;
+          const genericTerms2 = ["food", "non-food", "drink", "ingredients", "meal", "dish", "cuisine", "unknown"];
+          const isGeneric = genericTerms2.some((term) => name?.toLowerCase().includes(term));
+          if (name && prob >= 0.15 && !isGeneric) {
+            const unit = getUnitForFood2(name);
+            detections.push({
+              id: `dish-${timestamp2}-${Math.random()}`,
+              name,
+              confidence: prob,
+              amount: 1,
+              unit,
+              measureType: getMeasureType2(unit),
+              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-dish`
+            });
+            console.log(`  \u2705 Added dish: ${name} (${(prob * 100).toFixed(1)}%)`);
+            if (result.subclasses && Array.isArray(result.subclasses)) {
+              for (const subclass of result.subclasses) {
+                const subName = subclass.name;
+                const subProb = subclass.prob || 0.5;
+                if (subName && subProb >= 0.2 && subName !== name && !genericTerms2.some((t) => subName?.toLowerCase().includes(t))) {
+                  const subUnit = getUnitForFood2(subName);
+                  detections.push({
+                    id: `subclass-${timestamp2}-${Math.random()}`,
+                    name: subName,
+                    confidence: subProb,
+                    amount: 1,
+                    unit: subUnit,
+                    measureType: getMeasureType2(subUnit),
+                    source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-subclass`
+                  });
+                  console.log(`    \u2705 Added subclass: ${subName} (${(subProb * 100).toFixed(1)}%)`);
+                }
+              }
+            }
+          } else if (name && isGeneric) {
+            console.log(`  \u26A0\uFE0F Skipped generic result: ${name} (${(prob * 100).toFixed(1)}%)`);
+          }
+        }
+      }
+      if (data.foodFamily && Array.isArray(data.foodFamily)) {
+        console.log(`\u{1F4CD} Found ${data.foodFamily.length} food families`);
+        for (const family of data.foodFamily) {
+          if (family.foods && Array.isArray(family.foods)) {
+            for (const food of family.foods) {
+              const name = food.name || food.food_name;
+              const prob = food.prob || food.confidence || 0.5;
+              if (name && prob >= 0.15) {
+                const unit = getUnitForFood2(name);
+                detections.push({
+                  id: `family-${timestamp2}-${Math.random()}`,
+                  name,
+                  confidence: prob,
+                  amount: food.quantity || 1,
+                  unit,
+                  measureType: getMeasureType2(unit),
+                  source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-family`
+                });
+                console.log(`  \u2705 Added from food family: ${name} (${(prob * 100).toFixed(1)}%)`);
+              }
+            }
+          }
+        }
+      }
+      if (data.segmentation_results && Array.isArray(data.segmentation_results)) {
+        console.log(`\u{1F4CD} Found ${data.segmentation_results.length} segmentation results`);
+        for (const segment of data.segmentation_results) {
+          if (segment.recognition_results && Array.isArray(segment.recognition_results)) {
+            console.log(`  \u{1F50D} Segment has ${segment.recognition_results.length} recognition results`);
+            for (const recResult of segment.recognition_results) {
+              const name2 = recResult.name || recResult.food_name || recResult.class;
+              const prob2 = recResult.prob || recResult.probability || 0.5;
+              if (name2 && prob2 >= 0.15 && !["food", "non-food", "drink", "ingredients", "unknown"].includes(name2.toLowerCase())) {
+                const unit = getUnitForFood2(name2);
+                detections.push({
+                  id: `seg-rec-${timestamp2}-${Math.random()}`,
+                  name: name2,
+                  confidence: prob2,
+                  amount: 1,
+                  unit,
+                  measureType: getMeasureType2(unit),
+                  source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-segmentation`
+                });
+                console.log(`    \u2705 Added from segmentation: ${name2} (${(prob2 * 100).toFixed(1)}%)`);
+              }
+            }
+          }
+          const name = segment.name || segment.food_name || segment.class;
+          const prob = segment.prob || segment.confidence || 0.6;
+          if (name && prob >= 0.15 && !["food", "non-food", "drink", "ingredients", "unknown"].includes(name.toLowerCase())) {
+            const unit = getUnitForFood2(name);
+            detections.push({
+              id: `seg-${timestamp2}-${Math.random()}`,
+              name,
+              confidence: prob,
+              amount: 1,
+              unit,
+              measureType: getMeasureType2(unit),
+              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-segmentation`
+            });
+            console.log(`  \u2705 Added segmentation: ${name} (${(prob * 100).toFixed(1)}%)`);
+          }
+        }
+      }
+      if (data.foodItem && Array.isArray(data.foodItem)) {
+        console.log(`\u{1F4CD} Found ${data.foodItem.length} food items`);
+        for (const item of data.foodItem) {
+          const name = item.name || item.food_name;
+          const prob = item.prob || item.probability || 0.5;
+          if (name && prob >= 0.15) {
+            const unit = getUnitForFood2(name);
+            detections.push({
+              id: `item-${timestamp2}-${Math.random()}`,
+              name,
+              confidence: prob,
+              amount: item.quantity || 1,
+              unit,
+              measureType: getMeasureType2(unit),
+              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-fooditem`
+            });
+            console.log(`  \u2705 Added food item: ${name} (${(prob * 100).toFixed(1)}%)`);
+          }
+        }
+      }
+      if (data.ingredients && Array.isArray(data.ingredients)) {
+        console.log(`\u{1F4CD} Found ${data.ingredients.length} ingredients`);
+        for (const ingredient of data.ingredients) {
+          const name = typeof ingredient === "string" ? ingredient : ingredient.name || ingredient.ingredient;
+          if (name && typeof name === "string" && name !== "ingredients") {
+            const unit = getUnitForFood2(name);
+            detections.push({
+              id: `ing-${timestamp2}-${Math.random()}`,
+              name,
+              confidence: ingredient.confidence || 0.8,
+              amount: ingredient.quantity || ingredient.amount || 1,
+              unit,
+              measureType: getMeasureType2(unit),
+              source: `${endpointName.toLowerCase().replace(/\s+/g, "-")}-ingredient`
+            });
+            console.log(`  \u2705 Added ingredient: ${name}`);
+          }
+        }
+      }
+      return detections;
+    };
+    const deduplicateDetections = (detections) => {
+      const uniqueDetections = /* @__PURE__ */ new Map();
+      console.log(`\u{1F504} Deduplicating ${detections.length} total detections...`);
+      for (const detection of detections) {
+        const key = detection.name.toLowerCase().trim();
+        if (!uniqueDetections.has(key) || detection.confidence > uniqueDetections.get(key).confidence) {
+          uniqueDetections.set(key, detection);
+        }
+      }
+      const result = Array.from(uniqueDetections.values());
+      console.log(`\u2728 After deduplication: ${result.length} unique foods`);
+      result.sort((a, b) => b.confidence - a.confidence);
+      return result;
+    };
+    let allDetections = [];
+    const endpoints = [
+      {
+        path: "/image/recognition/type",
+        // Primary food type detection endpoint (confirmed working)
+        name: "Food Type Recognition",
+        priority: 1
+      }
+    ];
+    for (const endpoint of endpoints) {
+      console.log(`
+\u{1F680} Trying ${endpoint.name}: ${endpoint.path}`);
+      if (endpoint.priority > 1) {
+        console.log("   \u23F3 Waiting 1 second to avoid rate limits...");
+        await new Promise((resolve) => setTimeout(resolve, 1e3));
+      }
+      const formData = new FormData();
+      formData.append("image", imageBuffer, {
+        filename: "image.jpg",
+        contentType: "image/jpeg"
+      });
+      try {
+        const response2 = await axios.post(
+          `${LOGMEAL_API_URL}${endpoint.path}`,
+          formData,
+          {
+            headers: {
+              "Authorization": `Bearer ${LOGMEAL_API_KEY}`,
+              ...formData.getHeaders()
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            timeout: 3e4
+            // 30 second timeout
+          }
+        );
+        const endpointData = response2.data;
+        console.log(`\u2705 Success with ${endpoint.name}`);
+        console.log("\u{1F4CA} Response keys:", Object.keys(endpointData));
+        dailyCallCount++;
+        console.log(`\u{1F4CA} API calls today: ${dailyCallCount}/${MAX_DAILY_CALLS}`);
+        const endpointDetections = processLogMealResponse(endpointData, endpoint.name, getUnitForFood, getMeasureType);
+        if (endpointDetections.length > 0) {
+          console.log(`\u{1F4E6} Added ${endpointDetections.length} detections from ${endpoint.name}:`);
+          endpointDetections.forEach((d) => {
+            console.log(`    - ${d.name} (${(d.confidence * 100).toFixed(1)}%)`);
+          });
+          allDetections.push(...endpointDetections);
+        } else {
+          console.log(`\u26A0\uFE0F No valid detections from ${endpoint.name}`);
+        }
+      } catch (error) {
+        console.log(`\u274C Failed with ${endpoint.name}:`, error.response?.status || error.message);
+        if (error.response) {
+          console.log(`   Status: ${error.response.status}`);
+          console.log(`   Status Text: ${error.response.statusText}`);
+          if (error.response.status === 429) {
+            console.log(`   \u26A0\uFE0F RATE LIMIT: Too many requests to LogMeal API`);
+            console.log(`   \u{1F4A1} The LogMeal API has rate limits. Try again later or use manual entry.`);
+            if (!allDetections.find((d) => d.name === "RATE_LIMIT_ERROR")) {
+              allDetections.push({
+                id: "rate-limit-error",
+                name: "RATE_LIMIT_ERROR",
+                confidence: 0,
+                amount: 0,
+                unit: "",
+                measureType: "",
+                source: "error"
+              });
+            }
+          } else if (error.response.status === 401 || error.response.status === 403) {
+            console.log(`   \u26A0\uFE0F AUTH ERROR: API key may not have access to this endpoint`);
+          } else if (error.response.status === 400) {
+            console.log(`   \u26A0\uFE0F BAD REQUEST: Endpoint or parameters may be incorrect`);
+          } else if (error.response.status === 114 || error.response.data?.code === 114) {
+            console.log(`   \u26A0\uFE0F RATE LIMIT: LogMeal API quota exceeded for 24 hours`);
+            console.log(`   \u{1F4A1} You've reached your daily limit. Try again tomorrow or upgrade your plan.`);
+          }
+          console.log(`   Error data:`, error.response.data ? JSON.stringify(error.response.data).substring(0, 200) : "No error data");
+        } else {
+          console.log(`   Network/Other Error:`, error.message);
+        }
+        continue;
+      }
+    }
+    if (allDetections.length === 0) {
+      console.error("\u274C No detections from any LogMeal endpoint");
+      console.log("\u{1F4A1} This could be due to:");
+      console.log("   - Daily rate limit reached (200 requests per day - resets at midnight)");
+      console.log("   - Image quality (try better lighting/clearer photo)");
+      console.log("   - Food not recognized (try simpler/common foods)");
+      console.log("   - API service issues (check LogMeal status)");
+    }
+    let detectedIngredients = deduplicateDetections(allDetections);
+    const genericTerms = ["food", "non-food", "drink", "ingredients", "meal", "dish", "cuisine", "unknown", "rate_limit_error"];
+    detectedIngredients = detectedIngredients.filter((item) => {
+      const isGeneric = genericTerms.some((term) => item.name.toLowerCase() === term);
+      if (isGeneric) {
+        if (item.name.toLowerCase() === "rate_limit_error") {
+          console.log(`\u26A0\uFE0F LogMeal API is rate limited. Users can add ingredients manually.`);
+        } else {
+          console.log(`\u{1F6AB} Filtered out generic term from final results: ${item.name}`);
+        }
+        return false;
+      }
+      return true;
+    });
+    console.log(`
+\u2705 Final results: ${detectedIngredients.length} unique ingredients detected`);
+    if (detectedIngredients.length === 0) {
+      console.log("\u26A0\uFE0F No ingredients detected after processing all endpoints");
+    } else {
+      console.log("\u{1F37D}\uFE0F Detected foods:");
+      detectedIngredients.forEach((item, index2) => {
+        console.log(`  ${index2 + 1}. ${item.name} - ${item.amount}${item.unit} (${(item.confidence * 100).toFixed(1)}% confidence, source: ${item.source})`);
+      });
+    }
+    const response = {
+      ingredients: detectedIngredients,
+      raw: {
+        totalDetections: allDetections.length,
+        uniqueDetections: detectedIngredients.length,
+        endpointsUsed: endpoints.map((e) => e.name),
+        sourceBreakdown: detectedIngredients.reduce((acc, item) => {
+          acc[item.source] = (acc[item.source] || 0) + 1;
+          return acc;
+        }, {})
+      }
+    };
+    console.log("\u{1F4E4} Sending response with", detectedIngredients.length, "ingredients");
+    detectionCache.set(cacheKey, {
+      data: response,
+      timestamp: Date.now()
+    });
+    console.log(`\u{1F4BE} Cached result for future requests`);
+    res.json(response);
+  } catch (error) {
+    console.error("\u274C Error in LogMeal endpoint:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      details: error.message
+    });
+  }
+}
+var detectionCache, CACHE_DURATION, MAX_DAILY_CALLS, dailyCallCount, lastResetDate;
+var init_logmealEndpoint = __esm({
+  "server/logmealEndpoint.ts"() {
+    "use strict";
+    detectionCache = /* @__PURE__ */ new Map();
+    CACHE_DURATION = 5 * 60 * 1e3;
+    MAX_DAILY_CALLS = 180;
+    dailyCallCount = 0;
+    lastResetDate = (/* @__PURE__ */ new Date()).toDateString();
+  }
+});
+
+// server/communityService.ts
+var communityService_exports = {};
+__export(communityService_exports, {
+  CommunityService: () => CommunityService,
+  communityService: () => communityService
+});
+import { eq as eq2, and as and2, desc as desc2, sql as sql3, gte as gte2, inArray } from "drizzle-orm";
+var CommunityService, communityService;
+var init_communityService = __esm({
+  "server/communityService.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    CommunityService = class {
+      // Create a new community
+      async createCommunity(userId, data) {
+        const [community] = await db.insert(communities).values({
+          ...data,
+          creator_id: userId,
+          member_count: 1
+        }).returning();
+        await db.insert(communityMembers).values({
+          community_id: community.id,
+          user_id: userId,
+          role: "creator",
+          points: 0,
+          level: 1
+        });
+        return community;
+      }
+      // Get all communities with optional filtering
+      async getCommunities(category, userId) {
+        let whereConditions = [];
+        if (category) {
+          whereConditions.push(eq2(communities.category, category));
+        }
+        const allCommunities = await db.select().from(communities).where(whereConditions.length > 0 ? and2(...whereConditions) : void 0).orderBy(desc2(communities.member_count));
+        if (userId) {
+          const userMemberships = await db.select().from(communityMembers).where(eq2(communityMembers.user_id, userId));
+          const membershipMap = new Set(userMemberships.map((m) => m.community_id));
+          return allCommunities.map((community) => ({
+            ...community,
+            isMember: membershipMap.has(community.id)
+          }));
+        }
+        return allCommunities;
+      }
+      // Get community details with member info
+      async getCommunityDetails(communityId, userId) {
+        const [community] = await db.select().from(communities).where(eq2(communities.id, communityId));
+        if (!community) {
+          throw new Error("Community not found");
+        }
+        let memberInfo = null;
+        if (userId) {
+          const [member] = await db.select().from(communityMembers).where(and2(
+            eq2(communityMembers.community_id, communityId),
+            eq2(communityMembers.user_id, userId)
+          ));
+          memberInfo = member;
+        }
+        const topContributors = await db.select().from(communityMembers).where(eq2(communityMembers.community_id, communityId)).orderBy(desc2(communityMembers.points)).limit(10);
+        return {
+          ...community,
+          memberInfo,
+          topContributors
+        };
+      }
+      // Join a community
+      async joinCommunity(userId, communityId) {
+        const existing = await db.select().from(communityMembers).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+        if (existing.length > 0) {
+          throw new Error("Already a member of this community");
+        }
+        const [member] = await db.insert(communityMembers).values({
+          community_id: communityId,
+          user_id: userId,
+          role: "member",
+          points: 0,
+          level: 1
+        }).returning();
+        await db.update(communities).set({
+          member_count: sql3`${communities.member_count} + 1`,
+          updated_at: /* @__PURE__ */ new Date()
+        }).where(eq2(communities.id, communityId));
+        return member;
+      }
+      // Leave a community
+      async leaveCommunity(userId, communityId) {
+        const [member] = await db.select().from(communityMembers).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+        if (!member) {
+          throw new Error("Not a member of this community");
+        }
+        if (member.role === "creator") {
+          throw new Error("Creator cannot leave their own community");
+        }
+        await db.delete(communityMembers).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+        await db.update(communities).set({
+          member_count: sql3`${communities.member_count} - 1`,
+          updated_at: /* @__PURE__ */ new Date()
+        }).where(eq2(communities.id, communityId));
+      }
+      // Share a meal plan to community
+      async shareMealPlan(userId, communityId, mealPlanId, data) {
+        const member = await this.verifyMembership(userId, communityId);
+        const [sharedPlan] = await db.insert(sharedMealPlans).values({
+          ...data,
+          community_id: communityId,
+          meal_plan_id: mealPlanId,
+          sharer_id: userId
+        }).returning();
+        await this.awardPoints(userId, communityId, 25, "shared_meal_plan");
+        return sharedPlan;
+      }
+      // Get shared meal plans for a community
+      async getCommunityMealPlans(communityId, filter) {
+        let whereConditions = [eq2(sharedMealPlans.community_id, communityId)];
+        if (filter?.featured) {
+          whereConditions.push(eq2(sharedMealPlans.is_featured, true));
+        }
+        const plans = await db.select().from(sharedMealPlans).where(and2(...whereConditions)).orderBy(desc2(sharedMealPlans.created_at));
+        if (filter?.tags && filter.tags.length > 0) {
+          return plans.filter((plan) => {
+            const planTags = plan.tags;
+            return filter.tags.some((tag) => planTags.includes(tag));
+          });
+        }
+        return plans;
+      }
+      // Add a review to a shared meal plan
+      async reviewMealPlan(userId, sharedPlanId, review) {
+        const existing = await db.select().from(mealPlanReviews).where(and2(
+          eq2(mealPlanReviews.shared_plan_id, sharedPlanId),
+          eq2(mealPlanReviews.reviewer_id, userId)
+        ));
+        if (existing.length > 0) {
+          throw new Error("You have already reviewed this meal plan");
+        }
+        const [newReview] = await db.insert(mealPlanReviews).values({
+          ...review,
+          shared_plan_id: sharedPlanId,
+          reviewer_id: userId
+        }).returning();
+        if (review.tried_it) {
+          await this.updatePlanSuccessRate(sharedPlanId);
+        }
+        const [sharedPlan] = await db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.id, sharedPlanId));
+        if (sharedPlan) {
+          await this.awardPoints(userId, sharedPlan.community_id, 10, "reviewed_meal_plan");
+        }
+        return newReview;
+      }
+      // Mark a meal plan as tried
+      async markPlanAsTried(userId, sharedPlanId) {
+        await db.update(sharedMealPlans).set({
+          tries: sql3`${sharedMealPlans.tries} + 1`
+        }).where(eq2(sharedMealPlans.id, sharedPlanId));
+        const [sharedPlan] = await db.select().from(sharedMealPlans).where(eq2(sharedMealPlans.id, sharedPlanId));
+        if (sharedPlan) {
+          await this.awardPoints(userId, sharedPlan.community_id, 15, "tried_meal_plan");
+        }
+      }
+      // Get trending meal plans across all communities
+      async getTrendingMealPlans(limit = 10) {
+        const sevenDaysAgo = /* @__PURE__ */ new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const trending = await db.select().from(sharedMealPlans).where(gte2(sharedMealPlans.created_at, sevenDaysAgo)).orderBy(
+          desc2(sql3`${sharedMealPlans.likes} + ${sharedMealPlans.tries} * 2`)
+        ).limit(limit);
+        return trending;
+      }
+      // Private helper methods
+      async verifyMembership(userId, communityId) {
+        const [member] = await db.select().from(communityMembers).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+        if (!member) {
+          throw new Error("You must be a member to perform this action");
+        }
+        return member;
+      }
+      async awardPoints(userId, communityId, points, reason) {
+        await db.update(communityMembers).set({
+          points: sql3`${communityMembers.points} + ${points}`,
+          level: sql3`CASE 
+          WHEN ${communityMembers.points} + ${points} >= 500 THEN 5
+          WHEN ${communityMembers.points} + ${points} >= 300 THEN 4
+          WHEN ${communityMembers.points} + ${points} >= 150 THEN 3
+          WHEN ${communityMembers.points} + ${points} >= 50 THEN 2
+          ELSE 1
+        END`
+        }).where(and2(
+          eq2(communityMembers.community_id, communityId),
+          eq2(communityMembers.user_id, userId)
+        ));
+      }
+      async updatePlanSuccessRate(sharedPlanId) {
+        const reviews = await db.select().from(mealPlanReviews).where(and2(
+          eq2(mealPlanReviews.shared_plan_id, sharedPlanId),
+          eq2(mealPlanReviews.tried_it, true)
+        ));
+        if (reviews.length > 0) {
+          const positiveReviews = reviews.filter((r) => r.rating >= 4).length;
+          const successRate = Math.round(positiveReviews / reviews.length * 100);
+          await db.update(sharedMealPlans).set({ success_rate: successRate }).where(eq2(sharedMealPlans.id, sharedPlanId));
+        }
+      }
+      // ============================================
+      // COMMUNITY POSTS METHODS
+      // ============================================
+      // Create a new community post
+      async createCommunityPost(userId, communityId, data) {
+        await this.verifyMembership(userId, communityId);
+        console.log("Creating post with data:", JSON.stringify(data, null, 2));
+        let imagesForDB = null;
+        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+          imagesForDB = JSON.stringify(data.images);
+        }
+        console.log("Images for DB (JSON string):", imagesForDB);
+        const [post] = await db.insert(communityPosts).values({
+          content: data.content,
+          post_type: data.post_type || "discussion",
+          meal_plan_id: data.meal_plan_id || null,
+          images: imagesForDB,
+          author_id: userId,
+          community_id: communityId
+        }).returning();
+        const [author] = await db.select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          full_name: users.full_name
+        }).from(users).where(eq2(users.id, userId));
+        await this.awardPoints(userId, communityId, 10, "created_post");
+        return {
+          ...post,
+          images: post.images ? JSON.parse(post.images) : [],
+          // Parse JSON string back to array
+          author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+        };
+      }
+      // Delete a community post
+      async deletePost(postId, communityId) {
+        try {
+          await db.delete(communityPostLikes).where(eq2(communityPostLikes.post_id, postId));
+          await db.delete(communityPostComments).where(eq2(communityPostComments.post_id, postId));
+          const [deletedPost] = await db.delete(communityPosts).where(and2(
+            eq2(communityPosts.id, postId),
+            eq2(communityPosts.community_id, communityId)
+          )).returning();
+          return !!deletedPost;
+        } catch (error) {
+          console.error("Error deleting post:", error);
+          return false;
+        }
+      }
+      // Get community posts with pagination and filtering
+      async getCommunityPosts(communityId, options = {}) {
+        const { limit = 20, offset = 0, type, userId } = options;
+        let whereConditions = [eq2(communityPosts.community_id, communityId)];
+        if (type) {
+          whereConditions.push(eq2(communityPosts.post_type, type));
+        }
+        const posts = await db.select({
+          post: communityPosts,
+          author: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            profileImageUrl: users.profileImageUrl,
+            full_name: users.full_name
+          }
+        }).from(communityPosts).leftJoin(users, eq2(communityPosts.author_id, users.id)).where(and2(...whereConditions)).orderBy(desc2(communityPosts.is_pinned), desc2(communityPosts.created_at)).limit(limit).offset(offset);
+        let userLikedPosts = /* @__PURE__ */ new Set();
+        if (userId) {
+          const likedPosts = await db.select({ post_id: communityPostLikes.post_id }).from(communityPostLikes).where(eq2(communityPostLikes.user_id, userId));
+          userLikedPosts = new Set(likedPosts.map((like2) => like2.post_id).filter((id) => id !== null));
+        }
+        const mealPlanIds = posts.filter(({ post }) => post.post_type === "meal_share" && post.meal_plan_id).map(({ post }) => post.meal_plan_id);
+        let mealPlansMap = /* @__PURE__ */ new Map();
+        if (mealPlanIds.length > 0) {
+          const mealPlansData = await db.select().from(mealPlans).where(inArray(mealPlans.id, mealPlanIds));
+          mealPlansMap = new Map(mealPlansData.map((plan) => [plan.id, plan]));
+        }
+        return posts.map(({ post, author }) => {
+          let parsedImages = [];
+          let tempMealPlan = null;
+          if (post.images) {
+            try {
+              const imageData = JSON.parse(post.images);
+              if (imageData && typeof imageData === "object") {
+                if (imageData.temp_meal_plan) {
+                  parsedImages = imageData.images || [];
+                  tempMealPlan = imageData.temp_meal_plan;
+                  console.log("Found temp_meal_plan in post", post.id, ":", tempMealPlan);
+                } else if (Array.isArray(imageData)) {
+                  parsedImages = imageData;
+                } else {
+                  parsedImages = [];
+                }
+              }
+            } catch (e) {
+              console.error("Error parsing images for post", post.id, ":", e);
+              parsedImages = [];
+            }
+          }
+          let mealPlanData = null;
+          if (post.post_type === "meal_share") {
+            if (post.recipe_data) {
+              try {
+                mealPlanData = JSON.parse(post.recipe_data);
+                console.log("Found meal plan in recipe_data for post", post.id, ":", mealPlanData);
+              } catch (e) {
+                console.error("Error parsing recipe_data for post", post.id, ":", e);
+              }
+            }
+            if (!mealPlanData && tempMealPlan) {
+              mealPlanData = tempMealPlan;
+            } else if (!mealPlanData && post.meal_plan_id) {
+              mealPlanData = mealPlansMap.get(post.meal_plan_id);
+            }
+          }
+          return {
+            ...post,
+            images: parsedImages,
+            username: author?.full_name || author?.firstName || "Anonymous",
+            likes_count: post.likes,
+            author: author || { id: post.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+            isLiked: userLikedPosts.has(post.id),
+            is_liked: userLikedPosts.has(post.id),
+            created_at: post.created_at ? new Date(post.created_at).toLocaleString() : (/* @__PURE__ */ new Date()).toLocaleString(),
+            // Include meal plan data for meal_share posts (from DB or temp data)
+            meal_plan: mealPlanData
+          };
+        });
+      }
+      // Like/unlike a community post
+      async togglePostLike(userId, postId, communityId) {
+        const [post] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
+        if (!post) {
+          throw new Error("Post not found");
+        }
+        if (post.author_id === userId) {
+          throw new Error("Cannot like your own post");
+        }
+        if (communityId && communityId !== post.community_id) {
+          throw new Error("Post not found");
+        }
+        await this.verifyMembership(userId, post.community_id);
+        const [existingLike] = await db.select().from(communityPostLikes).where(and2(
+          eq2(communityPostLikes.post_id, postId),
+          eq2(communityPostLikes.user_id, userId)
+        ));
+        if (existingLike) {
+          await db.delete(communityPostLikes).where(and2(
+            eq2(communityPostLikes.post_id, postId),
+            eq2(communityPostLikes.user_id, userId)
+          ));
+          await db.update(communityPosts).set({ likes: sql3`${communityPosts.likes} - 1` }).where(eq2(communityPosts.id, postId));
+          const [post2] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
+          return { liked: false, likesCount: post2.likes || 0 };
+        } else {
+          await db.insert(communityPostLikes).values({
+            post_id: postId,
+            user_id: userId
+          });
+          await db.update(communityPosts).set({ likes: sql3`${communityPosts.likes} + 1` }).where(eq2(communityPosts.id, postId));
+          const [post2] = await db.select().from(communityPosts).where(eq2(communityPosts.id, postId));
+          return { liked: true, likesCount: post2.likes || 0 };
+        }
+      }
+      // Like/unlike a community comment
+      async toggleCommentLike(userId, commentId) {
+        const [comment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
+        if (!comment) {
+          throw new Error("Comment not found");
+        }
+        if (comment.author_id === userId) {
+          throw new Error("Cannot like your own comment");
+        }
+        const [post] = await db.select().from(communityPosts).where(eq2(communityPosts.id, comment.post_id));
+        if (!post) {
+          throw new Error("Post not found");
+        }
+        await this.verifyMembership(userId, post.community_id);
+        const [existingLike] = await db.select().from(communityCommentLikes).where(and2(
+          eq2(communityCommentLikes.comment_id, commentId),
+          eq2(communityCommentLikes.user_id, userId)
+        ));
+        if (existingLike) {
+          await db.delete(communityCommentLikes).where(and2(
+            eq2(communityCommentLikes.comment_id, commentId),
+            eq2(communityCommentLikes.user_id, userId)
+          ));
+          await db.update(communityPostComments).set({ likes: sql3`${communityPostComments.likes} - 1` }).where(eq2(communityPostComments.id, commentId));
+          const [updatedComment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
+          return { liked: false, likesCount: updatedComment.likes || 0 };
+        } else {
+          await db.insert(communityCommentLikes).values({
+            comment_id: commentId,
+            user_id: userId
+          });
+          await db.update(communityPostComments).set({ likes: sql3`${communityPostComments.likes} + 1` }).where(eq2(communityPostComments.id, commentId));
+          const [updatedComment] = await db.select().from(communityPostComments).where(eq2(communityPostComments.id, commentId));
+          return { liked: true, likesCount: updatedComment.likes || 0 };
+        }
+      }
+      // Add a comment to a community post
+      async addPostComment(userId, postId, content, parentId) {
+        const [comment] = await db.insert(communityPostComments).values({
+          post_id: postId,
+          author_id: userId,
+          content,
+          parent_id: parentId
+        }).returning();
+        await db.update(communityPosts).set({ comments_count: sql3`${communityPosts.comments_count} + 1` }).where(eq2(communityPosts.id, postId));
+        const [author] = await db.select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          full_name: users.full_name
+        }).from(users).where(eq2(users.id, userId));
+        return {
+          ...comment,
+          author: author || { id: userId, firstName: null, lastName: null, profileImageUrl: null, full_name: null }
+        };
+      }
+      // Get comments for a post
+      async getPostComments(postId, userId) {
+        const comments = await db.select({
+          comment: communityPostComments,
+          author: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            profileImageUrl: users.profileImageUrl,
+            full_name: users.full_name
+          }
+        }).from(communityPostComments).leftJoin(users, eq2(communityPostComments.author_id, users.id)).where(eq2(communityPostComments.post_id, postId)).orderBy(communityPostComments.created_at);
+        if (!userId) {
+          return comments.map(({ comment, author }) => ({
+            ...comment,
+            images: comment.images ? JSON.parse(comment.images) : [],
+            author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+            isLiked: false
+          }));
+        }
+        const commentIds = comments.map(({ comment }) => comment.id);
+        const userLikes = commentIds.length > 0 ? await db.select().from(communityCommentLikes).where(and2(
+          eq2(communityCommentLikes.user_id, userId),
+          sql3`${communityCommentLikes.comment_id} IN (${sql3.join(commentIds.map((id) => sql3`${id}`), sql3`, `)})`
+        )) : [];
+        const likedCommentIds = new Set(userLikes.map((like2) => like2.comment_id));
+        return comments.map(({ comment, author }) => ({
+          ...comment,
+          images: comment.images ? JSON.parse(comment.images) : [],
+          author: author || { id: comment.author_id, firstName: null, lastName: null, profileImageUrl: null, full_name: null },
+          isLiked: likedCommentIds.has(comment.id)
+        }));
+      }
+      // Get user membership for a community
+      async getUserMembership(userId, communityId) {
+        const [membership] = await db.select().from(communityMembers).where(and2(
+          eq2(communityMembers.user_id, userId),
+          eq2(communityMembers.community_id, communityId)
+        ));
+        return membership;
+      }
+      // Create community meal plan
+      async createCommunityMealPlan(userId, communityId, mealPlanData) {
+        return {
+          id: Date.now(),
+          title: mealPlanData.title,
+          description: mealPlanData.description,
+          image_url: mealPlanData.image_url,
+          youtube_video_id: mealPlanData.youtube_video_id,
+          ingredients: mealPlanData.ingredients,
+          instructions: mealPlanData.instructions,
+          prep_time: mealPlanData.prep_time,
+          cook_time: mealPlanData.cook_time,
+          servings: mealPlanData.servings,
+          creator_name: "Community Creator",
+          created_at: (/* @__PURE__ */ new Date()).toISOString(),
+          likes_count: 0,
+          is_liked: false
+        };
+      }
+    };
+    communityService = new CommunityService();
+  }
+});
+
 // server/auth.ts
 var auth_exports = {};
 __export(auth_exports, {
@@ -1643,15 +3620,18 @@ async function hashPassword(password) {
 async function verifyPassword(password, hashedPassword) {
   return await bcrypt.compare(password, hashedPassword);
 }
-function generateToken(userId) {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+function generateToken(userId, isCreator = false) {
+  return jwt.sign({ userId, isCreator }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 function verifyToken(token) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log(`\u2705 [AUTH DEBUG] Token verified with current secret for:`, decoded.userId);
     return decoded;
   } catch (error) {
+    console.log(`\u26A0\uFE0F [AUTH DEBUG] Token verification failed with current secret:`, error.name, error.message);
     if (error.name !== "JsonWebTokenError" || error.message !== "invalid signature") {
+      console.log(`\u274C [AUTH DEBUG] Non-signature error, token is invalid`);
       return null;
     }
     for (const oldSecret of OLD_JWT_SECRETS) {
@@ -1667,13 +3647,19 @@ function verifyToken(token) {
 async function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
+  console.log(`\u{1F50D} [AUTH DEBUG] Authorization header:`, authHeader ? "Present" : "Missing");
   if (!token) {
+    console.log(`\u274C [AUTH DEBUG] No token found`);
     return res.status(401).json({ message: "Access token required" });
   }
+  console.log(`\u{1F50D} [AUTH DEBUG] Token length:`, token.length);
+  console.log(`\u{1F50D} [AUTH DEBUG] Token preview:`, token.substring(0, 20) + "...");
   const decoded = verifyToken(token);
   if (!decoded) {
+    console.log(`\u274C [AUTH DEBUG] Token verification failed`);
     return res.status(403).json({ message: "Invalid token" });
   }
+  console.log(`\u2705 [AUTH DEBUG] Token verified for user:`, decoded.userId);
   try {
     const user = await storage.getUser(decoded.userId);
     if (!user) {
@@ -1681,7 +3667,7 @@ async function authenticateToken(req, res, next) {
     }
     req.user = user;
     if (decoded.needsRefresh) {
-      const newToken = generateToken(decoded.userId);
+      const newToken = generateToken(decoded.userId, user.is_creator || false);
       res.setHeader("X-New-Token", newToken);
       res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
       console.log(`\u{1F504} Auto-refreshed token for user ${decoded.userId}`);
@@ -1702,7 +3688,7 @@ async function authenticateFlexible(req, res, next) {
         if (user) {
           req.user = user;
           if (decoded.needsRefresh) {
-            const newToken = generateToken(decoded.userId);
+            const newToken = generateToken(decoded.userId, user.is_creator || false);
             res.setHeader("X-New-Token", newToken);
             res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
             console.log(`\u{1F504} Auto-refreshed token for user ${decoded.userId}`);
@@ -1719,7 +3705,7 @@ async function authenticateFlexible(req, res, next) {
       const user = await storage.getUser(req.session.userId);
       if (user) {
         req.user = user;
-        const newToken = generateToken(user.id.toString());
+        const newToken = generateToken(user.id.toString(), user.is_creator || false);
         res.setHeader("X-New-Token", newToken);
         res.setHeader("Access-Control-Expose-Headers", "X-New-Token");
         console.log(`\u{1F510} Generated new token for session user ${user.id}`);
@@ -1739,13 +3725,18 @@ async function registerUser(req, res) {
       return res.status(400).json({ message: "User already exists with this email" });
     }
     const hashedPassword = await hashPassword(validatedData.password);
+    const trialEndsAt = /* @__PURE__ */ new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
     const user = await storage.createUser({
       email: validatedData.email,
       phone: validatedData.phone,
       password_hash: hashedPassword,
-      full_name: validatedData.full_name
+      full_name: validatedData.full_name,
+      account_type: "free_trial",
+      trial_ends_at: trialEndsAt,
+      subscription_status: "active"
     });
-    const token = generateToken(user.id.toString());
+    const token = generateToken(user.id.toString(), user.is_creator || false);
     const { password_hash, ...userWithoutPassword } = user;
     res.status(201).json({
       user: userWithoutPassword,
@@ -1773,7 +3764,7 @@ async function loginUser(req, res) {
     if (!user.password_hash || !await verifyPassword(validatedData.password, user.password_hash)) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-    const token = generateToken(user.id.toString());
+    const token = generateToken(user.id.toString(), user.is_creator || false);
     if (req.session) {
       req.session.userId = user.id;
       req.session.save((err) => {
@@ -1801,9 +3792,19 @@ async function loginUser(req, res) {
 async function getCurrentUser(req, res) {
   try {
     if (!req.user) {
+      console.log("\u{1F50D} [getCurrentUser] No user in request");
       return res.status(401).json({ message: "User not authenticated" });
     }
+    console.log("\u{1F50D} [getCurrentUser] Full user object from req.user:");
+    console.log("\u{1F50D} [getCurrentUser] User ID:", req.user.id);
+    console.log("\u{1F50D} [getCurrentUser] User Email:", req.user.email);
+    console.log("\u{1F50D} [getCurrentUser] User is_creator:", req.user.is_creator);
+    console.log("\u{1F50D} [getCurrentUser] User full_name:", req.user.full_name);
+    console.log("\u{1F50D} [getCurrentUser] Complete user object:", JSON.stringify(req.user, null, 2));
     const { password_hash, ...userWithoutPassword } = req.user;
+    console.log("\u{1F50D} [getCurrentUser] Sending back user object:");
+    console.log("\u{1F50D} [getCurrentUser] userWithoutPassword.is_creator:", userWithoutPassword.is_creator);
+    console.log("\u{1F50D} [getCurrentUser] Complete response object:", JSON.stringify({ user: userWithoutPassword }, null, 2));
     res.json({ user: userWithoutPassword });
   } catch (error) {
     console.error("Get current user error:", error);
@@ -1922,213 +3923,6 @@ var init_googleAuth = __esm({
     } else {
       console.log("Google OAuth not configured - skipping Google strategy setup");
     }
-  }
-});
-
-// server/nutritionCalculator.ts
-var nutritionCalculator_exports = {};
-__export(nutritionCalculator_exports, {
-  calculateRecipeNutrition: () => calculateRecipeNutrition
-});
-function parseIngredientQuantity(ingredientText) {
-  const text2 = ingredientText.toLowerCase().trim();
-  const patterns = [
-    // Fractions: 1/2, 3/4, etc.
-    /^(\d+\/\d+)\s*(\w+)?\s+(.+)/,
-    // Decimals: 1.5, 0.25, etc.
-    /^(\d*\.?\d+)\s*(\w+)?\s+(.+)/,
-    // Range: 1-2, 2-3, etc.
-    /^(\d+)-\d+\s*(\w+)?\s+(.+)/,
-    // Just number: 2 cups, 1 pound, etc.
-    /^(\d+)\s*(\w+)?\s+(.+)/
-  ];
-  for (const pattern of patterns) {
-    const match = text2.match(pattern);
-    if (match) {
-      let quantity = 1;
-      if (match[1].includes("/")) {
-        const [num, den] = match[1].split("/").map(Number);
-        quantity = num / den;
-      } else {
-        quantity = parseFloat(match[1]);
-      }
-      const unit = match[2] || "";
-      const foodName = match[3].trim();
-      return { quantity, unit, foodName };
-    }
-  }
-  return { quantity: 1, unit: "", foodName: text2 };
-}
-function convertToGrams(quantity, unit, foodType) {
-  const unitConversions = {
-    // Weight units (already in grams or convert to grams)
-    "g": 1,
-    "gram": 1,
-    "grams": 1,
-    "kg": 1e3,
-    "kilogram": 1e3,
-    "lb": 453.592,
-    "lbs": 453.592,
-    "pound": 453.592,
-    "pounds": 453.592,
-    "oz": 28.3495,
-    "ounce": 28.3495,
-    "ounces": 28.3495,
-    // Volume to weight conversions (approximate)
-    "cup": 240,
-    // ml, varies by ingredient
-    "cups": 240,
-    "tbsp": 15,
-    // ml
-    "tablespoon": 15,
-    "tablespoons": 15,
-    "tsp": 5,
-    // ml
-    "teaspoon": 5,
-    "teaspoons": 5,
-    "ml": 1,
-    // for liquids, 1ml ≈ 1g
-    "milliliter": 1,
-    "l": 1e3,
-    // liters
-    "liter": 1e3,
-    "liters": 1e3
-  };
-  const densityAdjustments = {
-    "flour": 0.5,
-    // flour is lighter
-    "sugar": 0.8,
-    // sugar is denser
-    "oil": 0.9,
-    // oil is less dense than water
-    "butter": 0.9,
-    // butter density
-    "rice": 0.8,
-    // dry rice
-    "pasta": 0.6
-    // dry pasta
-  };
-  let grams = quantity * (unitConversions[unit.toLowerCase()] || 100);
-  if (["cup", "cups", "tbsp", "tablespoon", "tablespoons", "tsp", "teaspoon", "teaspoons"].includes(unit.toLowerCase())) {
-    for (const [food, adjustment] of Object.entries(densityAdjustments)) {
-      if (foodType.toLowerCase().includes(food)) {
-        grams *= adjustment;
-        break;
-      }
-    }
-  }
-  return Math.max(grams, 10);
-}
-async function calculateIngredientNutrition(ingredientText, usdaNutrition) {
-  const { quantity, unit, foodName } = parseIngredientQuantity(ingredientText);
-  const grams = convertToGrams(quantity, unit, foodName);
-  const scale = grams / 100;
-  const calories = (usdaNutrition.calories || 0) * scale;
-  const protein = (usdaNutrition.protein || 0) * scale;
-  const carbs = (usdaNutrition.carbs || 0) * scale;
-  const fat = (usdaNutrition.fat || 0) * scale;
-  const fiber = (usdaNutrition.fiber || 0) * scale;
-  const sugar = (usdaNutrition.sugar || 0) * scale;
-  const sodium = (usdaNutrition.sodium || 0) * scale;
-  console.log(`Nutrition for ${ingredientText}: ${Math.round(calories)}cal (${grams}g scaled from ${quantity} ${unit})`);
-  return {
-    calories: Math.round(calories),
-    protein: Math.round(protein * 100) / 100,
-    carbs: Math.round(carbs * 100) / 100,
-    fat: Math.round(fat * 100) / 100,
-    fiber: Math.round(fiber * 100) / 100,
-    sugar: Math.round(sugar * 100) / 100,
-    sodium: Math.round(sodium * 100) / 100
-  };
-}
-function estimateServings(recipe) {
-  const title = recipe.title?.toLowerCase() || "";
-  const instructions = recipe.instructions?.join(" ").toLowerCase() || "";
-  const description = recipe.description?.toLowerCase() || "";
-  const servingPatterns = [
-    /serves?\s+(\d+)/,
-    /(\d+)\s+servings?/,
-    /makes?\s+(\d+)/,
-    /portions?\s+(\d+)/,
-    /(\d+)\s+portions?/,
-    /feeds?\s+(\d+)/,
-    /for\s+(\d+)\s+people/
-  ];
-  const allText = `${title} ${instructions} ${description}`;
-  for (const pattern of servingPatterns) {
-    const match = allText.match(pattern);
-    if (match) {
-      const servings = parseInt(match[1]);
-      if (servings >= 1 && servings <= 12) {
-        return servings;
-      }
-    }
-  }
-  const hasLargeQuantities = recipe.ingredients?.some((ing) => {
-    const ingredientText = typeof ing === "string" ? ing : ing.display_text || ing.name || String(ing);
-    const text2 = String(ingredientText).toLowerCase();
-    return text2.includes("lb") || text2.includes("pound") || text2.includes("2 cup") || text2.includes("3 cup") || text2.includes("large") || text2.includes("whole");
-  });
-  if (title.includes("family") || hasLargeQuantities) return 6;
-  if (title.includes("single") || title.includes("one")) return 1;
-  if (title.includes("couple") || title.includes("two")) return 2;
-  return 4;
-}
-async function calculateRecipeNutrition(recipe, getUSDANutrition) {
-  const servings = estimateServings(recipe);
-  console.log(`Estimated servings for "${recipe.title}": ${servings}`);
-  let totalNutrition = {
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-    fiber: 0,
-    sugar: 0,
-    sodium: 0
-  };
-  if (recipe.ingredients && recipe.ingredients.length > 0) {
-    for (const ingredient of recipe.ingredients) {
-      const ingredientText = typeof ingredient === "string" ? ingredient : ingredient.display_text || ingredient.name || String(ingredient);
-      try {
-        const cleanIngredientText = String(ingredientText).trim();
-        if (!cleanIngredientText) continue;
-        const { foodName } = parseIngredientQuantity(cleanIngredientText);
-        const usdaNutrition = await getUSDANutrition(foodName);
-        if (usdaNutrition) {
-          const nutrition = await calculateIngredientNutrition(cleanIngredientText, usdaNutrition);
-          totalNutrition.calories += nutrition.calories;
-          totalNutrition.protein += nutrition.protein;
-          totalNutrition.carbs += nutrition.carbs;
-          totalNutrition.fat += nutrition.fat;
-          totalNutrition.fiber += nutrition.fiber;
-          totalNutrition.sugar += nutrition.sugar;
-          totalNutrition.sodium += nutrition.sodium;
-        }
-      } catch (error) {
-        console.error(`Error calculating nutrition for ${ingredientText}:`, error);
-      }
-    }
-  }
-  const perServing = {
-    calories: Math.round(totalNutrition.calories / servings),
-    protein: Math.round(totalNutrition.protein / servings * 100) / 100,
-    carbs: Math.round(totalNutrition.carbs / servings * 100) / 100,
-    fat: Math.round(totalNutrition.fat / servings * 100) / 100,
-    fiber: Math.round(totalNutrition.fiber / servings * 100) / 100,
-    sugar: Math.round(totalNutrition.sugar / servings * 100) / 100,
-    sodium: Math.round(totalNutrition.sodium / servings * 100) / 100
-  };
-  console.log(`Total nutrition: ${totalNutrition.calories}cal for ${servings} servings`);
-  console.log(`Per serving: ${perServing.calories}cal, ${perServing.protein}g protein, ${perServing.carbs}g carbs, ${perServing.fat}g fat`);
-  return {
-    ...totalNutrition,
-    servings,
-    perServing
-  };
-}
-var init_nutritionCalculator = __esm({
-  "server/nutritionCalculator.ts"() {
-    "use strict";
   }
 });
 
@@ -3461,23 +5255,49 @@ __export(intelligentGroceryListOptimizer_exports, {
 import OpenAI2 from "openai";
 async function consolidateIngredientsWithAI(ingredients) {
   try {
-    const prompt = `You are a grocery shopping expert. Consolidate this list of ingredients into a smart shopping list.
+    const prompt = `You are a grocery shopping expert. Consolidate this list of ingredients into a smart shopping list with STORE-REALISTIC quantities.
 
 INGREDIENTS TO CONSOLIDATE:
 ${ingredients.map((ing, i) => `${i + 1}. ${ing}`).join("\n")}
 
-RULES:
-1. Combine duplicate ingredients (e.g., "2 eggs" + "3 eggs" = "5 eggs")
-2. Convert to realistic purchase quantities:
-   - Eggs: 1-6 \u2192 "half dozen eggs", 7-12 \u2192 "1 dozen eggs", 13-18 \u2192 "1.5 dozen eggs"
-   - Milk: <2 cups \u2192 "1 pint milk", 2-4 cups \u2192 "1 quart milk", >4 cups \u2192 "half gallon milk"
-   - Flour: <3 cups \u2192 "2 lb bag flour", 3-6 cups \u2192 "5 lb bag flour", >6 cups \u2192 "10 lb bag flour"
-   - Chicken: combine all and round up to nearest pound
-   - Produce: round to nearest whole or half pound
-   - Spices/condiments: only buy once regardless of quantity
-3. Group similar items (e.g., "olive oil" and "extra virgin olive oil" \u2192 "1 bottle olive oil")
-4. For oils/vinegars/condiments: always just "1 bottle" regardless of how many times they appear
-5. Use realistic grocery store units (dozen, pound, gallon, bag, bottle, container)
+CRITICAL RULE #1 - DEDUPLICATION (MOST IMPORTANT):
+- ALWAYS combine duplicate ingredients FIRST before applying any other rules
+- Examples: "2 eggs" + "3 eggs" + "1 egg" = "6 eggs total" \u2192 then convert to "1 dozen eggs"
+- "1 onion" + "2 onions" + "1 yellow onion" = "4 onions total" \u2192 then convert to "2 lb onions"
+- "olive oil" appearing 5 times = combine to "1 bottle olive oil" (only buy once)
+
+AFTER DEDUPLICATION, APPLY STORE PACKAGING RULES:
+1. PRODUCE (apples, onions, tomatoes, etc):
+   - Single items (1 apple, 2 onions) \u2192 Convert to pounds: "3 lb apples", "2 lb onions"
+   - Never use "1 bag apple" \u2192 Always "3 lb apples" or specific weight
+   - Leafy greens \u2192 "1 bunch" or "1 bag" (e.g., "1 bunch cilantro", "1 bag spinach")
+
+2. EGGS & DAIRY:
+   - Eggs: Always in dozens \u2192 "1 dozen eggs" (never "6 eggs" or "1 egg")
+   - Milk: Use standard sizes \u2192 "1 quart milk", "1 half gallon milk"
+   - Cheese: By pound \u2192 "1 lb cheddar cheese"
+   - Butter: By package \u2192 "1 lb butter"
+
+3. MEAT & SEAFOOD:
+   - Always by pound, round UP \u2192 "2 lb chicken breast", "1 lb ground beef"
+   - Never use pieces \u2192 Convert "3 chicken breasts" to "2 lb chicken breast"
+
+4. SPICES & SEASONINGS (VERY IMPORTANT):
+   - ANY amount of spice = "1 container [spice name]"
+   - Examples: "1 tsp salt" \u2192 "1 container salt"
+   - "2 tbsp paprika" \u2192 "1 container paprika"
+   - "black pepper to taste" \u2192 "1 container black pepper"
+
+5. PANTRY ITEMS:
+   - Flour: "1 bag (5 lb) all-purpose flour"
+   - Sugar: "1 bag (4 lb) sugar"
+   - Oil/Vinegar: Always "1 bottle [type]"
+   - Rice/Pasta: By pound \u2192 "2 lb rice", "1 lb pasta"
+
+6. SPECIAL CASES:
+   - "to taste" \u2192 "1 container [ingredient]"
+   - Fractional amounts \u2192 Round UP to practical sizes
+   - Fresh herbs \u2192 "1 bunch fresh basil" (not dried)
 
 Return ONLY a JSON object with this structure:
 {
@@ -3521,7 +5341,7 @@ Return ONLY a JSON object with this structure:
       displayText: ing.displayText || ing.name || "Unknown item",
       quantity: ing.quantity || 1,
       unit: ing.unit || "unit",
-      category: ing.category || categorizeIngredient(ing.name)
+      category: ing.category || categorizeIngredient2(ing.name)
     }));
     return result;
   } catch (error) {
@@ -3529,15 +5349,107 @@ Return ONLY a JSON object with this structure:
     return fallbackConsolidation(ingredients);
   }
 }
-function formatForInstacart(ingredients) {
-  return ingredients.map((ing) => ({
-    name: ing.name,
-    display_text: ing.displayText,
-    measurements: [{
-      quantity: ing.quantity,
-      unit: normalizeUnitForInstacart(ing.unit)
-    }]
-  }));
+async function formatForInstacart(ingredients) {
+  const { mapToStoreQuantities: mapToStoreQuantities2, handleEdgeCases: handleEdgeCases2 } = await Promise.resolve().then(() => (init_instacartQuantityMapper(), instacartQuantityMapper_exports));
+  return ingredients.map((ing) => {
+    const edgeCase = handleEdgeCases2(ing.displayText);
+    const mapped = edgeCase || mapToStoreQuantities2(ing.displayText);
+    const cleanName = extractCleanIngredientName(mapped.name);
+    const descriptiveText = createDescriptiveDisplayText(cleanName, mapped.category);
+    return {
+      name: cleanName,
+      // Clean ingredient name only (e.g., "eggs", "spinach", "olive oil")
+      display_text: descriptiveText,
+      // Descriptive name for display (e.g., "Large Eggs", "Fresh Spinach")
+      measurements: [{
+        quantity: mapped.quantity,
+        unit: normalizeUnitForInstacart(mapped.unit)
+      }]
+    };
+  });
+}
+function extractCleanIngredientName(name) {
+  const cleanName = name.replace(/^(fresh |organic |dried |ground |whole |chopped |minced |sliced )/gi, "").replace(/\s*(leaves?|powder|flakes?)\s*$/gi, "").trim();
+  return cleanName;
+}
+function createDescriptiveDisplayText(name, category) {
+  const descriptiveMap = {
+    produce: {
+      "apples": "Fresh Red Apples",
+      "apple": "Fresh Red Apples",
+      "bananas": "Fresh Bananas",
+      "banana": "Fresh Bananas",
+      "onions": "Yellow Onions",
+      "onion": "Yellow Onions",
+      "tomatoes": "Fresh Tomatoes",
+      "tomato": "Fresh Tomatoes",
+      "lettuce": "Fresh Romaine Lettuce",
+      "spinach": "Fresh Baby Spinach",
+      "carrots": "Fresh Carrots",
+      "carrot": "Fresh Carrots",
+      "potatoes": "Russet Potatoes",
+      "potato": "Russet Potatoes",
+      "garlic": "Fresh Garlic",
+      "cilantro": "Fresh Cilantro Bunch",
+      "parsley": "Fresh Parsley Bunch",
+      "basil": "Fresh Basil Leaves"
+    },
+    dairy: {
+      "eggs": "Large Eggs",
+      "egg": "Large Eggs",
+      "milk": "Whole Milk",
+      "butter": "Unsalted Butter",
+      "cheese": "Cheddar Cheese",
+      "cheddar cheese": "Sharp Cheddar Cheese",
+      "mozzarella": "Mozzarella Cheese",
+      "yogurt": "Plain Greek Yogurt",
+      "cream": "Heavy Cream",
+      "sour cream": "Sour Cream"
+    },
+    meat: {
+      "chicken": "Boneless Chicken Breast",
+      "chicken breast": "Boneless Skinless Chicken Breast",
+      "ground beef": "Lean Ground Beef",
+      "beef": "Beef Sirloin",
+      "pork": "Pork Loin",
+      "bacon": "Thick Cut Bacon",
+      "turkey": "Ground Turkey",
+      "salmon": "Fresh Atlantic Salmon",
+      "shrimp": "Large Raw Shrimp"
+    },
+    spices: {
+      "salt": "Sea Salt",
+      "pepper": "Black Pepper",
+      "black pepper": "Ground Black Pepper",
+      "paprika": "Paprika",
+      "cumin": "Ground Cumin",
+      "oregano": "Dried Oregano",
+      "cinnamon": "Ground Cinnamon",
+      "garlic powder": "Garlic Powder",
+      "onion powder": "Onion Powder",
+      "chili powder": "Chili Powder",
+      "vanilla": "Pure Vanilla Extract"
+    },
+    pantry: {
+      "flour": "All-Purpose Flour",
+      "all-purpose flour": "All-Purpose Flour",
+      "sugar": "Granulated Sugar",
+      "brown sugar": "Light Brown Sugar",
+      "rice": "Long Grain White Rice",
+      "pasta": "Spaghetti Pasta",
+      "olive oil": "Extra Virgin Olive Oil",
+      "oil": "Vegetable Oil",
+      "vinegar": "White Vinegar",
+      "baking soda": "Baking Soda",
+      "baking powder": "Baking Powder"
+    }
+  };
+  const categoryMap = descriptiveMap[category] || {};
+  const lowerName = name.toLowerCase();
+  if (categoryMap[lowerName]) {
+    return categoryMap[lowerName];
+  }
+  return name.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
 }
 function fallbackConsolidation(ingredients) {
   const ingredientMap = /* @__PURE__ */ new Map();
@@ -3550,7 +5462,7 @@ function fallbackConsolidation(ingredients) {
     displayText: count > 1 ? `${name} (\xD7${count})` : name,
     quantity: count,
     unit: "unit",
-    category: categorizeIngredient(name)
+    category: categorizeIngredient2(name)
   }));
   return {
     consolidatedIngredients: consolidated,
@@ -3564,7 +5476,7 @@ function fallbackConsolidation(ingredients) {
     ]
   };
 }
-function categorizeIngredient(ingredient) {
+function categorizeIngredient2(ingredient) {
   const lowerIngredient = ingredient.toLowerCase();
   if (lowerIngredient.includes("chicken") || lowerIngredient.includes("beef") || lowerIngredient.includes("pork") || lowerIngredient.includes("turkey") || lowerIngredient.includes("lamb") || lowerIngredient.includes("bacon")) {
     return "meat";
@@ -3623,7 +5535,7 @@ __export(perplexitySearchLogger_exports, {
   perplexityLogger: () => perplexityLogger
 });
 import fs from "fs/promises";
-import path from "path";
+import path5 from "path";
 async function logPerplexitySearch(query, response, category = "general", cached = false, userId, executionTime) {
   return perplexityLogger.logSearch(query, response, category, cached, userId, executionTime);
 }
@@ -3637,11 +5549,11 @@ var init_perplexitySearchLogger = __esm({
       maxFileSize = 10 * 1024 * 1024;
       // 10MB
       constructor() {
-        this.logFile = path.join(__dirname, "../logs/perplexity-searches.json");
+        this.logFile = path5.join(__dirname, "../logs/perplexity-searches.json");
         this.ensureLogDirectory();
       }
       async ensureLogDirectory() {
-        const logDir = path.dirname(this.logFile);
+        const logDir = path5.dirname(this.logFile);
         try {
           await fs.mkdir(logDir, { recursive: true });
         } catch (error) {
@@ -3795,7 +5707,7 @@ __export(cultureCacheManager_exports, {
   refreshUserCulturalData: () => refreshUserCulturalData,
   startCacheMaintenanceScheduler: () => startCacheMaintenanceScheduler
 });
-import { eq as eq2 } from "drizzle-orm";
+import { eq as eq6 } from "drizzle-orm";
 async function getGlobalCacheStats() {
   try {
     const result = await db.select({
@@ -3829,7 +5741,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
   try {
     if (!options.forceRefresh) {
       console.log(`\u{1F50D} Looking for cached data for: "${normalizedCuisine}"`);
-      const cachedEntries = await db.select().from(culturalCuisineCache).where(eq2(culturalCuisineCache.cuisine_name, normalizedCuisine)).limit(1);
+      const cachedEntries = await db.select().from(culturalCuisineCache).where(eq6(culturalCuisineCache.cuisine_name, normalizedCuisine)).limit(1);
       console.log(`\u{1F50D} Database query returned ${cachedEntries.length} results`);
       const cachedEntry = cachedEntries[0];
       if (cachedEntry) {
@@ -3839,7 +5751,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
           await db.update(culturalCuisineCache).set({
             access_count: cachedEntry.access_count + 1,
             last_accessed: /* @__PURE__ */ new Date()
-          }).where(eq2(culturalCuisineCache.id, cachedEntry.id));
+          }).where(eq6(culturalCuisineCache.id, cachedEntry.id));
           cache_metrics.hits++;
           const cachedResult = {
             meals: cachedEntry.meals_data,
@@ -3868,7 +5780,7 @@ async function getCulturalCuisineData(userId, cultureTag, options = {}) {
           return cachedResult;
         } else {
           console.log(`\u23F0 Global cache expired for ${normalizedCuisine}, age: ${ageHours.toFixed(1)}h`);
-          await db.delete(culturalCuisineCache).where(eq2(culturalCuisineCache.id, cachedEntry.id));
+          await db.delete(culturalCuisineCache).where(eq6(culturalCuisineCache.id, cachedEntry.id));
         }
       }
     }
@@ -5155,9 +7067,9 @@ var init_recipeComplexityCalculator = __esm({
        */
       extractEquipmentFromInstructions(instructionText) {
         const equipment = [];
-        Object.keys(EQUIPMENT_COMPLEXITY).forEach((eq4) => {
-          if (instructionText.includes(eq4.replace("_", " "))) {
-            equipment.push(eq4);
+        Object.keys(EQUIPMENT_COMPLEXITY).forEach((eq9) => {
+          if (instructionText.includes(eq9.replace("_", " "))) {
+            equipment.push(eq9);
           }
         });
         if (instructionText.includes("oven") || instructionText.includes("bake")) equipment.push("oven");
@@ -9466,19 +11378,19 @@ var init_intelligentPromptBuilder = __esm({
 
 // server/cuisineMasterlistMigration.ts
 import fs2 from "fs";
-import path2 from "path";
+import path6 from "path";
 async function loadMasterlist(preferV2 = true) {
-  const basePath = path2.join(process.cwd(), "client", "src", "data");
+  const basePath = path6.join(process.cwd(), "client", "src", "data");
   if (preferV2) {
     try {
-      const v2Path = path2.join(basePath, "cultural_cuisine_masterlist_v2.json");
+      const v2Path = path6.join(basePath, "cultural_cuisine_masterlist_v2.json");
       const v2Data = await fs2.promises.readFile(v2Path, "utf-8");
       return JSON.parse(v2Data);
     } catch (error) {
       console.log("\u{1F4C4} V2 masterlist not found, falling back to legacy format");
     }
   }
-  const legacyPath = path2.join(basePath, "cultural_cuisine_masterlist.json");
+  const legacyPath = path6.join(basePath, "cultural_cuisine_masterlist.json");
   const legacyData = await fs2.promises.readFile(legacyPath, "utf-8");
   return JSON.parse(legacyData);
 }
@@ -9901,7 +11813,7 @@ var save_cultural_meals_exports = {};
 __export(save_cultural_meals_exports, {
   saveCulturalMeals: () => saveCulturalMeals
 });
-import { eq as eq3, and as and2 } from "drizzle-orm";
+import { eq as eq7, and as and5 } from "drizzle-orm";
 async function saveCulturalMeals(req, res) {
   try {
     const userId = 9;
@@ -9913,9 +11825,9 @@ async function saveCulturalMeals(req, res) {
       });
     }
     const existingSave = await db.select().from(userSavedCulturalMeals).where(
-      and2(
-        eq3(userSavedCulturalMeals.user_id, userId),
-        eq3(userSavedCulturalMeals.cuisine_name, cuisine_name.toLowerCase())
+      and5(
+        eq7(userSavedCulturalMeals.user_id, userId),
+        eq7(userSavedCulturalMeals.cuisine_name, cuisine_name.toLowerCase())
       )
     ).limit(1);
     if (existingSave.length > 0) {
@@ -9925,7 +11837,7 @@ async function saveCulturalMeals(req, res) {
         custom_name: custom_name || `${cuisine_name} Meal Collection`,
         notes,
         updated_at: /* @__PURE__ */ new Date()
-      }).where(eq3(userSavedCulturalMeals.id, existingSave[0].id)).returning();
+      }).where(eq7(userSavedCulturalMeals.id, existingSave[0].id)).returning();
       console.log(`\u2705 Updated saved meals for user ${userId}, cuisine: ${cuisine_name}`);
       return res.json({
         success: true,
@@ -10271,7 +12183,7 @@ var init_culturalMealRankingEngine = __esm({
 });
 
 // server/llamaMealRanker.ts
-import fetch4 from "node-fetch";
+import fetch5 from "node-fetch";
 var LlamaMealRanker, llamaMealRanker;
 var init_llamaMealRanker = __esm({
   "server/llamaMealRanker.ts"() {
@@ -10369,7 +12281,7 @@ Score ALL ${maxMeals} meals. Numbers only, NO text in meal objects.`;
        * Call OpenAI API for GPT-4o mini inference
        */
       async callLlamaAPI(prompt) {
-        const response = await fetch4(this.apiEndpoint, {
+        const response = await fetch5(this.apiEndpoint, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${this.apiKey}`,
@@ -10972,15 +12884,2003 @@ var init_intelligentMealBaseSelector = __esm({
   }
 });
 
+// server/services/urlDetectionService.js
+var UrlDetectionService, urlDetectionService_default;
+var init_urlDetectionService = __esm({
+  "server/services/urlDetectionService.js"() {
+    "use strict";
+    UrlDetectionService = class {
+      constructor() {
+        this.homepagePatterns = [
+          /^https?:\/\/[^\/]+\/?$/,
+          // domain.com or domain.com/
+          /^https?:\/\/[^\/]+\/index\.html?$/,
+          // domain.com/index.html
+          /^https?:\/\/[^\/]+\/home\/?$/,
+          // domain.com/home
+          /^https?:\/\/[^\/]+\/main\/?$/,
+          // domain.com/main
+          /^https?:\/\/[^\/]+\/default\/?$/
+          // domain.com/default
+        ];
+        this.recipePagePatterns = [
+          /\/recipe\//i,
+          // /recipe/something
+          /\/recipes\//i,
+          // /recipes/something  
+          /\/cooking\//i,
+          // /cooking/something
+          /\/food\//i,
+          // /food/something
+          /\/dish\//i,
+          // /dish/something
+          /\/meal\//i,
+          // /meal/something
+          /\/[^\/]+-recipe\/?$/i,
+          // something-recipe
+          /\/[^\/]+-cookies?\/?$/i,
+          // something-cookie(s)
+          /\/[^\/]+-cake\/?$/i,
+          // something-cake
+          /\/[^\/]+-bread\/?$/i,
+          // something-bread
+          /\/[^\/]+-soup\/?$/i,
+          // something-soup
+          /\/[^\/]+-salad\/?$/i,
+          // something-salad
+          /\/[^\/]+-pasta\/?$/i,
+          // something-pasta
+          /\/[^\/]+-pizza\/?$/i,
+          // something-pizza
+          /\/[^\/]+-chicken\/?$/i,
+          // something-chicken
+          /\/[^\/]+-beef\/?$/i,
+          // something-beef
+          /\/[^\/]+-fish\/?$/i,
+          // something-fish
+          /\/[^\/]+-dessert\/?$/i,
+          // something-dessert
+          /\/[^\/]+-breakfast\/?$/i,
+          // something-breakfast
+          /\/[^\/]+-lunch\/?$/i,
+          // something-lunch
+          /\/[^\/]+-dinner\/?$/i,
+          // something-dinner
+          /\/[^\/]+-appetizer\/?$/i,
+          // something-appetizer
+          /\/[^\/]+-smoothie\/?$/i,
+          // something-smoothie
+          /\/[^\/]+-drink\/?$/i,
+          // something-drink
+          /\/[^\/]+-bake\/?$/i,
+          // something-bake
+          /\/[^\/]+-grill\/?$/i,
+          // something-grill
+          /\/[^\/]+-roast\/?$/i
+          // something-roast
+        ];
+        this.categoryPagePatterns = [
+          /\/recipes\/?$/i,
+          // /recipes (listing)
+          /\/recipe-category\//i,
+          // /recipe-category/
+          /\/categories?\//i,
+          // /category/ or /categories/
+          /\/cuisine\//i,
+          // /cuisine/italian
+          /\/diet\//i,
+          // /diet/vegetarian
+          /\/course\//i,
+          // /course/appetizer
+          /\/ingredient\//i,
+          // /ingredient/chicken
+          /\/tag\//i,
+          // /tag/quick-meals
+          /\/tags\//i,
+          // /tags/easy
+          /\/collection\//i,
+          // /collection/holiday
+          /\/search\//i,
+          // /search/results
+          /\/browse\//i
+          // /browse/recent
+        ];
+      }
+      // Main function to determine URL type
+      detectUrlType(url) {
+        try {
+          const cleanUrl = url.trim();
+          console.log(`\u{1F50D} Analyzing URL: ${cleanUrl}`);
+          if (this.isHomepage(cleanUrl)) {
+            console.log(`\u{1F3E0} Detected: HOMEPAGE`);
+            return {
+              type: "homepage",
+              action: "discovery",
+              reason: "URL matches homepage patterns"
+            };
+          }
+          if (this.isCategoryPage(cleanUrl)) {
+            console.log(`\u{1F4CB} Detected: CATEGORY PAGE`);
+            return {
+              type: "category",
+              action: "discovery",
+              reason: "URL appears to be a recipe category or listing page"
+            };
+          }
+          if (this.isRecipePage(cleanUrl)) {
+            console.log(`\u{1F373} Detected: RECIPE PAGE`);
+            return {
+              type: "recipe",
+              action: "extract",
+              reason: "URL matches recipe page patterns"
+            };
+          }
+          console.log(`\u2753 Detected: UNKNOWN (treating as recipe page)`);
+          return {
+            type: "unknown",
+            action: "extract",
+            reason: "URL doesn't match known patterns, attempting direct extraction"
+          };
+        } catch (error) {
+          console.error("\u274C URL detection error:", error);
+          return {
+            type: "error",
+            action: "extract",
+            reason: "Error analyzing URL, defaulting to extraction"
+          };
+        }
+      }
+      // Check if URL is a homepage
+      isHomepage(url) {
+        return this.homepagePatterns.some((pattern) => pattern.test(url));
+      }
+      // Check if URL is a specific recipe page
+      isRecipePage(url) {
+        return this.recipePagePatterns.some((pattern) => pattern.test(url));
+      }
+      // Check if URL is a category/listing page
+      isCategoryPage(url) {
+        return this.categoryPagePatterns.some((pattern) => pattern.test(url));
+      }
+      // Get domain from URL
+      getDomain(url) {
+        try {
+          return new URL(url).hostname;
+        } catch (e) {
+          return null;
+        }
+      }
+      // Get path from URL
+      getPath(url) {
+        try {
+          return new URL(url).pathname;
+        } catch (e) {
+          return null;
+        }
+      }
+      // Analyze URL structure for debugging
+      analyzeUrl(url) {
+        try {
+          const urlObj = new URL(url);
+          return {
+            domain: urlObj.hostname,
+            path: urlObj.pathname,
+            hasTrailingSlash: urlObj.pathname.endsWith("/"),
+            pathSegments: urlObj.pathname.split("/").filter((seg) => seg.length > 0),
+            isRoot: urlObj.pathname === "/" || urlObj.pathname === "",
+            hasFileExtension: /\.[a-zA-Z]{2,4}$/.test(urlObj.pathname)
+          };
+        } catch (e) {
+          return null;
+        }
+      }
+      // Test multiple URLs for debugging
+      testUrls(urls) {
+        console.log("\n\u{1F9EA} URL Detection Test Results:");
+        console.log("=".repeat(50));
+        urls.forEach((url) => {
+          const result = this.detectUrlType(url);
+          const analysis = this.analyzeUrl(url);
+          console.log(`
+URL: ${url}`);
+          console.log(`Type: ${result.type.toUpperCase()}`);
+          console.log(`Action: ${result.action.toUpperCase()}`);
+          console.log(`Reason: ${result.reason}`);
+          if (analysis) {
+            console.log(`Domain: ${analysis.domain}`);
+            console.log(`Path: ${analysis.path}`);
+            console.log(`Segments: [${analysis.pathSegments.join(", ")}]`);
+          }
+        });
+        console.log("=".repeat(50));
+      }
+    };
+    urlDetectionService_default = UrlDetectionService;
+  }
+});
+
+// server/services/urlDiscoveryService.js
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+var UrlDiscoveryService, urlDiscoveryService_default;
+var init_urlDiscoveryService = __esm({
+  "server/services/urlDiscoveryService.js"() {
+    "use strict";
+    puppeteer.use(StealthPlugin());
+    UrlDiscoveryService = class {
+      constructor() {
+        this.discoveredUrls = /* @__PURE__ */ new Set();
+        this.processed = /* @__PURE__ */ new Set();
+      }
+      // Main discovery method - tries multiple strategies
+      async discoverRecipeUrls(homepageUrl) {
+        console.log(`\u{1F50D} Starting URL discovery for: ${homepageUrl}`);
+        const browser = await puppeteer.launch({
+          headless: true,
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-accelerated-2d-canvas",
+            "--no-first-run",
+            "--no-zygote",
+            "--single-process",
+            "--disable-gpu",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding"
+          ]
+        });
+        try {
+          const discoveryPromises = [
+            this.discoverFromSitemap(homepageUrl),
+            this.discoverFromHomepage(browser, homepageUrl),
+            this.discoverFromNavigation(browser, homepageUrl)
+          ];
+          const results = await Promise.allSettled(discoveryPromises);
+          const allUrls = /* @__PURE__ */ new Set();
+          results.forEach((result, index2) => {
+            if (result.status === "fulfilled") {
+              result.value.forEach((url) => allUrls.add(url));
+              console.log(`\u2705 Method ${index2 + 1} found ${result.value.length} URLs`);
+            } else {
+              console.log(`\u26A0\uFE0F Method ${index2 + 1} failed: ${result.reason.message}`);
+            }
+          });
+          const finalUrls = Array.from(allUrls);
+          console.log(`\u{1F3AF} Total unique recipe URLs discovered: ${finalUrls.length}`);
+          return finalUrls;
+        } catch (error) {
+          console.error("\u{1F6A8} URL discovery error:", error);
+          throw error;
+        } finally {
+          await browser.close();
+        }
+      }
+      // Method 1: Try to find sitemap.xml
+      async discoverFromSitemap(baseUrl) {
+        console.log("\u{1F4CB} Method 1: Checking sitemap...");
+        try {
+          const sitemapUrls = [
+            `${baseUrl}/sitemap.xml`,
+            `${baseUrl}/sitemap_index.xml`,
+            `${baseUrl}/recipe-sitemap.xml`,
+            `${baseUrl}/wp-sitemap-posts-post-1.xml`
+          ];
+          for (const sitemapUrl of sitemapUrls) {
+            try {
+              const response = await fetch(sitemapUrl);
+              if (response.ok) {
+                const sitemapText = await response.text();
+                const urls = this.extractUrlsFromSitemap(sitemapText);
+                if (urls.length > 0) {
+                  console.log(`\u2705 Found sitemap at ${sitemapUrl} with ${urls.length} URLs`);
+                  return urls;
+                }
+              }
+            } catch (e) {
+            }
+          }
+          console.log("\u26A0\uFE0F No accessible sitemap found");
+          return [];
+        } catch (error) {
+          console.log("\u26A0\uFE0F Sitemap discovery failed:", error.message);
+          return [];
+        }
+      }
+      // Method 2: Analyze homepage structure with enhanced recipe detection
+      async discoverFromHomepage(browser, homepageUrl) {
+        console.log("\u{1F3E0} Method 2: Analyzing homepage...");
+        const page = await browser.newPage();
+        try {
+          await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+          await page.setViewport({ width: 1366, height: 768 });
+          await page.goto(homepageUrl, {
+            waitUntil: "domcontentloaded",
+            timeout: 3e4
+          });
+          await new Promise((resolve) => setTimeout(resolve, 3e3));
+          await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight / 2);
+          });
+          await new Promise((resolve) => setTimeout(resolve, 2e3));
+          await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+          });
+          await new Promise((resolve) => setTimeout(resolve, 2e3));
+          const urls = await page.evaluate((baseUrl) => {
+            const recipeUrls = /* @__PURE__ */ new Set();
+            const recipePatterns = [
+              /\/recipe\//i,
+              /\/recipes\//i,
+              /\/cooking\//i,
+              /\/food\//i,
+              /\/dish\//i,
+              /\/meal\//i,
+              /-recipe\/?$/i,
+              // ends with -recipe
+              /-cookies?\/?$/i,
+              // ends with -cookie(s)
+              /-cake\/?$/i,
+              // ends with -cake
+              /-bread\/?$/i,
+              // ends with -bread
+              /-soup\/?$/i,
+              // ends with -soup
+              /-salad\/?$/i,
+              // ends with -salad
+              /-pasta\/?$/i,
+              // ends with -pasta
+              /-pizza\/?$/i,
+              // ends with -pizza
+              /-chicken\/?$/i,
+              // ends with -chicken
+              /-beef\/?$/i,
+              // ends with -beef
+              /-dessert\/?$/i,
+              // ends with -dessert
+              /-treats?\/?$/i,
+              // ends with -treat(s)
+              /-smoothie\/?$/i,
+              // ends with -smoothie
+              /-bars?\/?$/i,
+              // ends with -bar(s)
+              /-muffins?\/?$/i,
+              // ends with -muffin(s)
+              /-pancakes?\/?$/i,
+              // ends with -pancake(s)
+              /-waffles?\/?$/i
+              // ends with -waffle(s)
+            ];
+            const recipeTextPatterns = [
+              /recipe/i,
+              /cook/i,
+              /bake/i,
+              /dish/i,
+              /meal/i,
+              /food/i,
+              /kitchen/i,
+              /ingredient/i,
+              /delicious/i,
+              /tasty/i,
+              /yummy/i
+            ];
+            const links = Array.from(document.querySelectorAll("a[href]"));
+            links.forEach((link) => {
+              const href = link.href;
+              const linkText = link.textContent.toLowerCase().trim();
+              const linkTitle = (link.title || "").toLowerCase();
+              const linkAlt = (link.querySelector("img")?.alt || "").toLowerCase();
+              const matchesUrlPattern = recipePatterns.some((pattern) => pattern.test(href));
+              const matchesTextPattern = recipeTextPatterns.some(
+                (pattern) => pattern.test(linkText) || pattern.test(linkTitle) || pattern.test(linkAlt)
+              );
+              const hasRecipeKeywords = linkText.includes("recipe") || linkText.includes("cook") || linkText.includes("bake") || linkTitle.includes("recipe") || linkAlt.includes("recipe");
+              if (matchesUrlPattern || matchesTextPattern || hasRecipeKeywords) {
+                try {
+                  const linkUrl = new URL(href);
+                  const baseUrlObj = new URL(baseUrl);
+                  if (linkUrl.hostname === baseUrlObj.hostname) {
+                    const excludePatterns = [
+                      /\/about/i,
+                      /\/contact/i,
+                      /\/privacy/i,
+                      /\/terms/i,
+                      /\/search/i,
+                      /\/category/i,
+                      /\/tag/i,
+                      /\/author/i,
+                      /\/wp-admin/i,
+                      /\/admin/i,
+                      /\.(jpg|jpeg|png|gif|pdf|doc|docx)$/i
+                    ];
+                    const isExcluded = excludePatterns.some((pattern) => pattern.test(href));
+                    if (!isExcluded) {
+                      recipeUrls.add(href);
+                    }
+                  }
+                } catch (e) {
+                }
+              }
+            });
+            const recipeCards = document.querySelectorAll([
+              ".recipe-card",
+              ".recipe-item",
+              ".post-item",
+              ".entry-item",
+              ".food-item",
+              ".dish-item",
+              "[data-recipe]",
+              ".wp-block-latest-posts__post"
+            ].join(", "));
+            recipeCards.forEach((card) => {
+              const cardLinks = card.querySelectorAll("a[href]");
+              cardLinks.forEach((link) => {
+                const href = link.href;
+                try {
+                  const linkUrl = new URL(href);
+                  const baseUrlObj = new URL(baseUrl);
+                  if (linkUrl.hostname === baseUrlObj.hostname) {
+                    recipeUrls.add(href);
+                  }
+                } catch (e) {
+                }
+              });
+            });
+            return Array.from(recipeUrls);
+          }, homepageUrl);
+          console.log(`\u{1F3E0} Enhanced homepage analysis found ${urls.length} potential recipe URLs`);
+          return urls;
+        } catch (error) {
+          console.log("\u26A0\uFE0F Homepage analysis failed:", error.message);
+          return [];
+        } finally {
+          await page.close();
+        }
+      }
+      // Method 3: Navigate through recipe sections
+      async discoverFromNavigation(browser, homepageUrl) {
+        console.log("\u{1F9ED} Method 3: Navigation discovery...");
+        const page = await browser.newPage();
+        try {
+          await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+          await page.setViewport({ width: 1366, height: 768 });
+          await page.goto(homepageUrl, {
+            waitUntil: "domcontentloaded",
+            timeout: 3e4
+          });
+          await new Promise((resolve) => setTimeout(resolve, 3e3));
+          const urls = await page.evaluate((baseUrl) => {
+            const recipeUrls = /* @__PURE__ */ new Set();
+            const categorySelectors = [
+              'a[href*="recipe"]',
+              'a[href*="cooking"]',
+              'a[href*="food"]',
+              "nav a",
+              ".menu a",
+              ".navigation a",
+              ".recipe-categories a",
+              ".category a"
+            ];
+            categorySelectors.forEach((selector) => {
+              try {
+                const links = Array.from(document.querySelectorAll(selector));
+                links.forEach((link) => {
+                  const href = link.href;
+                  if (href && href.includes(new URL(baseUrl).hostname)) {
+                    const text2 = link.textContent.toLowerCase();
+                    if (text2.includes("recipe") || text2.includes("cooking") || text2.includes("food") || text2.includes("meal") || text2.includes("appetizer") || text2.includes("main") || text2.includes("dessert") || text2.includes("breakfast")) {
+                      recipeUrls.add(href);
+                    }
+                  }
+                });
+              } catch (e) {
+              }
+            });
+            return Array.from(recipeUrls);
+          }, homepageUrl);
+          console.log(`\u{1F9ED} Navigation discovery found ${urls.length} category URLs`);
+          return urls;
+        } catch (error) {
+          console.log("\u26A0\uFE0F Navigation discovery failed:", error.message);
+          return [];
+        } finally {
+          await page.close();
+        }
+      }
+      // Helper: Extract URLs from sitemap XML
+      extractUrlsFromSitemap(sitemapText) {
+        const urls = [];
+        const urlMatches = sitemapText.match(/<loc>(.*?)<\/loc>/g);
+        if (urlMatches) {
+          urlMatches.forEach((match) => {
+            const url = match.replace(/<\/?loc>/g, "");
+            if (this.isRecipeUrl(url)) {
+              urls.push(url);
+            }
+          });
+        }
+        return urls;
+      }
+      // Helper: Check if URL looks like a recipe
+      isRecipeUrl(url) {
+        const lowercaseUrl = url.toLowerCase();
+        const excludePatterns = [
+          "/recipe-index",
+          "/recipes-index",
+          "/recipe-collection",
+          "/recipes-collection",
+          "/recipe-ebook",
+          "/recipes-ebook",
+          "/holiday-recipe",
+          "/about",
+          "/contact",
+          "/privacy",
+          "/terms",
+          "/category",
+          "/tag",
+          "/author",
+          "/page/",
+          "/wp-admin",
+          "/wp-content",
+          ".pdf",
+          ".jpg",
+          ".png",
+          ".gif",
+          "/sitemap",
+          "/feed",
+          "/rss"
+        ];
+        if (excludePatterns.some((pattern) => lowercaseUrl.includes(pattern))) {
+          return false;
+        }
+        const recipeIndicators = [
+          "/recipe/",
+          "/recipes/",
+          "/cooking/",
+          "/food/",
+          "/dish/",
+          "/meal/"
+        ];
+        const hasRecipeIndicator = recipeIndicators.some((indicator) => lowercaseUrl.includes(indicator));
+        const looksSpecific = hasRecipeIndicator && (lowercaseUrl.split("/").length >= 4 || // Has path segments
+        /recipe.*[a-z]{3,}/.test(lowercaseUrl));
+        return looksSpecific;
+      }
+      // Get domain from URL
+      getDomain(url) {
+        try {
+          return new URL(url).hostname;
+        } catch (e) {
+          return null;
+        }
+      }
+    };
+    urlDiscoveryService_default = UrlDiscoveryService;
+  }
+});
+
+// server/services/webScraper.js
+import puppeteer2 from "puppeteer-extra";
+import StealthPlugin2 from "puppeteer-extra-plugin-stealth";
+var WebScraperService, webScraper_default;
+var init_webScraper = __esm({
+  "server/services/webScraper.js"() {
+    "use strict";
+    puppeteer2.use(StealthPlugin2());
+    WebScraperService = class {
+      // Extract JSON-LD structured data from page
+      async extractJsonLd(page) {
+        console.log("\u{1F50D} Checking for JSON-LD recipe schema...");
+        const jsonLdData = await page.evaluate(() => {
+          const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+          const recipeSchemas = [];
+          for (const script of scripts) {
+            try {
+              const data = JSON.parse(script.textContent);
+              const items = Array.isArray(data) ? data : [data];
+              for (const item of items) {
+                if (item["@type"] === "Recipe" || item["@graph"] && item["@graph"].some((g) => g["@type"] === "Recipe")) {
+                  const recipe = item["@type"] === "Recipe" ? item : item["@graph"].find((g) => g["@type"] === "Recipe");
+                  if (recipe) {
+                    recipeSchemas.push(recipe);
+                  }
+                }
+              }
+            } catch (e) {
+              continue;
+            }
+          }
+          return recipeSchemas;
+        });
+        console.log(`\u{1F4CB} Found ${jsonLdData.length} JSON-LD recipe schemas`);
+        return jsonLdData;
+      }
+      // Check if JSON-LD recipe data is complete
+      validateRecipeCompleteness(recipeData) {
+        if (!recipeData || recipeData.length === 0) {
+          return { isComplete: false, reason: "No JSON-LD recipe data found" };
+        }
+        const recipe = recipeData[0];
+        const hasName = recipe.name && recipe.name.trim().length > 0;
+        const hasIngredients = recipe.recipeIngredient && recipe.recipeIngredient.length > 0;
+        const hasInstructions = recipe.recipeInstructions && recipe.recipeInstructions.length > 0;
+        if (!hasName) {
+          return { isComplete: false, reason: "Missing recipe name" };
+        }
+        if (!hasIngredients) {
+          return { isComplete: false, reason: "Missing ingredients list" };
+        }
+        if (!hasInstructions) {
+          return { isComplete: false, reason: "Missing instructions" };
+        }
+        console.log("\u2705 JSON-LD recipe data is complete");
+        return { isComplete: true, recipe };
+      }
+      // Transform JSON-LD to our format
+      transformJsonLdRecipe(jsonLdRecipe) {
+        const ingredients = jsonLdRecipe.recipeIngredient || [];
+        const instructions = jsonLdRecipe.recipeInstructions || [];
+        const instructionTexts = instructions.map((instruction) => {
+          if (typeof instruction === "string") return instruction;
+          if (instruction.text) return instruction.text;
+          if (instruction.name) return instruction.name;
+          return String(instruction);
+        });
+        return {
+          title: jsonLdRecipe.name || "Unknown Recipe",
+          description: jsonLdRecipe.description || "",
+          ingredients,
+          instructions: instructionTexts,
+          image: jsonLdRecipe.image?.[0]?.url || jsonLdRecipe.image?.url || jsonLdRecipe.image,
+          prepTime: jsonLdRecipe.prepTime,
+          cookTime: jsonLdRecipe.cookTime,
+          totalTime: jsonLdRecipe.totalTime,
+          servings: jsonLdRecipe.recipeYield,
+          difficulty: jsonLdRecipe.difficulty,
+          cuisine: jsonLdRecipe.recipeCuisine,
+          category: jsonLdRecipe.recipeCategory
+        };
+      }
+      // Smart content loading with network idle waiting
+      async smartContentLoading(page) {
+        console.log("\u{1F3AF} Step 1: Wait for initial page load and network to settle");
+        await new Promise((resolve) => setTimeout(resolve, 2e3));
+        try {
+          await page.waitForNetworkIdle({ idleTime: 1e3, timeout: 1e4 });
+          console.log("\u2705 Network settled after initial load");
+        } catch (e) {
+          console.log("\u23F0 Network idle timeout on initial load, continuing...");
+        }
+        console.log("\u{1F53D} Step 2: Scroll to ingredients section and wait for content");
+        await page.evaluate(() => {
+          const ingredientsSelectors = [
+            '[class*="ingredient"]',
+            '[id*="ingredient"]',
+            ".recipe-ingredients",
+            "#ingredients",
+            "h2",
+            "h3",
+            ".ingredients-section",
+            '[data-module="ingredients"]'
+          ];
+          for (const selector of ingredientsSelectors) {
+            const element = document.querySelector(selector);
+            if (element) {
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
+              console.log(`Found ingredients at: ${selector}`);
+              return;
+            }
+          }
+          window.scrollTo({ top: window.innerHeight * 1.5, behavior: "smooth" });
+        });
+        try {
+          await page.waitForNetworkIdle({ idleTime: 500, timeout: 5e3 });
+          console.log("\u2705 Network settled after scrolling");
+        } catch (e) {
+          console.log("\u23F0 Network idle timeout after scrolling, continuing...");
+        }
+        console.log("\u{1F4CA} Step 3: Check if content loaded");
+        const hasIngredients = await page.evaluate(() => {
+          const text2 = document.body.innerText.toLowerCase();
+          const ingredientKeywords = ["cup", "tablespoon", "teaspoon", "tsp", "tbsp", "flour", "sugar", "egg"];
+          return ingredientKeywords.some((keyword) => text2.includes(keyword));
+        });
+        if (!hasIngredients) {
+          console.log("\u274C No ingredients found, scrolling more...");
+          await page.evaluate(() => {
+            window.scrollTo({ top: window.innerHeight * 2, behavior: "smooth" });
+          });
+          await new Promise((resolve) => setTimeout(resolve, 2e3));
+          try {
+            await page.waitForNetworkIdle({ idleTime: 500, timeout: 3e3 });
+          } catch (e) {
+            console.log("\u23F0 No additional network activity detected");
+          }
+        }
+        console.log("\u{1F53D} Step 4: Scroll to instructions and wait for content");
+        await page.evaluate(() => {
+          const instructionsSelectors = [
+            '[class*="instruction"]',
+            '[id*="instruction"]',
+            ".recipe-instructions",
+            "#instructions",
+            "#directions",
+            "h2",
+            "h3",
+            ".instructions-section",
+            '[data-module="instructions"]'
+          ];
+          for (const selector of instructionsSelectors) {
+            const element = document.querySelector(selector);
+            if (element) {
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
+              console.log(`Found instructions at: ${selector}`);
+              return;
+            }
+          }
+          window.scrollTo({ top: window.innerHeight * 3, behavior: "smooth" });
+        });
+        try {
+          await page.waitForNetworkIdle({ idleTime: 500, timeout: 5e3 });
+          console.log("\u2705 Network settled after scrolling to instructions");
+        } catch (e) {
+          console.log("\u23F0 Network idle timeout after instructions scroll, continuing...");
+        }
+        console.log("\u{1F4CA} Step 5: Final content check");
+        const contentStats = await page.evaluate(() => {
+          const text2 = document.body.innerText;
+          const ingredientCount = (text2.match(/\b(cup|tablespoon|teaspoon|tsp|tbsp)\b/gi) || []).length;
+          const stepCount = (text2.match(/\b(step|preheat|mix|add|bake|cook)\b/gi) || []).length;
+          return {
+            textLength: text2.length,
+            ingredientCount,
+            stepCount,
+            hasRecipeContent: ingredientCount > 0 && stepCount > 0
+          };
+        });
+        if (!contentStats.hasRecipeContent && contentStats.textLength < 1e3) {
+          console.log("\u23F0 Content still loading, waiting 5 more seconds...");
+          await new Promise((resolve) => setTimeout(resolve, 5e3));
+        }
+        console.log(`\u2705 Smart loading complete: ${contentStats.textLength} chars, ${contentStats.ingredientCount} ingredients, ${contentStats.stepCount} steps`);
+      }
+      async scrapeRecipePage(url) {
+        const browser = await puppeteer2.launch({
+          headless: true,
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-accelerated-2d-canvas",
+            "--no-first-run",
+            "--no-zygote",
+            "--single-process",
+            "--disable-gpu",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding"
+          ]
+          // Enhanced for Replit environment
+        });
+        const page = await browser.newPage();
+        try {
+          console.log(`\u{1F50D} Scraping recipe from: ${url}`);
+          await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+          await page.setExtraHTTPHeaders({
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Cache-Control": "max-age=0"
+          });
+          await page.setViewport({ width: 1366, height: 768 });
+          await page.goto(url, {
+            waitUntil: "domcontentloaded",
+            timeout: 3e4
+          });
+          console.log("\u{1F512} Stealth mode active, enhanced headers set, waiting for content...");
+          console.log("\u{1F680} Method 1: Fast JSON-LD extraction");
+          try {
+            await page.waitForSelector("body", { timeout: 5e3 });
+          } catch (e) {
+          }
+          const jsonLdData = await this.extractJsonLd(page);
+          const validation = this.validateRecipeCompleteness(jsonLdData);
+          if (validation.isComplete) {
+            console.log("\u2705 JSON-LD extraction successful - using fast method");
+            const imageUrls2 = await this.extractImages(page);
+            const transformedRecipe = this.transformJsonLdRecipe(validation.recipe);
+            return {
+              method: "json-ld",
+              jsonLdRecipe: transformedRecipe,
+              textContent: "",
+              // Empty since we have structured data
+              imageUrls: imageUrls2,
+              pdfUrls: [],
+              originalUrl: url
+            };
+          }
+          console.log(`\u26A0\uFE0F JSON-LD incomplete: ${validation.reason}`);
+          console.log("\u{1F504} Method 2: Enhanced HTML scraping with smart scrolling");
+          await this.smartContentLoading(page);
+          const textContent = await this.extractTextContent(page);
+          const imageUrls = await this.extractImages(page);
+          const pdfUrls = await this.extractPdfUrls(page);
+          console.log(`\u{1F4C4} Extracted ${textContent.length} characters of text`);
+          console.log(`\u{1F5BC}\uFE0F Found ${imageUrls.length} potential recipe images`);
+          console.log(`\u{1F4CB} Found ${pdfUrls.length} PDF documents`);
+          return {
+            method: "html-scraping",
+            textContent: textContent.trim(),
+            imageUrls,
+            pdfUrls,
+            originalUrl: url
+          };
+        } catch (error) {
+          console.error("\u{1F6A8} Scraping error:", error);
+          throw new Error(`Failed to scrape ${url}: ${error.message}`);
+        } finally {
+          await browser.close();
+        }
+      }
+      // Helper method to extract images
+      async extractImages(page) {
+        return await page.evaluate(() => {
+          const images = Array.from(document.querySelectorAll("img"));
+          return images.filter((img) => {
+            if (img.naturalWidth < 200 || img.naturalHeight < 150) return false;
+            const src = img.src.toLowerCase();
+            const alt = (img.alt || "").toLowerCase();
+            const excludePatterns = [
+              "logo",
+              "icon",
+              "avatar",
+              "profile",
+              "social",
+              "share",
+              "advertisement",
+              "banner",
+              "header",
+              "footer",
+              "sidebar"
+            ];
+            return !excludePatterns.some(
+              (pattern) => src.includes(pattern) || alt.includes(pattern)
+            );
+          }).map((img) => img.src).filter((src) => src && src.startsWith("http"));
+        });
+      }
+      // Helper method to extract text content
+      async extractTextContent(page) {
+        return await page.evaluate(() => {
+          const elementsToRemove = document.querySelectorAll("script, style, nav, header, footer, .ad, .advertisement, .social-share, .newsletter");
+          elementsToRemove.forEach((el) => el.remove());
+          const recipeSelectors = [
+            ".recipe",
+            ".recipe-content",
+            ".recipe-container",
+            ".recipe-card",
+            '[itemtype*="Recipe"]',
+            ".post-content",
+            ".entry-content",
+            "main"
+          ];
+          let recipeContent = "";
+          for (const selector of recipeSelectors) {
+            const element = document.querySelector(selector);
+            if (element) {
+              recipeContent = element.innerText;
+              break;
+            }
+          }
+          return recipeContent || document.body.innerText;
+        });
+      }
+      // Helper method to extract PDF URLs
+      async extractPdfUrls(page) {
+        return await page.evaluate(() => {
+          const links = Array.from(document.querySelectorAll('a[href$=".pdf"], a[href*=".pdf"]'));
+          return links.map((link) => link.href).filter((href) => href);
+        });
+      }
+      async downloadPdf(pdfUrl) {
+        console.log(`\u{1F4E5} Downloading PDF: ${pdfUrl}`);
+        try {
+          const response = await fetch(pdfUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to download PDF: ${response.statusText}`);
+          }
+          const buffer = await response.arrayBuffer();
+          return Buffer.from(buffer);
+        } catch (error) {
+          console.error("\u{1F6A8} PDF download error:", error);
+          throw error;
+        }
+      }
+    };
+    webScraper_default = WebScraperService;
+  }
+});
+
+// server/services/geminiVision.js
+import { GoogleGenerativeAI } from "@google/generative-ai";
+var GeminiVisionService, geminiVision_default;
+var init_geminiVision = __esm({
+  "server/services/geminiVision.js"() {
+    "use strict";
+    GeminiVisionService = class {
+      constructor() {
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        if (!apiKey) {
+          throw new Error("GOOGLE_AI_API_KEY environment variable is required");
+        }
+        this.genAI = new GoogleGenerativeAI(apiKey);
+        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      }
+      async identifyMainRecipeImage(imageUrls) {
+        if (!imageUrls || imageUrls.length === 0) {
+          console.log("\u{1F441}\uFE0F No images provided for analysis");
+          return null;
+        }
+        console.log(`\u{1F441}\uFE0F Analyzing ${imageUrls.length} images to find main recipe image`);
+        const prompt = `
+You are analyzing images from a recipe webpage to identify the main recipe image.
+
+Image URLs to analyze:
+${imageUrls.map((url, i) => `${i + 1}. ${url}`).join("\n")}
+
+TASK: Identify which URL points to the main recipe image showing the finished dish.
+
+CRITERIA:
+- Look for images that show completed, prepared food/dishes
+- Ignore logos, advertisements, social media icons, author photos, or generic stock photos  
+- Ignore small thumbnails, banners, or UI elements
+- Choose the most prominent image of the actual prepared recipe/meal
+
+RESPONSE FORMAT:
+Return ONLY the complete URL of the best main recipe image.
+If no suitable recipe image is found, return exactly: "none"
+
+Example good response: https://example.com/images/finished-pasta-dish.jpg
+Example bad response: none
+`;
+        try {
+          const result = await this.model.generateContent(prompt);
+          const response = result.response.text().trim();
+          console.log(`\u{1F441}\uFE0F Gemini identified main image: ${response}`);
+          if (response === "none") {
+            return null;
+          }
+          if (imageUrls.includes(response)) {
+            return response;
+          }
+          const matchedUrl = imageUrls.find((url) => url.includes(response) || response.includes(url));
+          return matchedUrl || null;
+        } catch (error) {
+          console.error("\u{1F6A8} Gemini vision error:", error);
+          return imageUrls.length > 0 ? imageUrls[0] : null;
+        }
+      }
+      async extractPdfText(pdfBuffer) {
+        console.log(`\u{1F441}\uFE0F Extracting text from PDF using OCR (${pdfBuffer.length} bytes)`);
+        const prompt = `
+Extract all readable text from this PDF document. 
+
+INSTRUCTIONS:
+- Extract ALL text content that is readable
+- Maintain the general structure and formatting where possible
+- If this is an image-only PDF with no selectable text, extract text using OCR
+- If no text is found or readable, return exactly: "NO_TEXT_FOUND"
+
+Return only the extracted text content.
+`;
+        try {
+          const imagePart = {
+            inlineData: {
+              data: pdfBuffer.toString("base64"),
+              mimeType: "application/pdf"
+            }
+          };
+          const result = await this.model.generateContent([prompt, imagePart]);
+          const extractedText = result.response.text().trim();
+          if (extractedText === "NO_TEXT_FOUND") {
+            console.log("\u{1F441}\uFE0F No text found in PDF");
+            return "";
+          }
+          console.log(`\u{1F441}\uFE0F Extracted ${extractedText.length} characters from PDF`);
+          return extractedText;
+        } catch (error) {
+          console.error("\u{1F6A8} PDF OCR error:", error);
+          return "";
+        }
+      }
+      async analyzeRecipeImage(imageUrl) {
+        console.log(`\u{1F441}\uFE0F Analyzing recipe image for additional context: ${imageUrl}`);
+        const prompt = `
+Analyze this recipe image and extract any visible text or useful information.
+
+LOOK FOR:
+- Recipe names/titles visible in the image
+- Ingredient lists or labels
+- Cooking instructions or steps
+- Any text overlays or captions
+- Visual clues about the dish type, cuisine, or cooking method
+
+RESPONSE FORMAT:
+Return any extracted text or useful descriptions about what you see in the image.
+If no useful text or information is visible, return: "NO_ADDITIONAL_INFO"
+`;
+        try {
+          const result = await this.model.generateContent([
+            prompt,
+            {
+              inlineData: {
+                data: await this.fetchImageAsBase64(imageUrl),
+                mimeType: "image/jpeg"
+              }
+            }
+          ]);
+          const analysis = result.response.text().trim();
+          console.log(`\u{1F441}\uFE0F Image analysis result: ${analysis.substring(0, 100)}...`);
+          return analysis === "NO_ADDITIONAL_INFO" ? "" : analysis;
+        } catch (error) {
+          console.error("\u{1F6A8} Image analysis error:", error);
+          return "";
+        }
+      }
+      async fetchImageAsBase64(imageUrl) {
+        try {
+          const response = await fetch(imageUrl);
+          const buffer = await response.arrayBuffer();
+          return Buffer.from(buffer).toString("base64");
+        } catch (error) {
+          console.error("\u{1F6A8} Image fetch error:", error);
+          throw error;
+        }
+      }
+    };
+    geminiVision_default = GeminiVisionService;
+  }
+});
+
+// server/services/groqService.js
+import Groq4 from "groq-sdk";
+var GroqService, groqService_default;
+var init_groqService = __esm({
+  "server/services/groqService.js"() {
+    "use strict";
+    GroqService = class {
+      constructor() {
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+          throw new Error("GROQ_API_KEY environment variable is required");
+        }
+        this.client = new Groq4({
+          apiKey
+        });
+      }
+      async extractStructuredRecipe(cleanedText, imageUrl = null) {
+        console.log(`\u{1F9E0} Using GPT-OSS-120B to extract structured recipe data`);
+        const schema = {
+          title: "string",
+          category: "main|soup|dessert|snack|drink|other",
+          ingredients: [{ "item": "string", "quantity": "string" }],
+          instructions: ["step 1", "step 2", "..."],
+          image_url: "string",
+          notes: "string"
+        };
+        const prompt = `You are a recipe extraction specialist. Extract recipe information from the provided text and format it as JSON according to this EXACT schema:
+
+${JSON.stringify(schema, null, 2)}
+
+EXTRACTION RULES:
+1. Extract the recipe title from the text
+2. Categorize as: main, soup, dessert, snack, drink, or other
+3. Extract ingredients with proper quantities (e.g., "2 cups flour", "1 tbsp salt")
+4. Break instructions into clear, numbered steps
+5. Use the provided image URL if available, otherwise set to null
+6. Include any cooking tips or notes in the notes field
+
+TEXT TO EXTRACT FROM:
+${cleanedText}
+
+${imageUrl ? `RECIPE IMAGE URL: ${imageUrl}` : "NO IMAGE PROVIDED"}
+
+IMPORTANT: 
+- Return ONLY valid JSON, no additional text or explanation
+- Ensure all fields are present in the response
+- If information is missing, use reasonable defaults
+- For quantities, be specific (e.g., "2 cups", "1 tablespoon", "1/2 teaspoon")
+
+JSON Response:`;
+        try {
+          const completion = await this.client.chat.completions.create({
+            model: "openai/gpt-oss-120b",
+            messages: [
+              { "role": "user", "content": prompt }
+            ],
+            temperature: 0,
+            max_tokens: 2e3
+          });
+          const response = completion.choices[0].message.content.trim();
+          console.log(`\u{1F9E0} GPT-OSS-120B response length: ${response.length} characters`);
+          try {
+            const parsed = JSON.parse(response);
+            console.log(`\u{1F9E0} Successfully parsed JSON recipe: "${parsed.title}"`);
+            return this.validateAndTransform(parsed, imageUrl);
+          } catch (parseError) {
+            console.log(`\u{1F9E0} JSON parse failed, attempting to fix...`);
+            return await this.retryExtraction(cleanedText, imageUrl, response);
+          }
+        } catch (error) {
+          console.error("\u{1F6A8} Groq API error:", error);
+          throw new Error(`Failed to extract recipe with AI: ${error.message}`);
+        }
+      }
+      async retryExtraction(cleanedText, imageUrl, previousResponse) {
+        console.log(`\u{1F504} Retrying extraction with correction prompt`);
+        const correctionPrompt = `The previous response was not valid JSON. Please fix this response to be valid JSON according to the recipe schema:
+
+PREVIOUS RESPONSE:
+${previousResponse}
+
+Fix the JSON syntax errors and ensure it follows this exact schema:
+{
+  "title": "string",
+  "category": "main|soup|dessert|snack|drink|other",
+  "ingredients": [{"item": "string", "quantity": "string"}],
+  "instructions": ["step 1", "step 2", "..."],
+  "image_url": "string",
+  "notes": "string"
+}
+
+Return ONLY the corrected JSON:`;
+        try {
+          const completion = await this.client.chat.completions.create({
+            model: "openai/gpt-oss-120b",
+            messages: [
+              { "role": "user", "content": correctionPrompt }
+            ],
+            temperature: 0,
+            max_tokens: 2e3
+          });
+          const correctedResponse = completion.choices[0].message.content.trim();
+          const parsed = JSON.parse(correctedResponse);
+          console.log(`\u{1F504} Successfully corrected and parsed JSON`);
+          return this.validateAndTransform(parsed, imageUrl);
+        } catch (error) {
+          console.error("\u{1F6A8} Retry failed:", error);
+          return this.createFallbackRecipe(cleanedText, imageUrl);
+        }
+      }
+      validateAndTransform(data, imageUrl) {
+        console.log(`\u2705 Validating and transforming recipe data`);
+        const title = data.title || "Extracted Recipe";
+        const category = data.category || "other";
+        const ingredients = Array.isArray(data.ingredients) ? data.ingredients : [];
+        const instructions = Array.isArray(data.instructions) ? data.instructions : [];
+        const notes = data.notes || "";
+        const transformedRecipe = {
+          id: Math.random().toString(36).substr(2, 9),
+          title,
+          description: notes,
+          image_url: imageUrl || data.image_url || null,
+          ingredients: ingredients.map((ing) => {
+            if (typeof ing === "string") {
+              return {
+                name: ing,
+                display_text: ing,
+                measurements: []
+              };
+            } else {
+              const quantity = ing.quantity || "";
+              const item = ing.item || ing.name || "";
+              return {
+                name: item,
+                display_text: quantity ? `${quantity} ${item}` : item,
+                measurements: quantity ? [{
+                  quantity: this.parseQuantity(quantity),
+                  unit: this.parseUnit(quantity)
+                }] : []
+              };
+            }
+          }),
+          instructions: instructions.map((instruction, index2) => {
+            if (typeof instruction !== "string") {
+              return `Step ${index2 + 1}: ${String(instruction)}`;
+            }
+            return instruction.startsWith("Step") ? instruction : `Step ${index2 + 1}: ${instruction}`;
+          }),
+          nutrition_info: null,
+          prep_time: 30,
+          // Default
+          cook_time: null,
+          difficulty: "Medium",
+          cuisine: "",
+          diet: "",
+          video_id: null,
+          video_title: null,
+          video_channel: null,
+          category
+        };
+        console.log(`\u2705 Transformed recipe: "${transformedRecipe.title}" with ${transformedRecipe.ingredients.length} ingredients and ${transformedRecipe.instructions.length} steps`);
+        return transformedRecipe;
+      }
+      parseQuantity(quantityString) {
+        if (!quantityString) return 1;
+        const numericMatch = quantityString.match(/(\d+(?:\.\d+)?(?:\/\d+)?)/);
+        if (numericMatch) {
+          const value = numericMatch[1];
+          if (value.includes("/")) {
+            const [num, den] = value.split("/");
+            return parseFloat(num) / parseFloat(den);
+          }
+          return parseFloat(value);
+        }
+        return 1;
+      }
+      parseUnit(quantityString) {
+        if (!quantityString) return "";
+        const unitPatterns = [
+          "cups?",
+          "cup",
+          "c",
+          "tablespoons?",
+          "tbsp",
+          "tbs",
+          "teaspoons?",
+          "tsp",
+          "ts",
+          "ounces?",
+          "oz",
+          "pounds?",
+          "lbs?",
+          "lb",
+          "grams?",
+          "g",
+          "kilograms?",
+          "kg",
+          "milliliters?",
+          "ml",
+          "liters?",
+          "l",
+          "pieces?",
+          "piece",
+          "cloves?",
+          "clove",
+          "slices?",
+          "slice"
+        ];
+        for (const pattern of unitPatterns) {
+          const regex = new RegExp(`\\b(${pattern})\\b`, "i");
+          const match = quantityString.match(regex);
+          if (match) {
+            return match[1].toLowerCase();
+          }
+        }
+        return "";
+      }
+      createFallbackRecipe(text2, imageUrl) {
+        console.log(`\u{1F198} Creating fallback recipe from raw text`);
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          title: "Extracted Recipe (Manual Review Needed)",
+          description: "This recipe was extracted but may need manual review for accuracy.",
+          image_url: imageUrl,
+          ingredients: [
+            {
+              name: "Raw extracted content",
+              display_text: "Please review the extracted content below",
+              measurements: []
+            }
+          ],
+          instructions: [
+            "Step 1: Review the raw extracted content",
+            "Step 2: Manually format the recipe as needed",
+            `Raw content: ${text2.substring(0, 500)}...`
+          ],
+          nutrition_info: null,
+          prep_time: null,
+          cook_time: null,
+          difficulty: "Unknown",
+          cuisine: "",
+          diet: "",
+          video_id: null,
+          video_title: null,
+          video_channel: null,
+          category: "other"
+        };
+      }
+    };
+    groqService_default = GroqService;
+  }
+});
+
+// server/services/textProcessor.js
+var TextProcessor, textProcessor_default;
+var init_textProcessor = __esm({
+  "server/services/textProcessor.js"() {
+    "use strict";
+    TextProcessor = class {
+      static clean(rawText) {
+        if (!rawText || typeof rawText !== "string") {
+          return "";
+        }
+        console.log(`\u{1F9F9} Cleaning text (${rawText.length} characters)`);
+        let cleaned = rawText;
+        const boilerplatePatterns = [
+          /print\s+recipe/gi,
+          /share\s+on\s+facebook/gi,
+          /pin\s+to\s+pinterest/gi,
+          /tweet\s+this/gi,
+          /share\s+on\s+twitter/gi,
+          /subscribe\s+to\s+newsletter/gi,
+          /sign\s+up\s+for\s+newsletter/gi,
+          /advertisement/gi,
+          /sponsored\s+content/gi,
+          /follow\s+us\s+on/gi,
+          /like\s+us\s+on/gi,
+          /get\s+our\s+app/gi,
+          /download\s+our\s+app/gi,
+          /privacy\s+policy/gi,
+          /terms\s+of\s+service/gi,
+          /cookie\s+policy/gi,
+          /all\s+rights\s+reserved/gi,
+          /copyright\s+\d{4}/gi,
+          /\d{4}\s+copyright/gi,
+          /related\s+recipes/gi,
+          /more\s+recipes/gi,
+          /you\s+might\s+also\s+like/gi,
+          /recommended\s+for\s+you/gi,
+          /popular\s+recipes/gi,
+          /trending\s+now/gi,
+          /leave\s+a\s+comment/gi,
+          /rate\s+this\s+recipe/gi,
+          /save\s+recipe/gi,
+          /add\s+to\s+favorites/gi,
+          /jump\s+to\s+recipe/gi,
+          /print\s+friendly/gi,
+          /nutrition\s+facts/gi,
+          /calories\s+per\s+serving/gi,
+          /prep\s+time:/gi,
+          /cook\s+time:/gi,
+          /total\s+time:/gi,
+          /serves:\s*\d+/gi,
+          /difficulty:\s*\w+/gi
+        ];
+        boilerplatePatterns.forEach((pattern) => {
+          cleaned = cleaned.replace(pattern, " ");
+        });
+        cleaned = cleaned.replace(/[^\w\s\-.,;:()\[\]]/g, " ");
+        cleaned = cleaned.replace(/\s+/g, " ");
+        const lines = cleaned.split("\n").map((line) => line.trim()).filter((line) => line.length > 3);
+        const uniqueLines = [];
+        const seenLines = /* @__PURE__ */ new Set();
+        for (const line of lines) {
+          const normalizedLine = line.toLowerCase().replace(/\s+/g, " ");
+          if (!seenLines.has(normalizedLine)) {
+            seenLines.add(normalizedLine);
+            uniqueLines.push(line);
+          }
+        }
+        cleaned = uniqueLines.join("\n").trim();
+        cleaned = cleaned.replace(/\n\s*\n/g, "\n").trim();
+        console.log(`\u{1F9F9} Cleaned text: ${cleaned.length} characters (${rawText.length - cleaned.length} removed)`);
+        return cleaned;
+      }
+      static extractRecipeStructure(text2) {
+        console.log(`\u{1F50D} Extracting recipe structure from text`);
+        const result = {
+          title: "",
+          ingredients: [],
+          instructions: [],
+          notes: ""
+        };
+        const lines = text2.split("\n").map((line) => line.trim()).filter((line) => line);
+        let currentSection = "unknown";
+        let ingredientLines = [];
+        let instructionLines = [];
+        let titleCandidates = [];
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].toLowerCase();
+          if (line.includes("ingredient") || line.includes("what you need")) {
+            currentSection = "ingredients";
+            continue;
+          } else if (line.includes("instruction") || line.includes("method") || line.includes("direction") || line.includes("steps") || line.includes("how to make")) {
+            currentSection = "instructions";
+            continue;
+          }
+          if (i < 5 && lines[i].length < 100 && lines[i].length > 5) {
+            titleCandidates.push(lines[i]);
+          }
+          if (currentSection === "ingredients" || this.looksLikeIngredient(lines[i])) {
+            ingredientLines.push(lines[i]);
+          }
+          if (currentSection === "instructions" || this.looksLikeInstruction(lines[i])) {
+            instructionLines.push(lines[i]);
+          }
+        }
+        result.title = titleCandidates.length > 0 ? titleCandidates[0] : "Extracted Recipe";
+        result.ingredients = ingredientLines;
+        result.instructions = instructionLines;
+        console.log(`\u{1F50D} Extracted: title="${result.title}", ${result.ingredients.length} ingredients, ${result.instructions.length} instructions`);
+        return result;
+      }
+      static looksLikeIngredient(line) {
+        const measurementPatterns = [
+          /\d+\s*(cup|cups|tsp|tbsp|teaspoon|tablespoon|oz|ounce|lb|pound|g|gram|kg|ml|liter)/i,
+          /\d+\/\d+/,
+          // Fractions
+          /\d+\s*(to|or|-)\s*\d+/,
+          // Ranges
+          /^\d+\s+/,
+          // Starts with number
+          /\d+\s*(clove|cloves|piece|pieces|slice|slices)/i
+        ];
+        return measurementPatterns.some((pattern) => pattern.test(line)) && line.length < 200;
+      }
+      static looksLikeInstruction(line) {
+        const instructionPatterns = [
+          /^\d+\./,
+          // Numbered steps
+          /^step\s+\d+/i,
+          /^(heat|cook|add|mix|stir|combine|place|put|set|bake|fry|boil)/i,
+          /^(preheat|prepare|wash|chop|dice|slice|mince)/i
+        ];
+        return instructionPatterns.some((pattern) => pattern.test(line)) || line.length > 20 && line.length < 500 && line.includes(" ");
+      }
+      static combineTexts(webText, pdfText, imageText = "") {
+        console.log(`\u{1F517} Combining texts: web(${webText.length}), pdf(${pdfText.length}), image(${imageText.length})`);
+        const combined = [webText, pdfText, imageText].filter((text2) => text2 && text2.trim()).join("\n\n---\n\n");
+        return this.clean(combined);
+      }
+    };
+    textProcessor_default = TextProcessor;
+  }
+});
+
+// server/services/smartExtractionRouter.js
+var smartExtractionRouter_exports = {};
+__export(smartExtractionRouter_exports, {
+  default: () => smartExtractionRouter_default
+});
+var SmartExtractionRouter, smartExtractionRouter_default;
+var init_smartExtractionRouter = __esm({
+  "server/services/smartExtractionRouter.js"() {
+    "use strict";
+    init_urlDetectionService();
+    init_urlDiscoveryService();
+    init_webScraper();
+    init_geminiVision();
+    init_groqService();
+    init_textProcessor();
+    SmartExtractionRouter = class {
+      constructor() {
+        console.log("\u{1F3D7}\uFE0F [ROUTER DEBUG] SmartExtractionRouter constructor called");
+        this.urlDetector = new urlDetectionService_default();
+        this.urlDiscovery = new urlDiscoveryService_default();
+        console.log("\u{1F3D7}\uFE0F [ROUTER DEBUG] SmartExtractionRouter initialized successfully");
+      }
+      // Main routing function that determines the extraction strategy
+      async extractFromUrl(url, options = {}) {
+        console.log(`\u{1F3AF} [ROUTER DEBUG] SmartRouter: Starting extraction for ${url}`);
+        console.log(`\u{1F3AF} [ROUTER DEBUG] Options:`, options);
+        try {
+          console.log(`\u{1F50D} [ROUTER DEBUG] Analyzing URL type...`);
+          const urlAnalysis = this.urlDetector.detectUrlType(url);
+          console.log(`\u{1F4CA} [ROUTER DEBUG] URL Analysis:`, urlAnalysis);
+          console.log(`\u{1F4CA} [ROUTER DEBUG] URL Analysis: ${urlAnalysis.type} \u2192 ${urlAnalysis.action}`);
+          console.log(`\u{1F4A1} [ROUTER DEBUG] Reasoning: ${urlAnalysis.reason}`);
+          switch (urlAnalysis.action) {
+            case "discovery":
+              return await this.handleDiscoveryRoute(url, urlAnalysis, options);
+            case "extract":
+              return await this.handleExtractionRoute(url, urlAnalysis, options);
+            default:
+              throw new Error(`Unknown action: ${urlAnalysis.action}`);
+          }
+        } catch (error) {
+          console.error("\u{1F6A8} SmartRouter error:", error);
+          return {
+            success: false,
+            error: error.message,
+            metadata: {
+              originalUrl: url,
+              routerError: true
+            }
+          };
+        }
+      }
+      // Handle discovery route (homepages, category pages)
+      async handleDiscoveryRoute(url, urlAnalysis, options) {
+        console.log(`\u{1F50D} Discovery Route: Finding recipes on ${urlAnalysis.type}`);
+        try {
+          const discoveredUrls = await this.urlDiscovery.discoverRecipeUrls(url);
+          if (discoveredUrls.length === 0) {
+            return {
+              success: false,
+              error: "No recipe URLs found on this page",
+              metadata: {
+                originalUrl: url,
+                urlType: urlAnalysis.type,
+                discoveredUrls: 0
+              }
+            };
+          }
+          console.log(`\u2705 Found ${discoveredUrls.length} recipe URLs`);
+          const maxRecipes = options.maxRecipes || 10;
+          const urlsToExtract = discoveredUrls.slice(0, maxRecipes);
+          console.log(`\u{1F4CB} Extracting from ${urlsToExtract.length} recipe URLs`);
+          const extractionResults = [];
+          const extractionErrors = [];
+          const batchSize = 5;
+          const batches = [];
+          for (let i = 0; i < urlsToExtract.length; i += batchSize) {
+            batches.push(urlsToExtract.slice(i, i + batchSize));
+          }
+          console.log(`\u{1F680} Processing ${urlsToExtract.length} recipes in ${batches.length} parallel batches of ${batchSize}`);
+          for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+            const batch = batches[batchIndex];
+            console.log(`\u26A1 Batch ${batchIndex + 1}/${batches.length}: Processing ${batch.length} recipes in parallel`);
+            const batchPromises = batch.map(async (recipeUrl, index2) => {
+              const globalIndex = batchIndex * batchSize + index2 + 1;
+              console.log(`\u{1F373} [${globalIndex}/${urlsToExtract.length}] Starting: ${recipeUrl}`);
+              try {
+                const result = await this.extractSingleRecipe(recipeUrl);
+                if (result.success) {
+                  console.log(`\u2705 [${globalIndex}/${urlsToExtract.length}] Success: ${result.recipe.title}`);
+                  return {
+                    success: true,
+                    url: recipeUrl,
+                    recipe: result.recipe,
+                    metadata: result.metadata
+                  };
+                } else {
+                  console.log(`\u274C [${globalIndex}/${urlsToExtract.length}] Failed: ${result.error}`);
+                  return {
+                    success: false,
+                    url: recipeUrl,
+                    error: result.error
+                  };
+                }
+              } catch (error) {
+                console.log(`\u{1F6A8} [${globalIndex}/${urlsToExtract.length}] Error: ${error.message}`);
+                return {
+                  success: false,
+                  url: recipeUrl,
+                  error: error.message
+                };
+              }
+            });
+            const batchResults = await Promise.all(batchPromises);
+            batchResults.forEach((result) => {
+              if (result.success) {
+                const recipe = result.recipe;
+                const hasValidTitle = recipe.title && recipe.title !== "Untitled Recipe";
+                const hasIngredients = recipe.ingredients && recipe.ingredients.length > 0;
+                const hasInstructions = recipe.instructions && recipe.instructions.length > 0;
+                if (hasValidTitle && hasIngredients && hasInstructions) {
+                  extractionResults.push({
+                    url: result.url,
+                    recipe: result.recipe,
+                    metadata: result.metadata
+                  });
+                } else {
+                  console.log(`\u{1F6AE} Filtered out invalid recipe from ${result.url}: title="${recipe.title}", ingredients=${recipe.ingredients?.length || 0}, instructions=${recipe.instructions?.length || 0}`);
+                  extractionErrors.push({
+                    url: result.url,
+                    error: "Recipe missing essential content (title, ingredients, or instructions)"
+                  });
+                }
+              } else {
+                extractionErrors.push({
+                  url: result.url,
+                  error: result.error
+                });
+              }
+            });
+            console.log(`\u{1F3AF} Batch ${batchIndex + 1} complete: ${batchResults.filter((r) => r.success).length}/${batch.length} successful`);
+            if (batchIndex < batches.length - 1) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+          }
+          const successCount = extractionResults.length;
+          const failureCount = extractionErrors.length;
+          if (successCount === 0) {
+            return {
+              success: false,
+              error: "Failed to extract any recipes from discovered URLs",
+              metadata: {
+                originalUrl: url,
+                urlType: urlAnalysis.type,
+                discoveredUrls: discoveredUrls.length,
+                attemptedExtractions: urlsToExtract.length,
+                failures: extractionErrors
+              }
+            };
+          }
+          return {
+            success: true,
+            type: "multi-recipe",
+            recipes: extractionResults,
+            summary: {
+              originalUrl: url,
+              urlType: urlAnalysis.type,
+              totalDiscovered: discoveredUrls.length,
+              attempted: urlsToExtract.length,
+              successful: successCount,
+              failed: failureCount,
+              successRate: `${Math.round(successCount / urlsToExtract.length * 100)}%`
+            },
+            errors: extractionErrors.length > 0 ? extractionErrors : void 0
+          };
+        } catch (error) {
+          console.error("\u{1F6A8} Discovery route error:", error);
+          return {
+            success: false,
+            error: `Discovery failed: ${error.message}`,
+            metadata: {
+              originalUrl: url,
+              urlType: urlAnalysis.type,
+              discoveryError: true
+            }
+          };
+        }
+      }
+      // Handle extraction route (specific recipe pages)
+      async handleExtractionRoute(url, urlAnalysis, options) {
+        console.log(`\u{1F373} Extraction Route: Direct recipe extraction from ${urlAnalysis.type}`);
+        try {
+          const result = await this.extractSingleRecipe(url);
+          if (result.success) {
+            return {
+              success: true,
+              type: "single-recipe",
+              recipe: result.recipe,
+              metadata: {
+                ...result.metadata,
+                urlType: urlAnalysis.type,
+                routingReason: urlAnalysis.reason
+              }
+            };
+          } else {
+            return {
+              success: false,
+              error: result.error,
+              metadata: {
+                originalUrl: url,
+                urlType: urlAnalysis.type,
+                extractionError: true
+              }
+            };
+          }
+        } catch (error) {
+          console.error("\u{1F6A8} Extraction route error:", error);
+          return {
+            success: false,
+            error: `Extraction failed: ${error.message}`,
+            metadata: {
+              originalUrl: url,
+              urlType: urlAnalysis.type,
+              extractionError: true
+            }
+          };
+        }
+      }
+      // Single recipe extraction using our proven multi-step pipeline
+      async extractSingleRecipe(url) {
+        try {
+          console.log(`\u{1F527} Using multi-step extractor for: ${url}`);
+          const webScraper = new webScraper_default();
+          const gemini = new geminiVision_default();
+          const groq = new groqService_default();
+          const scrapedData = await webScraper.scrapeRecipePage(url);
+          let extractedRecipe;
+          let mainImageUrl = "";
+          if (scrapedData.method === "json-ld") {
+            console.log(`\u26A1 Using fast JSON-LD extraction`);
+            const imageUrls = scrapedData.imageUrls || [];
+            if (imageUrls.length > 0) {
+              mainImageUrl = await gemini.identifyMainRecipeImage(imageUrls);
+            }
+            const jsonLdText = JSON.stringify(scrapedData.jsonLdRecipe);
+            extractedRecipe = await groq.extractStructuredRecipe(jsonLdText, mainImageUrl);
+          } else {
+            console.log(`\u{1F40C} Using enhanced HTML extraction`);
+            const imageUrls = scrapedData.imageUrls || [];
+            let geminiResponse = null;
+            if (imageUrls.length > 0) {
+              mainImageUrl = await gemini.identifyMainRecipeImage(imageUrls);
+            }
+            const combinedText = textProcessor_default.combineTexts(
+              scrapedData.textContent,
+              "",
+              ""
+            );
+            const cleanedText = textProcessor_default.clean(combinedText);
+            extractedRecipe = await groq.extractStructuredRecipe(cleanedText, mainImageUrl);
+          }
+          return {
+            success: true,
+            recipe: extractedRecipe,
+            metadata: {
+              originalUrl: url,
+              extractionMethod: scrapedData.method,
+              extractedImages: scrapedData.imageUrls?.length || 0,
+              mainImageSelected: !!mainImageUrl,
+              textLength: scrapedData.method === "json-ld" ? JSON.stringify(scrapedData.jsonLdRecipe).length : scrapedData.textContent.length
+            }
+          };
+        } catch (error) {
+          console.error(`\u{1F6A8} Single recipe extraction error for ${url}:`, error);
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+      // Get URL analysis without extraction (for debugging)
+      analyzeUrl(url) {
+        return this.urlDetector.detectUrlType(url);
+      }
+    };
+    smartExtractionRouter_default = SmartExtractionRouter;
+  }
+});
+
+// server/services/batchExtractionService.js
+var batchExtractionService_exports = {};
+__export(batchExtractionService_exports, {
+  default: () => batchExtractionService_default
+});
+var BatchExtractionService, batchExtractionService_default;
+var init_batchExtractionService = __esm({
+  "server/services/batchExtractionService.js"() {
+    "use strict";
+    init_urlDiscoveryService();
+    init_webScraper();
+    init_geminiVision();
+    init_groqService();
+    init_textProcessor();
+    BatchExtractionService = class {
+      constructor() {
+        this.urlDiscovery = new urlDiscoveryService_default();
+        this.maxWorkers = 6;
+        this.activeWorkers = 0;
+        this.extractionQueue = [];
+        this.results = [];
+        this.errors = [];
+        this.progress = {
+          total: 0,
+          completed: 0,
+          failed: 0,
+          inProgress: 0
+        };
+      }
+      // Main batch extraction method
+      async extractRecipesFromSite(homepageUrl, maxRecipes = 50) {
+        console.log(`\u{1F680} Starting batch extraction from: ${homepageUrl}`);
+        console.log(`\u{1F4CA} Configuration: ${this.maxWorkers} workers, max ${maxRecipes} recipes`);
+        this.results = [];
+        this.errors = [];
+        this.progress = { total: 0, completed: 0, failed: 0, inProgress: 0 };
+        try {
+          console.log("\u{1F4CD} Phase 1: URL Discovery");
+          const discoveredUrls = await this.urlDiscovery.discoverRecipeUrls(homepageUrl);
+          if (discoveredUrls.length === 0) {
+            throw new Error("No recipe URLs found on the site");
+          }
+          const urlsToProcess = discoveredUrls.slice(0, maxRecipes);
+          this.progress.total = urlsToProcess.length;
+          console.log(`\u{1F3AF} Found ${discoveredUrls.length} URLs, processing ${urlsToProcess.length}`);
+          console.log("\u26A1 Phase 2: Parallel Recipe Extraction");
+          await this.processUrlsInParallel(urlsToProcess);
+          console.log("\u{1F4CA} Phase 3: Results Summary");
+          const summary = this.generateSummary();
+          return {
+            success: true,
+            summary,
+            results: this.results,
+            errors: this.errors.length > 0 ? this.errors : void 0
+          };
+        } catch (error) {
+          console.error("\u{1F6A8} Batch extraction failed:", error);
+          return {
+            success: false,
+            error: error.message,
+            partialResults: this.results.length > 0 ? this.results : void 0
+          };
+        }
+      }
+      // Process URLs using worker pool
+      async processUrlsInParallel(urls) {
+        return new Promise((resolve) => {
+          this.extractionQueue = [...urls];
+          const workers = [];
+          for (let i = 0; i < Math.min(this.maxWorkers, urls.length); i++) {
+            workers.push(this.startWorker(i + 1));
+          }
+          const checkCompletion = () => {
+            if (this.progress.completed + this.progress.failed >= this.progress.total) {
+              console.log("\u2705 All extractions completed");
+              resolve();
+            } else {
+              setTimeout(checkCompletion, 1e3);
+            }
+          };
+          checkCompletion();
+        });
+      }
+      // Individual worker process
+      async startWorker(workerId) {
+        console.log(`\u{1F527} Worker ${workerId} started`);
+        while (this.extractionQueue.length > 0) {
+          const url = this.extractionQueue.shift();
+          if (!url) break;
+          this.activeWorkers++;
+          this.progress.inProgress++;
+          console.log(`\u{1F477} Worker ${workerId} processing: ${url}`);
+          console.log(`\u{1F4CA} Progress: ${this.progress.completed}/${this.progress.total} completed, ${this.progress.inProgress} in progress`);
+          try {
+            const result = await this.extractSingleRecipe(url);
+            if (result.success) {
+              this.results.push({
+                url,
+                recipe: result.recipe,
+                metadata: result.metadata,
+                extractedAt: (/* @__PURE__ */ new Date()).toISOString(),
+                workerId
+              });
+              this.progress.completed++;
+              console.log(`\u2705 Worker ${workerId} completed: ${result.recipe.title}`);
+            } else {
+              this.errors.push({
+                url,
+                error: result.error || "Unknown extraction error",
+                workerId,
+                failedAt: (/* @__PURE__ */ new Date()).toISOString()
+              });
+              this.progress.failed++;
+              console.log(`\u274C Worker ${workerId} failed: ${url}`);
+            }
+          } catch (error) {
+            this.errors.push({
+              url,
+              error: error.message,
+              workerId,
+              failedAt: (/* @__PURE__ */ new Date()).toISOString()
+            });
+            this.progress.failed++;
+            console.log(`\u{1F6A8} Worker ${workerId} error: ${error.message}`);
+          }
+          this.activeWorkers--;
+          this.progress.inProgress--;
+          await new Promise((resolve) => setTimeout(resolve, 1e3 + Math.random() * 1e3));
+        }
+        console.log(`\u{1F3C1} Worker ${workerId} finished`);
+      }
+      // Use the existing extraction system for each recipe
+      async extractSingleRecipe(url) {
+        try {
+          const webScraper = new webScraper_default();
+          const gemini = new geminiVision_default();
+          const groq = new groqService_default();
+          const textProcessor = new textProcessor_default();
+          const scrapedData = await webScraper.scrapeRecipePage(url);
+          let extractedRecipe;
+          let mainImageUrl = "";
+          if (scrapedData.method === "json-ld") {
+            const imageUrls = scrapedData.imageUrls || [];
+            if (imageUrls.length > 0) {
+              const geminiResponse = await gemini.analyzeImages(imageUrls);
+              mainImageUrl = geminiResponse.mainImageUrl || imageUrls[0];
+            }
+            const jsonLdText = JSON.stringify(scrapedData.jsonLdRecipe);
+            extractedRecipe = await groq.extractStructuredRecipe(jsonLdText, mainImageUrl);
+          } else {
+            const imageUrls = scrapedData.imageUrls || [];
+            let geminiResponse = null;
+            if (imageUrls.length > 0) {
+              geminiResponse = await gemini.analyzeImages(imageUrls);
+              mainImageUrl = geminiResponse.mainImageUrl || imageUrls[0];
+            }
+            const combinedText = textProcessor.combineTexts(
+              scrapedData.textContent,
+              "",
+              geminiResponse?.extractedText || ""
+            );
+            const cleanedText = textProcessor.cleanText(combinedText);
+            extractedRecipe = await groq.extractStructuredRecipe(cleanedText, mainImageUrl);
+          }
+          return {
+            success: true,
+            recipe: extractedRecipe,
+            metadata: {
+              originalUrl: url,
+              extractionMethod: scrapedData.method,
+              extractedImages: scrapedData.imageUrls?.length || 0,
+              mainImageSelected: !!mainImageUrl,
+              textLength: scrapedData.method === "json-ld" ? JSON.stringify(scrapedData.jsonLdRecipe).length : scrapedData.textContent.length
+            }
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      }
+      // Generate extraction summary
+      generateSummary() {
+        const total = this.progress.total;
+        const completed = this.progress.completed;
+        const failed = this.progress.failed;
+        const successRate = total > 0 ? (completed / total * 100).toFixed(1) : 0;
+        return {
+          totalUrls: total,
+          successfulExtractions: completed,
+          failedExtractions: failed,
+          successRate: `${successRate}%`,
+          averageIngredients: this.calculateAverageIngredients(),
+          extractionMethods: this.countExtractionMethods(),
+          topFailureReasons: this.getTopFailureReasons()
+        };
+      }
+      calculateAverageIngredients() {
+        if (this.results.length === 0) return 0;
+        const totalIngredients = this.results.reduce((sum, result) => {
+          return sum + (result.recipe.ingredients?.length || 0);
+        }, 0);
+        return (totalIngredients / this.results.length).toFixed(1);
+      }
+      countExtractionMethods() {
+        const methods = {};
+        this.results.forEach((result) => {
+          const method = result.metadata.extractionMethod;
+          methods[method] = (methods[method] || 0) + 1;
+        });
+        return methods;
+      }
+      getTopFailureReasons() {
+        const reasons = {};
+        this.errors.forEach((error) => {
+          const reason = error.error;
+          reasons[reason] = (reasons[reason] || 0) + 1;
+        });
+        return Object.entries(reasons).sort(([, a], [, b]) => b - a).slice(0, 3).map(([reason, count]) => ({ reason, count }));
+      }
+      // Get current progress
+      getProgress() {
+        return {
+          ...this.progress,
+          successRate: this.progress.total > 0 ? (this.progress.completed / this.progress.total * 100).toFixed(1) + "%" : "0%"
+        };
+      }
+    };
+    batchExtractionService_default = BatchExtractionService;
+  }
+});
+
 // server/index.ts
-import express2 from "express";
+import express3 from "express";
 import session from "express-session";
-import dotenv from "dotenv";
+import cors from "cors";
+import dotenv5 from "dotenv";
+import path9 from "path";
+import { fileURLToPath as fileURLToPath5 } from "url";
 
 // server/routes.ts
 init_storage();
+import express from "express";
 import { createServer } from "http";
-import fetch5 from "node-fetch";
+import fetch6 from "node-fetch";
 
 // server/grok.ts
 import OpenAI from "openai";
@@ -11957,11 +15857,12 @@ function fallbackInstructionExtraction(text2) {
   return extractedSteps;
 }
 function extractMeasurements(ingredient) {
-  const measurementRegex = /(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\s*(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter)s?/gi;
+  const measurementRegex = /(\d+\/\d+|\d+\s+\d+\/\d+|\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\s*(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter|clove|slice|can|jar|package|container)s?/gi;
   const measurements = [];
   let match;
   while ((match = measurementRegex.exec(ingredient)) !== null) {
-    let quantity = match[1].toLowerCase();
+    let quantityStr = match[1].toLowerCase();
+    let numericQuantity;
     const wordToNumber = {
       "one": 1,
       "two": 2,
@@ -11976,7 +15877,22 @@ function extractMeasurements(ingredient) {
       "half": 0.5,
       "quarter": 0.25
     };
-    const numericQuantity = wordToNumber[quantity] !== void 0 ? wordToNumber[quantity] : parseFloat(quantity);
+    if (wordToNumber[quantityStr] !== void 0) {
+      numericQuantity = wordToNumber[quantityStr];
+    } else if (quantityStr.includes("/")) {
+      if (quantityStr.includes(" ")) {
+        const parts = quantityStr.split(" ");
+        const whole = parseFloat(parts[0]);
+        const fractionParts = parts[1].split("/");
+        const fraction = parseFloat(fractionParts[0]) / parseFloat(fractionParts[1]);
+        numericQuantity = whole + fraction;
+      } else {
+        const fractionParts = quantityStr.split("/");
+        numericQuantity = parseFloat(fractionParts[0]) / parseFloat(fractionParts[1]);
+      }
+    } else {
+      numericQuantity = parseFloat(quantityStr);
+    }
     let unit = match[2].toLowerCase();
     const unitMap = {
       "tablespoon": "tbsp",
@@ -11984,7 +15900,9 @@ function extractMeasurements(ingredient) {
       "ounce": "oz",
       "pound": "lb",
       "gram": "g",
-      "liter": "l"
+      "liter": "l",
+      "clove": "cloves",
+      "slice": "slices"
     };
     const normalizedUnit = unitMap[unit] || unit;
     measurements.push({
@@ -11992,11 +15910,21 @@ function extractMeasurements(ingredient) {
       unit: normalizedUnit
     });
   }
+  if (measurements.length === 0) {
+    const simpleQuantityMatch = ingredient.match(/^(\d+)\s+(large|medium|small)?\s*(.+)/i);
+    if (simpleQuantityMatch) {
+      measurements.push({
+        quantity: parseFloat(simpleQuantityMatch[1]),
+        unit: "pieces"
+      });
+    }
+  }
   return measurements;
 }
 async function getRecipeFromYouTube(query, filters) {
   try {
-    console.log(`Starting generalized recipe workflow for: "${query}"`);
+    console.log(`\u{1F3AC} [YOUTUBE] Starting generalized recipe workflow for: "${query}"`);
+    console.log(`\u{1F50D} [YOUTUBE] Filters:`, filters);
     let spoonacularRecipe = null;
     let cookingTimeMinutes = 30;
     try {
@@ -12015,10 +15943,30 @@ async function getRecipeFromYouTube(query, filters) {
       console.error("Failed to find a suitable recipe video");
       return null;
     }
-    console.log(`Found video: ${videoInfo.title} by ${videoInfo.channelTitle}`);
+    console.log(`\u2705 [YOUTUBE] Found video: ${videoInfo.title} by ${videoInfo.channelTitle}`);
+    console.log(`\u{1F517} [YOUTUBE] Video URL: https://www.youtube.com/watch?v=${videoInfo.id}`);
+    let transcript = "";
+    try {
+      console.log("\u{1F399}\uFE0F [YOUTUBE] Checking for transcript...");
+      const videoUrl = `https://www.youtube.com/watch?v=${videoInfo.id}`;
+      console.log("\u274C [YOUTUBE] Whisper transcription disabled");
+      transcript = videoInfo.description || "";
+      if (transcript && transcript.length > 50) {
+        console.log(`\u2705 [YOUTUBE] Got transcript (${transcript.length} chars)`);
+        console.log(`\u{1F4DD} [YOUTUBE] Transcript preview: ${transcript.substring(0, 150)}...`);
+      } else {
+        console.log("\u26A0\uFE0F [YOUTUBE] No transcript available");
+      }
+    } catch (error) {
+      console.error("\u274C [YOUTUBE] Error getting transcript:", error);
+      transcript = "";
+    }
+    console.log("\u{1F4AC} [YOUTUBE] Fetching video comments...");
     videoInfo.comments = await getVideoComments(videoInfo.id);
     let ingredients = [];
-    const descriptionIngredients = await extractIngredientsWithLLaVA(videoInfo.description);
+    console.log("\u{1F957} [YOUTUBE] Extracting ingredients...");
+    const textForIngredients = transcript || videoInfo.description;
+    const descriptionIngredients = await extractIngredientsWithLLaVA(textForIngredients);
     if (descriptionIngredients.length > 0) {
       console.log(`Found ${descriptionIngredients.length} ingredients in video description`);
       ingredients = descriptionIngredients.map(
@@ -12053,8 +16001,11 @@ async function getRecipeFromYouTube(query, filters) {
       console.log(`After deduplication: ${ingredients.length} ingredients`);
     }
     let instructions = [];
+    console.log("\u{1F4DD} [YOUTUBE] Extracting instructions...");
     try {
-      const aiInstructions = await extractInstructionsWithLLaVA("", videoInfo.description);
+      const textForInstructions = transcript || videoInfo.description;
+      console.log(`\u{1F50D} [YOUTUBE] Using ${transcript ? "transcript" : "description"} for instruction extraction`);
+      const aiInstructions = await extractInstructionsWithLLaVA(textForInstructions, videoInfo.description);
       if (aiInstructions.length > 0) {
         console.log(`LLaVA-Chef extracted ${aiInstructions.length} instruction steps`);
         instructions = aiInstructions;
@@ -12067,7 +16018,7 @@ async function getRecipeFromYouTube(query, filters) {
       instructions = fallbackInstructionExtraction(videoInfo.description);
     }
     if (ingredients.length === 0) {
-      console.log("No ingredients found in video description, generating from video title using Grok");
+      console.log("\u26A0\uFE0F [YOUTUBE] No ingredients found, generating from video title using Grok...");
       try {
         const grokIngredients = await generateIngredientsFromTitle(videoInfo.title);
         if (grokIngredients.length > 0) {
@@ -12083,17 +16034,53 @@ async function getRecipeFromYouTube(query, filters) {
       }
     }
     if (instructions.length === 0) {
-      console.log("Failed to extract instructions from video");
-      instructions = [];
+      console.log("\u26A0\uFE0F [YOUTUBE] No instructions extracted, attempting GPT-OSS-120B generation...");
+      console.log(`\u{1F4CA} [YOUTUBE] Available text sources:`);
+      console.log(`  - Transcript: ${transcript ? `${transcript.length} chars` : "NOT AVAILABLE"}`);
+      console.log(`  - Description: ${videoInfo.description ? `${videoInfo.description.length} chars` : "NOT AVAILABLE"}`);
+      try {
+        const { groqInstructionGenerator: groqInstructionGenerator2 } = await Promise.resolve().then(() => (init_groqInstructionGenerator(), groqInstructionGenerator_exports));
+        const textToUse = transcript || videoInfo.description || "";
+        if (textToUse.length > 50) {
+          console.log(`\u{1F916} [YOUTUBE] Using ${transcript ? "TRANSCRIPT" : "DESCRIPTION"} for GPT-OSS-120B generation`);
+          console.log(`\u{1F4DD} [YOUTUBE] Text preview: "${textToUse.substring(0, 200)}..."`);
+          instructions = await groqInstructionGenerator2.generateInstructionsFromTranscript(
+            textToUse,
+            videoInfo.title,
+            ingredients
+          );
+          if (instructions.length > 0) {
+            console.log(`\u2705 [YOUTUBE] GPT-OSS-120B successfully generated ${instructions.length} instructions`);
+            instructions.forEach((inst, idx) => {
+              console.log(`  ${idx + 1}. ${inst.substring(0, 80)}...`);
+            });
+          } else {
+            console.log(`\u274C [YOUTUBE] GPT-OSS-120B failed to generate instructions`);
+          }
+        } else {
+          console.log(`\u274C [YOUTUBE] Insufficient text for instruction generation (only ${textToUse.length} chars)`);
+        }
+      } catch (genError) {
+        console.error("\u274C [YOUTUBE] Error generating instructions with GPT-OSS-120B:", genError);
+      }
+      if (instructions.length === 0) {
+        console.log("\u26A0\uFE0F [YOUTUBE] No instructions generated, will be handled by validation pipeline");
+        instructions = [];
+      }
+    } else {
+      console.log(`\u2705 [YOUTUBE] Successfully extracted ${instructions.length} instructions`);
     }
     return {
       title: videoInfo.title,
       description: videoInfo.description,
-      ingredients: ingredients.map((ingredient) => ({
-        name: ingredient,
-        display_text: ingredient,
-        measurements: extractMeasurements(ingredient)
-      })),
+      ingredients: ingredients.map((ingredient) => {
+        const cleanName = ingredient.replace(/^\d+\/\d+|\d+\s+\d+\/\d+|\d+(?:\.\d+)?/g, "").replace(/\b(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter|clove|slice|can|jar|package|container)s?\b/gi, "").replace(/^\s*(of|large|medium|small)\s+/i, "").trim();
+        return {
+          name: cleanName || ingredient,
+          display_text: ingredient,
+          measurements: extractMeasurements(ingredient)
+        };
+      }),
       instructions,
       videoUrl: `https://www.youtube.com/watch?v=${videoInfo.id}`,
       thumbnailUrl: videoInfo.thumbnailUrl,
@@ -12102,7 +16089,9 @@ async function getRecipeFromYouTube(query, filters) {
       video_title: videoInfo.title,
       video_channel: videoInfo.channelTitle,
       source_url: `https://www.youtube.com/watch?v=${videoInfo.id}`,
-      source_name: videoInfo.channelTitle
+      source_name: videoInfo.channelTitle,
+      transcript: transcript || ""
+      // Store transcript for later use if needed
     };
     const formattedIngredients = ingredients.map((ingredient) => {
       let cleanedIngredient = ingredient.replace(/(\d+(?:\.\d+)?)\s*(cup|cups|tsp|tbsp|tablespoon|teaspoon|tablespoons|teaspoons)\s+\1\s*\2s?/gi, "$1 $2").replace(/(\d+(?:\.\d+)?)\s*(oz|ounce|ounces|pound|pounds|lb|lbs|g|gram|grams|ml|l|liter|liters)\s+\1\s*\2s?/gi, "$1 $2").replace(/(\b\w+)\s+\1\b/g, "$1").replace(/\s+/g, " ").trim();
@@ -12227,26 +16216,1514 @@ var rateLimiter = new RateLimiter();
 setInterval(() => rateLimiter.cleanup(), 60 * 60 * 1e3);
 
 // server/routes.ts
+init_logmealEndpoint();
+init_communityService();
+
+// server/communityCommentsService.ts
 init_schema();
+init_db();
+import { eq as eq3, asc, sql as sql4 } from "drizzle-orm";
+var CommunityCommentsService = class {
+  // Get all comments for a specific post
+  async getPostComments(postId) {
+    const comments = await db.select({
+      id: communityPostComments.id,
+      post_id: communityPostComments.post_id,
+      author_id: communityPostComments.author_id,
+      content: communityPostComments.content,
+      parent_id: communityPostComments.parent_id,
+      images: communityPostComments.images,
+      likes: communityPostComments.likes,
+      created_at: communityPostComments.created_at,
+      updated_at: communityPostComments.updated_at,
+      author: {
+        firstName: users.firstName,
+        lastName: users.lastName
+      }
+    }).from(communityPostComments).leftJoin(users, eq3(communityPostComments.author_id, users.id)).where(eq3(communityPostComments.post_id, postId)).orderBy(asc(communityPostComments.created_at));
+    return comments.map((comment) => ({
+      ...comment,
+      images: comment.images ? JSON.parse(comment.images) : []
+    }));
+  }
+  // Create a new comment
+  async createComment(commentData) {
+    const imagesString = commentData.images && commentData.images.length > 0 ? JSON.stringify(commentData.images) : null;
+    const [comment] = await db.insert(communityPostComments).values({
+      post_id: commentData.post_id,
+      author_id: commentData.author_id,
+      content: commentData.content,
+      parent_id: commentData.parent_id || null,
+      images: imagesString
+    }).returning();
+    await this.updatePostCommentsCount(commentData.post_id);
+    return {
+      ...comment,
+      images: comment.images ? JSON.parse(comment.images) : []
+    };
+  }
+  // Update comment content
+  async updateComment(commentId, userId, data) {
+    const imagesString = data.images && data.images.length > 0 ? JSON.stringify(data.images) : null;
+    const [comment] = await db.update(communityPostComments).set({
+      content: data.content,
+      images: imagesString,
+      updated_at: /* @__PURE__ */ new Date()
+    }).where(eq3(communityPostComments.id, commentId)).returning();
+    if (!comment) return null;
+    return {
+      ...comment,
+      images: comment.images ? JSON.parse(comment.images) : []
+    };
+  }
+  // Delete a comment
+  async deleteComment(commentId, userId) {
+    const [comment] = await db.select({ post_id: communityPostComments.post_id }).from(communityPostComments).where(eq3(communityPostComments.id, commentId));
+    if (!comment) return false;
+    const result = await db.delete(communityPostComments).where(eq3(communityPostComments.id, commentId));
+    if (result.rowCount && result.rowCount > 0) {
+      await this.updatePostCommentsCount(comment.post_id);
+      return true;
+    }
+    return false;
+  }
+  // Helper: Update comments count on a post
+  async updatePostCommentsCount(postId) {
+    const [{ count }] = await db.select({ count: sql4`count(*)` }).from(communityPostComments).where(eq3(communityPostComments.post_id, postId));
+    await db.update(communityPosts).set({ comments_count: count }).where(eq3(communityPosts.id, postId));
+  }
+  // Get nested comment structure (for threaded comments)
+  async getNestedComments(postId, userId) {
+    const { communityService: communityService2 } = await Promise.resolve().then(() => (init_communityService(), communityService_exports));
+    const allComments = await communityService2.getPostComments(postId, userId);
+    const commentMap = /* @__PURE__ */ new Map();
+    const rootComments = [];
+    allComments.forEach((comment) => {
+      commentMap.set(comment.id, { ...comment, children: [] });
+    });
+    allComments.forEach((comment) => {
+      const commentWithChildren = commentMap.get(comment.id);
+      if (comment.parent_id) {
+        const parent = commentMap.get(comment.parent_id);
+        if (parent) {
+          parent.children.push(commentWithChildren);
+        }
+      } else {
+        rootComments.push(commentWithChildren);
+      }
+    });
+    return rootComments;
+  }
+};
+var communityCommentsService = new CommunityCommentsService();
+
+// server/creatorService.ts
+init_db();
+init_schema();
+import { eq as eq4, and as and3, desc as desc4, sql as sql5, inArray as inArray2 } from "drizzle-orm";
+var CreatorService = class {
+  // Create or update creator profile
+  async upsertCreatorProfile(userId, data) {
+    const existing = await db.select().from(creatorProfiles).where(eq4(creatorProfiles.user_id, userId));
+    if (existing.length > 0) {
+      const [updated] = await db.update(creatorProfiles).set({
+        ...data,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq4(creatorProfiles.user_id, userId)).returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(creatorProfiles).values({
+        ...data,
+        user_id: userId
+      }).returning();
+      return created;
+    }
+  }
+  // Get creator profile with stats
+  async getCreatorProfile(creatorId, viewerId) {
+    const [profile] = await db.select().from(creatorProfiles).where(eq4(creatorProfiles.user_id, creatorId));
+    if (!profile) {
+      return null;
+    }
+    const [user] = await db.select().from(users).where(eq4(users.id, creatorId));
+    let isFollowing = false;
+    if (viewerId) {
+      const follow = await db.select().from(creatorFollowers).where(and3(
+        eq4(creatorFollowers.creator_id, creatorId),
+        eq4(creatorFollowers.follower_id, viewerId)
+      ));
+      isFollowing = follow.length > 0;
+    }
+    const recentPlans = await db.select().from(sharedMealPlans).where(eq4(sharedMealPlans.sharer_id, creatorId)).orderBy(desc4(sharedMealPlans.created_at)).limit(6);
+    const reviews = await db.select().from(mealPlanReviews).innerJoin(
+      sharedMealPlans,
+      eq4(mealPlanReviews.shared_plan_id, sharedMealPlans.id)
+    ).where(eq4(sharedMealPlans.sharer_id, creatorId));
+    let averageRating = 0;
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce((sum, r) => sum + r.meal_plan_reviews.rating, 0);
+      averageRating = Math.round(totalRating / reviews.length * 10) / 10;
+    }
+    return {
+      ...profile,
+      user: {
+        id: user.id,
+        name: user.full_name || user.firstName || "Creator",
+        email: user.email,
+        profileImageUrl: user.profileImageUrl
+      },
+      isFollowing,
+      recentPlans,
+      averageRating,
+      totalReviews: reviews.length
+    };
+  }
+  // Follow a creator
+  async followCreator(followerId, creatorId) {
+    const existing = await db.select().from(creatorFollowers).where(and3(
+      eq4(creatorFollowers.creator_id, creatorId),
+      eq4(creatorFollowers.follower_id, followerId)
+    ));
+    if (existing.length > 0) {
+      throw new Error("Already following this creator");
+    }
+    const [follower] = await db.insert(creatorFollowers).values({
+      creator_id: creatorId,
+      follower_id: followerId
+    }).returning();
+    await db.update(creatorProfiles).set({
+      follower_count: sql5`${creatorProfiles.follower_count} + 1`,
+      updated_at: /* @__PURE__ */ new Date()
+    }).where(eq4(creatorProfiles.user_id, creatorId));
+    return follower;
+  }
+  // Unfollow a creator
+  async unfollowCreator(followerId, creatorId) {
+    const result = await db.delete(creatorFollowers).where(and3(
+      eq4(creatorFollowers.creator_id, creatorId),
+      eq4(creatorFollowers.follower_id, followerId)
+    ));
+    if (result.rowCount === 0) {
+      throw new Error("Not following this creator");
+    }
+    await db.update(creatorProfiles).set({
+      follower_count: sql5`${creatorProfiles.follower_count} - 1`,
+      updated_at: /* @__PURE__ */ new Date()
+    }).where(eq4(creatorProfiles.user_id, creatorId));
+  }
+  // Get creators followed by a user
+  async getFollowedCreators(userId) {
+    const follows = await db.select().from(creatorFollowers).innerJoin(
+      creatorProfiles,
+      eq4(creatorFollowers.creator_id, creatorProfiles.user_id)
+    ).innerJoin(
+      users,
+      eq4(creatorProfiles.user_id, users.id)
+    ).where(eq4(creatorFollowers.follower_id, userId)).orderBy(desc4(creatorFollowers.followed_at));
+    return follows.map((f) => ({
+      profile: f.creator_profiles,
+      user: {
+        id: f.users.id,
+        name: f.users.full_name || f.users.firstName || "Creator",
+        email: f.users.email,
+        profileImageUrl: f.users.profileImageUrl
+      },
+      followedAt: f.creator_followers.followed_at
+    }));
+  }
+  // Get meal plans from followed creators
+  async getFollowedCreatorsMealPlans(userId, limit = 20) {
+    const follows = await db.select().from(creatorFollowers).where(eq4(creatorFollowers.follower_id, userId));
+    if (follows.length === 0) {
+      return [];
+    }
+    const creatorIds = follows.map((f) => f.creator_id);
+    const plans = await db.select().from(sharedMealPlans).innerJoin(users, eq4(sharedMealPlans.sharer_id, users.id)).where(inArray2(sharedMealPlans.sharer_id, creatorIds)).orderBy(desc4(sharedMealPlans.created_at)).limit(limit);
+    return plans.map((p) => ({
+      ...p.shared_meal_plans,
+      creator: {
+        id: p.users.id,
+        name: p.users.full_name || p.users.firstName || "Creator",
+        profileImageUrl: p.users.profileImageUrl
+      }
+    }));
+  }
+  // Get top creators by various metrics
+  async getTopCreators(metric = "followers", limit = 10) {
+    console.log(`\u{1F50D} [DEBUG] Getting top creators by ${metric}, limit: ${limit}`);
+    const allProfiles = await db.select().from(creatorProfiles);
+    console.log(`\u{1F4CA} [DEBUG] Total creator profiles in database: ${allProfiles.length}`);
+    if (allProfiles.length === 0) {
+      console.log(`\u26A0\uFE0F [DEBUG] No creator profiles found, returning empty array`);
+      return [];
+    }
+    let creators;
+    switch (metric) {
+      case "followers":
+        creators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id)).orderBy(desc4(creatorProfiles.follower_count)).limit(limit);
+        break;
+      case "plans":
+        creators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id)).orderBy(desc4(creatorProfiles.total_plans_shared)).limit(limit);
+        break;
+      case "rating":
+        creators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id)).orderBy(desc4(creatorProfiles.average_rating)).limit(limit);
+        break;
+      default:
+        creators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id)).orderBy(desc4(creatorProfiles.follower_count)).limit(limit);
+    }
+    console.log(`\u2705 [DEBUG] Found ${creators.length} creators for metric: ${metric}`);
+    return creators.map((c) => ({
+      profile: c.creator_profiles,
+      user: {
+        id: c.users.id,
+        name: c.users.full_name || c.users.firstName || "Creator",
+        email: c.users.email,
+        profileImageUrl: c.users.profileImageUrl
+      }
+    }));
+  }
+  // Update creator stats after sharing a meal plan
+  async updateCreatorStats(creatorId) {
+    const plans = await db.select().from(sharedMealPlans).where(eq4(sharedMealPlans.sharer_id, creatorId));
+    const reviews = await db.select().from(mealPlanReviews).innerJoin(
+      sharedMealPlans,
+      eq4(mealPlanReviews.shared_plan_id, sharedMealPlans.id)
+    ).where(eq4(sharedMealPlans.sharer_id, creatorId));
+    let averageRating = null;
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce((sum, r) => sum + r.meal_plan_reviews.rating, 0);
+      averageRating = Math.round(totalRating / reviews.length);
+    }
+    await db.update(creatorProfiles).set({
+      total_plans_shared: plans.length,
+      average_rating: averageRating,
+      updated_at: /* @__PURE__ */ new Date()
+    }).where(eq4(creatorProfiles.user_id, creatorId));
+  }
+  // Search creators by specialty
+  async searchCreators(query, specialties) {
+    const allCreators = await db.select().from(creatorProfiles).innerJoin(users, eq4(creatorProfiles.user_id, users.id));
+    let filtered = allCreators;
+    if (query) {
+      filtered = allCreators.filter((c) => {
+        const name = c.users.full_name || c.users.firstName || "";
+        const bio = c.creator_profiles.bio || "";
+        return name.toLowerCase().includes(query.toLowerCase()) || bio.toLowerCase().includes(query.toLowerCase());
+      });
+    }
+    if (specialties && specialties.length > 0) {
+      filtered = filtered.filter((c) => {
+        const creatorSpecialties = c.creator_profiles.specialties;
+        return specialties.some((s) => creatorSpecialties.includes(s));
+      });
+    }
+    return filtered.map((c) => ({
+      profile: c.creator_profiles,
+      user: {
+        id: c.users.id,
+        name: c.users.full_name || c.users.firstName || "Creator",
+        email: c.users.email,
+        profileImageUrl: c.users.profileImageUrl
+      }
+    }));
+  }
+};
+var creatorService = new CreatorService();
+
+// server/mealPlanSharingService.ts
+init_db();
+init_schema();
+import { eq as eq5, and as and4, desc as desc5, sql as sql6, gte as gte3 } from "drizzle-orm";
+var MealPlanSharingService = class {
+  // Prepare a meal plan for sharing (remove personal data, calculate metrics)
+  async prepareMealPlanForSharing(mealPlanId, userId) {
+    const [plan] = await db.select().from(mealPlans).where(and4(
+      eq5(mealPlans.id, mealPlanId),
+      eq5(mealPlans.userId, userId)
+    ));
+    if (!plan) {
+      throw new Error("Meal plan not found or you don't have permission");
+    }
+    const mealPlanData = plan.mealPlan;
+    let totalCost = 0;
+    let totalPrepTime = 0;
+    let totalDifficulty = 0;
+    let totalCalories = 0;
+    let recipeCount = 0;
+    const previewImages = [];
+    const tags = /* @__PURE__ */ new Set();
+    for (const dayKey in mealPlanData) {
+      const day = mealPlanData[dayKey];
+      if (day && typeof day === "object") {
+        for (const mealType in day) {
+          const meal = day[mealType];
+          if (meal && typeof meal === "object") {
+            recipeCount++;
+            if (meal.estimatedCost) totalCost += parseFloat(meal.estimatedCost);
+            if (meal.cookingTime) totalPrepTime += parseInt(meal.cookingTime);
+            if (meal.difficulty) totalDifficulty += meal.difficulty;
+            if (meal.nutritionInfo?.calories) totalCalories += meal.nutritionInfo.calories;
+            if (meal.imageUrl && previewImages.length < 3) {
+              previewImages.push(meal.imageUrl);
+            }
+            if (meal.cuisine) tags.add(meal.cuisine.toLowerCase());
+            if (meal.dietType) tags.add(meal.dietType.toLowerCase());
+            if (totalPrepTime <= 30) tags.add("quick");
+            if (totalCost / recipeCount < 5) tags.add("budget-friendly");
+          }
+        }
+      }
+    }
+    const avgServings = 4;
+    const metrics = {
+      cost_per_serving: recipeCount > 0 ? Math.round(totalCost / recipeCount / avgServings * 100) / 100 : 0,
+      total_prep_time: totalPrepTime,
+      average_difficulty: recipeCount > 0 ? Math.round(totalDifficulty / recipeCount) : 1,
+      nutrition_score: this.calculateNutritionScore(totalCalories / recipeCount),
+      total_calories: Math.round(totalCalories),
+      total_recipes: recipeCount
+    };
+    if (metrics.cost_per_serving < 3) tags.add("ultra-budget");
+    if (metrics.average_difficulty <= 2) tags.add("beginner-friendly");
+    if (metrics.nutrition_score >= 80) tags.add("nutritious");
+    const sanitizedMealPlan = this.sanitizeMealPlan(mealPlanData);
+    return {
+      mealPlan: sanitizedMealPlan,
+      metrics,
+      preview_images: previewImages,
+      tags: Array.from(tags)
+    };
+  }
+  // Share a meal plan to a community
+  async shareMealPlan(userId, communityId, mealPlanId, title, description) {
+    const prepared = await this.prepareMealPlanForSharing(mealPlanId, userId);
+    const [shared] = await db.insert(sharedMealPlans).values({
+      community_id: communityId,
+      meal_plan_id: mealPlanId,
+      sharer_id: userId,
+      title,
+      description,
+      tags: prepared.tags,
+      preview_images: prepared.preview_images,
+      metrics: prepared.metrics,
+      likes: 0,
+      tries: 0,
+      success_rate: null,
+      is_featured: false
+    }).returning();
+    return shared;
+  }
+  // Remix a shared meal plan
+  async remixMealPlan(userId, originalPlanId, remixedMealPlanId, changes, communityId) {
+    const [original] = await db.select().from(sharedMealPlans).where(eq5(sharedMealPlans.id, originalPlanId));
+    if (!original) {
+      throw new Error("Original shared plan not found");
+    }
+    const [remix] = await db.insert(mealPlanRemixes).values({
+      original_plan_id: originalPlanId,
+      remixer_id: userId,
+      remixed_plan_id: remixedMealPlanId,
+      community_id: communityId,
+      changes_made: changes
+    }).returning();
+    return remix;
+  }
+  // Get personalized meal plan recommendations
+  async getRecommendedMealPlans(userId, limit = 10) {
+    const [profile] = await db.select().from(profiles).where(eq5(profiles.user_id, userId));
+    if (!profile) {
+      return this.getTrendingMealPlans(limit);
+    }
+    const allPlans = await db.select().from(sharedMealPlans).orderBy(desc5(sharedMealPlans.created_at)).limit(limit * 3);
+    const scoredPlans = allPlans.map((plan) => {
+      let score = 0;
+      const cultural = profile.cultural_background || [];
+      const planTags = plan.tags || [];
+      const culturalMatch = cultural.some((c) => planTags.includes(c.toLowerCase()));
+      if (culturalMatch) score += 30;
+      const goals = profile.goals || [];
+      if (goals.includes("Save Money") && planTags.includes("budget-friendly")) score += 20;
+      if (goals.includes("Eat Healthier") && planTags.includes("nutritious")) score += 20;
+      if (goals.includes("Save Time") && planTags.includes("quick")) score += 20;
+      if (plan.success_rate && plan.success_rate > 80) score += 15;
+      score += Math.min(plan.tries || 0, 20);
+      return { ...plan, score };
+    });
+    scoredPlans.sort((a, b) => b.score - a.score);
+    return scoredPlans.slice(0, limit);
+  }
+  // Get trending meal plans
+  async getTrendingMealPlans(limit = 10) {
+    const threeDaysAgo = /* @__PURE__ */ new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const trending = await db.select().from(sharedMealPlans).where(gte3(sharedMealPlans.created_at, threeDaysAgo)).orderBy(
+      desc5(sql6`${sharedMealPlans.likes} * 2 + ${sharedMealPlans.tries} * 3`)
+    ).limit(limit);
+    return trending;
+  }
+  // Like a meal plan
+  async likeMealPlan(sharedPlanId) {
+    await db.update(sharedMealPlans).set({
+      likes: sql6`${sharedMealPlans.likes} + 1`
+    }).where(eq5(sharedMealPlans.id, sharedPlanId));
+  }
+  // Get meal plan with creator info
+  async getMealPlanWithCreator(sharedPlanId) {
+    const [plan] = await db.select().from(sharedMealPlans).innerJoin(users, eq5(sharedMealPlans.sharer_id, users.id)).where(eq5(sharedMealPlans.id, sharedPlanId));
+    if (!plan) return null;
+    return {
+      ...plan.shared_meal_plans,
+      creator: {
+        id: plan.users.id,
+        name: plan.users.full_name || plan.users.firstName || "Creator",
+        email: plan.users.email,
+        profileImageUrl: plan.users.profileImageUrl
+      }
+    };
+  }
+  // Search meal plans
+  async searchMealPlans(query, filters) {
+    let plans = await db.select().from(sharedMealPlans).orderBy(desc5(sharedMealPlans.created_at));
+    if (query) {
+      plans = plans.filter(
+        (p) => p.title.toLowerCase().includes(query.toLowerCase()) || p.description && p.description.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+    if (filters) {
+      if (filters.tags && filters.tags.length > 0) {
+        plans = plans.filter((p) => {
+          const planTags = p.tags;
+          return filters.tags.some((tag) => planTags.includes(tag));
+        });
+      }
+      if (filters.maxCost) {
+        plans = plans.filter((p) => {
+          const metrics = p.metrics;
+          return metrics?.cost_per_serving <= filters.maxCost;
+        });
+      }
+      if (filters.maxTime) {
+        plans = plans.filter((p) => {
+          const metrics = p.metrics;
+          return metrics?.total_prep_time <= filters.maxTime;
+        });
+      }
+      if (filters.minRating) {
+        plans = plans.filter(
+          (p) => p.success_rate && p.success_rate >= filters.minRating * 20
+        );
+      }
+    }
+    return plans;
+  }
+  // Get meal plans by creator
+  async getCreatorMealPlans(creatorId, limit = 20) {
+    const plans = await db.select().from(sharedMealPlans).where(eq5(sharedMealPlans.sharer_id, creatorId)).orderBy(desc5(sharedMealPlans.created_at)).limit(limit);
+    return plans;
+  }
+  // Private helper methods
+  calculateNutritionScore(avgCalories) {
+    if (avgCalories >= 400 && avgCalories <= 700) return 100;
+    if (avgCalories >= 350 && avgCalories <= 800) return 80;
+    if (avgCalories >= 300 && avgCalories <= 900) return 60;
+    return 40;
+  }
+  sanitizeMealPlan(mealPlan) {
+    const sanitized = { ...mealPlan };
+    for (const dayKey in sanitized) {
+      const day = sanitized[dayKey];
+      if (day && typeof day === "object") {
+        for (const mealType in day) {
+          const meal = day[mealType];
+          if (meal && typeof meal === "object") {
+            delete meal.personalNotes;
+            delete meal.userRating;
+            delete meal.customModifications;
+          }
+        }
+      }
+    }
+    return sanitized;
+  }
+};
+var mealPlanSharingService = new MealPlanSharingService();
+
+// server/groqValidator.ts
+import Groq2 from "groq-sdk";
+import dotenv2 from "dotenv";
+import path2 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
+var __filename2 = fileURLToPath2(import.meta.url);
+var __dirname3 = path2.dirname(__filename2);
+dotenv2.config({ path: path2.join(__dirname3, "..", ".env") });
+var GroqRecipeValidator = class {
+  client = null;
+  constructor() {
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (groqApiKey) {
+      console.log("\u{1F680} [GROQ VALIDATOR] Initializing with API key:", groqApiKey.substring(0, 10) + "...");
+      console.log("\u2705 [GROQ VALIDATOR] API key loaded successfully");
+      this.client = new Groq2({
+        apiKey: groqApiKey
+      });
+    } else {
+      console.error("\u274C [GROQ VALIDATOR] GROQ_API_KEY not found, using fallback validation");
+    }
+  }
+  async validateInstructions(instructions) {
+    let instructionText;
+    if (Array.isArray(instructions)) {
+      if (instructions.length === 0) {
+        console.log("\u274C [GROQ VALIDATOR] Empty instructions array, returning false");
+        return false;
+      }
+      instructionText = instructions.join(" ");
+      console.log("\u{1F50D} [GROQ VALIDATOR] Instructions provided as array with", instructions.length, "items, joined to string");
+    } else if (typeof instructions === "string") {
+      instructionText = instructions;
+    } else {
+      console.log("\u274C [GROQ VALIDATOR] Instructions missing or invalid type");
+      return false;
+    }
+    console.log("\u{1F50D} [GROQ VALIDATOR] Starting validation for instructions:", instructionText?.substring(0, 100) + "...");
+    if (!instructionText || instructionText.length < 30) {
+      console.log("\u274C [GROQ VALIDATOR] Instructions too short or missing, returning false");
+      return false;
+    }
+    if (!this.client) {
+      console.log("\u26A0\uFE0F [GROQ VALIDATOR] No Groq client, using fallback validation");
+      return this.fallbackValidation(instructionText);
+    }
+    try {
+      console.log("\u{1F4E1} [GROQ VALIDATOR] Calling validation model via Groq API...");
+      const startTime = Date.now();
+      const completion = await this.client.chat.completions.create({
+        model: "openai/gpt-oss-20b",
+        // Using GPT-OSS-20B for fast validation
+        messages: [{
+          role: "user",
+          content: `Reply with only VALID or INVALID. Are these clear cooking instructions? ${instructionText.substring(0, 500)}`
+        }],
+        temperature: 0,
+        max_tokens: 10
+      });
+      let response = completion.choices[0]?.message?.content?.trim() || "";
+      const reasoning = completion.choices[0]?.message?.reasoning || "";
+      if (!response && reasoning) {
+        console.log(`\u{1F4DD} [GROQ VALIDATOR] Extracting from reasoning: "${reasoning.substring(0, 100)}"`);
+        response = this.fallbackValidation(instructionText) ? "VALID" : "INVALID";
+        console.log(`\u{1F4DD} [GROQ VALIDATOR] Using fallback result: ${response}`);
+      }
+      const timeTaken = Date.now() - startTime;
+      console.log(`\u2705 [GROQ VALIDATOR] Validation response: "${response}" (took ${timeTaken}ms)`);
+      const isValid = response.includes("VALID") && !response.includes("INVALID");
+      console.log(`\u{1F4CA} [GROQ VALIDATOR] Validation result: ${isValid ? "VALID \u2713" : "INVALID \u2717"}`);
+      return isValid;
+    } catch (error) {
+      console.error("\u{1F525} [GROQ VALIDATOR] Groq API error:", error);
+      console.log("\u26A0\uFE0F [GROQ VALIDATOR] Falling back to local validation due to error");
+      return this.fallbackValidation(instructionText);
+    }
+  }
+  fallbackValidation(instructions) {
+    console.log("\u{1F527} [GROQ VALIDATOR] Running fallback validation...");
+    const hasMinLength = instructions.length > 50;
+    const hasCookingVerbs = /cook|bake|mix|heat|boil|fry|stir|add|pour|slice|chop/i.test(instructions);
+    const hasSteps = /\d+\.|step|first|then|next|finally/i.test(instructions);
+    console.log(`  - Has minimum length (>50 chars): ${hasMinLength}`);
+    console.log(`  - Has cooking verbs: ${hasCookingVerbs}`);
+    console.log(`  - Has step indicators: ${hasSteps}`);
+    const isValid = hasMinLength && hasCookingVerbs && hasSteps;
+    console.log(`\u{1F527} [GROQ VALIDATOR] Fallback result: ${isValid ? "VALID \u2713" : "INVALID \u2717"}`);
+    return isValid;
+  }
+  // Batch validation for multiple recipes
+  async validateBatch(recipes2) {
+    console.log(`\u{1F4E6} [GROQ VALIDATOR] Starting batch validation for ${recipes2.length} recipes`);
+    const validationPromises = recipes2.map(async (recipe, index2) => {
+      console.log(`  \u{1F373} Validating recipe ${index2 + 1}/${recipes2.length}: ${recipe.title || "Unknown"}`);
+      const isValid = await this.validateInstructions(recipe.instructions);
+      if (!isValid) {
+        console.log(`  \u274C Recipe "${recipe.title}" has invalid instructions, replacing with "No instructions available"`);
+        recipe.instructions = "No instructions available";
+      } else {
+        console.log(`  \u2705 Recipe "${recipe.title}" has valid instructions`);
+      }
+      return recipe;
+    });
+    const results = await Promise.all(validationPromises);
+    console.log(`\u{1F4E6} [GROQ VALIDATOR] Batch validation complete`);
+    return results;
+  }
+};
+var groqValidator = new GroqRecipeValidator();
+
+// server/groqIngredientParser.ts
+import Groq3 from "groq-sdk";
+import dotenv3 from "dotenv";
+import path3 from "path";
+import { fileURLToPath as fileURLToPath3 } from "url";
+var __filename3 = fileURLToPath3(import.meta.url);
+var __dirname4 = path3.dirname(__filename3);
+dotenv3.config({ path: path3.join(__dirname4, "..", ".env") });
+var GroqIngredientParser = class {
+  client = null;
+  constructor() {
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (groqApiKey) {
+      console.log("\u{1F680} [GROQ INGREDIENT PARSER] Initializing with GPT-OSS-20B");
+      console.log("\u2705 [GROQ INGREDIENT PARSER] API key loaded successfully");
+      this.client = new Groq3({
+        apiKey: groqApiKey
+      });
+    } else {
+      console.error("\u274C [GROQ INGREDIENT PARSER] GROQ_API_KEY not found in environment");
+      console.error("\u274C [GROQ INGREDIENT PARSER] Please add GROQ_API_KEY to Replit Secrets");
+    }
+  }
+  async parseIngredients(ingredients) {
+    console.log("\u{1F3AF} [GROQ INGREDIENT PARSER] Parsing", ingredients.length, "ingredients");
+    if (!this.client) {
+      console.log("\u274C [GROQ INGREDIENT PARSER] No Groq client available");
+      return [];
+    }
+    try {
+      console.log("\u{1F4E1} [GROQ INGREDIENT PARSER] Calling GPT-OSS-20B...");
+      const startTime = Date.now();
+      const prompt = `Parse these cooking ingredients into structured data. For each ingredient, extract:
+1. The clean ingredient name (lowercase, no amounts)
+2. The amount with unit
+3. The numeric quantity
+4. The unit of measurement
+
+Ingredients to parse:
+${ingredients.map((ing, i) => `${i + 1}. ${ing}`).join("\n")}
+
+Return a JSON array with this EXACT structure for each ingredient:
+[
+  {
+    "ingredient": "sugar",
+    "amount": "\xBD teaspoon",
+    "quantity": 0.5,
+    "unit": "teaspoon",
+    "originalText": "\xBD teaspoon sugar"
+  }
+]
+
+Rules:
+- Convert fractions to decimal numbers (\xBD = 0.5, \xBC = 0.25, \u215B = 0.125, \u2153 = 0.333, \u2154 = 0.667)
+- For items without units (like "4 eggs"), use "pieces" as unit
+- Keep the "amount" field exactly as written (with fractions if present)
+- Clean ingredient names should be lowercase and singular
+- Remove descriptors like "large", "fresh", "chopped" from ingredient name but keep in originalText
+
+Parse ALL ingredients and return ONLY the JSON array, no other text.`;
+      const completion = await this.client.chat.completions.create({
+        model: "openai/gpt-oss-20b",
+        messages: [{
+          role: "user",
+          content: prompt
+        }],
+        temperature: 0.1,
+        // Low temperature for consistent parsing
+        max_tokens: 2e3,
+        reasoning_effort: "medium"
+      });
+      const response = completion.choices[0]?.message?.content || "";
+      const timeTaken = Date.now() - startTime;
+      console.log(`\u2705 [GROQ INGREDIENT PARSER] Parsed in ${timeTaken}ms`);
+      let parsed;
+      try {
+        const jsonMatch = response.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("No JSON array found in response");
+        }
+      } catch (parseError) {
+        console.error("\u274C [GROQ INGREDIENT PARSER] Failed to parse JSON response:", parseError);
+        console.log("Raw response:", response.substring(0, 500));
+        try {
+          const objectMatches = response.match(/\{[^{}]*\}/g);
+          if (objectMatches) {
+            const fallbackParsed = objectMatches.map((match) => JSON.parse(match));
+            console.log("\u2705 [GROQ INGREDIENT PARSER] Recovered using fallback parsing");
+            return fallbackParsed;
+          }
+        } catch (fallbackError) {
+          console.log("\u274C [GROQ INGREDIENT PARSER] Fallback parsing also failed");
+        }
+        console.log("\u{1F527} [GROQ INGREDIENT PARSER] Using basic ingredient fallback");
+        return ingredients.map((ing, i) => ({
+          ingredient: ing.toLowerCase().replace(/^[\d\s\/]+/, "").trim().split(" ").pop() || "ingredient",
+          amount: ing.match(/^[\d\s\/¼½¾⅓⅔⅛⅜⅝⅞\w]*/) ? (ing.match(/^[\d\s\/¼½¾⅓⅔⅛⅜⅝⅞\w]*/) || ["1"])[0].trim() : "1",
+          quantity: 1,
+          unit: "piece",
+          originalText: ing
+        }));
+      }
+      const validated = parsed.filter((item, index2) => {
+        if (!item.ingredient || !item.amount) {
+          console.warn(`\u26A0\uFE0F [GROQ INGREDIENT PARSER] Skipping invalid item at index ${index2}`);
+          return false;
+        }
+        if (!item.originalText) {
+          item.originalText = ingredients[index2];
+        }
+        return true;
+      });
+      console.log(`\u2705 [GROQ INGREDIENT PARSER] Successfully parsed ${validated.length} ingredients`);
+      return validated;
+    } catch (error) {
+      console.error("\u{1F525} [GROQ INGREDIENT PARSER] Error parsing ingredients:", error);
+      return [];
+    }
+  }
+  // Format parsed ingredients as a table for display
+  formatAsTable(parsedIngredients) {
+    const lines = ["Ingredient | Amount"];
+    lines.push("-----------|-------");
+    parsedIngredients.forEach((item) => {
+      lines.push(`${item.ingredient} | ${item.amount}`);
+    });
+    return lines.join("\n");
+  }
+};
+var groqIngredientParser = new GroqIngredientParser();
+
+// server/usdaNutritionService.ts
+import fetch4 from "node-fetch";
+import dotenv4 from "dotenv";
+import path4 from "path";
+import { fileURLToPath as fileURLToPath4 } from "url";
+var __filename4 = fileURLToPath4(import.meta.url);
+var __dirname5 = path4.dirname(__filename4);
+dotenv4.config({ path: path4.join(__dirname5, "..", ".env") });
+var USDANutritionService = class {
+  apiKey;
+  baseUrl = "https://api.nal.usda.gov/fdc/v1";
+  cache = /* @__PURE__ */ new Map();
+  cacheExpiry = 7 * 24 * 60 * 60 * 1e3;
+  // 7 days
+  // USDA Nutrient IDs for common nutrients
+  nutrientIds = {
+    calories: 1008,
+    // Energy (kcal)
+    protein: 1003,
+    // Protein (g)
+    carbs: 1005,
+    // Carbohydrate, by difference (g)
+    fat: 1004,
+    // Total lipid (fat) (g)
+    fiber: 1079,
+    // Fiber, total dietary (g)
+    sugar: 2e3,
+    // Sugars, total including NLEA (g)
+    sodium: 1093,
+    // Sodium, Na (mg)
+    cholesterol: 1253,
+    // Cholesterol (mg)
+    saturatedFat: 1258,
+    // Fatty acids, total saturated (g)
+    transFat: 1257,
+    // Fatty acids, total trans (g)
+    vitaminA: 1106,
+    // Vitamin A, RAE (µg)
+    vitaminC: 1162,
+    // Vitamin C, total ascorbic acid (mg)
+    calcium: 1087,
+    // Calcium, Ca (mg)
+    iron: 1089
+    // Iron, Fe (mg)
+  };
+  constructor() {
+    this.apiKey = process.env.USDA_API_KEY;
+    if (!this.apiKey) {
+      console.log("\u26A0\uFE0F [USDA NUTRITION] No API key found. Set USDA_API_KEY in .env");
+    } else {
+      console.log("\u2705 [USDA NUTRITION] Service initialized with API key");
+    }
+  }
+  async searchFood(query) {
+    if (!this.apiKey) {
+      console.log("\u26A0\uFE0F [USDA NUTRITION] Cannot search without API key");
+      return null;
+    }
+    try {
+      console.log(`\u{1F50D} [USDA NUTRITION] Searching for: ${query}`);
+      const searchUrl = `${this.baseUrl}/foods/search?query=${encodeURIComponent(query)}&api_key=${this.apiKey}&pageSize=5`;
+      const searchResponse = await fetch4(searchUrl);
+      if (!searchResponse.ok) {
+        throw new Error(`USDA API error: ${searchResponse.status}`);
+      }
+      const searchData = await searchResponse.json();
+      if (!searchData.foods || searchData.foods.length === 0) {
+        console.log(`\u274C [USDA NUTRITION] No results found for: ${query}`);
+        return null;
+      }
+      const food = searchData.foods[0];
+      console.log(`\u2705 [USDA NUTRITION] Found: ${food.description} (ID: ${food.fdcId})`);
+      const detailUrl = `${this.baseUrl}/food/${food.fdcId}?api_key=${this.apiKey}`;
+      const detailResponse = await fetch4(detailUrl);
+      if (!detailResponse.ok) {
+        throw new Error(`USDA API detail error: ${detailResponse.status}`);
+      }
+      const detailData = await detailResponse.json();
+      console.log(`\u{1F4CB} [USDA NUTRITION] Food type: ${detailData.dataType}`);
+      console.log(`\u{1F4CB} [USDA NUTRITION] Nutrients count: ${detailData.foodNutrients?.length || 0}`);
+      if (detailData.foodNutrients && detailData.foodNutrients.length > 0) {
+        console.log(`\u{1F4CB} [USDA NUTRITION] Sample nutrients:`);
+        detailData.foodNutrients.slice(0, 5).forEach((n) => {
+          const name = n.nutrientName || n.nutrient?.name || n.name || "Unknown";
+          const value = n.amount || n.value || 0;
+          const unit = n.unitName || n.nutrient?.unitName || n.unit || "";
+          console.log(`   - ${name}: ${value} ${unit}`);
+        });
+      }
+      return {
+        fdcId: detailData.fdcId,
+        description: detailData.description,
+        dataType: detailData.dataType,
+        brandName: detailData.brandName,
+        foodNutrients: detailData.foodNutrients || []
+      };
+    } catch (error) {
+      console.error("\u{1F525} [USDA NUTRITION] Error searching food:", error);
+      return null;
+    }
+  }
+  async getNutritionData(ingredientName, quantity = 100, unit = "g") {
+    const cacheKey = `${ingredientName}_${quantity}_${unit}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
+      console.log(`\u{1F4E6} [USDA NUTRITION] Using cached data for: ${ingredientName}`);
+      return cached.data;
+    }
+    const foodItem = await this.searchFood(ingredientName);
+    if (!foodItem) {
+      console.log(`\u274C [USDA NUTRITION] No data found for: ${ingredientName}`);
+      return null;
+    }
+    const nutrition = this.extractNutritionFromFood(foodItem, quantity, unit);
+    this.cache.set(cacheKey, {
+      data: nutrition,
+      timestamp: Date.now()
+    });
+    return nutrition;
+  }
+  extractNutritionFromFood(food, quantity, unit) {
+    const nutrients = food.foodNutrients;
+    const multiplier = this.getMultiplier(quantity, unit);
+    const getNutrientValue = (nutrientId, namePatterns) => {
+      const nutrient = nutrients.find((n) => {
+        if (n.nutrientId === nutrientId) return true;
+        if (n.nutrient?.id === nutrientId) return true;
+        if (n.nutrient?.nutrientId === nutrientId) return true;
+        if (namePatterns) {
+          const name = (n.nutrientName || n.nutrient?.name || n.nutrient?.nutrientName || n.name || "").toLowerCase();
+          return namePatterns.some((pattern) => name.includes(pattern));
+        }
+        return false;
+      });
+      if (nutrient) {
+        let value = 0;
+        if (typeof nutrient.value === "number") value = nutrient.value;
+        else if (typeof nutrient.amount === "number") value = nutrient.amount;
+        else if (typeof nutrient.nutrient?.value === "number") value = nutrient.nutrient.value;
+        else if (typeof nutrient.nutrient?.amount === "number") value = nutrient.nutrient.amount;
+        const unitName = nutrient.unitName || nutrient.nutrient?.unitName || nutrient.unit || "";
+        const nutrientName = nutrient.nutrientName || nutrient.nutrient?.name || nutrient.nutrient?.nutrientName || nutrient.name || "Unknown";
+        if (value > 0) {
+          console.log(`   Found: ${nutrientName} = ${value} ${unitName}`);
+        }
+        return value * multiplier;
+      }
+      return 0;
+    };
+    return {
+      calories: Math.round(getNutrientValue(this.nutrientIds.calories, ["energy", "calorie"])),
+      protein: Math.round(getNutrientValue(this.nutrientIds.protein, ["protein"]) * 10) / 10,
+      carbs: Math.round(getNutrientValue(this.nutrientIds.carbs, ["carbohydrate"]) * 10) / 10,
+      fat: Math.round(getNutrientValue(this.nutrientIds.fat, ["total lipid", "fat"]) * 10) / 10,
+      fiber: Math.round(getNutrientValue(this.nutrientIds.fiber, ["fiber", "dietary fiber"]) * 10) / 10,
+      sugar: Math.round(getNutrientValue(this.nutrientIds.sugar, ["sugar", "total sugar"]) * 10) / 10,
+      sodium: Math.round(getNutrientValue(this.nutrientIds.sodium, ["sodium"])),
+      cholesterol: Math.round(getNutrientValue(this.nutrientIds.cholesterol, ["cholesterol"])),
+      saturatedFat: Math.round(getNutrientValue(this.nutrientIds.saturatedFat, ["saturated"]) * 10) / 10,
+      transFat: Math.round(getNutrientValue(this.nutrientIds.transFat, ["trans"]) * 10) / 10,
+      vitaminA: Math.round(getNutrientValue(this.nutrientIds.vitaminA, ["vitamin a"])),
+      vitaminC: Math.round(getNutrientValue(this.nutrientIds.vitaminC, ["vitamin c", "ascorbic acid"]) * 10) / 10,
+      calcium: Math.round(getNutrientValue(this.nutrientIds.calcium, ["calcium"])),
+      iron: Math.round(getNutrientValue(this.nutrientIds.iron, ["iron"]) * 10) / 10
+    };
+  }
+  getMultiplier(quantity, unit) {
+    const conversions = {
+      "g": quantity / 100,
+      "gram": quantity / 100,
+      "grams": quantity / 100,
+      "kg": quantity * 1e3 / 100,
+      "kilogram": quantity * 1e3 / 100,
+      "oz": quantity * 28.35 / 100,
+      "ounce": quantity * 28.35 / 100,
+      "lb": quantity * 453.592 / 100,
+      "pound": quantity * 453.592 / 100,
+      "cup": quantity * 240 / 100,
+      // Approximate for liquids
+      "cups": quantity * 240 / 100,
+      "tablespoon": quantity * 15 / 100,
+      "tablespoons": quantity * 15 / 100,
+      "tbsp": quantity * 15 / 100,
+      "teaspoon": quantity * 5 / 100,
+      "teaspoons": quantity * 5 / 100,
+      "tsp": quantity * 5 / 100,
+      "ml": quantity / 100,
+      // Assuming water density
+      "milliliter": quantity / 100,
+      "l": quantity * 1e3 / 100,
+      "liter": quantity * 1e3 / 100,
+      "piece": quantity,
+      // Varies greatly, use estimated values
+      "pieces": quantity,
+      "item": quantity,
+      "items": quantity,
+      "serving": quantity,
+      "servings": quantity
+    };
+    const unitLower = unit.toLowerCase();
+    return conversions[unitLower] || quantity / 100;
+  }
+  // Clear the cache
+  clearCache() {
+    this.cache.clear();
+    console.log("\u{1F9F9} [USDA NUTRITION] Cache cleared");
+  }
+};
+var usdaNutritionService = new USDANutritionService();
+
+// server/recipeNutritionCalculator.ts
+var RecipeNutritionCalculator = class {
+  constructor() {
+    console.log("\u{1F34E} [RECIPE NUTRITION] Calculator initialized");
+  }
+  /**
+   * Calculate nutrition for a recipe given its ingredients
+   */
+  async calculateRecipeNutrition(ingredients, servings = 4) {
+    console.log(`\u{1F4CA} [RECIPE NUTRITION] Calculating nutrition for ${ingredients.length} ingredients`);
+    console.log(`\u{1F37D}\uFE0F [RECIPE NUTRITION] Recipe serves: ${servings}`);
+    try {
+      const parsedIngredients = await groqIngredientParser.parseIngredients(ingredients);
+      if (!parsedIngredients || parsedIngredients.length === 0) {
+        console.error("\u274C [RECIPE NUTRITION] Failed to parse ingredients");
+        return null;
+      }
+      console.log(`\u2705 [RECIPE NUTRITION] Parsed ${parsedIngredients.length} ingredients`);
+      const ingredientBreakdown = [];
+      for (const parsed of parsedIngredients) {
+        console.log(`\u{1F50D} [RECIPE NUTRITION] Getting nutrition for: ${parsed.ingredient} (${parsed.amount})`);
+        const nutrition = await usdaNutritionService.getNutritionData(
+          parsed.ingredient,
+          parsed.quantity,
+          parsed.unit
+        );
+        if (nutrition) {
+          ingredientBreakdown.push({
+            ingredient: parsed.ingredient,
+            amount: parsed.amount,
+            nutrition
+          });
+        } else {
+          console.warn(`\u26A0\uFE0F [RECIPE NUTRITION] No USDA data for: ${parsed.ingredient} - skipping`);
+        }
+      }
+      if (ingredientBreakdown.length === 0) {
+        console.error("\u274C [RECIPE NUTRITION] No ingredients had USDA nutrition data");
+        return null;
+      }
+      const dataCompleteness = ingredientBreakdown.length / parsedIngredients.length * 100;
+      console.log(`\u{1F4CA} [RECIPE NUTRITION] Data completeness: ${dataCompleteness.toFixed(1)}% (${ingredientBreakdown.length}/${parsedIngredients.length} ingredients)`);
+      if (dataCompleteness < 50) {
+        console.warn("\u26A0\uFE0F [RECIPE NUTRITION] Less than 50% of ingredients have USDA data - insufficient for accurate nutrition");
+        return null;
+      }
+      const totalNutrition = this.sumNutrition(ingredientBreakdown.map((i) => i.nutrition));
+      const perServingNutrition = this.divideNutrition(totalNutrition, servings);
+      const result = {
+        servings,
+        perServing: perServingNutrition,
+        total: totalNutrition,
+        ingredientBreakdown
+      };
+      console.log(`\u2705 [RECIPE NUTRITION] Calculation complete`);
+      console.log(`\u{1F4CA} [RECIPE NUTRITION] Per serving: ${perServingNutrition.calories} calories`);
+      console.log(`\u{1F4CA} [RECIPE NUTRITION] Macros: ${perServingNutrition.protein}g protein, ${perServingNutrition.carbs}g carbs, ${perServingNutrition.fat}g fat`);
+      return result;
+    } catch (error) {
+      console.error("\u{1F525} [RECIPE NUTRITION] Error calculating nutrition:", error);
+      return null;
+    }
+  }
+  /**
+   * Parse ingredients and return formatted table
+   */
+  async parseIngredientsToTable(ingredients) {
+    const parsed = await groqIngredientParser.parseIngredients(ingredients);
+    if (parsed.length === 0) {
+      return "No ingredients could be parsed";
+    }
+    return groqIngredientParser.formatAsTable(parsed);
+  }
+  /**
+   * Sum nutrition data from multiple ingredients
+   */
+  sumNutrition(nutritionArray) {
+    const sum = {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+      sugar: 0,
+      sodium: 0,
+      cholesterol: 0,
+      saturatedFat: 0,
+      transFat: 0,
+      vitaminA: 0,
+      vitaminC: 0,
+      calcium: 0,
+      iron: 0
+    };
+    for (const nutrition of nutritionArray) {
+      sum.calories += nutrition.calories;
+      sum.protein += nutrition.protein;
+      sum.carbs += nutrition.carbs;
+      sum.fat += nutrition.fat;
+      sum.fiber += nutrition.fiber;
+      sum.sugar += nutrition.sugar;
+      sum.sodium += nutrition.sodium;
+      sum.cholesterol += nutrition.cholesterol;
+      sum.saturatedFat += nutrition.saturatedFat;
+      sum.transFat += nutrition.transFat;
+      if (nutrition.vitaminA !== void 0 && sum.vitaminA !== void 0) {
+        sum.vitaminA += nutrition.vitaminA;
+      }
+      if (nutrition.vitaminC !== void 0 && sum.vitaminC !== void 0) {
+        sum.vitaminC += nutrition.vitaminC;
+      }
+      if (nutrition.calcium !== void 0 && sum.calcium !== void 0) {
+        sum.calcium += nutrition.calcium;
+      }
+      if (nutrition.iron !== void 0 && sum.iron !== void 0) {
+        sum.iron += nutrition.iron;
+      }
+    }
+    return this.roundNutrition(sum);
+  }
+  /**
+   * Divide nutrition data by number of servings
+   */
+  divideNutrition(nutrition, servings) {
+    const divided = {
+      calories: nutrition.calories / servings,
+      protein: nutrition.protein / servings,
+      carbs: nutrition.carbs / servings,
+      fat: nutrition.fat / servings,
+      fiber: nutrition.fiber / servings,
+      sugar: nutrition.sugar / servings,
+      sodium: nutrition.sodium / servings,
+      cholesterol: nutrition.cholesterol / servings,
+      saturatedFat: nutrition.saturatedFat / servings,
+      transFat: nutrition.transFat / servings,
+      vitaminA: nutrition.vitaminA ? nutrition.vitaminA / servings : void 0,
+      vitaminC: nutrition.vitaminC ? nutrition.vitaminC / servings : void 0,
+      calcium: nutrition.calcium ? nutrition.calcium / servings : void 0,
+      iron: nutrition.iron ? nutrition.iron / servings : void 0
+    };
+    return this.roundNutrition(divided);
+  }
+  /**
+   * Round nutrition values to appropriate decimal places
+   */
+  roundNutrition(nutrition) {
+    return {
+      calories: Math.round(nutrition.calories),
+      protein: Math.round(nutrition.protein * 10) / 10,
+      carbs: Math.round(nutrition.carbs * 10) / 10,
+      fat: Math.round(nutrition.fat * 10) / 10,
+      fiber: Math.round(nutrition.fiber * 10) / 10,
+      sugar: Math.round(nutrition.sugar * 10) / 10,
+      sodium: Math.round(nutrition.sodium),
+      cholesterol: Math.round(nutrition.cholesterol),
+      saturatedFat: Math.round(nutrition.saturatedFat * 10) / 10,
+      transFat: Math.round(nutrition.transFat * 10) / 10,
+      vitaminA: nutrition.vitaminA ? Math.round(nutrition.vitaminA) : void 0,
+      vitaminC: nutrition.vitaminC ? Math.round(nutrition.vitaminC * 10) / 10 : void 0,
+      calcium: nutrition.calcium ? Math.round(nutrition.calcium) : void 0,
+      iron: nutrition.iron ? Math.round(nutrition.iron * 10) / 10 : void 0
+    };
+  }
+  /**
+   * Format nutrition data as a readable string
+   */
+  formatNutritionSummary(nutrition) {
+    const lines = [
+      `Calories: ${nutrition.calories}`,
+      `Protein: ${nutrition.protein}g`,
+      `Carbs: ${nutrition.carbs}g`,
+      `Fat: ${nutrition.fat}g`,
+      `Fiber: ${nutrition.fiber}g`,
+      `Sugar: ${nutrition.sugar}g`,
+      `Sodium: ${nutrition.sodium}mg`,
+      `Cholesterol: ${nutrition.cholesterol}mg`
+    ];
+    if (nutrition.saturatedFat > 0) {
+      lines.push(`Saturated Fat: ${nutrition.saturatedFat}g`);
+    }
+    if (nutrition.transFat > 0) {
+      lines.push(`Trans Fat: ${nutrition.transFat}g`);
+    }
+    if (nutrition.vitaminA) {
+      lines.push(`Vitamin A: ${nutrition.vitaminA}mcg`);
+    }
+    if (nutrition.vitaminC) {
+      lines.push(`Vitamin C: ${nutrition.vitaminC}mg`);
+    }
+    if (nutrition.calcium) {
+      lines.push(`Calcium: ${nutrition.calcium}mg`);
+    }
+    if (nutrition.iron) {
+      lines.push(`Iron: ${nutrition.iron}mg`);
+    }
+    return lines.join("\n");
+  }
+  /**
+   * Format complete recipe nutrition as HTML
+   */
+  formatNutritionHTML(recipeNutrition) {
+    const perServing = recipeNutrition.perServing;
+    return `
+<div class="nutrition-facts">
+  <h3>Nutrition Facts</h3>
+  <p>Servings: ${recipeNutrition.servings}</p>
+  <hr>
+  <h4>Amount Per Serving</h4>
+  <p><strong>Calories:</strong> ${perServing.calories}</p>
+  <hr>
+  <table>
+    <tr>
+      <td><strong>Total Fat</strong> ${perServing.fat}g</td>
+      <td>${Math.round(perServing.fat / 65 * 100)}%</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;Saturated Fat ${perServing.saturatedFat}g</td>
+      <td>${Math.round(perServing.saturatedFat / 20 * 100)}%</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;Trans Fat ${perServing.transFat}g</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><strong>Cholesterol</strong> ${perServing.cholesterol}mg</td>
+      <td>${Math.round(perServing.cholesterol / 300 * 100)}%</td>
+    </tr>
+    <tr>
+      <td><strong>Sodium</strong> ${perServing.sodium}mg</td>
+      <td>${Math.round(perServing.sodium / 2300 * 100)}%</td>
+    </tr>
+    <tr>
+      <td><strong>Total Carbohydrate</strong> ${perServing.carbs}g</td>
+      <td>${Math.round(perServing.carbs / 275 * 100)}%</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;Dietary Fiber ${perServing.fiber}g</td>
+      <td>${Math.round(perServing.fiber / 28 * 100)}%</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;Total Sugars ${perServing.sugar}g</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><strong>Protein</strong> ${perServing.protein}g</td>
+      <td>${Math.round(perServing.protein / 50 * 100)}%</td>
+    </tr>
+  </table>
+  <hr>
+  <p>* Percent Daily Values are based on a 2,000 calorie diet.</p>
+</div>`;
+  }
+};
+var recipeNutritionCalculator = new RecipeNutritionCalculator();
+
+// server/objectStorage.ts
+import { Storage } from "@google-cloud/storage";
+import { randomUUID } from "crypto";
+var REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+var objectStorageClient = new Storage({
+  credentials: {
+    audience: "replit",
+    subject_token_type: "access_token",
+    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+    type: "external_account",
+    credential_source: {
+      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+      format: {
+        type: "json",
+        subject_token_field_name: "access_token"
+      }
+    },
+    universe_domain: "googleapis.com"
+  },
+  projectId: ""
+});
+var ObjectNotFoundError = class _ObjectNotFoundError extends Error {
+  constructor() {
+    super("Object not found");
+    this.name = "ObjectNotFoundError";
+    Object.setPrototypeOf(this, _ObjectNotFoundError.prototype);
+  }
+};
+var ObjectStorageService = class {
+  constructor() {
+  }
+  // Gets the public object search paths.
+  getPublicObjectSearchPaths() {
+    const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
+    const paths = Array.from(
+      new Set(
+        pathsStr.split(",").map((path10) => path10.trim()).filter((path10) => path10.length > 0)
+      )
+    );
+    if (paths.length === 0) {
+      throw new Error(
+        "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
+      );
+    }
+    return paths;
+  }
+  // Gets the private object directory.
+  getPrivateObjectDir() {
+    const dir = process.env.PRIVATE_OBJECT_DIR || "";
+    if (!dir) {
+      throw new Error(
+        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
+      );
+    }
+    return dir;
+  }
+  // Search for a public object from the search paths.
+  async searchPublicObject(filePath) {
+    for (const searchPath of this.getPublicObjectSearchPaths()) {
+      const fullPath = `${searchPath}/${filePath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      const [exists] = await file.exists();
+      if (exists) {
+        return file;
+      }
+    }
+    return null;
+  }
+  // Downloads an object to the response.
+  async downloadObject(file, res, cacheTtlSec = 3600) {
+    try {
+      const [metadata] = await file.getMetadata();
+      res.set({
+        "Content-Type": metadata.contentType || "application/octet-stream",
+        "Content-Length": metadata.size,
+        "Cache-Control": `public, max-age=${cacheTtlSec}`
+      });
+      const stream = file.createReadStream();
+      stream.on("error", (err) => {
+        console.error("Stream error:", err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Error streaming file" });
+        }
+      });
+      stream.pipe(res);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Error downloading file" });
+      }
+    }
+  }
+  // Gets the upload URL for an object entity.
+  async getObjectEntityUploadURL() {
+    const privateObjectDir = this.getPrivateObjectDir();
+    if (!privateObjectDir) {
+      throw new Error(
+        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
+      );
+    }
+    const objectId = randomUUID();
+    const fullPath = `${privateObjectDir}/uploads/${objectId}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    return signObjectURL({
+      bucketName,
+      objectName,
+      method: "PUT",
+      ttlSec: 900
+    });
+  }
+  // Gets the object entity file from the object path.
+  async getObjectEntityFile(objectPath) {
+    if (!objectPath.startsWith("/objects/")) {
+      throw new ObjectNotFoundError();
+    }
+    const parts = objectPath.slice(1).split("/");
+    if (parts.length < 2) {
+      throw new ObjectNotFoundError();
+    }
+    const entityId = parts.slice(1).join("/");
+    let entityDir = this.getPrivateObjectDir();
+    if (!entityDir.endsWith("/")) {
+      entityDir = `${entityDir}/`;
+    }
+    const objectEntityPath = `${entityDir}${entityId}`;
+    const { bucketName, objectName } = parseObjectPath(objectEntityPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const objectFile = bucket.file(objectName);
+    const [exists] = await objectFile.exists();
+    if (!exists) {
+      throw new ObjectNotFoundError();
+    }
+    return objectFile;
+  }
+  normalizeObjectEntityPath(rawPath) {
+    if (!rawPath.startsWith("https://storage.googleapis.com/")) {
+      return rawPath;
+    }
+    const url = new URL(rawPath);
+    const rawObjectPath = url.pathname;
+    let objectEntityDir = this.getPrivateObjectDir();
+    if (!objectEntityDir.endsWith("/")) {
+      objectEntityDir = `${objectEntityDir}/`;
+    }
+    if (!rawObjectPath.startsWith(objectEntityDir)) {
+      return rawObjectPath;
+    }
+    const entityId = rawObjectPath.slice(objectEntityDir.length);
+    return `/objects/${entityId}`;
+  }
+  // Helper method to get the object entity path from upload URL
+  getObjectEntityPathFromUploadURL(uploadURL) {
+    try {
+      const url = new URL(uploadURL);
+      const pathParts = url.pathname.split("/");
+      const objectName = pathParts[pathParts.length - 1].split("?")[0];
+      return `/objects/uploads/${objectName}`;
+    } catch (error) {
+      console.error("Error parsing upload URL:", error);
+      return uploadURL;
+    }
+  }
+};
+function parseObjectPath(path10) {
+  if (!path10.startsWith("/")) {
+    path10 = `/${path10}`;
+  }
+  const pathParts = path10.split("/");
+  if (pathParts.length < 3) {
+    throw new Error("Invalid path: must contain at least a bucket name");
+  }
+  const bucketName = pathParts[1];
+  const objectName = pathParts.slice(2).join("/");
+  return {
+    bucketName,
+    objectName
+  };
+}
+async function signObjectURL({
+  bucketName,
+  objectName,
+  method,
+  ttlSec
+}) {
+  const request = {
+    bucket_name: bucketName,
+    object_name: objectName,
+    method,
+    expires_at: new Date(Date.now() + ttlSec * 1e3).toISOString()
+  };
+  const response = await fetch(
+    `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(request)
+    }
+  );
+  if (!response.ok) {
+    throw new Error(
+      `Failed to sign object URL, errorcode: ${response.status}, make sure you're running on Replit`
+    );
+  }
+  const { signed_url: signedURL } = await response.json();
+  return signedURL;
+}
+
+// server/routes.ts
+init_schema();
+init_db();
 import Stripe from "stripe";
+import { eq as eq8, and as and6, isNull as isNull2, desc as desc6 } from "drizzle-orm";
 var YOUTUBE_API_KEY2 = process.env.YOUTUBE_API_KEY;
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
 }
 var stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-06-30.basil"
+  apiVersion: "2025-07-30.basil"
 });
 async function registerRoutes(app2) {
+  app2.get("/api/test-cors", (_req, res) => {
+    res.json({
+      status: "CORS is working correctly!",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      message: "If you can see this from Whop, CORS is configured properly"
+    });
+  });
   const { registerUser: registerUser2, loginUser: loginUser2, getCurrentUser: getCurrentUser2, authenticateToken: authenticateToken2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
   app2.post("/api/auth/register", registerUser2);
   app2.post("/api/auth/login", loginUser2);
   app2.get("/api/auth/user", authenticateToken2, getCurrentUser2);
+  app2.post("/api/user/toggle-creator", authenticateToken2, async (req, res) => {
+    try {
+      console.log(`\u{1F50D} [DEBUG] toggle-creator called`);
+      console.log(`\u{1F50D} [DEBUG] Request headers:`, req.headers.authorization ? "Auth header present" : "No auth header");
+      console.log(`\u{1F50D} [DEBUG] req.user:`, req.user);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`\u274C [DEBUG] No user ID in toggle-creator request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const newCreatorStatus = !(user.is_creator || false);
+      await db.update(users).set({
+        is_creator: newCreatorStatus,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq8(users.id, userId));
+      const { generateToken: generateToken2 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
+      const newToken = generateToken2(userId, newCreatorStatus);
+      res.json({
+        message: `Creator mode ${newCreatorStatus ? "enabled" : "disabled"}`,
+        is_creator: newCreatorStatus,
+        token: newToken
+      });
+    } catch (error) {
+      console.error("Error toggling creator status:", error);
+      res.status(500).json({ message: "Failed to toggle creator status" });
+    }
+  });
   const { passport: passport2, isGoogleOAuthConfigured: isGoogleOAuthConfigured2, handleGoogleCallback: handleGoogleCallback2 } = await Promise.resolve().then(() => (init_googleAuth(), googleAuth_exports));
   if (isGoogleOAuthConfigured2) {
     app2.get("/api/auth/google", (req, res, next) => {
-      console.log("Google OAuth initiated");
-      console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
-      console.log("Callback URL:", `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`);
       passport2.authenticate("google", {
         scope: ["profile", "email"]
       })(req, res, next);
@@ -12264,7 +17741,6 @@ async function registerRoutes(app2) {
           const userData = encodeURIComponent(JSON.stringify(userWithoutPassword));
           res.redirect(`/?token=${token}&user=${userData}&success=google`);
         } catch (error) {
-          console.error("Google callback error:", error);
           res.redirect("/?error=callback_failed");
         }
       }
@@ -12305,7 +17781,6 @@ async function registerRoutes(app2) {
         message: "Test user login successful"
       });
     } catch (error) {
-      console.error("Test login error:", error);
       res.status(500).json({ message: "Test login failed" });
     }
   });
@@ -12331,14 +17806,28 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to reset test user" });
     }
   });
+  app2.get("/api/stripe-publishable-key", (req, res) => {
+    try {
+      const pk = process.env.STRIPE_PUBLISHABLE_KEY || "";
+      if (!pk) {
+        return res.status(404).json({ message: "Publishable key not configured" });
+      }
+      return res.json({ publishableKey: pk });
+    } catch (err) {
+      return res.status(500).json({ message: "Failed to retrieve publishable key" });
+    }
+  });
   app2.post("/api/create-payment-intent", async (req, res) => {
     try {
       const { amount, paymentType } = req.body;
       let paymentAmount;
       let description;
       if (paymentType === "founders") {
-        paymentAmount = 9900;
+        paymentAmount = 1e4;
         description = "Healthy Mama Founders Offer - Lifetime Access";
+      } else if (paymentType === "monthly") {
+        paymentAmount = 2e3;
+        description = "Healthy Mama Monthly Subscription";
       } else if (paymentType === "trial") {
         paymentAmount = 0;
         description = "Healthy Mama 21-Day Premium Trial Setup";
@@ -12360,9 +17849,102 @@ async function registerRoutes(app2) {
         // Send back amount in dollars
       });
     } catch (error) {
-      console.error("Error creating payment intent:", error);
       res.status(500).json({
         message: "Error creating payment intent: " + error.message
+      });
+    }
+  });
+  app2.post("/api/create-monthly-subscription", async (req, res) => {
+    try {
+      const { paymentMethodId, email, name } = req.body;
+      if (!email || !paymentMethodId) {
+        return res.status(400).json({ message: "Email and payment method are required" });
+      }
+      const customer = await stripe.customers.create({
+        email,
+        name: name || "",
+        payment_method: paymentMethodId,
+        invoice_settings: {
+          default_payment_method: paymentMethodId
+        }
+      });
+      const subscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "Healthy Mama Monthly",
+              description: "Monthly subscription for meal planning"
+            },
+            unit_amount: 2e3,
+            // $20.00 in cents
+            recurring: {
+              interval: "month"
+            }
+          }
+        }],
+        payment_settings: {
+          payment_method_types: ["card"],
+          save_default_payment_method: "on_subscription"
+        },
+        expand: ["latest_invoice.payment_intent"]
+      });
+      res.json({
+        subscriptionId: subscription.id,
+        customerId: customer.id,
+        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
+        message: "Monthly subscription created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating monthly subscription:", error);
+      res.status(500).json({
+        message: "Error setting up monthly subscription: " + error.message
+      });
+    }
+  });
+  app2.post("/api/create-setup-intent", async (req, res) => {
+    try {
+      const { email, name, paymentType } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      const customer = await stripe.customers.create({
+        email,
+        name: name || "",
+        metadata: {
+          paymentType: paymentType || "trial"
+        }
+      });
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customer.id,
+        payment_method_types: ["card"],
+        usage: "off_session",
+        metadata: {
+          type: paymentType || "trial",
+          email
+        }
+      });
+      if (paymentType === "monthly") {
+        await stripe.customers.update(customer.id, {
+          metadata: {
+            paymentType: "monthly",
+            pendingSubscription: "true",
+            priceAmount: "2000",
+            // $20 in cents
+            email
+          }
+        });
+      }
+      res.json({
+        customerId: customer.id,
+        clientSecret: setupIntent.client_secret,
+        paymentType,
+        message: `${paymentType === "monthly" ? "Monthly subscription" : "Trial"} setup created successfully`
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error creating setup intent: " + error.message
       });
     }
   });
@@ -12393,11 +17975,117 @@ async function registerRoutes(app2) {
         message: "Trial setup created successfully"
       });
     } catch (error) {
-      console.error("Error creating trial subscription:", error);
       res.status(500).json({
         message: "Error setting up trial: " + error.message
       });
     }
+  });
+  app2.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+    let event;
+    try {
+      const sig = req.headers["stripe-signature"];
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      if (!webhookSecret) {
+        console.log("Warning: Stripe webhook secret not configured");
+        event = JSON.parse(req.body.toString());
+      } else {
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      }
+    } catch (err) {
+      console.error("Webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    switch (event.type) {
+      case "setup_intent.succeeded":
+        const setupIntent = event.data.object;
+        console.log("SetupIntent succeeded:", setupIntent.id);
+        if (setupIntent.metadata?.type === "monthly") {
+          try {
+            const customer = await stripe.customers.retrieve(setupIntent.customer);
+            if (customer.metadata?.pendingSubscription === "true") {
+              const subscription2 = await stripe.subscriptions.create({
+                customer: customer.id,
+                items: [{
+                  price_data: {
+                    currency: "usd",
+                    product_data: {
+                      name: "Healthy Mama Monthly",
+                      description: "Monthly subscription for meal planning"
+                    },
+                    unit_amount: 2e3,
+                    // $20 in cents
+                    recurring: {
+                      interval: "month"
+                    }
+                  }
+                }],
+                default_payment_method: setupIntent.payment_method
+              });
+              console.log("Subscription created:", subscription2.id);
+              await stripe.customers.update(customer.id, {
+                metadata: {
+                  subscriptionId: subscription2.id,
+                  subscriptionStatus: "active",
+                  pendingSubscription: "false"
+                }
+              });
+            }
+          } catch (error) {
+            console.error("Error creating subscription from webhook:", error);
+          }
+        } else if (setupIntent.metadata?.type === "trial") {
+          try {
+            const customer = await stripe.customers.retrieve(setupIntent.customer);
+            const subscription2 = await stripe.subscriptions.create({
+              customer: customer.id,
+              items: [{
+                price_data: {
+                  currency: "usd",
+                  product_data: {
+                    name: "Healthy Mama Monthly",
+                    description: "Monthly subscription after 30-day trial"
+                  },
+                  unit_amount: 2e3,
+                  // $20 in cents
+                  recurring: {
+                    interval: "month"
+                  }
+                }
+              }],
+              default_payment_method: setupIntent.payment_method,
+              trial_period_days: 30
+              // 30-day free trial
+            });
+            console.log("Trial subscription created:", subscription2.id);
+            await stripe.customers.update(customer.id, {
+              metadata: {
+                subscriptionId: subscription2.id,
+                subscriptionStatus: "trialing",
+                trialEndsAt: new Date(subscription2.trial_end * 1e3).toISOString()
+              }
+            });
+          } catch (error) {
+            console.error("Error creating trial subscription from webhook:", error);
+          }
+        }
+        break;
+      case "payment_intent.succeeded":
+        const paymentIntent = event.data.object;
+        console.log("PaymentIntent succeeded:", paymentIntent.id);
+        if (paymentIntent.metadata?.paymentType === "founders") {
+          console.log("Founders payment successful for amount:", paymentIntent.amount / 100);
+        }
+        break;
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        const subscription = event.data.object;
+        console.log(`Subscription ${event.type}:`, subscription.id);
+        break;
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+    res.json({ received: true });
   });
   app2.post("/api/recipes/generate", authenticateToken2, async (req, res) => {
     try {
@@ -12456,7 +18144,7 @@ async function registerRoutes(app2) {
                 }
               }
               const spoonacularUrl = `https://api.spoonacular.com/recipes/complexSearch?${params.toString()}`;
-              const response = await fetch5(spoonacularUrl);
+              const response = await fetch6(spoonacularUrl);
               const data = await response.json();
               if (data.results && data.results.length > 0) {
                 spoonacularTime = data.results[0].readyInMinutes || 30;
@@ -12519,6 +18207,12 @@ async function registerRoutes(app2) {
           if (youtubeRecipe) {
             console.log("Successfully extracted recipe data from YouTube");
             console.log(`Recipe has ${youtubeRecipe.ingredients.length} ingredients and ${youtubeRecipe.instructions.length} instructions`);
+            if (Array.isArray(youtubeRecipe.instructions) && youtubeRecipe.instructions.length === 0) {
+              console.log("\u26A0\uFE0F [YOUTUBE EXTRACTION] Empty instructions array detected, will be fixed during validation");
+            } else if (!youtubeRecipe.instructions) {
+              console.log("\u26A0\uFE0F [YOUTUBE EXTRACTION] No instructions field detected");
+              youtubeRecipe.instructions = [];
+            }
             youtubeRecipe.cuisine = cuisine || youtubeRecipe.cuisine;
             youtubeRecipe.diet = dietRestrictions || youtubeRecipe.diet;
             youtubeRecipe.image_url = youtubeRecipe.thumbnailUrl || youtubeRecipe.image_url;
@@ -12549,66 +18243,66 @@ async function registerRoutes(app2) {
         }
       }
       if (recipe) {
-        if (generationMode === "detailed" && recipe.ingredients && recipe.ingredients.length > 0) {
+        if (!skipNutrition && recipe.ingredients && recipe.ingredients.length > 0) {
           try {
-            const { calculateRecipeNutrition: calculateRecipeNutrition2 } = await Promise.resolve().then(() => (init_nutritionCalculator(), nutritionCalculator_exports));
-            const getUSDANutrition = async (foodName) => {
-              try {
-                console.log(`Looking up USDA nutrition for: "${foodName}"`);
-                const searchResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
-                if (searchResponse.ok) {
-                  const searchData = await searchResponse.json();
-                  if (searchData.foods && searchData.foods.length > 0) {
-                    const foodId = searchData.foods[0].fdcId;
-                    console.log(`Found USDA food ID ${foodId} for "${foodName}"`);
-                    const nutritionResponse = await fetch5(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
-                    if (nutritionResponse.ok) {
-                      const nutritionData2 = await nutritionResponse.json();
-                      const nutrients = nutritionData2.foodNutrients || [];
-                      let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 };
-                      nutrients.forEach((nutrient) => {
-                        const name = nutrient.nutrient?.name?.toLowerCase() || "";
-                        const value = parseFloat(nutrient.amount) || 0;
-                        if (name.includes("energy")) nutrition.calories = value;
-                        else if (name.includes("protein")) nutrition.protein = value;
-                        else if (name.includes("carbohydrate")) nutrition.carbs = value;
-                        else if (name.includes("total lipid") || name.includes("fat")) nutrition.fat = value;
-                        else if (name.includes("fiber")) nutrition.fiber = value;
-                        else if (name.includes("sugars")) nutrition.sugar = value;
-                        else if (name.includes("sodium")) nutrition.sodium = value;
-                      });
-                      console.log(`USDA nutrition for "${foodName}": ${nutrition.calories}cal, ${nutrition.protein}g protein`);
-                      return nutrition;
-                    } else {
-                      console.log(`Failed to get nutrition data for food ID ${foodId}`);
-                    }
-                  } else {
-                    console.log(`No USDA foods found for "${foodName}"`);
-                  }
-                } else {
-                  console.log(`USDA search failed for "${foodName}": ${searchResponse.status}`);
-                }
-                return null;
-              } catch (error) {
-                console.error(`Error fetching USDA nutrition for ${foodName}:`, error);
-                return null;
+            console.log("\u{1F34E} Starting nutrition calculation for recipe:", recipe.title);
+            const ingredientStrings = recipe.ingredients.map((ing) => {
+              if (typeof ing === "string") {
+                return ing;
+              } else if (ing.display_text) {
+                return ing.display_text;
+              } else if (ing.measurements && ing.measurements.length > 0) {
+                const measurement = ing.measurements[0];
+                return `${measurement.quantity} ${measurement.unit} ${ing.name}`;
               }
-            };
-            const nutritionData = await calculateRecipeNutrition2(recipe, getUSDANutrition);
-            recipe.nutrition_info = {
-              calories: nutritionData.perServing.calories,
-              protein_g: nutritionData.perServing.protein,
-              carbs_g: nutritionData.perServing.carbs,
-              fat_g: nutritionData.perServing.fat,
-              fiber_g: nutritionData.perServing.fiber,
-              sugar_g: nutritionData.perServing.sugar,
-              sodium_mg: nutritionData.perServing.sodium,
-              servings: nutritionData.servings,
-              total_calories: nutritionData.calories
-            };
-            console.log(`Added per-serving nutrition: ${nutritionData.perServing.calories}cal per serving (${nutritionData.servings} servings total, ${nutritionData.calories} total calories)`);
+              return ing.name || "";
+            }).filter((s) => s.length > 0);
+            console.log(`\u{1F4DD} Processing ${ingredientStrings.length} ingredients`);
+            const servings = recipe.servings || 4;
+            const nutritionResult = await recipeNutritionCalculator.calculateRecipeNutrition(
+              ingredientStrings,
+              servings
+            );
+            if (nutritionResult) {
+              recipe.nutrition_info = {
+                // Per serving nutrition
+                calories: nutritionResult.perServing.calories,
+                protein_g: nutritionResult.perServing.protein,
+                carbs_g: nutritionResult.perServing.carbs,
+                fat_g: nutritionResult.perServing.fat,
+                fiber_g: nutritionResult.perServing.fiber,
+                sugar_g: nutritionResult.perServing.sugar,
+                sodium_mg: nutritionResult.perServing.sodium,
+                cholesterol_mg: nutritionResult.perServing.cholesterol,
+                saturated_fat_g: nutritionResult.perServing.saturatedFat,
+                trans_fat_g: nutritionResult.perServing.transFat,
+                // Servings and totals
+                servings: nutritionResult.servings,
+                total_calories: nutritionResult.total.calories,
+                total_protein_g: nutritionResult.total.protein,
+                total_carbs_g: nutritionResult.total.carbs,
+                total_fat_g: nutritionResult.total.fat,
+                total_fiber_g: nutritionResult.total.fiber,
+                total_sugar_g: nutritionResult.total.sugar,
+                total_sodium_mg: nutritionResult.total.sodium,
+                // Include the ingredient breakdown for transparency
+                ingredient_nutrition: nutritionResult.ingredientBreakdown.map((item) => ({
+                  ingredient: item.ingredient,
+                  amount: item.amount,
+                  calories: item.nutrition.calories,
+                  protein: item.nutrition.protein,
+                  carbs: item.nutrition.carbs,
+                  fat: item.nutrition.fat
+                }))
+              };
+              console.log(`\u2705 Nutrition calculated successfully:`);
+              console.log(`   Per serving: ${nutritionResult.perServing.calories} cal`);
+              console.log(`   Macros: ${nutritionResult.perServing.protein}g protein, ${nutritionResult.perServing.carbs}g carbs, ${nutritionResult.perServing.fat}g fat`);
+            } else {
+              console.log("\u26A0\uFE0F Nutrition calculation returned null, proceeding without nutrition data");
+            }
           } catch (nutritionError) {
-            console.log("Nutrition calculation failed:", nutritionError.message);
+            console.error("\u274C Nutrition calculation failed:", nutritionError.message);
             console.log("Proceeding without nutrition data");
           }
         }
@@ -12642,6 +18336,49 @@ async function registerRoutes(app2) {
         } catch (mappingError) {
           console.warn("Dish name mapping error:", mappingError);
         }
+        console.log("\u{1F50D} [RECIPE GENERATION] Starting instruction validation for recipe:", recipeToSave.title);
+        console.log("\u{1F4DD} [RECIPE GENERATION] Original instructions type:", typeof recipeToSave.instructions);
+        console.log(
+          "\u{1F4DD} [RECIPE GENERATION] Original instructions:",
+          Array.isArray(recipeToSave.instructions) ? `Array with ${recipeToSave.instructions.length} items: ${JSON.stringify(recipeToSave.instructions.slice(0, 2))}...` : typeof recipeToSave.instructions === "string" ? recipeToSave.instructions.substring(0, 200) + "..." : recipeToSave.instructions
+        );
+        const isInstructionsValid = await groqValidator.validateInstructions(recipeToSave.instructions);
+        if (!isInstructionsValid) {
+          console.log("\u274C [RECIPE GENERATION] Instructions FAILED validation");
+          if (recipeToSave.transcript || recipeToSave.description) {
+            console.log("\u{1F916} [RECIPE GENERATION] Attempting to generate instructions with GPT-OSS-120B");
+            try {
+              const { groqInstructionGenerator: groqInstructionGenerator2 } = await Promise.resolve().then(() => (init_groqInstructionGenerator(), groqInstructionGenerator_exports));
+              const generatedInstructions = await groqInstructionGenerator2.generateInstructionsFromTranscript(
+                recipeToSave.transcript || recipeToSave.description || "",
+                recipeToSave.title,
+                recipeToSave.ingredients?.map(
+                  (ing) => typeof ing === "string" ? ing : ing.name || ing.display_text
+                )
+              );
+              if (generatedInstructions.length > 0) {
+                console.log(`\u2705 [RECIPE GENERATION] Generated ${generatedInstructions.length} instructions with GPT-OSS-120B`);
+                recipeToSave.instructions = generatedInstructions;
+              } else {
+                console.log("\u26A0\uFE0F [RECIPE GENERATION] Could not generate instructions, using fallback message");
+                recipeToSave.instructions = ["No instructions available"];
+              }
+            } catch (genError) {
+              console.error("Error generating instructions:", genError);
+              recipeToSave.instructions = ["No instructions available"];
+            }
+          } else {
+            console.log("\u26A0\uFE0F [RECIPE GENERATION] No transcript/description available for generation");
+            recipeToSave.instructions = ["No instructions available"];
+          }
+        } else {
+          console.log("\u2705 [RECIPE GENERATION] Instructions PASSED validation");
+          if (Array.isArray(recipeToSave.instructions) && recipeToSave.instructions.length === 0) {
+            console.log("\u26A0\uFE0F [RECIPE GENERATION] Valid but empty array detected, replacing with message");
+            recipeToSave.instructions = ["No instructions available"];
+          }
+        }
+        console.log("\u{1F4DD} [RECIPE GENERATION] Final instructions:", recipeToSave.instructions);
         let finalRecipe = { ...recipeToSave, title: familiarTitle, user_id: userId };
         if (dietRestrictions) {
           try {
@@ -12719,6 +18456,150 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error fetching generated recipes:", error);
       res.status(500).json({ message: "Failed to fetch generated recipes" });
+    }
+  });
+  app2.post("/api/recipes/create", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+      const {
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        ingredients,
+        instructions,
+        nutrition_info
+      } = req.body;
+      if (!title?.trim()) {
+        return res.status(400).json({ message: "Recipe title is required" });
+      }
+      if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+        return res.status(400).json({ message: "At least one ingredient is required" });
+      }
+      if (!instructions || !Array.isArray(instructions) || instructions.length === 0) {
+        return res.status(400).json({ message: "At least one instruction is required" });
+      }
+      const newRecipe = await storage.createUserRecipe({
+        user_id: userId,
+        title: title.trim(),
+        description: description?.trim() || "",
+        image_url: image_url || null,
+        time_minutes: parseInt(time_minutes) || 0,
+        cuisine: cuisine?.trim() || "homemade",
+        diet: diet?.trim() || "",
+        ingredients,
+        instructions,
+        nutrition_info: nutrition_info || {}
+      });
+      console.log(`\u2705 Created user recipe ${newRecipe.id}: "${title}"`);
+      res.json(newRecipe);
+    } catch (error) {
+      console.error("Error creating user recipe:", error);
+      res.status(500).json({ message: "Failed to create recipe" });
+    }
+  });
+  app2.post("/api/community-recipes/save-as-meal-plan", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const {
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        ingredients,
+        instructions,
+        nutrition_info
+      } = req.body;
+      if (!title?.trim()) {
+        return res.status(400).json({ message: "Recipe title is required" });
+      }
+      if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+        return res.status(400).json({ message: "At least one ingredient is required" });
+      }
+      if (!instructions || !Array.isArray(instructions) || instructions.length === 0) {
+        return res.status(400).json({ message: "At least one instruction is required" });
+      }
+      const mealPlanData = {
+        userId,
+        name: title.trim(),
+        description: description?.trim() || `Delicious ${title.trim()} recipe`,
+        mealPlan: {
+          "Day 1": {
+            "meal": {
+              title: title.trim(),
+              ingredients,
+              instructions,
+              image_url: image_url || null,
+              prep_time: parseInt(time_minutes) || 30,
+              cook_time: parseInt(time_minutes) || 30,
+              servings: 4,
+              cuisine: cuisine?.trim() || "homemade",
+              diet: diet?.trim() || "",
+              nutrition_info: nutrition_info || {
+                calories: 0,
+                protein_g: 0,
+                carbs_g: 0,
+                fat_g: 0
+              }
+            }
+          }
+        },
+        isAutoSaved: false
+      };
+      const savedMealPlan = await storage.saveMealPlan(mealPlanData);
+      console.log(`\u2705 Created meal plan from recipe "${title}" with ID: ${savedMealPlan.id}`);
+      res.json({
+        ...savedMealPlan,
+        message: "Recipe saved as meal plan successfully"
+      });
+    } catch (error) {
+      console.error("Error saving recipe as meal plan:", error);
+      res.status(500).json({ message: "Failed to save recipe as meal plan" });
+    }
+  });
+  app2.get("/api/recipes/user", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+      const userRecipes2 = await storage.getUserCreatedRecipes(userId);
+      res.json(userRecipes2);
+    } catch (error) {
+      console.error("Error fetching user recipes:", error);
+      res.status(500).json({ message: "Failed to fetch user recipes" });
+    }
+  });
+  app2.delete("/api/recipes/user/:id", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+      const recipeId = parseInt(req.params.id);
+      if (isNaN(recipeId)) {
+        return res.status(400).json({ message: "Invalid recipe ID" });
+      }
+      const success = await storage.deleteUserRecipe(recipeId, userId);
+      if (success) {
+        console.log(`\u2705 Deleted user recipe ${recipeId} for user ${userId}`);
+        res.json({ success: true, message: "Recipe deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Recipe not found or not owned by user" });
+      }
+    } catch (error) {
+      console.error("Error deleting user recipe:", error);
+      res.status(500).json({ message: "Failed to delete recipe" });
     }
   });
   app2.post("/api/recipes/:id/save", authenticateToken2, async (req, res) => {
@@ -12927,7 +18808,7 @@ async function registerRoutes(app2) {
       const consolidationResult = await consolidateIngredientsWithAI2(allIngredients);
       console.log(`\u2705 Consolidated ${allIngredients.length} ingredients into ${consolidationResult.consolidatedIngredients.length} items`);
       console.log(`\u{1F4B0} Removed ${consolidationResult.savings.duplicatesRemoved} duplicates`);
-      const formattedIngredients = formatForInstacart2(consolidationResult.consolidatedIngredients);
+      const formattedIngredients = await formatForInstacart2(consolidationResult.consolidatedIngredients);
       const recipeData = {
         title: `Grocery List for ${mealPlan.name}`,
         image_url: "",
@@ -13273,172 +19154,25 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to delete food log" });
     }
   });
-  app2.post("/api/detect-foods-logmeal", async (req, res) => {
+  app2.post("/api/detect-foods-logmeal", handleLogMealDetection);
+  app2.get("/api/logmeal-status", async (req, res) => {
     try {
-      console.log("\u{1F354} === LOGMEAL API ENDPOINT CALLED ===");
-      const { image } = req.body;
-      if (!image) {
-        console.error("\u274C No image data provided");
-        return res.status(400).json({ error: "Image data is required" });
-      }
-      console.log("\u{1F4CA} Received image data:", {
-        length: image.length,
-        isBase64: image.includes("base64"),
-        prefix: image.substring(0, 50)
-      });
-      const LOGMEAL_API_KEY = "79cbe9badc6d24d77ffbcd536692c6fd697de89d";
-      const LOGMEAL_API_URL = "https://api.logmeal.es/v2";
-      console.log("\u{1F511} Using LogMeal API");
-      const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
-      const imageBuffer = Buffer.from(base64Image, "base64");
-      console.log("\u{1F4E6} Image buffer size:", imageBuffer.length);
-      const FormData = __require("form-data");
-      const formData = new FormData();
-      formData.append("image", imageBuffer, {
-        filename: "image.jpg",
-        contentType: "image/jpeg"
-      });
-      console.log("\u{1F4E1} Calling LogMeal API for dish recognition...");
-      let logmealResponse;
-      try {
-        logmealResponse = await fetch5(`${LOGMEAL_API_URL}/recognition/dish`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${LOGMEAL_API_KEY}`,
-            ...formData.getHeaders()
-          },
-          body: formData
-        });
-        if (!logmealResponse.ok) {
-          console.log("\u26A0\uFE0F Dish endpoint failed, trying type endpoint...");
-          const formData2 = new FormData();
-          formData2.append("image", imageBuffer, {
-            filename: "image.jpg",
-            contentType: "image/jpeg"
-          });
-          logmealResponse = await fetch5(`${LOGMEAL_API_URL}/image/recognition/type`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${LOGMEAL_API_KEY}`,
-              ...formData2.getHeaders()
-            },
-            body: formData2
-          });
-        }
-      } catch (fetchError) {
-        console.error("\u274C Network error calling LogMeal API:", fetchError.message);
-        return res.status(500).json({
-          error: "Network error calling LogMeal API",
-          details: fetchError.message
-        });
-      }
-      if (!logmealResponse.ok) {
-        const errorText = await logmealResponse.text();
-        console.error("\u274C LogMeal API HTTP error:", logmealResponse.status);
-        console.error("\u274C Error response:", errorText);
-        return res.status(500).json({
-          error: "LogMeal API request failed",
-          status: logmealResponse.status,
-          details: errorText
-        });
-      }
-      const logmealData = await logmealResponse.json();
-      console.log("\u2705 LogMeal API response received");
-      console.log("\u{1F4CA} Response structure:", Object.keys(logmealData));
-      const detectedIngredients = [];
-      const getUnitForFood = (foodName) => {
-        const lowerName = foodName.toLowerCase();
-        if (lowerName.includes("rice") || lowerName.includes("pasta")) return "cup";
-        if (lowerName.includes("chicken") || lowerName.includes("beef") || lowerName.includes("pork") || lowerName.includes("steak")) return "oz";
-        if (lowerName.includes("milk") || lowerName.includes("juice") || lowerName.includes("soup")) return "cup";
-        if (lowerName.includes("bread") || lowerName.includes("toast")) return "slice";
-        if (lowerName.includes("egg")) return "egg";
-        if (lowerName.includes("apple") || lowerName.includes("banana") || lowerName.includes("orange")) return "piece";
-        return "serving";
-      };
-      const getMeasureType = (unit) => {
-        if (unit === "cup" || unit === "tbsp" || unit === "tsp" || unit === "ml") return "volume";
-        if (unit === "oz" || unit === "g" || unit === "lb") return "weight";
-        return "count";
-      };
-      if (logmealData.recognition_results) {
-        console.log(`\u{1F37D}\uFE0F Found ${logmealData.recognition_results.length} dishes`);
-        for (const result of logmealData.recognition_results) {
-          const foodName = result.name || result.food_name || "Unknown";
-          const confidence = result.prob || result.probability || 0.5;
-          if (confidence < 0.3) continue;
-          if (foodName.toLowerCase().includes("unknown")) continue;
-          const unit = getUnitForFood(foodName);
-          detectedIngredients.push({
-            id: `food-${Date.now()}-${Math.random()}`,
-            name: foodName,
-            confidence,
-            amount: 1,
-            unit,
-            measureType: getMeasureType(unit),
-            source: "dish"
-          });
-          console.log(`  \u2705 Dish: ${foodName} (${(confidence * 100).toFixed(1)}%)`);
-        }
-      }
-      if (logmealData.food_types && Array.isArray(logmealData.food_types)) {
-        console.log(`\u{1F3F7}\uFE0F Found ${logmealData.food_types.length} food types`);
-        for (const foodType of logmealData.food_types) {
-          if (foodType.name === "food" && foodType.probs > 0.8) {
-            console.log("  \u2139\uFE0F Confirmed as food item");
-          }
-        }
-      }
-      if (logmealData.ingredients) {
-        console.log(`\u{1F958} Found ingredients:`, logmealData.ingredients);
-        for (const ingredient of logmealData.ingredients) {
-          const ingredientName = ingredient.name || ingredient;
-          const unit = getUnitForFood(ingredientName);
-          detectedIngredients.push({
-            id: `ingredient-${Date.now()}-${Math.random()}`,
-            name: ingredientName,
-            confidence: 0.8,
-            amount: ingredient.quantity || 1,
-            unit,
-            measureType: getMeasureType(unit),
-            source: "ingredient"
-          });
-        }
-      }
-      if (logmealData.foodItems && Array.isArray(logmealData.foodItems)) {
-        console.log(`\u{1F355} Found ${logmealData.foodItems.length} food items`);
-        for (const item of logmealData.foodItems) {
-          const itemName = item.name || item.food_name || item.title;
-          if (!itemName) continue;
-          const confidence = item.confidence || item.score || 0.7;
-          const unit = getUnitForFood(itemName);
-          detectedIngredients.push({
-            id: `item-${Date.now()}-${Math.random()}`,
-            name: itemName,
-            confidence,
-            amount: item.quantity || 1,
-            unit,
-            measureType: getMeasureType(unit),
-            source: "foodItem"
-          });
-          console.log(`  \u2705 Food item: ${itemName} (${(confidence * 100).toFixed(1)}%)`);
-        }
-      }
-      detectedIngredients.sort((a, b) => b.confidence - a.confidence);
-      const finalIngredients = detectedIngredients.slice(0, 15);
-      console.log(`\u{1F4CA} Final detection: ${finalIngredients.length} food items`);
+      const { dailyCallCount: dailyCallCount2, MAX_DAILY_CALLS: MAX_DAILY_CALLS2, lastResetDate: lastResetDate2 } = await Promise.resolve().then(() => (init_logmealEndpoint(), logmealEndpoint_exports));
       res.json({
-        ingredients: finalIngredients,
-        raw: {
-          hasRecognitionResults: !!logmealData.recognition_results,
-          hasFoodTypes: !!logmealData.food_types,
-          hasIngredients: !!logmealData.ingredients,
-          hasFoodItems: !!logmealData.foodItems
-        }
+        callsUsed: dailyCallCount2 || 0,
+        maxCalls: MAX_DAILY_CALLS2 || 180,
+        remaining: (MAX_DAILY_CALLS2 || 180) - (dailyCallCount2 || 0),
+        lastResetDate: lastResetDate2 || (/* @__PURE__ */ new Date()).toDateString(),
+        status: (dailyCallCount2 || 0) >= (MAX_DAILY_CALLS2 || 180) ? "limited" : "available"
       });
     } catch (error) {
-      console.error("Error in LogMeal API detection:", error);
-      res.status(500).json({ error: "Failed to detect foods with LogMeal" });
+      res.json({
+        callsUsed: 0,
+        maxCalls: 180,
+        remaining: 180,
+        lastResetDate: (/* @__PURE__ */ new Date()).toDateString(),
+        status: "available"
+      });
     }
   });
   app2.get("/api/test-vision", async (req, res) => {
@@ -13452,8 +19186,7 @@ async function registerRoutes(app2) {
           features: [{ type: "LABEL_DETECTION", maxResults: 1 }]
         }]
       };
-      console.log("\u{1F9EA} Testing Vision API with minimal request...");
-      const response = await fetch5(testUrl, {
+      const response = await fetch6(testUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(testRequest)
@@ -13496,9 +19229,7 @@ async function registerRoutes(app2) {
       });
       const VISION_API_KEY = "AIzaSyBZNfvaAwCwgZHi4a9MKs8CkaRaMAxUPm4";
       const VISION_API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`;
-      console.log("\u{1F511} Using API key:", VISION_API_KEY.substring(0, 10) + "...");
       const base64Image = image.replace(/^data:image\/\w+;base64,/, "");
-      console.log("\u{1F4E6} Base64 image size after cleanup:", base64Image.length);
       const visionRequest = {
         requests: [{
           image: {
@@ -13521,10 +19252,9 @@ async function registerRoutes(app2) {
         }]
       };
       console.log("\u{1F4E1} Calling Google Vision API...");
-      console.log("\u{1F517} Vision API URL:", VISION_API_URL);
       let visionResponse;
       try {
-        visionResponse = await fetch5(VISION_API_URL, {
+        visionResponse = await fetch6(VISION_API_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -13532,8 +19262,6 @@ async function registerRoutes(app2) {
           body: JSON.stringify(visionRequest)
         });
       } catch (fetchError) {
-        console.error("\u274C Network error calling Vision API:", fetchError.message);
-        console.error("Full error:", fetchError);
         return res.status(500).json({
           error: "Network error calling Vision API",
           details: fetchError.message
@@ -13656,7 +19384,6 @@ async function registerRoutes(app2) {
       }
       detectedIngredients.sort((a, b) => b.confidence - a.confidence);
       const finalIngredients = detectedIngredients.slice(0, 10);
-      console.log(`\u{1F4CA} Final detection: ${finalIngredients.length} ingredients`);
       res.json({
         ingredients: finalIngredients,
         raw: {
@@ -13771,7 +19498,7 @@ async function registerRoutes(app2) {
       }
       if (process.env.USDA_API_KEY) {
         try {
-          const searchResponse = await fetch5(
+          const searchResponse = await fetch6(
             `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`
           );
           if (searchResponse.ok) {
@@ -13980,7 +19707,7 @@ async function registerRoutes(app2) {
         console.log("Goal Weights:", filters.goalWeights);
         console.log("Weight-based Enhanced:", filters.weightBasedEnhanced);
       }
-      const response = await fetch5("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch6("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -14091,10 +19818,14 @@ async function registerRoutes(app2) {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("X-Accel-Buffering", "no");
     const sendData = (data) => {
       res.write(`data: ${data}
 
 `);
+      if (typeof res.flush === "function") {
+        res.flush();
+      }
     };
     try {
       const userId = req.user?.id;
@@ -14224,6 +19955,8 @@ async function registerRoutes(app2) {
         temperature: 0.7,
         max_tokens: 4096
       });
+      const expectedTotalMeals = numDays * mealsPerDay;
+      console.log(`\u{1F9EE} DYNAMIC CALCULATION: ${numDays} days \xD7 ${mealsPerDay} meals = ${expectedTotalMeals} total expected meals`);
       let buffer = "";
       let mealCount = 0;
       let currentDay = 0;
@@ -14236,61 +19969,101 @@ async function registerRoutes(app2) {
       for await (const chunk of openaiStream) {
         const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
+          console.log("\u{1F30A} STREAM CHUNK received:", content.length, "chars:", content.substring(0, 100));
           buffer += content;
           if (content.includes('"title"')) {
-            console.log("\u{1F4E1} Title found in stream:", content);
+            console.log("\u{1F4E1} TITLE DETECTED in chunk:", content);
           }
           const dayMatches = [...buffer.matchAll(/"day_(\d+)"/g)];
           if (dayMatches.length > 0) {
             currentDay = parseInt(dayMatches[dayMatches.length - 1][1]);
           }
-          const mealRegex = /"title":\s*"([^"]+)"[^}]*"cook_time_minutes":\s*(\d+)[^}]*"difficulty":\s*(\d+)/g;
-          let lastSearchPosition = buffer.length - content.length;
-          mealRegex.lastIndex = Math.max(0, lastSearchPosition - 200);
+          console.log("\u{1F50D} BUFFER SIZE:", buffer.length, "chars - searching for complete titles");
+          const titleRegex = /"title":\s*"([^"]+)"/g;
+          console.log("\u{1F575}\uFE0F SEARCHING entire buffer for titles...");
           let match;
-          while ((match = mealRegex.exec(buffer)) !== null) {
-            const [fullMatch, mealTitle, cookTime2, difficulty2] = match;
-            const mealPosition = buffer.indexOf(fullMatch);
-            const mealKey = `${mealTitle}_${mealPosition}`;
+          titleRegex.lastIndex = 0;
+          while ((match = titleRegex.exec(buffer)) !== null) {
+            const mealTitle = match[1];
+            console.log("\u{1F3AF} REGEX MATCH found title:", mealTitle);
+            const mealKey = `${mealTitle.trim()}`;
             if (processedMeals.has(mealKey)) {
-              console.log(`\u23ED\uFE0F Skipping duplicate meal: ${mealTitle} at position ${mealPosition}`);
+              console.log(`\u23ED\uFE0F DUPLICATE DETECTED: ${mealTitle} (already processed)`);
               continue;
             }
             const mealType = mealTypes[mealCount % 3];
             processedMeals.add(mealKey);
             mealCount++;
-            console.log(`\u{1F37D}\uFE0F NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount}`);
+            console.log(`\u{1F37D}\uFE0F NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount} \u{1F680} SCHEDULING STREAMING!`);
             const mealData = {
               title: mealTitle,
               name: mealTitle,
               // For compatibility
-              cook_time_minutes: parseInt(cookTime2),
-              cook_time: parseInt(cookTime2),
+              cook_time_minutes: 25,
+              // Default cook time
+              cook_time: 25,
               // For compatibility
               prep_time: 10,
               // Default prep time
-              difficulty: parseInt(difficulty2),
+              difficulty: 2,
+              // Default difficulty
               mealType,
               day: currentDay || 1,
-              totalTime: parseInt(cookTime2) + 10,
+              totalTime: 35,
               id: `${mealType}_${mealCount}_${Date.now()}`
             };
-            sendData(JSON.stringify({
+            console.log(`\u{1F4E4} SENDING SSE data IMMEDIATELY for meal ${mealCount}/${expectedTotalMeals}:`, mealTitle);
+            const sseData = JSON.stringify({
               type: "meal",
-              data: mealData
-            }));
+              data: mealData,
+              mealNumber: mealCount,
+              totalMeals: expectedTotalMeals
+            });
+            console.log("\u{1F4E6} SSE payload:", sseData);
+            sendData(sseData);
+            try {
+              if (res.flush) {
+                res.flush();
+              }
+              if (res.socket && res.socket.flush) {
+                res.socket.flush();
+              }
+            } catch (flushError) {
+              console.log("Flush attempt failed (not critical):", flushError.message);
+            }
+            console.log(`\u2728 STREAMED IMMEDIATELY: Meal ${mealCount}/${expectedTotalMeals} - ${mealTitle} sent to frontend at ${(/* @__PURE__ */ new Date()).toISOString()}!`);
+          }
+          if (!titleRegex.test(buffer)) {
+            console.log("\u274C NO TITLES found in this chunk");
           }
         }
       }
-      try {
-        const cleanBuffer = buffer.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const completeMealPlan = JSON.parse(cleanBuffer);
+      console.log(`\u{1F50D} COMPLETION CHECK: Streamed ${mealCount} meals out of ${expectedTotalMeals} expected`);
+      if (mealCount >= expectedTotalMeals) {
+        console.log(`\u2705 ALL ${expectedTotalMeals} MEALS STREAMED! Now sending complete meal plan...`);
+        try {
+          const cleanBuffer = buffer.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          const completeMealPlan = JSON.parse(cleanBuffer);
+          sendData(JSON.stringify({
+            type: "complete",
+            data: completeMealPlan,
+            allMealsStreamed: true,
+            totalMealsStreamed: mealCount,
+            expectedTotalMeals
+          }));
+          console.log(`\u{1F4CB} COMPLETE MEAL PLAN SENT after all ${expectedTotalMeals} meals streamed!`);
+        } catch (e) {
+          console.log("\u274C Failed to parse complete meal plan, sending done signal");
+          sendData(JSON.stringify({ type: "done" }));
+        }
+      } else {
+        console.log(`\u23F3 WAITING for more meals... Only ${mealCount}/${expectedTotalMeals} streamed so far. NOT sending complete plan yet.`);
         sendData(JSON.stringify({
-          type: "complete",
-          data: completeMealPlan
+          type: "partial_complete",
+          streamedMeals: mealCount,
+          totalExpected: expectedTotalMeals,
+          message: "Waiting for all meals to stream before showing complete plan"
         }));
-      } catch (e) {
-        sendData(JSON.stringify({ type: "done" }));
       }
       res.end();
     } catch (error) {
@@ -14647,6 +20420,83 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: `Failed to calculate batch timing: ${error.message}` });
     }
   });
+  app2.post("/api/recipes/intelligent-search", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+      const { query } = req.body;
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+      console.log(`\u{1F50D} [PERPLEXITY TEST] Starting search for: "${query}"`);
+      console.log(`\u{1F511} [PERPLEXITY TEST] API Key exists: ${!!process.env.PERPLEXITY_API_KEY}`);
+      const requestBody = {
+        model: "llama-3.1-sonar-small-128k-online",
+        messages: [
+          {
+            role: "system",
+            content: "You are a recipe search expert. Find detailed recipes with ingredients, instructions, and cooking times."
+          },
+          {
+            role: "user",
+            content: `Find 3 simple recipes for: ${query}. Include ingredients, instructions, cooking time, and difficulty level for each recipe.`
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.3,
+        top_p: 0.9,
+        return_citations: true,
+        return_images: false,
+        return_related_questions: false,
+        search_recency_filter: "month",
+        top_k: 0,
+        stream: false,
+        presence_penalty: 0,
+        frequency_penalty: 1
+      };
+      console.log(`\u{1F4E4} [PERPLEXITY TEST] Request body:`, JSON.stringify(requestBody, null, 2));
+      const perplexityResponse = await fetch6("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+      console.log(`\u{1F310} [PERPLEXITY] Response status: ${perplexityResponse.status}`);
+      if (!perplexityResponse.ok) {
+        const errorText = await perplexityResponse.text();
+        console.error(`\u{1F6A8} [PERPLEXITY] Error response:`, errorText);
+        throw new Error(`Perplexity API error: ${perplexityResponse.status} - ${errorText}`);
+      }
+      const perplexityData = await perplexityResponse.json();
+      const recipeContent = perplexityData.choices[0]?.message?.content || "";
+      const citations = perplexityData.citations || [];
+      console.log(`\u{1F310} [PERPLEXITY] Success! Found ${citations.length} citations`);
+      console.log(`\u{1F4DD} [PERPLEXITY] Content length: ${recipeContent.length} characters`);
+      console.log(`\u{1F4DD} [PERPLEXITY] Content preview:`, recipeContent.substring(0, 200) + "...");
+      res.json({
+        success: true,
+        query,
+        perplexityContent: recipeContent,
+        citations,
+        contentLength: recipeContent.length,
+        searchMetadata: {
+          perplexitySearched: true,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      });
+    } catch (error) {
+      console.error("\u{1F6A8} [PERPLEXITY TEST] Error:", error);
+      res.status(500).json({
+        message: "Failed to perform perplexity search",
+        error: error.message,
+        query: req.body.query
+      });
+    }
+  });
   app2.post("/api/recipes/resolve-conflicts", async (req, res) => {
     try {
       const { mealRequest, dietaryRestrictions, culturalBackground } = req.body;
@@ -14909,7 +20759,7 @@ async function registerRoutes(app2) {
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, profileType, questionnaire_answers, questionnaire_selections } = req.body;
       console.log("\u{1F4BE} Creating weight-based profile with data:", {
         profileName,
         familySize,
@@ -14928,7 +20778,7 @@ async function registerRoutes(app2) {
         family_size: familySize,
         members: [],
         // Empty for weight-based approach
-        profile_type: "individual",
+        profile_type: profileType || "individual",
         preferences: dietaryRestrictions,
         goals: goalsArray,
         cultural_background: culturalBackground
@@ -14960,7 +20810,7 @@ async function registerRoutes(app2) {
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, profileType, questionnaire_answers, questionnaire_selections } = req.body;
       console.log("\u{1F4BE} Saving weight-based profile with data:", {
         profileName,
         familySize,
@@ -14980,7 +20830,7 @@ async function registerRoutes(app2) {
           primary_goal: "Weight-Based Planning",
           family_size: familySize || existingProfile.family_size || 2,
           members: existingProfile.members || [],
-          profile_type: "individual",
+          profile_type: profileType || existingProfile.profile_type || "individual",
           preferences: dietaryRestrictions || existingProfile.preferences || [],
           goals: goalsArray,
           cultural_background: culturalBackground || existingProfile.cultural_background || []
@@ -14994,7 +20844,7 @@ async function registerRoutes(app2) {
           primary_goal: "Weight-Based Planning",
           family_size: familySize || 2,
           members: [],
-          profile_type: "individual",
+          profile_type: profileType || "individual",
           preferences: dietaryRestrictions || [],
           goals: goalsArray,
           cultural_background: culturalBackground || []
@@ -15122,7 +20972,7 @@ async function registerRoutes(app2) {
     try {
       const userId = 9;
       const { userSavedCulturalMeals: userSavedCulturalMeals2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq4 } = await import("drizzle-orm");
+      const { eq: eq9 } = await import("drizzle-orm");
       const savedMeals = [];
       res.json({
         success: true,
@@ -15416,43 +21266,1501 @@ async function registerRoutes(app2) {
       });
     }
   });
+  app2.post("/api/objects/upload", authenticateToken2, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+  app2.get("/objects/:objectPath(*)", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error serving object:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+  app2.get("/api/communities", authenticateToken2, async (req, res) => {
+    try {
+      const category = req.query.category;
+      const userId = req.user?.id;
+      const communities2 = await communityService.getCommunities(category, userId);
+      res.json(communities2);
+    } catch (error) {
+      console.error("Error fetching communities:", error);
+      res.status(500).json({ message: "Failed to fetch communities" });
+    }
+  });
+  app2.get("/api/communities/my-communities", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const userCommunities = await db.select({
+        id: communities.id,
+        name: communities.name,
+        description: communities.description,
+        member_count: communities.member_count,
+        cover_image: communities.cover_image
+      }).from(communities).innerJoin(communityMembers, eq8(communityMembers.community_id, communities.id)).where(eq8(communityMembers.user_id, userId));
+      res.json(userCommunities);
+    } catch (error) {
+      console.error("Error fetching user communities:", error);
+      res.status(500).json({ message: "Failed to fetch user communities" });
+    }
+  });
+  app2.get("/api/communities/:id", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (isNaN(communityId)) {
+        return res.status(400).json({ message: "Invalid community ID" });
+      }
+      const community = await communityService.getCommunityDetails(communityId, userId);
+      res.json(community);
+    } catch (error) {
+      console.error("Error fetching community details:", error);
+      res.status(500).json({ message: "Failed to fetch community details" });
+    }
+  });
+  app2.get("/api/communities/:id/stats", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      const stats = {
+        newMembersThisWeek: 0,
+        engagementRate: 85,
+        activeToday: 0,
+        totalPosts: 0,
+        totalComments: 0
+      };
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching community stats:", error);
+      res.status(500).json({ message: "Failed to fetch community stats" });
+    }
+  });
+  app2.post("/api/communities", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { name, description, category, cover_image } = req.body;
+      if (!name || !description || !category) {
+        return res.status(400).json({ message: "Name, description, and category are required" });
+      }
+      const community = await communityService.createCommunity(userId, {
+        name,
+        description,
+        category,
+        cover_image
+      });
+      res.json(community);
+    } catch (error) {
+      console.error("Error creating community:", error);
+      res.status(500).json({ message: "Failed to create community" });
+    }
+  });
+  app2.post("/api/communities/:id/join", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const communityId = Number(req.params.id);
+      const member = await communityService.joinCommunity(userId, communityId);
+      res.json(member);
+    } catch (error) {
+      console.error("Error joining community:", error);
+      if (error.message === "Already a member of this community") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to join community" });
+    }
+  });
+  app2.post("/api/communities/:id/leave", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const communityId = Number(req.params.id);
+      await communityService.leaveCommunity(userId, communityId);
+      res.json({ message: "Successfully left community" });
+    } catch (error) {
+      console.error("Error leaving community:", error);
+      if (error.message === "Creator cannot leave their own community") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to leave community" });
+    }
+  });
+  app2.get("/api/communities/:id/posts", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      const limit = parseInt(req.query.limit) || 20;
+      const offset = parseInt(req.query.offset) || 0;
+      const type = req.query.type;
+      const posts = await communityService.getCommunityPosts(communityId, {
+        limit,
+        offset,
+        type,
+        userId
+      });
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching community posts:", error);
+      res.status(500).json({ message: "Failed to fetch community posts" });
+    }
+  });
+  app2.post("/api/communities/:id/posts", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { content, post_type = "discussion", meal_plan_id, images } = req.body;
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Post content is required" });
+      }
+      if (content.length > 5e3) {
+        return res.status(400).json({ message: "Post content is too long (max 5000 characters)" });
+      }
+      const post = await communityService.createCommunityPost(userId, communityId, {
+        content: content.trim(),
+        post_type,
+        meal_plan_id,
+        images: images && Array.isArray(images) && images.length > 0 ? images : null
+      });
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating community post:", error);
+      if (error.message === "You must be a member to perform this action") {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to create community post" });
+    }
+  });
+  app2.delete("/api/communities/:id/posts/:postId", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const community = await communityService.getCommunityById(communityId);
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      if (community.creator_id !== userId) {
+        return res.status(403).json({ message: "Only creators can delete posts" });
+      }
+      const result = await communityService.deletePost(postId, communityId);
+      if (!result) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      res.json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting community post:", error);
+      res.status(500).json({ message: "Failed to delete community post" });
+    }
+  });
+  app2.post("/api/communities/:communityId/posts/:postId/like", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.communityId);
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const result = await communityService.togglePostLike(userId, postId, communityId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling post like:", error);
+      if (error.message === "Post not found" || error.message === "Not a member of this community") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to toggle post like" });
+    }
+  });
+  app2.post("/api/communities/:communityId/posts/:postId/comments/:commentId/like", authenticateToken2, async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const result = await communityService.toggleCommentLike(userId, commentId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling comment like:", error);
+      if (error.message === "Comment not found" || error.message === "Post not found" || error.message === "You must be a member to perform this action") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to toggle comment like" });
+    }
+  });
+  app2.post("/api/communities/:id/share-meal-plan", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const communityId = Number(req.params.id);
+      const { meal_plan_id, title, description } = req.body;
+      if (!meal_plan_id || !title) {
+        return res.status(400).json({ message: "meal_plan_id and title are required" });
+      }
+      const sharedPlan = await mealPlanSharingService.shareMealPlan(
+        userId,
+        communityId,
+        meal_plan_id,
+        title,
+        description
+      );
+      res.json(sharedPlan);
+    } catch (error) {
+      console.error("Error sharing meal plan:", error);
+      res.status(500).json({ message: "Failed to share meal plan" });
+    }
+  });
+  app2.get("/api/communities/:id/meal-plans", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const membership = await communityService.getUserMembership(userId, communityId);
+      if (!membership) {
+        return res.status(403).json({ message: "You must be a member to view meal plans" });
+      }
+      const mealPlans2 = await communityService.getCommunityMealPlans(communityId);
+      res.json(mealPlans2);
+    } catch (error) {
+      console.error("Error fetching community meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch meal plans" });
+    }
+  });
+  app2.post("/api/communities/:id/meal-plans", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const community = await communityService.getCommunityDetails(communityId, userId);
+      if (!community || community.creator_id !== userId) {
+        return res.status(403).json({ message: "Only creators can add meal plans" });
+      }
+      const {
+        title,
+        description,
+        image_url,
+        youtube_video_id,
+        ingredients,
+        instructions,
+        prep_time,
+        cook_time,
+        servings
+      } = req.body;
+      if (!title || !ingredients || !instructions) {
+        return res.status(400).json({ message: "Title, ingredients, and instructions are required" });
+      }
+      const mealPlan = await communityService.createCommunityMealPlan(userId, communityId, {
+        title,
+        description,
+        image_url,
+        youtube_video_id,
+        ingredients,
+        instructions,
+        prep_time,
+        cook_time,
+        servings
+      });
+      res.json(mealPlan);
+    } catch (error) {
+      console.error("Error creating community meal plan:", error);
+      res.status(500).json({ message: "Failed to create meal plan" });
+    }
+  });
+  app2.get("/api/communities/:id/posts/:postId/comments", authenticateToken2, async (req, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const nested = req.query.nested === "true";
+      const userId = req.user?.id;
+      if (nested) {
+        const comments = await communityCommentsService.getNestedComments(postId, userId);
+        res.json(comments);
+      } else {
+        const comments = await communityService.getPostComments(postId, userId);
+        res.json(comments);
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+  app2.post("/api/communities/:id/posts/:postId/comments", authenticateToken2, async (req, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { content, parent_id, images } = req.body;
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+      if (content.length > 2e3) {
+        return res.status(400).json({ message: "Comment is too long (max 2000 characters)" });
+      }
+      const comment = await communityCommentsService.createComment({
+        post_id: postId,
+        author_id: userId,
+        content: content.trim(),
+        parent_id: parent_id || null,
+        images: images && Array.isArray(images) && images.length > 0 ? images : null
+      });
+      res.json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+  app2.put("/api/communities/:id/posts/:postId/comments/:commentId", authenticateToken2, async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { content, images } = req.body;
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+      if (content.length > 2e3) {
+        return res.status(400).json({ message: "Comment is too long (max 2000 characters)" });
+      }
+      const comment = await communityCommentsService.updateComment(commentId, userId, {
+        content: content.trim(),
+        images: images && Array.isArray(images) && images.length > 0 ? images : null
+      });
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      res.json(comment);
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      res.status(500).json({ message: "Failed to update comment" });
+    }
+  });
+  app2.delete("/api/communities/:id/posts/:postId/comments/:commentId", authenticateToken2, async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const success = await communityCommentsService.deleteComment(commentId, userId);
+      if (!success) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      res.json({ message: "Comment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+  app2.get("/api/communities/:id/meal-plans", async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const { featured, tags } = req.query;
+      const filter = {};
+      if (featured === "true") filter.featured = true;
+      if (tags) filter.tags = tags.split(",");
+      const plans = await communityService.getCommunityMealPlans(communityId, filter);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching community meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch community meal plans" });
+    }
+  });
+  app2.get("/api/trending-meal-plans", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit) || 10;
+      const trending = await mealPlanSharingService.getTrendingMealPlans(limit);
+      res.json(trending);
+    } catch (error) {
+      console.error("Error fetching trending meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch trending meal plans" });
+    }
+  });
+  app2.get("/api/recommended-meal-plans", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const limit = parseInt(req.query.limit) || 10;
+      const recommendations = await mealPlanSharingService.getRecommendedMealPlans(userId, limit);
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error fetching recommended meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch recommended meal plans" });
+    }
+  });
+  app2.post("/api/meal-plans/:id/review", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const sharedPlanId = Number(req.params.id);
+      const { rating, comment, tried_it, modifications, images } = req.body;
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      }
+      const review = await communityService.reviewMealPlan(userId, sharedPlanId, {
+        rating,
+        comment,
+        tried_it,
+        modifications,
+        images
+      });
+      res.json(review);
+    } catch (error) {
+      console.error("Error reviewing meal plan:", error);
+      if (error.message === "You have already reviewed this meal plan") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to review meal plan" });
+    }
+  });
+  app2.post("/api/meal-plans/:id/try", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const sharedPlanId = Number(req.params.id);
+      await communityService.markPlanAsTried(userId, sharedPlanId);
+      res.json({ message: "Marked as tried successfully" });
+    } catch (error) {
+      console.error("Error marking meal plan as tried:", error);
+      res.status(500).json({ message: "Failed to mark meal plan as tried" });
+    }
+  });
+  app2.post("/api/meal-plans/:id/like", authenticateToken2, async (req, res) => {
+    try {
+      const sharedPlanId = Number(req.params.id);
+      await mealPlanSharingService.likeMealPlan(sharedPlanId);
+      res.json({ message: "Liked successfully" });
+    } catch (error) {
+      console.error("Error liking meal plan:", error);
+      res.status(500).json({ message: "Failed to like meal plan" });
+    }
+  });
+  app2.get("/api/search-meal-plans", async (req, res) => {
+    try {
+      const { q, tags, maxCost, maxTime, minRating } = req.query;
+      const filters = {};
+      if (tags) filters.tags = tags.split(",");
+      if (maxCost) filters.maxCost = parseFloat(maxCost);
+      if (maxTime) filters.maxTime = parseInt(maxTime);
+      if (minRating) filters.minRating = parseInt(minRating);
+      const results = await mealPlanSharingService.searchMealPlans(q || "", filters);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching meal plans:", error);
+      res.status(500).json({ message: "Failed to search meal plans" });
+    }
+  });
+  app2.get("/api/creators/top", async (req, res) => {
+    console.log("\u{1F680} TOP CREATORS ENDPOINT HIT - DEBUG!");
+    try {
+      console.log(`\u{1F50D} [DEBUG] /api/creators/top called with query:`, req.query);
+      const metric = req.query.metric || "followers";
+      const limit = parseInt(req.query.limit) || 10;
+      console.log(`\u{1F4CA} [DEBUG] About to call getTopCreators with metric: ${metric}, limit: ${limit}`);
+      const creators = await creatorService.getTopCreators(metric, limit);
+      console.log(`\u2705 [DEBUG] getTopCreators returned ${creators?.length || 0} creators`);
+      res.json(creators);
+    } catch (error) {
+      console.error("\u274C [DEBUG] Error fetching top creators:", error);
+      res.status(500).json({ message: "Failed to fetch top creators" });
+    }
+  });
+  app2.get("/api/creators/:id", async (req, res) => {
+    try {
+      const creatorId = req.params.id;
+      const viewerId = req.user?.id;
+      const profile = await creatorService.getCreatorProfile(creatorId, viewerId);
+      if (!profile) {
+        return res.status(404).json({ message: "Creator profile not found" });
+      }
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching creator profile:", error);
+      res.status(500).json({ message: "Failed to fetch creator profile" });
+    }
+  });
+  app2.put("/api/creators/profile", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { bio, specialties, certifications, social_links } = req.body;
+      const profile = await creatorService.upsertCreatorProfile(userId, {
+        bio,
+        specialties,
+        certifications,
+        social_links
+      });
+      res.json(profile);
+    } catch (error) {
+      console.error("Error updating creator profile:", error);
+      res.status(500).json({ message: "Failed to update creator profile" });
+    }
+  });
+  app2.post("/api/creators/:id/follow", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const creatorId = req.params.id;
+      const follow = await creatorService.followCreator(userId, creatorId);
+      res.json(follow);
+    } catch (error) {
+      console.error("Error following creator:", error);
+      if (error.message === "Already following this creator") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to follow creator" });
+    }
+  });
+  app2.post("/api/creators/:id/unfollow", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const creatorId = req.params.id;
+      await creatorService.unfollowCreator(userId, creatorId);
+      res.json({ message: "Unfollowed successfully" });
+    } catch (error) {
+      console.error("Error unfollowing creator:", error);
+      res.status(500).json({ message: "Failed to unfollow creator" });
+    }
+  });
+  app2.get("/api/creators/following", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const creators = await creatorService.getFollowedCreators(userId);
+      res.json(creators);
+    } catch (error) {
+      console.error("Error fetching followed creators:", error);
+      res.status(500).json({ message: "Failed to fetch followed creators" });
+    }
+  });
+  app2.get("/api/creators/following/meal-plans", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const limit = parseInt(req.query.limit) || 20;
+      const plans = await creatorService.getFollowedCreatorsMealPlans(userId, limit);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching followed creators meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch followed creators meal plans" });
+    }
+  });
+  app2.get("/api/creators/:id/meal-plans", async (req, res) => {
+    try {
+      const creatorId = req.params.id;
+      const limit = parseInt(req.query.limit) || 20;
+      const plans = await mealPlanSharingService.getCreatorMealPlans(creatorId, limit);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching creator meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch creator meal plans" });
+    }
+  });
+  app2.get("/api/creator/stats", authenticateToken2, async (req, res) => {
+    try {
+      console.log(`\u{1F50D} [DEBUG] /api/creator/stats called for user:`, req.user?.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`\u274C [DEBUG] No user ID found in request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const followers = await db.select().from(creatorFollowers).where(eq8(creatorFollowers.creator_id, userId));
+      const userCommunities = await db.select().from(communities).where(eq8(communities.creator_id, userId));
+      const sharedPlans = await db.select().from(sharedMealPlans).where(eq8(sharedMealPlans.sharer_id, userId));
+      const stats = {
+        totalFollowers: followers.length,
+        totalCommunities: userCommunities.length,
+        totalSharedPlans: sharedPlans.length,
+        totalEarnings: 0,
+        // Will implement with Stripe
+        engagementRate: 78,
+        // Mock percentage
+        averageRating: 4.5,
+        // Mock rating
+        thisMonthGrowth: 12,
+        // Mock growth percentage
+        activeMemberships: 0
+        // Will implement with membership system
+      };
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching creator stats:", error);
+      res.status(500).json({ message: "Failed to fetch creator stats" });
+    }
+  });
+  app2.get("/api/communities/:id/courses", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      console.log(`[COURSES API] Fetching courses for community ${communityId}, user: ${userId}`);
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const courses = await db.select().from(communityMealCourses).where(eq8(communityMealCourses.community_id, communityId)).orderBy(communityMealCourses.display_order);
+      console.log(`[COURSES API] Found ${courses.length} courses`);
+      if (courses.length === 0) {
+        const [member] = await db.select().from(communityMembers).where(and6(
+          eq8(communityMembers.community_id, communityId),
+          eq8(communityMembers.user_id, userId),
+          eq8(communityMembers.role, "creator")
+        ));
+        if (member) {
+          console.log(`[COURSES API] Creator detected, creating default courses`);
+          const defaultCourses = [
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Start Here",
+              emoji: "\u{1F31F}",
+              description: "Essential information to get started with our meal planning community",
+              category: "beginner",
+              is_published: true,
+              display_order: 0,
+              lesson_count: 4
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "30-Day Meal Transformation",
+              emoji: "\u{1F525}",
+              description: "Transform your eating habits with our comprehensive 30-day program",
+              category: "intermediate",
+              is_published: true,
+              display_order: 1,
+              lesson_count: 5
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Budget Nutrition Secrets",
+              emoji: "\u{1F4B0}",
+              description: "Learn how to eat healthy on a budget with smart shopping strategies",
+              category: "beginner",
+              is_published: true,
+              display_order: 2,
+              lesson_count: 4
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Recipe Vault",
+              emoji: "\u{1F4DA}",
+              description: "Access our collection of quick, healthy, and delicious recipes",
+              category: "beginner",
+              is_published: true,
+              display_order: 3,
+              lesson_count: 4
+            }
+          ];
+          const insertedCourses = await db.insert(communityMealCourses).values(defaultCourses).returning();
+          console.log(`[COURSES API] Created ${insertedCourses.length} default courses`);
+          const newCourses = await db.select().from(communityMealCourses).where(eq8(communityMealCourses.community_id, communityId)).orderBy(communityMealCourses.display_order);
+          return res.json(newCourses);
+        }
+      }
+      const coursesWithModules = await Promise.all(
+        courses.map(async (course) => {
+          const modules = await db.select().from(communityMealCourseModules).where(eq8(communityMealCourseModules.course_id, course.id)).orderBy(communityMealCourseModules.module_order);
+          const modulesWithLessons = await Promise.all(
+            modules.map(async (module) => {
+              const lessons = await db.select().from(communityMealLessons).where(eq8(communityMealLessons.module_id, module.id)).orderBy(communityMealLessons.lesson_order);
+              return { ...module, lessons };
+            })
+          );
+          const standaloneLessons = await db.select().from(communityMealLessons).where(and6(
+            eq8(communityMealLessons.course_id, course.id),
+            isNull2(communityMealLessons.module_id)
+          )).orderBy(communityMealLessons.lesson_order);
+          return { ...course, modules: modulesWithLessons, lessons: standaloneLessons };
+        })
+      );
+      res.json(coursesWithModules || []);
+    } catch (error) {
+      console.error("[COURSES API] Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+  app2.post("/api/communities/:id/courses", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [member] = await db.select().from(communityMembers).where(and6(
+        eq8(communityMembers.community_id, communityId),
+        eq8(communityMembers.user_id, userId),
+        eq8(communityMembers.role, "creator")
+      ));
+      if (!member) {
+        return res.status(403).json({ message: "Only creators can create courses" });
+      }
+      const courseData = {
+        community_id: communityId,
+        creator_id: userId,
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        category: req.body.category,
+        cover_image: req.body.cover_image || null,
+        is_published: false,
+        display_order: req.body.display_order || 0,
+        drip_enabled: req.body.drip_enabled || false,
+        drip_days: req.body.drip_days || []
+      };
+      const [newCourse] = await db.insert(communityMealCourses).values(courseData).returning();
+      res.json(newCourse);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Failed to create course" });
+    }
+  });
+  app2.put("/api/communities/:id/courses/:courseId", authenticateToken2, async (req, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can update this course" });
+      }
+      const [updatedCourse] = await db.update(communityMealCourses).set({
+        title: req.body.title || course.title,
+        emoji: req.body.emoji || course.emoji,
+        description: req.body.description || course.description,
+        category: req.body.category || course.category,
+        is_published: req.body.is_published ?? course.is_published,
+        display_order: req.body.display_order ?? course.display_order,
+        drip_enabled: req.body.drip_enabled ?? course.drip_enabled,
+        drip_days: req.body.drip_days || course.drip_days,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealCourses.id, courseId)).returning();
+      res.json(updatedCourse);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Failed to update course" });
+    }
+  });
+  app2.delete("/api/communities/:id/courses/:courseId", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can delete this course" });
+      }
+      await db.delete(communityMealCourses).where(eq8(communityMealCourses.id, courseId));
+      res.json({ message: "Course deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+  app2.post("/api/communities/:id/courses/:courseId/modules", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can add modules to this course" });
+      }
+      const modules = await db.select().from(communityMealCourseModules).where(eq8(communityMealCourseModules.course_id, courseId)).orderBy(desc6(communityMealCourseModules.module_order));
+      const nextOrder = modules.length > 0 ? modules[0].module_order + 1 : 0;
+      const moduleData = {
+        course_id: courseId,
+        title: req.body.title || "New Module",
+        emoji: req.body.emoji || "\u{1F4C1}",
+        description: req.body.description || "",
+        cover_image: req.body.cover_image || null,
+        module_order: req.body.module_order ?? nextOrder,
+        is_expanded: req.body.is_expanded ?? false
+      };
+      const [newModule] = await db.insert(communityMealCourseModules).values(moduleData).returning();
+      res.json(newModule);
+    } catch (error) {
+      console.error("Error creating module:", error);
+      res.status(500).json({ message: "Failed to create module" });
+    }
+  });
+  app2.put("/api/communities/:id/courses/:courseId/modules/:moduleId", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const moduleId = Number(req.params.moduleId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can update modules in this course" });
+      }
+      const [updatedModule] = await db.update(communityMealCourseModules).set({
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        module_order: req.body.module_order,
+        is_expanded: req.body.is_expanded,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealCourseModules.id, moduleId)).returning();
+      res.json(updatedModule);
+    } catch (error) {
+      console.error("Error updating module:", error);
+      res.status(500).json({ message: "Failed to update module" });
+    }
+  });
+  app2.delete("/api/communities/:id/courses/:courseId/modules/:moduleId", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const moduleId = Number(req.params.moduleId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can delete modules from this course" });
+      }
+      await db.update(communityMealLessons).set({ module_id: null }).where(eq8(communityMealLessons.module_id, moduleId));
+      await db.delete(communityMealCourseModules).where(eq8(communityMealCourseModules.id, moduleId));
+      res.json({ message: "Module deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting module:", error);
+      res.status(500).json({ message: "Failed to delete module" });
+    }
+  });
+  app2.post("/api/communities/:id/courses/:courseId/lessons", authenticateToken2, async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [course] = await db.select().from(communityMealCourses).where(and6(
+        eq8(communityMealCourses.id, courseId),
+        eq8(communityMealCourses.creator_id, userId)
+      ));
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can add lessons to this course" });
+      }
+      const lessonData = {
+        course_id: courseId,
+        module_id: req.body.module_id,
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        video_url: req.body.video_url,
+        youtube_video_id: req.body.youtube_video_id,
+        image_url: req.body.image_url,
+        ingredients: req.body.ingredients || [],
+        instructions: req.body.instructions || [],
+        prep_time: req.body.prep_time || 0,
+        cook_time: req.body.cook_time || 0,
+        servings: req.body.servings || 4,
+        difficulty_level: req.body.difficulty_level || 1,
+        nutrition_info: req.body.nutrition_info || {},
+        lesson_order: req.body.lesson_order || 0,
+        is_published: false
+      };
+      const [newLesson] = await db.insert(communityMealLessons).values(lessonData).returning();
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        const sections = req.body.sections.map((section, index2) => ({
+          lesson_id: newLesson.id,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index2,
+          is_visible: section.is_visible ?? true
+        }));
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+      await db.update(communityMealCourses).set({
+        lesson_count: course.lesson_count + 1,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealCourses.id, courseId));
+      res.json(newLesson);
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res.status(500).json({ message: "Failed to create lesson" });
+    }
+  });
+  app2.put("/api/communities/:id/courses/:courseId/lessons/:lessonId", authenticateToken2, async (req, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [lesson] = await db.select({
+        lesson: communityMealLessons,
+        course: communityMealCourses
+      }).from(communityMealLessons).innerJoin(communityMealCourses, eq8(communityMealLessons.course_id, communityMealCourses.id)).where(and6(
+        eq8(communityMealLessons.id, lessonId),
+        eq8(communityMealLessons.course_id, courseId)
+      ));
+      if (!lesson || lesson.course.creator_id !== userId) {
+        return res.status(403).json({ message: "Only the creator can update this lesson" });
+      }
+      const [updatedLesson] = await db.update(communityMealLessons).set({
+        title: req.body.title || lesson.lesson.title,
+        emoji: req.body.emoji || lesson.lesson.emoji,
+        description: req.body.description || lesson.lesson.description,
+        video_url: req.body.video_url || lesson.lesson.video_url,
+        youtube_video_id: req.body.youtube_video_id || lesson.lesson.youtube_video_id,
+        image_url: req.body.image_url || lesson.lesson.image_url,
+        ingredients: req.body.ingredients || lesson.lesson.ingredients,
+        instructions: req.body.instructions || lesson.lesson.instructions,
+        prep_time: req.body.prep_time || lesson.lesson.prep_time,
+        cook_time: req.body.cook_time || lesson.lesson.cook_time,
+        servings: req.body.servings || lesson.lesson.servings,
+        difficulty_level: req.body.difficulty_level || lesson.lesson.difficulty_level,
+        is_published: req.body.is_published !== void 0 ? req.body.is_published : lesson.lesson.is_published,
+        lesson_order: req.body.lesson_order || lesson.lesson.lesson_order,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealLessons.id, lessonId)).returning();
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        await db.delete(communityMealLessonSections).where(eq8(communityMealLessonSections.lesson_id, lessonId));
+        const sections = req.body.sections.map((section, index2) => ({
+          lesson_id: lessonId,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index2,
+          is_visible: section.is_visible ?? true
+        }));
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+      res.json(updatedLesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Failed to update lesson" });
+    }
+  });
+  app2.put("/api/communities/:id/lessons/:lessonId", authenticateToken2, async (req, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const [lesson] = await db.select({
+        lesson: communityMealLessons,
+        course: communityMealCourses
+      }).from(communityMealLessons).innerJoin(communityMealCourses, eq8(communityMealLessons.course_id, communityMealCourses.id)).where(eq8(communityMealLessons.id, lessonId));
+      if (!lesson || lesson.course.creator_id !== userId) {
+        return res.status(403).json({ message: "Only the creator can update this lesson" });
+      }
+      const [updatedLesson] = await db.update(communityMealLessons).set({
+        title: req.body.title || lesson.lesson.title,
+        emoji: req.body.emoji || lesson.lesson.emoji,
+        description: req.body.description || lesson.lesson.description,
+        video_url: req.body.video_url || lesson.lesson.video_url,
+        youtube_video_id: req.body.youtube_video_id || lesson.lesson.youtube_video_id,
+        image_url: req.body.image_url || lesson.lesson.image_url,
+        ingredients: req.body.ingredients || lesson.lesson.ingredients,
+        instructions: req.body.instructions || lesson.lesson.instructions,
+        prep_time: req.body.prep_time ?? lesson.lesson.prep_time,
+        cook_time: req.body.cook_time ?? lesson.lesson.cook_time,
+        servings: req.body.servings ?? lesson.lesson.servings,
+        difficulty_level: req.body.difficulty_level ?? lesson.lesson.difficulty_level,
+        nutrition_info: req.body.nutrition_info || lesson.lesson.nutrition_info,
+        is_published: req.body.is_published ?? lesson.lesson.is_published,
+        updated_at: /* @__PURE__ */ new Date()
+      }).where(eq8(communityMealLessons.id, lessonId)).returning();
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        await db.delete(communityMealLessonSections).where(eq8(communityMealLessonSections.lesson_id, lessonId));
+        const sections = req.body.sections.map((section, index2) => ({
+          lesson_id: lessonId,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index2,
+          is_visible: section.is_visible ?? true
+        }));
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+      res.json(updatedLesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Failed to update lesson" });
+    }
+  });
+  app2.get("/api/communities/:id/lessons/:lessonId", authenticateToken2, async (req, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const userId = req.user?.id;
+      const [lesson] = await db.select().from(communityMealLessons).where(eq8(communityMealLessons.id, lessonId));
+      if (!lesson) {
+        return res.status(404).json({ message: "Lesson not found" });
+      }
+      const sections = await db.select().from(communityMealLessonSections).where(eq8(communityMealLessonSections.lesson_id, lessonId)).orderBy(communityMealLessonSections.display_order);
+      let userProgress = null;
+      if (userId) {
+        const [progress] = await db.select().from(userMealCourseProgress).where(and6(
+          eq8(userMealCourseProgress.user_id, userId),
+          eq8(userMealCourseProgress.course_id, lesson.course_id)
+        ));
+        userProgress = progress;
+      }
+      res.json({
+        ...lesson,
+        sections,
+        userProgress
+      });
+    } catch (error) {
+      console.error("Error fetching lesson:", error);
+      res.status(500).json({ message: "Failed to fetch lesson" });
+    }
+  });
+  app2.get("/api/creator/communities", authenticateToken2, async (req, res) => {
+    try {
+      console.log(`\u{1F50D} [DEBUG] /api/creator/communities called for user:`, req.user?.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`\u274C [DEBUG] No user ID in creator/communities request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const creatorCommunities = await db.select().from(communities).where(eq8(communities.creator_id, userId));
+      const communitiesWithStats = await Promise.all(
+        creatorCommunities.map(async (community) => {
+          const members = await db.select().from(communityMembers).where(eq8(communityMembers.community_id, community.id));
+          return {
+            ...community,
+            memberCount: members.length,
+            monthlyRevenue: 0,
+            // Will implement with Stripe
+            engagementRate: Math.floor(Math.random() * 30) + 60
+            // Mock percentage
+          };
+        })
+      );
+      res.json(communitiesWithStats);
+    } catch (error) {
+      console.error("Error fetching creator communities:", error);
+      res.status(500).json({ message: "Failed to fetch creator communities" });
+    }
+  });
+  app2.post("/api/community-posts", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const {
+        community_id,
+        content,
+        post_type = "meal_share",
+        recipe_data,
+        meal_plan_id,
+        images
+      } = req.body;
+      if (!community_id || !content?.trim()) {
+        return res.status(400).json({ message: "Missing required fields: community_id, content" });
+      }
+      const membership = await db.select().from(communityMembers).where(and6(
+        eq8(communityMembers.community_id, community_id),
+        eq8(communityMembers.user_id, userId)
+      )).limit(1);
+      if (membership.length === 0) {
+        return res.status(403).json({ message: "Not a member of this community" });
+      }
+      const [newPost] = await db.insert(communityPosts).values({
+        community_id,
+        author_id: userId,
+        content: content.trim(),
+        post_type,
+        meal_plan_id: meal_plan_id || null,
+        images: images ? JSON.stringify(images) : null,
+        recipe_data: recipe_data ? JSON.stringify(recipe_data) : null
+      }).returning();
+      if (recipe_data && post_type === "meal_share") {
+        console.log("=== SERVER: Received recipe_data for sharing ===", {
+          hasVideoId: !!recipe_data.video_id,
+          video_id: recipe_data.video_id,
+          video_title: recipe_data.video_title,
+          video_channel: recipe_data.video_channel,
+          title: recipe_data.title,
+          hasIngredients: !!recipe_data.ingredients
+        });
+        const tempMealPlan = {
+          id: `recipe_${newPost.id}`,
+          // Use post ID for unique identifier
+          name: recipe_data.title || "Shared Recipe",
+          description: recipe_data.description || "",
+          meal_plan: {
+            day_1: {
+              breakfast: {
+                name: recipe_data.title || "Shared Recipe",
+                description: recipe_data.description || "",
+                ingredients: recipe_data.ingredients || [],
+                instructions: recipe_data.instructions || [],
+                prep_time: recipe_data.time_minutes || 30,
+                cuisine: recipe_data.cuisine || "",
+                difficulty: "Medium",
+                // Add nutrition if available
+                nutrition: recipe_data.nutrition || recipe_data.nutrition_info || null,
+                // Add image if available
+                image_url: recipe_data.image_url || null,
+                // Add video fields if available
+                video_id: recipe_data.video_id || null,
+                video_title: recipe_data.video_title || null,
+                video_channel: recipe_data.video_channel || null
+              }
+            }
+          }
+        };
+        await db.update(communityPosts).set({
+          recipe_data: JSON.stringify(tempMealPlan)
+        }).where(eq8(communityPosts.id, newPost.id));
+      }
+      res.status(201).json({ message: "Post created successfully", post: newPost });
+    } catch (error) {
+      console.error("Error creating community post:", error);
+      res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+  app2.get("/api/favorites", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const favorites = await storage.getUserFavorites(userId);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      res.status(500).json({ message: "Failed to fetch favorites" });
+    }
+  });
+  app2.post("/api/favorites", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { item_type, item_id, title, description, image_url, time_minutes, cuisine, diet, video_id, video_title, video_channel, metadata } = req.body;
+      if (!item_type || !item_id || !title) {
+        return res.status(400).json({ message: "Missing required fields: item_type, item_id, title" });
+      }
+      const isAlreadyFavorited = await storage.isFavorited(userId, item_type, item_id);
+      if (isAlreadyFavorited) {
+        return res.status(409).json({ message: "Item already favorited" });
+      }
+      const favorite = await storage.addToFavorites({
+        user_id: userId,
+        item_type,
+        item_id,
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        video_id,
+        video_title,
+        video_channel,
+        metadata
+      });
+      res.status(201).json(favorite);
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      res.status(500).json({ message: "Failed to add to favorites" });
+    }
+  });
+  app2.delete("/api/favorites/:itemType/:itemId", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { itemType, itemId } = req.params;
+      const success = await storage.removeFromFavorites(userId, itemType, itemId);
+      if (success) {
+        res.json({ message: "Removed from favorites" });
+      } else {
+        res.status(404).json({ message: "Favorite not found" });
+      }
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+      res.status(500).json({ message: "Failed to remove from favorites" });
+    }
+  });
+  app2.post("/api/extract-meal-plan", authenticateToken2, async (req, res) => {
+    try {
+      console.log("\u{1F525} [BACKEND DEBUG] Extract meal plan endpoint hit");
+      const { url } = req.body;
+      const userId = req.user?.id;
+      console.log("\u{1F525} [BACKEND DEBUG] Request details:", {
+        url,
+        userId,
+        hasAuth: !!userId,
+        body: req.body
+      });
+      if (!userId) {
+        console.log("\u274C [BACKEND DEBUG] User not authenticated");
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      if (!url) {
+        console.log("\u274C [BACKEND DEBUG] URL is missing from request");
+        return res.status(400).json({ message: "URL is required" });
+      }
+      console.log(`\u{1F3AF} [BACKEND DEBUG] Starting smart extraction for: ${url}`);
+      console.log("\u{1F4E6} [BACKEND DEBUG] Importing SmartExtractionRouter...");
+      const { default: SmartExtractionRouter2 } = await Promise.resolve().then(() => (init_smartExtractionRouter(), smartExtractionRouter_exports));
+      console.log("\u{1F4E6} [BACKEND DEBUG] SmartExtractionRouter imported successfully");
+      const smartRouter = new SmartExtractionRouter2();
+      console.log("\u{1F527} [BACKEND DEBUG] SmartRouter instance created");
+      console.log("\u{1F680} [BACKEND DEBUG] Calling extractFromUrl...");
+      const result = await smartRouter.extractFromUrl(url, { maxRecipes: 10 });
+      console.log("\u{1F4E4} [BACKEND DEBUG] SmartRouter result:", result);
+      if (!result.success) {
+        console.log("\u274C [BACKEND DEBUG] SmartRouter failed:", result.error);
+        console.log("\u274C [BACKEND DEBUG] Failure metadata:", result.metadata);
+        return res.status(500).json({
+          success: false,
+          error: result.error,
+          metadata: result.metadata
+        });
+      }
+      if (result.type === "single-recipe") {
+        console.log(`\u2705 Single recipe extracted: "${result.recipe.title}"`);
+        res.json({
+          success: true,
+          recipe: result.recipe,
+          metadata: result.metadata
+        });
+      } else if (result.type === "multi-recipe") {
+        console.log(`\u2705 Multiple recipes extracted: ${result.recipes.length} recipes`);
+        const bestRecipe = result.recipes.reduce((best, current) => {
+          const currentScore = (current.recipe.ingredients?.length || 0) + (current.recipe.instructions?.length || 0);
+          const bestScore = (best.recipe.ingredients?.length || 0) + (best.recipe.instructions?.length || 0);
+          return currentScore > bestScore ? current : best;
+        });
+        const primaryRecipe = bestRecipe?.recipe;
+        if (!primaryRecipe) {
+          return res.status(500).json({
+            success: false,
+            error: "No recipes could be extracted from the discovered URLs"
+          });
+        }
+        res.json({
+          success: true,
+          recipe: primaryRecipe,
+          allRecipes: result.recipes.map((r) => r.recipe),
+          // Include all full recipes
+          metadata: {
+            ...bestRecipe?.metadata,
+            multipleRecipesFound: true,
+            totalRecipesExtracted: result.recipes.length,
+            allRecipes: result.recipes.map((r) => ({
+              title: r.recipe.title,
+              url: r.url,
+              ingredients: r.recipe.ingredients?.length || 0,
+              instructions: r.recipe.instructions?.length || 0
+            })),
+            extractionSummary: result.summary
+          }
+        });
+      }
+    } catch (error) {
+      console.error("\u{1F6A8} [BACKEND DEBUG] Meal extraction critical error:", error);
+      console.error("\u{1F6A8} [BACKEND DEBUG] Error stack:", error.stack);
+      console.error("\u{1F6A8} [BACKEND DEBUG] Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      res.status(500).json({
+        success: false,
+        error: "Failed to extract meal plan data",
+        details: error.message
+      });
+    }
+  });
+  app2.post("/api/batch-extract-recipes", authenticateToken2, async (req, res) => {
+    try {
+      const { homepageUrl, maxRecipes = 50 } = req.body;
+      if (!homepageUrl) {
+        return res.status(400).json({
+          success: false,
+          error: "Homepage URL is required"
+        });
+      }
+      console.log(`\u{1F680} Starting batch extraction from: ${homepageUrl}`);
+      console.log(`\u{1F4CA} Max recipes: ${maxRecipes}`);
+      const { default: BatchExtractionService2 } = await Promise.resolve().then(() => (init_batchExtractionService(), batchExtractionService_exports));
+      const batchExtractor = new BatchExtractionService2();
+      const result = await batchExtractor.extractRecipesFromSite(homepageUrl, maxRecipes);
+      if (result.success) {
+        console.log(`\u2705 Batch extraction completed: ${result.summary.successfulExtractions} recipes extracted`);
+        res.json(result);
+      } else {
+        console.log(`\u274C Batch extraction failed: ${result.error}`);
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error("\u{1F6A8} Batch extraction error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to start batch extraction",
+        details: error.message
+      });
+    }
+  });
+  app2.get("/api/batch-extract-progress/:sessionId", authenticateToken2, async (req, res) => {
+    try {
+      res.json({
+        message: "Progress tracking not yet implemented",
+        sessionId: req.params.sessionId
+      });
+    } catch (error) {
+      console.error("Progress tracking error:", error);
+      res.status(500).json({ message: "Failed to get progress" });
+    }
+  });
+  app2.get("/api/favorites/:itemType/:itemId/check", authenticateToken2, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const { itemType, itemId } = req.params;
+      const isFavorited = await storage.isFavorited(userId, itemType, itemId);
+      res.json({ isFavorited });
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
+      res.status(500).json({ message: "Failed to check favorite status" });
+    }
+  });
   const httpServer = createServer(app2);
   return httpServer;
 }
 
 // server/vite.ts
-import express from "express";
+import express2 from "express";
 import fs3 from "fs";
-import path4 from "path";
+import path8 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
-import path3 from "path";
+import path7 from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-var vite_config_default = defineConfig({
-  plugins: [
-    react(),
-    runtimeErrorOverlay(),
-    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
-      await import("@replit/vite-plugin-cartographer").then(
-        (m) => m.cartographer()
-      )
-    ] : []
-  ],
-  resolve: {
-    alias: {
-      "@": path3.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path3.resolve(import.meta.dirname, "shared"),
-      "@assets": path3.resolve(import.meta.dirname, "attached_assets")
+var vite_config_default = defineConfig(async ({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  return {
+    plugins: [
+      react(),
+      runtimeErrorOverlay(),
+      ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
+        await import("@replit/vite-plugin-cartographer").then(
+          (m) => m.cartographer()
+        )
+      ] : []
+    ],
+    resolve: {
+      alias: {
+        "@": path7.resolve(import.meta.dirname, "client", "src"),
+        "@shared": path7.resolve(import.meta.dirname, "shared"),
+        "@assets": path7.resolve(import.meta.dirname, "attached_assets")
+      }
+    },
+    root: path7.resolve(import.meta.dirname, "client"),
+    build: {
+      outDir: path7.resolve(import.meta.dirname, "dist/public"),
+      emptyOutDir: true
+    },
+    server: {
+      host: "0.0.0.0",
+      port: 5173,
+      proxy: {
+        "/api": {
+          target: "http://localhost:5001",
+          changeOrigin: true,
+          secure: false
+        }
+      }
     }
-  },
-  root: path3.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path3.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true
-  }
+  };
 });
 
 // server/vite.ts
@@ -15493,7 +22801,7 @@ async function setupVite(app2, server) {
     }
     const url = req.originalUrl;
     try {
-      const clientTemplate = path4.resolve(
+      const clientTemplate = path8.resolve(
         import.meta.dirname,
         "..",
         "client",
@@ -15513,24 +22821,68 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path4.resolve(import.meta.dirname, "public");
+  const distPath = path8.resolve(import.meta.dirname, "..", "dist", "public");
   if (!fs3.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app2.use(express.static(distPath));
-  app2.use("*", (_req, res) => {
-    res.sendFile(path4.resolve(distPath, "index.html"));
+  app2.use(express2.static(distPath));
+  app2.use("*", (req, res) => {
+    if (req.originalUrl.startsWith("/api/")) {
+      return res.status(404).json({ error: "API endpoint not found" });
+    }
+    res.sendFile(path8.resolve(distPath, "index.html"));
   });
 }
 
 // server/index.ts
 init_googleAuth();
-dotenv.config();
-var app = express2();
-app.use(express2.json({ limit: "10mb" }));
-app.use(express2.urlencoded({ extended: false, limit: "10mb" }));
+var __filename5 = fileURLToPath5(import.meta.url);
+var __dirname6 = path9.dirname(__filename5);
+dotenv5.config({ path: path9.join(__dirname6, "..", ".env") });
+var app = express3();
+var corsOptions = {
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    const allowedOrigins = [
+      /^https:\/\/.*\.apps\.whop\.com$/,
+      // Any Whop app subdomain
+      /^https:\/\/whop\.com$/,
+      // Main Whop domain
+      /^http:\/\/localhost:\d+$/,
+      // Local development
+      /^https:\/\/.*\.replit\.dev$/,
+      // Replit domains
+      /^https:\/\/.*\.repl\.co$/
+      // Replit alternative domains
+    ];
+    const allowed = allowedOrigins.some(
+      (pattern) => pattern.test(origin)
+    );
+    if (allowed) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true,
+  // Allow cookies and authentication
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  exposedHeaders: ["set-cookie"],
+  maxAge: 86400
+  // Cache preflight response for 24 hours
+};
+app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  if (req.path === "/api/stripe/webhook") {
+    next();
+  } else {
+    express3.json({ limit: "10mb" })(req, res, next);
+  }
+});
+app.use(express3.urlencoded({ extended: false, limit: "10mb" }));
 app.use(session({
   secret: process.env.SESSION_SECRET || "healthy-mama-session-secret-2025",
   resave: false,
@@ -15540,19 +22892,23 @@ app.use(session({
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1e3,
     // 30 days for better persistence
-    sameSite: "lax"
-    // Helps with CSRF protection
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    // 'none' for cross-site in production
+    domain: process.env.NODE_ENV === "production" ? void 0 : void 0
+    // Let browser handle domain
   },
   name: "healthy-mama-session",
   // Custom session name
-  rolling: true
+  rolling: true,
   // Reset expiry on activity
+  proxy: true
+  // Trust proxy for secure cookies behind reverse proxy
 }));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use((req, res, next) => {
   const start = Date.now();
-  const path5 = req.path;
+  const path10 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -15561,8 +22917,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path5.startsWith("/api")) {
-      let logLine = `${req.method} ${path5} ${res.statusCode} in ${duration}ms`;
+    if (path10.startsWith("/api")) {
+      let logLine = `${req.method} ${path10} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -15575,7 +22931,9 @@ app.use((req, res, next) => {
   next();
 });
 (async () => {
+  console.log("\u{1F527} [SERVER DEBUG] Registering API routes...");
   const server = await registerRoutes(app);
+  console.log("\u2705 [SERVER DEBUG] API routes registered successfully");
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -15583,9 +22941,12 @@ app.use((req, res, next) => {
     throw err;
   });
   if (app.get("env") === "development") {
+    console.log("\u{1F527} [SERVER DEBUG] Setting up Vite development middleware...");
     await setupVite(app, server);
   } else {
+    console.log("\u{1F527} [SERVER DEBUG] Setting up static file serving...");
     serveStatic(app);
+    console.log("\u2705 [SERVER DEBUG] Static file serving configured");
   }
   const port = process.env.PORT ? parseInt(process.env.PORT) : 5e3;
   server.on("error", (error) => {
@@ -15599,9 +22960,5 @@ app.use((req, res, next) => {
   });
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
-    console.log("\u{1F511} API Keys Status:");
-    console.log(`   - Instacart: ${process.env.INSTACART_API_KEY ? "\u2705 Available" : "\u274C Not found"}`);
-    console.log(`   - YouTube: ${process.env.YOUTUBE_API_KEY ? "\u2705 Available" : "\u274C Not found"}`);
-    console.log(`   - OpenAI: ${process.env.OPENAI_API_KEY ? "\u2705 Available" : "\u274C Not found"}`);
   });
 })();

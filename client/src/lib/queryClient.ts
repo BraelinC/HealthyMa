@@ -1,11 +1,20 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { buildApiUrl } from "../config/api";
 
 // Centralized API request function with robust error handling and auto token refresh
 export async function apiRequest(
   url: string,
   options: RequestInit = {}
 ): Promise<any> {
-  const token = localStorage.getItem('auth_token');
+  let token = localStorage.getItem('auth_token');
+  
+  // Clear malformed tokens
+  if (token && (token === 'null' || token.length < 10)) {
+    console.log('🔧 Clearing malformed token:', token);
+    localStorage.removeItem('auth_token');
+    token = null;
+  }
+  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...((options.headers as Record<string, string>) || {}),
@@ -15,10 +24,13 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  console.log('API Request:', { url, method: options.method || 'GET', hasBody: !!options.body });
+  // Build full URL if it's a relative path
+  const fullUrl = url.startsWith('http') ? url : buildApiUrl(url);
+  
+  // console.log('API Request:', { url: fullUrl, method: options.method || 'GET', hasBody: !!options.body });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch(fullUrl, {
       credentials: "include",
       ...options,
       headers,
@@ -34,24 +46,24 @@ export async function apiRequest(
       window.dispatchEvent(new CustomEvent('auth-token-refreshed', { detail: { token: newToken } }));
     }
 
-    console.log('API Response:', { 
-      url, 
-      status: res.status, 
-      ok: res.ok,
-      contentType: res.headers.get('content-type'),
-      hasNewToken: !!newToken
-    });
+    // console.log('API Response:', { 
+    //   url: fullUrl, 
+    //   status: res.status, 
+    //   ok: res.ok,
+    //   contentType: res.headers.get('content-type'),
+    //   hasNewToken: !!newToken
+    // });
 
     // Check if response is JSON
     const contentType = res.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       const text = await res.text();
       console.error('Non-JSON Response:', text);
-      throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON. Check endpoint: ${url}`);
+      throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON. Check endpoint: ${fullUrl}`);
     }
 
     const text = await res.text();
-    console.log('API Response Text:', text);
+    // console.log('API Response Text:', text);
 
     if (!text || text.trim() === '') {
       if (!res.ok) {
@@ -73,7 +85,7 @@ export async function apiRequest(
       throw new Error(errorMessage);
     }
 
-    console.log('API Parsed Response:', parsed);
+    // console.log('API Parsed Response:', parsed);
     return parsed;
   } catch (error) {
     console.error('API Request Error:', error);
@@ -121,20 +133,24 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: async ({ queryKey }) => {
         const [url] = queryKey as [string];
-        console.log('Query function called for:', url);
+        // console.log('Query function called for:', url);
         try {
           const result = await apiRequest(url, { method: 'GET' });
-          console.log('Query result:', result);
+          // console.log('Query result:', result);
           return result;
         } catch (error) {
           console.error('Query error for', url, ':', error);
           throw error;
         }
       },
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false,
+      // Disable client caching while we debug: always consider data stale
+      staleTime: 0,
+      cacheTime: 0,
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
       retry: (failureCount, error: any) => {
-        console.log('Query retry attempt:', failureCount, 'for error:', error);
+        // console.log('Query retry attempt:', failureCount, 'for error:', error);
         // Don't retry on authentication or client errors
         if (error.message?.includes('401') || error.message?.includes('400')) {
           return false;

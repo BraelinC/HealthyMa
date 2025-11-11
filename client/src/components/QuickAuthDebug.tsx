@@ -35,7 +35,7 @@ export function QuickAuthDebug() {
         setAuthStatus({ authenticated: false, error: `HTTP ${response.status}` });
       }
     } catch (error) {
-      setAuthStatus({ authenticated: false, error: error.message });
+      setAuthStatus({ authenticated: false, error: (error as Error).message });
     }
   };
 
@@ -62,7 +62,7 @@ export function QuickAuthDebug() {
         toast({ title: "Registration Failed", description: error, variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
     }
   };
 
@@ -84,7 +84,7 @@ export function QuickAuthDebug() {
         toast({ title: "Login Failed", description: error, variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
     }
   };
 

@@ -3,14 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe, LogOut } from 'lucide-react';
+import { Plus, X, Users, Target, ChefHat, Save, UserPlus, Edit3, Heart, Home, Shuffle, Baby, User, Crown, Globe, LogOut, CheckCircle, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Profile, FamilyMember } from '@shared/schema';
 import CulturalCuisineDropdown from '@/components/CulturalCuisineDropdown';
@@ -81,21 +81,15 @@ const commonPreferences = [
 ];
 
 const commonDietaryRestrictions = [
-  'Vegetarian',
-  'Vegan',
-  'Gluten-Free',
-  'Dairy-Free',
-  'Nut-Free',
-  'Egg-Free',
-  'Soy-Free',
-  'Shellfish Allergy',
-  'Fish Allergy',
-  'Halal',
-  'Kosher',
-  'Low-Sodium',
-  'Diabetic',
-  'Keto',
-  'Paleo'
+  'Milk',
+  'Eggs',
+  'Fish',
+  'Shellfish',
+  'Tree Nuts',
+  'Peanuts',
+  'Wheat',
+  'Soy',
+  'Sesame'
 ];
 
 const personalGoals = [
@@ -209,6 +203,7 @@ export default function Profile() {
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      queryClient.refetchQueries({ queryKey: ['/api/profile'] });
 
       // Reset to idle after showing saved state
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -259,6 +254,7 @@ export default function Profile() {
       });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      queryClient.refetchQueries({ queryKey: ['/api/profile'] });
 
       // Reset to idle after showing saved state
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -614,6 +610,7 @@ export default function Profile() {
       // Wait a moment before invalidating to ensure database update is complete
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
+      queryClient.refetchQueries({ queryKey: ['/api/profile'] });
       }, 500);
 
       console.log('✅ Cultural preferences saved successfully!');
@@ -777,9 +774,19 @@ export default function Profile() {
             </div>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-emerald-600 bg-clip-text text-transparent">
-                Family Profile
+                {!profile && !isEditing 
+                  ? 'Profile Setup' 
+                  : profileType === 'individual' ? 'Individual Profile' : 'Family Profile'
+                }
               </h1>
-              <p className="text-gray-600 mt-1">Create your personalized meal planning experience</p>
+              <p className="text-gray-600 mt-1">
+                {!profile && !isEditing 
+                  ? 'Set up your profile to get personalized meal plans'
+                  : profileType === 'individual' 
+                    ? 'Create your personalized meal planning experience' 
+                    : 'Create your family\'s meal planning experience'
+                }
+              </p>
             </div>
           </div>
           {!isEditing && profile && (
@@ -889,37 +896,6 @@ export default function Profile() {
           </Card>
         )}
 
-        {!profile && !isEditing && (
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-white/30 backdrop-blur-sm border-0 shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="bg-gradient-to-r from-pink-100 to-purple-100 p-4 rounded-full w-fit mx-auto mb-4">
-                  <Users className="h-8 w-8 text-pink-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Family Members</h3>
-                <p className="text-sm text-gray-600">Add each family member with their preferences and goals</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/30 backdrop-blur-sm border-0 shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="bg-gradient-to-r from-blue-100 to-emerald-100 p-4 rounded-full w-fit mx-auto mb-4">
-                  <Target className="h-8 w-8 text-blue-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Personal Goals</h3>
-                <p className="text-sm text-gray-600">Set dietary goals and preferences for each family member</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/30 backdrop-blur-sm border-0 shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="bg-gradient-to-r from-emerald-100 to-green-100 p-4 rounded-full w-fit mx-auto mb-4">
-                  <ChefHat className="h-8 w-8 text-emerald-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Smart Meal Plans</h3>
-                <p className="text-sm text-gray-600">Get personalized meal plans based on your family's profile</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {(isEditing || profile) && (
           <div className="space-y-6 mt-6">
@@ -949,9 +925,12 @@ export default function Profile() {
                       <Select 
                         value={profileType} 
                         onValueChange={(value: 'individual' | 'family') => {
+                          const previousType = profileType;
                           setProfileType(value);
-                          // Clear members when switching to individual
-                          if (value === 'individual') {
+                          // Only clear members when explicitly switching FROM family TO individual
+                          // and we're not loading profile data (members should exist before clearing)
+                          if (value === 'individual' && previousType === 'family' && members.length > 0) {
+                            console.log('🗑️ User explicitly switched to individual - clearing members');
                             setMembers([]);
                             setFamilySize(1);
                           }
@@ -1053,103 +1032,26 @@ export default function Profile() {
                 {profileType === 'individual' && isEditing && (
                   <div className="space-y-4 pt-4 border-t border-gray-200">
                     <div>
-                      <Label>Dietary Preferences</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {commonPreferences.map(pref => (
-                          <Button
-                            key={pref}
-                            onClick={() => addIndividualPreference(pref)}
-                            variant={individualPreferences.includes(pref) ? "default" : "outline"}
-                            size="sm"
-                            className="text-xs"
-                          >
-                            {pref}
-                          </Button>
-                        ))}
-                      </div>
-                      {individualPreferences.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {individualPreferences.map((pref: string) => (
-                            <Badge key={pref} variant="secondary" className="flex items-center gap-1">
-                              {pref}
-                              <button
-                                onClick={() => removeIndividualPreference(pref)}
-                                className="ml-1 text-red-500 hover:text-red-700"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
                       <Label className="flex items-center gap-2">
                         <span className="text-red-500">*</span>
                         Dietary Restrictions
                       </Label>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Gluten-Free')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Gluten-Free']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Gluten-Free') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Gluten-Free
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Dairy-Free/Lactose Intolerance')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Dairy-Free/Lactose Intolerance']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Dairy-Free/Lactose Intolerance') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Dairy-Free/Lactose Intolerance
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Nut-Free')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Nut-Free']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Nut-Free') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Nut-Free
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Vegetarian or Vegan')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Vegetarian or Vegan']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Vegetarian or Vegan') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Vegetarian or Vegan
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (!individualDietaryRestrictions.includes('Egg-Free')) {
-                              setIndividualDietaryRestrictions([...individualDietaryRestrictions, 'Egg-Free']);
-                            }
-                          }}
-                          variant={individualDietaryRestrictions.includes('Egg-Free') ? "destructive" : "outline"}
-                          size="sm"
-                          className="text-xs"
-                        >
-                          Egg-Free
-                        </Button>
+                        {commonDietaryRestrictions.map(restriction => (
+                          <Button
+                            key={restriction}
+                            onClick={() => {
+                              if (!individualDietaryRestrictions.includes(restriction)) {
+                                setIndividualDietaryRestrictions([...individualDietaryRestrictions, restriction]);
+                              }
+                            }}
+                            variant={individualDietaryRestrictions.includes(restriction) ? "destructive" : "outline"}
+                            size="sm"
+                            className="text-xs"
+                          >
+                            {restriction}
+                          </Button>
+                        ))}
                       </div>
                       {individualDietaryRestrictions.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
@@ -1174,17 +1076,6 @@ export default function Profile() {
 
                 {profileType === 'individual' && !isEditing && (
                   <div className="space-y-4 pt-4 border-t border-gray-200">
-                    {individualPreferences.length > 0 && (
-                      <div>
-                        <Label className="text-sm font-medium">Dietary Preferences:</Label>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {individualPreferences.map((pref: string) => (
-                            <Badge key={pref} variant="outline">{pref}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     {individualDietaryRestrictions.length > 0 && (
                       <div>
                         <Label className="text-sm font-medium text-red-600">Dietary Restrictions:</Label>
@@ -1240,6 +1131,8 @@ export default function Profile() {
             {!isEditing && (profile || profileType === 'individual') && (
               <AchievementsContainer />
             )}
+
+
 
 
             {profileType === 'family' && (
@@ -1471,41 +1364,6 @@ export default function Profile() {
 
                           <div className="space-y-4">
                             <div>
-                              <Label>Dietary Preferences</Label>
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {commonPreferences.map(pref => (
-                                  <Button
-                                    key={pref}
-                                    onClick={() => addPreference(pref)}
-                                    variant={newMember.preferences.includes(pref) ? "default" : "outline"}
-                                    size="sm"
-                                    className="text-xs"
-                                  >
-                                    {pref}
-                                  </Button>
-                                ))}
-                              </div>
-                              {newMember.preferences.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {newMember.preferences.map((pref: string) => (
-                                    <Badge key={pref} variant="secondary" className="flex items-center gap-1">
-                                      {pref}
-                                      <button
-                                        onClick={() => setNewMember({
-                                          ...newMember,
-                                          preferences: newMember.preferences.filter((p: string) => p !== pref)
-                                        })}
-                                        className="ml-1 text-red-500 hover:text-red-700"
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </button>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            <div>
                               <Label className="flex items-center gap-2">
                                 <span className="text-red-500">*</span>
                                 Dietary Restrictions
@@ -1543,41 +1401,6 @@ export default function Profile() {
                                 </div>
                               )}
                             </div>
-
-                            <div>
-                              <Label>Personal Goals</Label>
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {personalGoals.map(goal => (
-                                  <Button
-                                    key={goal}
-                                    onClick={() => addGoal(goal)}
-                                    variant={newMember.goals.includes(goal) ? "default" : "outline"}
-                                    size="sm"
-                                    className="text-xs"
-                                  >
-                                    {goal}
-                                  </Button>
-                                ))}
-                              </div>
-                              {newMember.goals.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {newMember.goals.map((goal: string) => (
-                                    <Badge key={goal} variant="secondary" className="flex items-center gap-1">
-                                      {goal}
-                                      <button
-                                        onClick={() => setNewMember({
-                                          ...newMember,
-                                          goals: newMember.goals.filter((g: string) => g !== goal)
-                                        })}
-                                        className="ml-1 text-red-500 hover:text-red-700"
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </button>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
                           </div>
 
                           <div className="flex gap-2 mt-6">
@@ -1597,6 +1420,42 @@ export default function Profile() {
               </CardContent>
               </Card>
             )}
+
+            {/* Support Healthy Mama Section */}
+            <Card className="bg-gradient-to-r from-purple-50 to-emerald-50 border-2 border-purple-200 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-purple-600" />
+                  Support Healthy Mama
+                </CardTitle>
+                <CardDescription>
+                  Enjoying Healthy Mama? Help support me as this grows!
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center">
+                <div className="bg-white/70 rounded-lg p-6 border border-purple-200">
+                  <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    $100
+                  </p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    One-time support<br/>
+                    (Help keep the platform growing!)
+                  </p>
+                  <Button 
+                    onClick={() => {
+                      // Store the current page to return to after payment
+                      sessionStorage.setItem('returnTo', '/profile');
+                      // Trigger the same payment flow as landing page by going to landing page with payment parameter
+                      window.location.href = '/?payment=founders';
+                    }}
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Support Development
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Prompt Preview Section */}
             <ProfilePromptPreview 

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { safeApiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import { safeApiRequest, apiRequest } from "@/lib/queryClient";
+import { CreateRecipe } from "@/components/CreateRecipe";
 
 import { 
   ChefHat,
@@ -15,9 +17,10 @@ import {
   ChevronDown,
   ChevronUp,
   ShoppingCart,
+  Search,
+  Bot,
   BookOpen,
   Activity,
-  Search,
   GripVertical,
   Move,
   Egg,
@@ -48,7 +51,9 @@ import {
   Croissant,
   Milk,
   Check,
-  CheckCircle
+  CheckCircle,
+  Share2,
+  UserPlus
 } from "lucide-react";
 
 // Import React Icons for more specific food types
@@ -60,7 +65,7 @@ import {
 } from "react-icons/gi";
 import { MdRamenDining, MdLocalBar, MdIcecream } from "react-icons/md";
 import { TbBurger } from "react-icons/tb";
-import { Icon } from "@iconify/react";
+// import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +74,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { GroceryListPanel } from "@/components/GroceryListPanel";
+import { CommunityShareModal } from "@/components/CommunityShareModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Meal {
   title: string;
@@ -113,6 +122,7 @@ interface MealCompletion {
 }
 
 export default function Home() {
+  const [, setLocation] = useLocation(); // For instant navigation
   const [currentPlan, setCurrentPlan] = useState<MealPlan | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingMeal, setEditingMeal] = useState<{ dayKey: string; mealType: string; meal: Meal } | null>(null);
@@ -125,8 +135,198 @@ export default function Home() {
   const [showGroceryPanel, setShowGroceryPanel] = useState(false);
   const [groceryListData, setGroceryListData] = useState<any>(null);
   const [isLoadingGroceries, setIsLoadingGroceries] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [showCreateRecipe, setShowCreateRecipe] = useState(false);
+  const [showAddIngredientModal, setShowAddIngredientModal] = useState(false);
+  const [newIngredient, setNewIngredient] = useState({ name: '', quantity: 1, unit: 'items', category: 'pantry' });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedRecipes, setSelectedRecipes] = useState<Set<number>>(new Set());
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [itemToShare, setItemToShare] = useState<any>(null);
+  const [shareType, setShareType] = useState<'recipe' | 'meal_plan'>('recipe');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Handle adding custom ingredient to grocery list
+  const handleAddIngredient = () => {
+    if (!newIngredient.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an ingredient name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add ingredient to grocery list data
+    if (groceryListData && groceryListData.consolidatedIngredients) {
+      const updatedData = { ...groceryListData };
+      
+      // Create the new ingredient object
+      const ingredientText = `${newIngredient.quantity} ${newIngredient.unit} ${newIngredient.name}`;
+      const newIngredientObj = {
+        name: newIngredient.name,
+        displayText: ingredientText,
+        quantity: newIngredient.quantity,
+        unit: newIngredient.unit,
+        category: newIngredient.category,
+        notes: "Custom ingredient",
+        is_custom: true
+      };
+      
+      // Add to consolidated ingredients
+      updatedData.consolidatedIngredients = [...updatedData.consolidatedIngredients, newIngredientObj];
+      
+      setGroceryListData(updatedData);
+    } else {
+      // If no grocery data exists yet, create initial structure
+      const ingredientText = `${newIngredient.quantity} ${newIngredient.unit} ${newIngredient.name}`;
+      const newIngredientObj = {
+        name: newIngredient.name,
+        displayText: ingredientText,
+        quantity: newIngredient.quantity,
+        unit: newIngredient.unit,
+        category: newIngredient.category,
+        notes: "Custom ingredient",
+        is_custom: true
+      };
+      
+      setGroceryListData({
+        consolidatedIngredients: [newIngredientObj],
+        shoppingUrl: null,
+        savings: null,
+        recommendations: []
+      });
+    }
+
+    // Reset form and close modal
+    setNewIngredient({ name: '', quantity: 1, unit: 'items', category: 'pantry' });
+    setShowAddIngredientModal(false);
+    
+    toast({
+      title: "Ingredient Added",
+      description: `${newIngredient.name} has been added to your grocery list`,
+    });
+  };
+
+  // Check if user has a profile
+  const { data: profileData, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['/api/profile'],
+    queryFn: () => apiRequest('/api/profile').catch(() => null),
+    retry: false
+  });
+  
+  // Determine if user has a complete profile
+  const hasCompleteProfile = profileData && (
+    profileData.profile_name || 
+    profileData.members?.length > 0 ||
+    profileData.family_size > 0
+  );
+
+  // Share function - opens community modal
+  const handleShare = useCallback((item: any, itemType: 'recipe' | 'meal_plan' = 'recipe') => {
+    setItemToShare(item);
+    setShareType(itemType);
+    setShareModalOpen(true);
+  }, []);
+
+  // Favorites state and mutations
+  const [favoriteStatus, setFavoriteStatus] = useState<Record<string, boolean>>({});
+
+  // Get cached favorites data to sync heart icon state
+  const cachedFavorites = queryClient.getQueryData(['/api/favorites']) as any[] || [];
+  
+  // Initialize favorite status from cached data
+  useEffect(() => {
+    const status: Record<string, boolean> = {};
+    cachedFavorites.forEach((fav: any) => {
+      if (fav.title) {
+        status[fav.title] = true;
+      }
+    });
+    setFavoriteStatus(status);
+  }, [cachedFavorites.length]); // Only depend on length to avoid infinite re-renders
+  
+  // Add to favorites mutation
+  const addToFavoritesMutation = useMutation({
+    mutationFn: async (meal: any) => {
+      return await safeApiRequest("/api/favorites", {
+        method: "POST",
+        body: JSON.stringify({
+          item_type: "recipe",
+          item_id: meal.title,
+          title: meal.title,
+          description: `Cook time: ${meal.cook_time_minutes}m | Difficulty: ${meal.difficulty}/5`,
+          time_minutes: meal.cook_time_minutes,
+          cuisine: "homemade",
+          diet: meal.difficulty ? `Difficulty: ${meal.difficulty}/5` : "",
+          metadata: {
+            ingredients: meal.ingredients,
+            instructions: meal.instructions,
+            nutrition_info: meal.nutrition
+          }
+        })
+      });
+    },
+    onSuccess: (_, meal) => {
+      setFavoriteStatus(prev => ({ ...prev, [meal.title]: true }));
+      // Immediately refresh favorites cache
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      queryClient.refetchQueries({ queryKey: ['/api/favorites'] });
+      toast({
+        title: "Added to Favorites",
+        description: `${meal.title} has been saved to your favorites!`
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add to favorites. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Remove from favorites mutation
+  const removeFromFavoritesMutation = useMutation({
+    mutationFn: async (meal: any) => {
+      return await safeApiRequest(`/api/favorites/recipe/${encodeURIComponent(meal.title)}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: (_, meal) => {
+      setFavoriteStatus(prev => ({ ...prev, [meal.title]: false }));
+      // Immediately refresh favorites cache
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      queryClient.refetchQueries({ queryKey: ['/api/favorites'] });
+      toast({
+        title: "Removed from Favorites",
+        description: `${meal.title} has been removed from your favorites.`
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove from favorites. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Handle favorite toggle
+  const handleFavoriteToggle = (meal: any, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent meal details from opening
+    
+    const isFavorited = favoriteStatus[meal.title];
+    if (isFavorited) {
+      removeFromFavoritesMutation.mutate(meal);
+    } else {
+      addToFavoritesMutation.mutate(meal);
+    }
+  };
 
   // Prefetch grocery list for better UX
   const prefetchGroceryList = useCallback(async (mealPlanId: number) => {
@@ -149,15 +349,45 @@ export default function Home() {
     }
   }, [isLoadingGroceries]);
 
-  // Fetch the most recent meal plan
+  // Fetch the most recent meal plan with optimized caching
   const { data: mealPlans, isLoading } = useQuery({
     queryKey: ['/api/meal-plans/saved'],
+    staleTime: 30000, // Cache for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
-  // Fetch meal completions for the current plan
+  // Fetch meal completions for the current plan with optimized caching
   const { data: mealCompletions } = useQuery({
     queryKey: [`/api/meal-plans/${currentPlan?.id}/completions`],
     enabled: !!currentPlan?.id,
+    staleTime: 30000,
+    gcTime: 300000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
+  });
+
+  // Background prefetching for favorites data - INSTANT LOADING
+  // Prefetch favorites data in the background so it's ready when user clicks "View Favorites"
+  useQuery({
+    queryKey: ['/api/favorites'],
+    staleTime: Infinity, // Never consider data stale - instant from cache
+    gcTime: Infinity, // Keep in cache forever
+    refetchOnWindowFocus: false,
+    refetchOnMount: true, // Always prefetch on Home page load
+    refetchOnReconnect: false
+  });
+
+  // Background prefetching for user recipes - INSTANT LOADING  
+  // Prefetch user's created recipes so they're ready for favorites page
+  useQuery({
+    queryKey: ['/api/recipes/user'],
+    staleTime: Infinity, // Never consider data stale - instant from cache
+    gcTime: Infinity, // Keep in cache forever
+    refetchOnWindowFocus: false,
+    refetchOnMount: true, // Always prefetch on Home page load
+    refetchOnReconnect: false
   });
 
   // Set the current plan to the most recent one (excluding completed plans)
@@ -184,9 +414,17 @@ export default function Home() {
         const days = Object.keys(normalizedPlan.mealPlan).sort();
         setDayOrder(days);
         
-        // Clear old grocery data and prefetch new
-        setGroceryListData(null);
-        prefetchGroceryList(normalizedPlan.id);
+        // Try hydrate grocery data from local cache for instant open
+        try {
+          const cached = localStorage.getItem(`grocery:${(profileData as any)?.user_id || (profileData as any)?.id || ''}:${normalizedPlan.id}`);
+          if (cached) {
+            setGroceryListData(JSON.parse(cached));
+          } else {
+            setGroceryListData(null);
+          }
+        } catch {
+          setGroceryListData(null);
+        }
       } else {
         // All plans are completed
         setCurrentPlan(null);
@@ -202,6 +440,81 @@ export default function Home() {
       setCompletions(mealCompletions);
     }
   }, [mealCompletions]);
+
+  // Close add menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showAddMenu && !(event.target as Element).closest('.floating-add-button')) {
+        setShowAddMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showAddMenu]);
+
+  // Intelligent Search Function
+  const handleIntelligentSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast({ title: "Search Query Required", description: "Please enter what you'd like to cook!" });
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await safeApiRequest('/api/recipes/intelligent-search', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          query: searchQuery
+        }),
+      });
+
+      console.log('Perplexity Test Response:', response);
+      
+      // For now, just show the raw content for testing
+      if (response.success && response.perplexityContent) {
+        toast({ 
+          title: "Perplexity API Working!", 
+          description: `Found ${response.citations?.length || 0} citations, ${response.contentLength} characters` 
+        });
+        
+        // Create a simple display format for testing
+        setSearchResults([{
+          title: "Perplexity Search Results",
+          description: "Raw recipe content from Perplexity API",
+          content: response.perplexityContent,
+          citations: response.citations,
+          contentLength: response.contentLength
+        }]);
+      } else {
+        toast({ 
+          title: "No results found", 
+          description: "Try a different search term",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({ 
+        title: "Search Failed", 
+        description: "Could not search recipes. Please try again.",
+        variant: "destructive"
+      });
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Add Recipe to Meal Plan
+  const handleAddToMealPlan = (recipe: any) => {
+    // For now, show success toast - could implement actual meal plan addition later
+    toast({
+      title: "Recipe Added!",
+      description: `${recipe.title} has been added to your meal planning queue.`
+    });
+    setSelectedRecipes(prev => new Set([...Array.from(prev), recipe.title]));
+  };
 
   // Update meal plan mutation
   const updateMealPlanMutation = useMutation({
@@ -783,8 +1096,44 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 pb-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            {/* Header Skeleton */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="h-10 w-64 bg-gray-200 rounded-lg animate-pulse mb-3"></div>
+                  <div className="flex items-center gap-6">
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
+            </div>
+            
+            {/* Meal Plan Cards Skeleton */}
+            <div className="space-y-6">
+              {[1, 2].map((day) => (
+                <div key={day} className="bg-white rounded-2xl shadow-lg p-8">
+                  <div className="h-7 w-32 bg-gray-200 rounded animate-pulse mb-6"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((meal) => (
+                      <div key={meal} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6">
+                        <div className="h-6 w-20 bg-gray-200 rounded animate-pulse mb-4"></div>
+                        <div className="h-24 w-24 bg-gray-200 rounded-xl mx-auto animate-pulse mb-4"></div>
+                        <div className="h-5 w-full bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -805,19 +1154,43 @@ export default function Home() {
                   Congratulations! You've completed all your meal plans. 
                   Time to create a new one for your next cooking adventure.
                 </p>
-                <Button onClick={() => window.location.href = '/meal-planner'}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Meal Plan
-                </Button>
+                {!isLoadingProfile && !hasCompleteProfile ? (
+                  <Button 
+                    onClick={() => window.location.href = '/profile'}
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Create Your Profile First
+                  </Button>
+                ) : (
+                  <Button onClick={() => window.location.href = '/meal-planner'}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create New Meal Plan
+                  </Button>
+                )}
               </>
             ) : (
               <>
                 <h1 className="text-3xl font-bold mb-4">No Meal Plans Found</h1>
-                <p className="text-muted-foreground mb-6">Create your first meal plan to get started.</p>
-                <Button onClick={() => window.location.href = '/meal-planner'}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Meal Plan
-                </Button>
+                <p className="text-muted-foreground mb-6">
+                  {!hasCompleteProfile 
+                    ? "Set up your profile first to get personalized meal plans!"
+                    : "Create your first meal plan to get started."}
+                </p>
+                {!isLoadingProfile && !hasCompleteProfile ? (
+                  <Button 
+                    onClick={() => window.location.href = '/profile'}
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Create Your Profile First
+                  </Button>
+                ) : (
+                  <Button onClick={() => window.location.href = '/meal-planner'}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Meal Plan
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -834,7 +1207,8 @@ export default function Home() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-purple-700 to-indigo-600 bg-clip-text text-transparent leading-tight">Your Meal Plan</h1>
+              <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-purple-700 to-indigo-600 bg-clip-text text-transparent leading-tight"> Your Meal Plan
+              </h1>
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
@@ -1007,6 +1381,40 @@ export default function Home() {
                                 {mealType}
                               </CardTitle>
                               <div className="flex gap-1">
+                                {/* Heart/Favorite button - always visible when there's a meal */}
+                                {meal && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className={`hover:scale-110 transition-transform ${
+                                      favoriteStatus[meal.title] 
+                                        ? 'text-red-500 hover:text-red-600' 
+                                        : 'text-gray-400 hover:text-red-500'
+                                    }`}
+                                    onClick={(e) => handleFavoriteToggle(meal, e)}
+                                    disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
+                                    title={favoriteStatus[meal.title] ? "Remove from favorites" : "Add to favorites"}
+                                  >
+                                    <Heart className={`w-4 h-4 ${favoriteStatus[meal.title] ? 'fill-current' : ''}`} />
+                                  </Button>
+                                )}
+                                
+                                {/* Share button - always visible when there's a meal */}
+                                {meal && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-gray-400 hover:text-blue-600 hover:scale-110 transition-transform"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleShare(meal);
+                                    }}
+                                    title="Share recipe"
+                                  >
+                                    <Share2 className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                
                                 {meal && isEditing && (
                                   <>
                                     <Button
@@ -1266,7 +1674,10 @@ export default function Home() {
                                         {meal.ingredients?.map((ingredient, index) => (
                                           <li key={index} className="flex items-start gap-2">
                                             <span className="w-1 h-1 bg-primary rounded-full mt-1.5 flex-shrink-0"></span>
-                                            {ingredient}
+                                            {typeof ingredient === 'string' 
+                                              ? ingredient 
+                                              : ingredient?.display_text || ingredient?.name || 'Ingredient'
+                                            }
                                           </li>
                                         ))}
                                       </ul>
@@ -1314,6 +1725,53 @@ export default function Home() {
                                             <div className="font-medium">Fat</div>
                                             <div className="text-muted-foreground">{meal.nutrition.fat_g}g</div>
                                           </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {/* YouTube Video */}
+                                    {(meal.video_id || meal.video_title) && (
+                                      <div>
+                                        <h5 className="font-medium text-sm mb-2 flex items-center gap-1">
+                                          <svg className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136C4.495 20.455 12 20.455 12 20.455s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                          </svg>
+                                          How to Make
+                                        </h5>
+                                        <div className="bg-background/50 p-3 rounded-lg">
+                                          {meal.video_id ? (
+                                            <div className="space-y-2">
+                                              <div className="aspect-video bg-gray-100 rounded overflow-hidden">
+                                                <iframe
+                                                  src={`https://www.youtube.com/embed/${meal.video_id}`}
+                                                  title={meal.video_title || meal.title}
+                                                  className="w-full h-full"
+                                                  allowFullScreen
+                                                />
+                                              </div>
+                                              {(meal.video_title || meal.video_channel) && (
+                                                <div className="text-xs">
+                                                  {meal.video_title && (
+                                                    <p className="font-medium text-gray-900 line-clamp-2">
+                                                      {meal.video_title}
+                                                    </p>
+                                                  )}
+                                                  {meal.video_channel && (
+                                                    <p className="text-gray-600 mt-1">
+                                                      by {meal.video_channel}
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <div className="text-xs text-gray-600">
+                                              <p className="font-medium">{meal.video_title}</p>
+                                              {meal.video_channel && (
+                                                <p className="mt-1">by {meal.video_channel}</p>
+                                              )}
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     )}
@@ -1525,6 +1983,327 @@ export default function Home() {
         prefetchedData={groceryListData}
         onDataRefreshed={(data) => setGroceryListData(data)}
       />
+
+      {/* Intelligent Recipe Search Dialog */}
+      <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-purple-600" />
+              AI-Powered Recipe Search
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Search Input */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="What would you like to cook? (e.g., 'healthy dinner for family', 'quick pasta recipe')"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !isSearching) {
+                    handleIntelligentSearch();
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleIntelligentSearch}
+                disabled={isSearching || !searchQuery.trim()}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                {isSearching ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    🎯 Personalized Results ({searchResults.length} recipes)
+                  </h3>
+                  <Badge variant="outline" className="text-purple-600 border-purple-200">
+                    Ranked for you
+                  </Badge>
+                </div>
+                
+                <div className="grid gap-4">
+                  {searchResults.map((result, index) => (
+                    <Card key={index} className="border border-gray-200 hover:border-purple-300 transition-colors">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="text-lg font-semibold text-gray-800">{result.title}</h4>
+                              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                                Perplexity Test
+                              </Badge>
+                            </div>
+                            <p className="text-gray-600 text-sm mb-3">{result.description}</p>
+                            
+                            {/* Test Results */}
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-3">
+                              <div className="flex items-center gap-1">
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                {result.contentLength} chars
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Search className="h-4 w-4" />
+                                {result.citations?.length || 0} citations
+                              </div>
+                            </div>
+
+                            {/* Citations */}
+                            {result.citations && result.citations.length > 0 && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                                <div className="text-xs font-medium text-blue-700 mb-1">Sources:</div>
+                                <div className="text-xs text-blue-600">
+                                  {result.citations.slice(0, 3).map((citation: any, i: number) => (
+                                    <div key={i} className="mb-1">{citation}</div>
+                                  ))}
+                                  {result.citations.length > 3 && (
+                                    <div>+ {result.citations.length - 3} more sources</div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="ml-4">
+                            <Badge variant="outline" className="text-green-600 border-green-200">
+                              ✅ Working
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Content Preview */}
+                        <div className="border-t border-gray-100 pt-4 mt-4">
+                          <h5 className="font-medium text-gray-700 mb-2">Recipe Content Preview:</h5>
+                          <div className="bg-gray-50 p-3 rounded text-sm text-gray-700 max-h-32 overflow-y-auto">
+                            <pre className="whitespace-pre-wrap">{result.content?.substring(0, 500)}...</pre>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!isSearching && searchResults.length === 0 && (
+              <div className="text-center py-12">
+                <Search className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-600 mb-2">
+                  Search for personalized recipes
+                </h3>
+                <p className="text-gray-500 text-sm max-w-md mx-auto">
+                  Our AI will find recipes from across the web and rank them specifically for your profile, preferences, and dietary needs.
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Floating Add Meals Button */}
+      <div className="fixed bottom-24 right-6 z-50 floating-add-button">
+        {/* Expanded Menu - shows above button */}
+        {showAddMenu && (
+          <div className="absolute bottom-16 right-0 mb-2 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 min-w-[200px] animate-in slide-in-from-bottom-2 duration-200">
+            <div className="px-4 py-2 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700">Add Meals</h3>
+            </div>
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
+              onClick={() => {
+                setShowCreateRecipe(true);
+                setShowAddMenu(false);
+              }}
+            >
+              <BookOpen className="h-5 w-5 mr-3 text-emerald-600" />
+              <div className="text-left">
+                <div className="font-medium text-gray-900">Create Your Own Recipe</div>
+                <div className="text-xs text-gray-500">Build recipes from scratch</div>
+              </div>
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
+              onClick={() => {
+                // Instant navigation using React Router - data already prefetched in background
+                setLocation('/favorites');
+                setShowAddMenu(false);
+              }}
+            >
+              <Heart className="h-5 w-5 mr-3 text-pink-600" />
+              <div className="text-left">
+                <div className="font-medium text-gray-900">View Favorites</div>
+                <div className="text-xs text-gray-500">See your saved meals</div>
+              </div>
+            </Button>
+            
+            {/* Add Ingredient option - only show when grocery panel is open */}
+            {showGroceryPanel && (
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50"
+                onClick={() => {
+                  setShowAddIngredientModal(true);
+                  setShowAddMenu(false);
+                }}
+              >
+                <Plus className="h-5 w-5 mr-3 text-purple-600" />
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">Add Ingredient</div>
+                  <div className="text-xs text-gray-500">Add custom items to grocery list</div>
+                </div>
+              </Button>
+            )}
+          </div>
+        )}
+        
+        {/* Main Plus Button */}
+        <Button
+          onClick={() => setShowAddMenu(!showAddMenu)}
+          className={`
+            relative h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 
+            bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700
+            border-0 group ${showAddMenu ? 'rotate-45' : 'rotate-0'}
+          `}
+        >
+          <Plus className="h-6 w-6 text-white transition-transform duration-200" />
+          
+          {/* Ripple effect on click */}
+          <div className="absolute inset-0 rounded-full bg-white opacity-0 group-active:opacity-20 transition-opacity duration-150"></div>
+          
+          {/* Glow effect */}
+          <div className="absolute inset-0 rounded-full bg-purple-400 opacity-0 group-hover:opacity-20 blur-md transition-opacity duration-200"></div>
+        </Button>
+      </div>
+      
+      {/* Create Recipe Dialog */}
+      <CreateRecipe 
+        isOpen={showCreateRecipe} 
+        onClose={() => setShowCreateRecipe(false)} 
+      />
+      
+      {/* Community Share Modal */}
+      <CommunityShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        recipe={shareType === 'recipe' ? itemToShare : undefined}
+        mealPlan={shareType === 'meal_plan' ? itemToShare : undefined}
+        shareType={shareType}
+      />
+      
+      {/* Add Ingredient Modal */}
+      <Dialog open={showAddIngredientModal} onOpenChange={setShowAddIngredientModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-purple-600" />
+              Add Custom Ingredient
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ingredient-name">Ingredient Name</Label>
+              <Input
+                id="ingredient-name"
+                placeholder="e.g., Organic quinoa"
+                value={newIngredient.name}
+                onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={newIngredient.quantity}
+                  onChange={(e) => setNewIngredient({ ...newIngredient, quantity: parseFloat(e.target.value) || 1 })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="unit">Unit</Label>
+                <Select value={newIngredient.unit} onValueChange={(value) => setNewIngredient({ ...newIngredient, unit: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="items">items</SelectItem>
+                    <SelectItem value="lbs">lbs</SelectItem>
+                    <SelectItem value="oz">oz</SelectItem>
+                    <SelectItem value="cups">cups</SelectItem>
+                    <SelectItem value="tbsp">tbsp</SelectItem>
+                    <SelectItem value="tsp">tsp</SelectItem>
+                    <SelectItem value="packages">packages</SelectItem>
+                    <SelectItem value="bottles">bottles</SelectItem>
+                    <SelectItem value="cans">cans</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select value={newIngredient.category} onValueChange={(value) => setNewIngredient({ ...newIngredient, category: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="produce">Produce</SelectItem>
+                  <SelectItem value="meat">Meat & Seafood</SelectItem>
+                  <SelectItem value="dairy">Dairy & Eggs</SelectItem>
+                  <SelectItem value="pantry">Pantry</SelectItem>
+                  <SelectItem value="frozen">Frozen</SelectItem>
+                  <SelectItem value="beverages">Beverages</SelectItem>
+                  <SelectItem value="snacks">Snacks</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowAddIngredientModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                onClick={handleAddIngredient}
+              >
+                Add Ingredient
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );

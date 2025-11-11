@@ -17,9 +17,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation } from "@tanstack/react-query";
 import { safeApiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Ingredient {
   name: string;
@@ -117,7 +119,24 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
   const [isLoading, setIsLoading] = useState(false);
   const [savings, setSavings] = useState<{ duplicatesRemoved: number; itemsConsolidated: number } | null>(null);
   const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  const cacheKey = user && mealPlan ? `grocery:${(user as any).id}:${mealPlan.id}` : null;
+
+  // Handle checkbox changes
+  const handleItemCheck = (itemKey: string, checked: boolean) => {
+    setCheckedItems(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(itemKey);
+      } else {
+        newSet.delete(itemKey);
+      }
+      return newSet;
+    });
+  };
 
   // Handle opening Instacart
   const handleOpenInstacart = async () => {
@@ -154,6 +173,9 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
           description: "Your optimized Instacart shopping list has been created!",
         });
       }
+      if (cacheKey) {
+        try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch {}
+      }
     },
     onError: (error) => {
       toast({
@@ -164,14 +186,30 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
     },
   });
 
+  // Read from local cache on open for instant render
+  useEffect(() => {
+    if (!isOpen || !cacheKey) return;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const json = JSON.parse(cached);
+        processGroceryData(json);
+        setIsLoading(false);
+      }
+    } catch {}
+  }, [isOpen, cacheKey]);
+  
   // Update data when prefetchedData changes
   useEffect(() => {
     if (prefetchedData && prefetchedData.consolidatedIngredients) {
       console.log('Updating with prefetched grocery data');
       processGroceryData(prefetchedData);
       setIsLoading(false);
+      if (cacheKey) {
+        try { localStorage.setItem(cacheKey, JSON.stringify(prefetchedData)); } catch {}
+      }
     }
-  }, [prefetchedData]);
+  }, [prefetchedData, cacheKey]);
   
   // Fetch data if not prefetched when panel opens
   useEffect(() => {
@@ -190,6 +228,9 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
           });
           
           processGroceryData(response);
+          if (cacheKey) {
+            try { localStorage.setItem(cacheKey, JSON.stringify(response)); } catch {}
+          }
           
           // Update the parent component with fresh data
           if (onDataRefreshed) {
@@ -203,7 +244,7 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
       
       fetchConsolidatedList();
     }
-  }, [mealPlan?.id, isOpen, ingredients.length]); // Check if we already have ingredients
+  }, [mealPlan?.id, isOpen, ingredients.length, prefetchedData, cacheKey]); // Check if we already have ingredients
   
   // Helper function to process grocery data
   const processGroceryData = (response: any) => {
@@ -217,18 +258,39 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
         notes: ing.notes
       }));
       
-      // Group by category
-      const grouped = consolidatedIngredients.reduce((acc, ingredient) => {
-        const category = ingredient.category || 'other';
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        acc[category].push(ingredient);
-        return acc;
-      }, {} as { [key: string]: Ingredient[] });
+      // Preserve existing custom ingredients by merging them
+      setCategorizedIngredients(prevCategorized => {
+        // Find custom ingredients (those with is_custom: true)
+        const customIngredients: { [key: string]: Ingredient[] } = {};
+        Object.entries(prevCategorized).forEach(([category, items]) => {
+          const customItems = items.filter((item: any) => item.is_custom);
+          if (customItems.length > 0) {
+            customIngredients[category] = customItems;
+          }
+        });
+        
+        // Group API ingredients by category
+        const grouped = consolidatedIngredients.reduce((acc, ingredient) => {
+          const category = ingredient.category || 'other';
+          if (!acc[category]) {
+            acc[category] = [];
+          }
+          acc[category].push(ingredient);
+          return acc;
+        }, {} as { [key: string]: Ingredient[] });
+        
+        // Merge custom ingredients with API ingredients
+        Object.entries(customIngredients).forEach(([category, customItems]) => {
+          if (!grouped[category]) {
+            grouped[category] = [];
+          }
+          grouped[category] = [...grouped[category], ...customItems];
+        });
+        
+        return grouped;
+      });
       
       setIngredients(consolidatedIngredients);
-      setCategorizedIngredients(grouped);
       setSavings(response.savings);
       setRecommendations(response.recommendations || []);
       
@@ -279,54 +341,6 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
               ) : (
                 <div className="space-y-6">
                 
-                {/* Summary */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Smart Shopping Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Total items:</span>
-                      <span className="font-medium">{ingredients.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm mt-2">
-                      <span className="text-muted-foreground">Categories:</span>
-                      <span className="font-medium">{Object.keys(categorizedIngredients).length}</span>
-                    </div>
-                    {savings && (
-                      <>
-                        <div className="flex items-center justify-between text-sm mt-2">
-                          <span className="text-muted-foreground">Duplicates removed:</span>
-                          <span className="font-medium text-green-600">{savings.duplicatesRemoved}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm mt-2">
-                          <span className="text-muted-foreground">Items consolidated:</span>
-                          <span className="font-medium text-green-600">{savings.itemsConsolidated}</span>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                {/* Recommendations */}
-                {recommendations.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm">Smart Shopping Tips</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        {recommendations.map((rec, index) => (
-                          <li key={index} className="text-sm text-muted-foreground flex items-start">
-                            <ChevronRight className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                            <span>{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
-                
                 {/* Categorized ingredients */}
                 {Object.entries(categorizedIngredients).map(([category, items]) => (
                   <div key={category}>
@@ -338,19 +352,30 @@ export function GroceryListPanel({ isOpen, onClose, mealPlan, prefetchedData, on
                       </Badge>
                     </div>
                     <div className="space-y-2">
-                      {items.map((ingredient, index) => (
-                        <div
-                          key={`${category}-${index}`}
-                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <span className="text-sm font-medium">{ingredient.displayText || ingredient.name}</span>
-                            {ingredient.notes && (
-                              <span className="text-xs text-muted-foreground block mt-1">{ingredient.notes}</span>
-                            )}
+                      {items.map((ingredient, index) => {
+                        const itemKey = `${category}-${index}`;
+                        const isChecked = checkedItems.has(itemKey);
+                        return (
+                          <div
+                            key={itemKey}
+                            className={`flex items-center gap-3 p-3 bg-muted/50 rounded-lg transition-all ${isChecked ? 'opacity-50' : ''}`}
+                          >
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={(checked) => handleItemCheck(itemKey, checked as boolean)}
+                              className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                            />
+                            <div className="flex-1">
+                              <span className={`text-sm font-medium ${isChecked ? 'line-through text-muted-foreground' : ''}`}>
+                                {ingredient.displayText || ingredient.name}
+                              </span>
+                              {ingredient.notes && (
+                                <span className="text-xs text-muted-foreground block mt-1">{ingredient.notes}</span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ))}

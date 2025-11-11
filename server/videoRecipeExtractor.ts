@@ -1,4 +1,6 @@
 import fetch from 'node-fetch';
+import { groqValidator } from './groqValidator';
+import { parseIngredientsWithGPT } from './gptIngredientParser';
 import { deduplicateIngredients, cleanIngredientList } from "./ingredientDeduplicator";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -1024,15 +1026,15 @@ function fallbackInstructionExtraction(text: string): string[] {
  * Format ingredient string with measurements
  */
 function extractMeasurements(ingredient: string): { quantity: number, unit: string }[] {
-  // Simple regex to extract measurements 
-  const measurementRegex = /(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\s*(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter)s?/gi;
+  // Enhanced regex to capture fractions and regular numbers
+  const measurementRegex = /(\d+\/\d+|\d+\s+\d+\/\d+|\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\s*(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter|clove|slice|can|jar|package|container)s?/gi;
   
-  // Use a simpler approach that doesn't require ES2018+
   const measurements: { quantity: number, unit: string }[] = [];
   let match;
   
   while ((match = measurementRegex.exec(ingredient)) !== null) {
-    let quantity = match[1].toLowerCase();
+    let quantityStr = match[1].toLowerCase();
+    let numericQuantity: number;
     
     // Convert text numbers to numeric
     const wordToNumber: Record<string, number> = {
@@ -1041,8 +1043,25 @@ function extractMeasurements(ingredient: string): { quantity: number, unit: stri
       'half': 0.5, 'quarter': 0.25
     };
     
-    const numericQuantity = wordToNumber[quantity] !== undefined ? 
-      wordToNumber[quantity] : parseFloat(quantity);
+    if (wordToNumber[quantityStr] !== undefined) {
+      numericQuantity = wordToNumber[quantityStr];
+    } else if (quantityStr.includes('/')) {
+      // Handle fractions like "1/2", "1/4", "1 1/2"
+      if (quantityStr.includes(' ')) {
+        // Mixed number like "1 1/2"
+        const parts = quantityStr.split(' ');
+        const whole = parseFloat(parts[0]);
+        const fractionParts = parts[1].split('/');
+        const fraction = parseFloat(fractionParts[0]) / parseFloat(fractionParts[1]);
+        numericQuantity = whole + fraction;
+      } else {
+        // Simple fraction like "1/2"
+        const fractionParts = quantityStr.split('/');
+        numericQuantity = parseFloat(fractionParts[0]) / parseFloat(fractionParts[1]);
+      }
+    } else {
+      numericQuantity = parseFloat(quantityStr);
+    }
     
     let unit = match[2].toLowerCase();
     
@@ -1050,7 +1069,8 @@ function extractMeasurements(ingredient: string): { quantity: number, unit: stri
     const unitMap: Record<string, string> = {
       'tablespoon': 'tbsp', 'teaspoon': 'tsp',
       'ounce': 'oz', 'pound': 'lb',
-      'gram': 'g', 'liter': 'l'
+      'gram': 'g', 'liter': 'l',
+      'clove': 'cloves', 'slice': 'slices'
     };
     
     const normalizedUnit = unitMap[unit] || unit;
@@ -1059,6 +1079,18 @@ function extractMeasurements(ingredient: string): { quantity: number, unit: stri
       quantity: numericQuantity,
       unit: normalizedUnit
     });
+  }
+  
+  // If no measurements found but ingredient contains "large" or similar size descriptors
+  if (measurements.length === 0) {
+    // Check for items like "4 large eggs", "2 medium onions"
+    const simpleQuantityMatch = ingredient.match(/^(\d+)\s+(large|medium|small)?\s*(.+)/i);
+    if (simpleQuantityMatch) {
+      measurements.push({
+        quantity: parseFloat(simpleQuantityMatch[1]),
+        unit: 'pieces'
+      });
+    }
   }
   
   return measurements;
@@ -1075,7 +1107,8 @@ export async function getRecipeFromYouTube(query: string, filters?: {
   excludeIngredients?: string;
 }): Promise<any | null> {
   try {
-    console.log(`Starting generalized recipe workflow for: "${query}"`);
+    console.log(`🎬 [YOUTUBE] Starting generalized recipe workflow for: "${query}"`);
+    console.log(`🔍 [YOUTUBE] Filters:`, filters);
     
     // Step 1: Query Spoonacular API to enforce cooking time and get authentic recipe data
     let spoonacularRecipe: SpoonacularRecipe | null = null;
@@ -1101,16 +1134,54 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       return null;
     }
     
-    console.log(`Found video: ${videoInfo.title} by ${videoInfo.channelTitle}`);
+    console.log(`✅ [YOUTUBE] Found video: ${videoInfo.title} by ${videoInfo.channelTitle}`);
+    console.log(`🔗 [YOUTUBE] Video URL: https://www.youtube.com/watch?v=${videoInfo.id}`);
     
-    // Step 2: Get video comments (might contain recipe details)
+    // Step 2: Get transcript using Whisper if needed
+    let transcript = '';
+    try {
+      // Import Whisper transcriber
+      // TEMPORARILY DISABLED - Whisper functionality commented out
+      // const { whisperTranscriber } = await import('./whisperTranscriber');
+      
+      console.log('🎙️ [YOUTUBE] Checking for transcript...');
+      const videoUrl = `https://www.youtube.com/watch?v=${videoInfo.id}`;
+      
+      // Try to get transcript (will use Whisper V3 Turbo if no native transcript exists)
+      // TEMPORARILY DISABLED - Whisper functionality commented out
+      console.log('❌ [YOUTUBE] Whisper transcription disabled');
+      transcript = videoInfo.description || ''; // Use description as fallback only
+      
+      /*
+      transcript = await whisperTranscriber.getTranscriptWithFallback(
+        videoUrl,
+        videoInfo.description // Use description as potential existing transcript
+      );
+      */
+      
+      if (transcript && transcript.length > 50) {
+        console.log(`✅ [YOUTUBE] Got transcript (${transcript.length} chars)`);
+        console.log(`📝 [YOUTUBE] Transcript preview: ${transcript.substring(0, 150)}...`);
+      } else {
+        console.log('⚠️ [YOUTUBE] No transcript available');
+      }
+    } catch (error) {
+      console.error('❌ [YOUTUBE] Error getting transcript:', error);
+      transcript = '';
+    }
+    
+    // Step 3: Get video comments (might contain recipe details)
+    console.log('💬 [YOUTUBE] Fetching video comments...');
     videoInfo.comments = await getVideoComments(videoInfo.id);
     
-    // Step 3: Extract ingredients from description and comments
+    // Step 4: Extract ingredients with simplified pipeline (initial -> transcript-only fallback)
     let ingredients: string[] = [];
     
-    // First try description for ingredients using LLaVA-Chef
-    const descriptionIngredients = await extractIngredientsWithLLaVA(videoInfo.description);
+    console.log('🥗 [YOUTUBE] Extracting ingredients...');
+    
+    // First try description and transcript for ingredients using LLaVA-Chef
+    const textForIngredients = transcript || videoInfo.description;
+    const descriptionIngredients = await extractIngredientsWithLLaVA(textForIngredients);
     if (descriptionIngredients.length > 0) {
       console.log(`Found ${descriptionIngredients.length} ingredients in video description`);
       // Clean up ingredients to fix duplicate measurements (but preserve mixed fractions like "1 1/2")
@@ -1147,6 +1218,19 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       }
     }
     
+    // Replace with minimal measured list using dedicated helper
+    try {
+      const { ensureMeasuredIngredients } = await import('./ingredientSimple');
+      ingredients = await ensureMeasuredIngredients({
+        transcript: transcript || '',
+        description: videoInfo.description || '',
+        initial: ingredients,
+        title: videoInfo.title,
+      });
+    } catch (e) {
+      console.error('[ING SIMPLE] pipeline failed:', e);
+    }
+
     // Apply advanced deduplication and cleaning to all extracted ingredients
     if (ingredients.length > 0) {
       console.log(`Before deduplication: ${ingredients.length} ingredients`);
@@ -1167,12 +1251,17 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       console.log(`After deduplication: ${ingredients.length} ingredients`);
     }
     
-    // Step 4: Extract instructions using LLaVA-Chef with parallel processing
+    // Step 5: Extract instructions using LLaVA-Chef with parallel processing
     let instructions: string[] = [];
+    
+    console.log('📝 [YOUTUBE] Extracting instructions...');
     
     try {
       // Use LLaVA-Chef to extract instructions (with transcript if available)
-      const aiInstructions = await extractInstructionsWithLLaVA('', videoInfo.description);
+      const textForInstructions = transcript || videoInfo.description;
+      console.log(`🔍 [YOUTUBE] Using ${transcript ? 'transcript' : 'description'} for instruction extraction`);
+      
+      const aiInstructions = await extractInstructionsWithLLaVA(textForInstructions, videoInfo.description);
       if (aiInstructions.length > 0) {
         console.log(`LLaVA-Chef extracted ${aiInstructions.length} instruction steps`);
         instructions = aiInstructions;
@@ -1185,39 +1274,75 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       instructions = fallbackInstructionExtraction(videoInfo.description);
     }
     
-    // Step 5: If we couldn't extract ingredients, use Grok to generate them from video title
-    if (ingredients.length === 0) {
-      console.log("No ingredients found in video description, generating from video title using Grok");
+    // Ingredient pipeline simplified above; no further upgrades here
+
+    // Step 7: Validate instructions; if missing or invalid, generate with GPT-OSS-120B
+    const areValid = await groqValidator.validateInstructions(instructions);
+    if (instructions.length === 0 || !areValid) {
+      console.log("⚠️ [YOUTUBE] No instructions extracted, attempting GPT-OSS-120B generation...");
+      console.log(`📊 [YOUTUBE] Available text sources:`);
+      console.log(`  - Transcript: ${transcript ? `${transcript.length} chars` : 'NOT AVAILABLE'}`);
+      console.log(`  - Description: ${videoInfo.description ? `${videoInfo.description.length} chars` : 'NOT AVAILABLE'}`);
+      
+      // Try to generate instructions using GPT-OSS-120B
       try {
-        const grokIngredients = await generateIngredientsFromTitle(videoInfo.title);
-        if (grokIngredients.length > 0) {
-          console.log(`Grok generated ${grokIngredients.length} ingredients from video title`);
-          ingredients = grokIngredients;
+        const { groqInstructionGenerator } = await import('./groqInstructionGenerator');
+        
+        // Use transcript if available, otherwise use description
+        const textToUse = transcript || videoInfo.description || '';
+        
+        if (textToUse.length > 50) {
+          console.log(`🤖 [YOUTUBE] Using ${transcript ? 'TRANSCRIPT' : 'DESCRIPTION'} for GPT-OSS-120B generation`);
+          console.log(`📝 [YOUTUBE] Text preview: "${textToUse.substring(0, 200)}..."`);
+          
+          instructions = await groqInstructionGenerator.generateInstructionsFromTranscript(
+            textToUse,
+            videoInfo.title,
+            ingredients
+          );
+          
+          if (instructions.length > 0) {
+            console.log(`✅ [YOUTUBE] GPT-OSS-120B successfully generated ${instructions.length} instructions`);
+            instructions.forEach((inst, idx) => {
+              console.log(`  ${idx + 1}. ${inst.substring(0, 80)}...`);
+            });
+          } else {
+            console.log(`❌ [YOUTUBE] GPT-OSS-120B failed to generate instructions`);
+          }
         } else {
-          console.log("Grok could not generate ingredients from title");
-          ingredients = [];
+          console.log(`❌ [YOUTUBE] Insufficient text for instruction generation (only ${textToUse.length} chars)`);
         }
-      } catch (error) {
-        console.error("Error generating ingredients with Grok:", error);
-        ingredients = [];
+      } catch (genError) {
+        console.error('❌ [YOUTUBE] Error generating instructions with GPT-OSS-120B:', genError);
       }
-    }
-    
-    // Step 6: If no instructions found, leave empty for caller to handle
-    if (instructions.length === 0) {
-      console.log("Failed to extract instructions from video");
-      instructions = [];
+      
+      // If still no instructions, leave empty for validation to handle
+      if (instructions.length === 0) {
+        console.log("⚠️ [YOUTUBE] No instructions generated, will be handled by validation pipeline");
+        instructions = [];
+      }
+    } else {
+      console.log(`✅ [YOUTUBE] Successfully extracted ${instructions.length} instructions`);
     }
     
     // Return the complete recipe data with proper video fields
     return {
       title: videoInfo.title,
       description: videoInfo.description,
-      ingredients: ingredients.map(ingredient => ({
-        name: ingredient,
-        display_text: ingredient,
-        measurements: extractMeasurements(ingredient)
-      })),
+      ingredients: ingredients.map(ingredient => {
+        // Extract just the ingredient name without measurements for the 'name' field
+        const cleanName = ingredient
+          .replace(/^\d+\/\d+|\d+\s+\d+\/\d+|\d+(?:\.\d+)?/g, '')
+          .replace(/\b(cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|pound|lb|g|gram|ml|l|liter|clove|slice|can|jar|package|container)s?\b/gi, '')
+          .replace(/^\s*(of|large|medium|small)\s+/i, '')
+          .trim();
+        
+        return {
+          name: cleanName || ingredient,
+          display_text: ingredient,
+          measurements: extractMeasurements(ingredient)
+        };
+      }),
       instructions: instructions,
       videoUrl: `https://www.youtube.com/watch?v=${videoInfo.id}`,
       thumbnailUrl: videoInfo.thumbnailUrl,
@@ -1226,7 +1351,8 @@ export async function getRecipeFromYouTube(query: string, filters?: {
       video_title: videoInfo.title,
       video_channel: videoInfo.channelTitle,
       source_url: `https://www.youtube.com/watch?v=${videoInfo.id}`,
-      source_name: videoInfo.channelTitle
+      source_name: videoInfo.channelTitle,
+      transcript: transcript || ''  // Store transcript for later use if needed
     };
     
     // Format ingredients with consistent measurement formatting

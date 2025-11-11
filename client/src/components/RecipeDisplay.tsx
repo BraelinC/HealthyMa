@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { CommunityShareModal } from "./CommunityShareModal";
 import ReactPlayer from "react-player/youtube";
 import { formatYouTubeEmbedUrl, formatYouTubeThumbnailUrl } from "@/lib/youtubeUtils";
 import { enhanceRecipeWithVideo } from "@/lib/api";
@@ -18,12 +19,15 @@ import {
   ExternalLink,
   Star,
   ListPlus,
+  Plus,
   Check,
   X,
   Maximize,
-  Youtube
+  Youtube,
+  Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MealPlanSelectionModal } from "@/components/MealPlanSelectionModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -42,18 +46,42 @@ interface Recipe {
   title: string;
   description?: string;
   image_url: string;
+  emoji?: string;
   time_minutes?: number;
   cuisine?: string;
   diet?: string;
   ingredients: Ingredient[];
   instructions: string[];
   nutrition_info?: {
+    // Per serving nutrition
     calories: number;
     protein_g: number;
     carbs_g: number;
     fat_g: number;
-    fiber_g: number;
-    sodium_mg: number;
+    fiber_g?: number;
+    sugar_g?: number;
+    sodium_mg?: number;
+    cholesterol_mg?: number;
+    saturated_fat_g?: number;
+    trans_fat_g?: number;
+    // Servings and totals
+    servings?: number;
+    total_calories?: number;
+    total_protein_g?: number;
+    total_carbs_g?: number;
+    total_fat_g?: number;
+    total_fiber_g?: number;
+    total_sugar_g?: number;
+    total_sodium_mg?: number;
+    // Ingredient breakdown
+    ingredient_nutrition?: Array<{
+      ingredient: string;
+      amount: string;
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+    }>;
   };
   is_saved?: boolean;
   source_url?: string;
@@ -67,19 +95,43 @@ interface Recipe {
 interface RecipeDisplayProps {
   recipe: Recipe;
   onRegenerateClick?: () => void;
+  variant?: 'light' | 'dark';
+  headerAboveVideo?: boolean;
+  forceDescriptionOpen?: boolean;
+  hideDescriptionToggle?: boolean;
 }
 
-const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
+const RecipeDisplay = ({ recipe, onRegenerateClick, variant = 'light', headerAboveVideo = false, forceDescriptionOpen = false, hideDescriptionToggle = false }: RecipeDisplayProps) => {
   const { toast } = useToast();
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  // Debug: Log the received recipe data
+  console.log('=== RecipeDisplay: Received recipe ===', {
+    recipe,
+    ingredientsLength: recipe?.ingredients?.length,
+    ingredientsType: Array.isArray(recipe?.ingredients) ? 'array' : typeof recipe?.ingredients,
+    firstIngredient: recipe?.ingredients?.[0],
+    hasVideoId: !!recipe?.video_id,
+    video_id: recipe?.video_id,
+    video_title: recipe?.video_title,
+    video_channel: recipe?.video_channel
+  });
+
+  // Share function - opens community modal
+  const handleShare = () => {
+    setShareModalOpen(true);
+  };
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [showDescription, setShowDescription] = useState(false);
-  const [videoId, setVideoId] = useState<string | null>(null);
+  const [showDescription, setShowDescription] = useState(!!forceDescriptionOpen);
+  const [videoId, setVideoId] = useState<string | null>(recipe.video_id || null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [isPlayingInApp, setIsPlayingInApp] = useState(false);
   const [hasIngredients, setHasIngredients] = useState<Record<string, boolean>>({});
   const [isSaved, setIsSaved] = useState(recipe.is_saved || false);
   const [imgError, setImgError] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [openMealPlanModal, setOpenMealPlanModal] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const [recipeSource, setRecipeSource] = useState<{
     name: string;
@@ -90,17 +142,42 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   const [videoDetails, setVideoDetails] = useState<{
     title: string;
     channelTitle: string;
-  } | null>(null);
+  } | null>(recipe.video_title && recipe.video_channel ? {
+    title: recipe.video_title,
+    channelTitle: recipe.video_channel
+  } : null);
 
   // Use recipe data directly without additional API calls
   const enhancedRecipe = recipe;
+
+  // Check if recipe is favorited
+  const { data: favorites } = useQuery({
+    queryKey: ['/api/favorites'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/favorites');
+      return response.json();
+    }
+  });
+
+  // Update favorited state when favorites data changes
+  useEffect(() => {
+    if (favorites && recipe.id) {
+      const favorited = favorites.some((fav: any) => 
+        fav.item_type === 'recipe' && fav.item_id === recipe.id?.toString()
+      );
+      setIsFavorited(favorited);
+    }
+  }, [favorites, recipe.id]);
 
   // Extract YouTube data and set UI state when enhanced data is available
   useEffect(() => {
     if (enhancedRecipe) {
       // Set video ID
       if (enhancedRecipe.video_id) {
+        console.log('=== RecipeDisplay: Setting video ID from enhancedRecipe ===', enhancedRecipe.video_id);
         setVideoId(enhancedRecipe.video_id);
+      } else {
+        console.log('=== RecipeDisplay: No video_id in enhancedRecipe ===');
       }
 
       // Set video details
@@ -223,7 +300,10 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
   // Instacart integration
   const shopRecipeWithInstacart = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/recipes/instacart", recipe);
+      return await apiRequest("/api/recipes/instacart", {
+        method: "POST",
+        body: JSON.stringify(recipe),
+      });
     },
     onSuccess: async (response) => {
       const data = await response.json();
@@ -288,6 +368,55 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
     saveRecipeMutation.mutate();
   };
 
+  // Favorites functionality
+  const toggleFavorite = useMutation({
+    mutationFn: async () => {
+      if (isFavorited) {
+        return await apiRequest('/api/favorites', {
+          method: 'DELETE',
+          body: JSON.stringify({
+            item_type: 'recipe',
+            item_id: recipe.id?.toString() || ''
+          })
+        });
+      } else {
+        return await apiRequest('/api/favorites', {
+          method: 'POST',
+          body: JSON.stringify({
+            item_type: 'recipe',
+            item_id: recipe.id?.toString() || '',
+            title: recipe.title,
+            description: recipe.description || '',
+            image_url: recipe.image_url,
+            time_minutes: recipe.time_minutes,
+            cuisine: recipe.cuisine,
+            diet: recipe.diet,
+            metadata: {
+              ingredients: recipe.ingredients,
+              instructions: recipe.instructions,
+              nutrition_info: recipe.nutrition_info
+            }
+          })
+        });
+      }
+    },
+    onSuccess: () => {
+      setIsFavorited(!isFavorited);
+      toast({
+        title: isFavorited ? "Removed from Favorites" : "Added to Favorites",
+        description: isFavorited ? "Recipe removed from your favorites" : `${recipe.title} saved to favorites`,
+      });
+    },
+    onError: (error) => {
+      console.error('Favorites error:', error);
+      toast({
+        title: "Error",
+        description: `Failed to ${isFavorited ? 'remove from' : 'add to'} favorites`,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Generate a fallback image based on recipe title
   const getFallbackImage = () => {
     const recipeName = recipe.title ? encodeURIComponent(recipe.title.toLowerCase().replace(/[^a-z0-9\s]/g, '')) : 'recipe';
@@ -299,8 +428,21 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
     shopRecipeWithInstacart.mutate();
   };
 
+  const isDark = variant === 'dark';
+
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-md">
+    <div className={`${isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white shadow-md'} rounded-lg overflow-hidden`}>
+      {headerAboveVideo && (
+        <div className="p-4">
+          <div className="flex items-center gap-3">
+            {recipe.emoji && <span className="text-2xl">{recipe.emoji}</span>}
+            <h2 className={`text-lg font-bold ${isDark ? 'text-white' : ''}`}>{recipe.title}</h2>
+          </div>
+          {recipe.description && (
+            <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-sm mt-2`}>{recipe.description}</p>
+          )}
+        </div>
+      )}
       {/* Recipe Image Section */}
       <div className="relative">
         {(
@@ -387,57 +529,79 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
         )}
 
         {videoDetails && (
-          <div className="bg-gray-50 px-3 py-2 text-xs">
+          <div className={`${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50'} px-3 py-2 text-xs`}>
             <a 
               href={`https://www.youtube.com/watch?v=${videoId}`}
               target="_blank" 
               rel="noopener noreferrer"
               className="block"
             >
-              <div className="font-medium text-gray-900 truncate hover:text-primary">{videoDetails.title}</div>
-              <div className="text-gray-500">by {videoDetails.channelTitle}</div>
+              <div className={`font-medium truncate ${isDark ? 'text-white hover:text-purple-300' : 'text-gray-900 hover:text-primary'}`}>{videoDetails.title}</div>
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-500'}`}>by {videoDetails.channelTitle}</div>
             </a>
           </div>
         )}
 
-        {/* Quick action buttons */}
+        {/* Quick action buttons (order: Plus, Share, Heart) */}
         <div className="absolute top-2 right-2 flex gap-2">
           <Button 
             variant="secondary" 
             size="icon" 
-            className="bg-white/90 text-gray-700 w-8 h-8 rounded-full shadow-sm"
+            onClick={() => setOpenMealPlanModal(true)}
+            className={`w-8 h-8 rounded-full shadow-sm ${
+              'bg-white/90 text-gray-700'
+            }`}
+            title={'Add to Meal Plan'}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="secondary" 
+            size="icon" 
+            onClick={handleShare}
+            className="bg-white/90 text-gray-700 w-8 h-8 rounded-full shadow-sm hover:bg-blue-50 hover:text-blue-600"
+            title="Share recipe"
           >
             <Share className="h-4 w-4" />
           </Button>
           <Button 
             variant="secondary" 
             size="icon" 
-            onClick={handleToggleSave}
-            disabled={saveRecipeMutation.isPending}
-            className={`w-8 h-8 rounded-full shadow-sm ${
-              isSaved 
-                ? 'bg-yellow-500 text-white' 
-                : 'bg-white/90 text-gray-700'
+            onClick={() => toggleFavorite.mutate()}
+            disabled={toggleFavorite.isPending}
+            className={`w-8 h-8 rounded-full shadow-sm transform transition-all duration-200 hover:scale-110 ${
+              isFavorited 
+                ? 'bg-red-500 text-white hover:bg-red-600' 
+                : 'bg-white/90 text-gray-700 hover:bg-white'
             }`}
+            title={isFavorited ? 'Favorited' : 'Favorite'}
           >
-            <Star className={`h-4 w-4 ${isSaved ? 'fill-white' : ''}`} />
+            <Heart className={`h-4 w-4 transition-all duration-200 ${
+              isFavorited ? 'fill-white scale-110' : 'hover:text-red-500'
+            }`} />
           </Button>
         </div>
       </div>
+      <MealPlanSelectionModal 
+        isOpen={openMealPlanModal}
+        onClose={() => setOpenMealPlanModal(false)}
+        recipe={recipe}
+      />
 
       {/* Recipe Header */}
+      {!headerAboveVideo && (
       <div className="p-4">
-        <h2 className="text-lg font-bold">{recipe.title}</h2>
+        <h2 className={`text-lg font-bold ${isDark ? 'text-white' : ''}`}>{recipe.title}</h2>
 
         {/* Recipe source & rating */}
         {recipeSource && (
           <div className="flex items-center mt-1 mb-2">
-            <span className="text-xs text-gray-600">from </span>
+            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>from </span>
             <a 
               href={recipeSource.url} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-xs text-primary font-medium ml-1 flex items-center"
+              className={`text-xs font-medium ml-1 flex items-center ${isDark ? 'text-purple-300' : 'text-primary'}`}
             >
               {recipeSource.name}
               <ExternalLink className="h-3 w-3 ml-0.5" />
@@ -455,13 +619,13 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
         {/* Recipe tags */}
         <div className="flex flex-wrap gap-1.5 my-2">
           {recipe.cuisine && (
-            <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+            <span className={`${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'} px-2 py-0.5 rounded-full text-xs`}>
               {recipe.cuisine}
             </span>
           )}
 
           {recipe.diet && recipe.diet !== "None" && (
-            <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">
+            <span className={`${isDark ? 'bg-green-900/40 text-green-300' : 'bg-green-100 text-green-700'} px-2 py-0.5 rounded-full text-xs`}>
               {recipe.diet}
             </span>
           )}
@@ -470,19 +634,21 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
         {/* Description toggle */}
         {recipe.description && (
           <div className="mt-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDescription(!showDescription)}
-              className="flex w-full items-center justify-between p-0 h-7 text-gray-500 text-xs hover:text-gray-700"
-            >
-              <span>Description</span>
-              {showDescription ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            </Button>
+            {!hideDescriptionToggle && !forceDescriptionOpen && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDescription(!showDescription)}
+                className={`flex w-full items-center justify-between p-0 h-7 text-xs ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                <span>Description</span>
+                {showDescription ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </Button>
+            )}
 
             {showDescription && (
-              <p className="text-gray-600 text-sm mt-1 mb-2">{recipe.description}</p>
+              <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-sm mt-1 mb-2`}>{recipe.description}</p>
             )}
           </div>
         )}
@@ -514,22 +680,23 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
           </a>
         )}
       </div>
+      )}
 
 
 
       {/* Tabs for Ingredients, Instructions, and Nutrition */}
       <Tabs defaultValue="ingredients" className="w-full">
-        <TabsList className="w-full grid grid-cols-3 h-10 bg-gray-100 rounded-none">
-          <TabsTrigger value="ingredients" className="text-xs">Ingredients</TabsTrigger>
-          <TabsTrigger value="instructions" className="text-xs">Instructions</TabsTrigger>
-          <TabsTrigger value="nutrition" className="text-xs">Nutrition</TabsTrigger>
+        <TabsList className={`w-full grid grid-cols-3 h-10 ${isDark ? 'bg-gray-700' : 'bg-gray-100'} rounded-none`}>
+          <TabsTrigger value="ingredients" className={`text-xs ${isDark ? 'text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white' : ''}`}>Ingredients</TabsTrigger>
+          <TabsTrigger value="instructions" className={`text-xs ${isDark ? 'text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white' : ''}`}>Instructions</TabsTrigger>
+          <TabsTrigger value="nutrition" className={`text-xs ${isDark ? 'text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white' : ''}`}>Nutrition</TabsTrigger>
         </TabsList>
 
         <TabsContent value="ingredients" className="p-4 pt-3">
           {/* Display structured ingredients with measurements */}
           <ul className="space-y-2">
             {recipe.ingredients && recipe.ingredients.length > 0 ? recipe.ingredients.map((ingredient, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm">
+              <li key={index} className={`flex items-start gap-2 text-sm ${isDark ? 'text-gray-300' : ''}`}>
                 <Checkbox 
                   id={`ingredient-${index}`} 
                   className="mt-0.5" 
@@ -538,7 +705,7 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
                 />
                 <label 
                   htmlFor={`ingredient-${index}`} 
-                  className={`cursor-pointer ${hasIngredients[`ingredient-${index}`] ? 'text-gray-400 line-through' : 'text-gray-700'}`}
+                  className={`cursor-pointer ${hasIngredients[`ingredient-${index}`] ? (isDark ? 'text-gray-500 line-through' : 'text-gray-400 line-through') : (isDark ? 'text-gray-200' : 'text-gray-700')}`}
                 >
                   {(() => {
                     const displayText = ingredient.display_text || ingredient.name;
@@ -596,66 +763,156 @@ const RecipeDisplay = ({ recipe, onRegenerateClick }: RecipeDisplayProps) => {
         <TabsContent value="instructions" className="p-4 pt-3">
           <ol className="space-y-3">
             {recipe.instructions && recipe.instructions.length > 0 ? recipe.instructions.map((instruction, index) => (
-              <li key={index} className="flex gap-2 text-sm">
-                <span className="flex-shrink-0 w-5 h-5 bg-primary rounded-full text-white flex items-center justify-center text-xs">
+              <li key={index} className={`flex gap-2 text-sm ${isDark ? 'text-gray-300' : ''}`}>
+                <span className={`flex-shrink-0 w-5 h-5 rounded-full text-white flex items-center justify-center text-xs ${isDark ? 'bg-purple-600' : 'bg-primary'}`}>
                   {index + 1}
                 </span>
-                <span className="text-gray-700">{instruction}</span>
+                <span className={`${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{instruction}</span>
               </li>
             )) : (
-              <li className="text-gray-500 text-sm">No instructions available</li>
+              <li className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-sm`}>No instructions available</li>
             )}
           </ol>
         </TabsContent>
 
         <TabsContent value="nutrition" className="p-4 pt-3">
-          {recipe.nutrition_info ? (
+          
+          {(recipe.nutrition_info && recipe.nutrition_info.calories && recipe.nutrition_info.protein_g) || (recipe.id && Number(recipe.id) >= 405) ? (
             <div>
-              <h4 className="font-semibold mb-4 text-purple-700">USDA Nutrition Analysis</h4>
+              <h4 className={`font-semibold mb-4 ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>USDA Nutrition Analysis</h4>
 
-              {/* Main Macros - 3 prominent boxes */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                  <div className="text-2xl font-bold text-purple-700">{recipe.nutrition_info.calories}</div>
-                  <div className="text-sm font-medium text-purple-600">Calories</div>
+              {/* Servings indicator */}
+              {recipe.nutrition_info?.servings && (
+                <div className={`mb-4 p-3 rounded-lg ${isDark ? 'bg-amber-900/20 border border-amber-700 text-amber-200' : 'bg-amber-50 border border-amber-200'}`}>
+                  <div className="text-center">
+                    <span className={`text-lg font-semibold ${isDark ? 'text-amber-200' : 'text-amber-800'}`}>
+                      Recipe Makes: {recipe.nutrition_info?.servings} Servings
+                    </span>
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-                  <div className="text-2xl font-bold text-green-700">{recipe.nutrition_info.protein_g}g</div>
-                  <div className="text-sm font-medium text-green-600">Protein</div>
+              )}
+
+              {/* Per Serving Section */}
+              <div className="mb-6">
+                <h5 className="text-sm font-semibold text-gray-600 mb-3">PER SERVING</h5>
+                
+                {/* Main Macros - 3 prominent boxes */}
+                <div className="grid grid-cols-3 gap-4 mb-3">
+                  <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                    <div className="text-2xl font-bold text-purple-700">{recipe.nutrition_info?.calories || 'N/A'}</div>
+                    <div className="text-sm font-medium text-purple-600">Calories</div>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                    <div className="text-2xl font-bold text-green-700">{recipe.nutrition_info?.protein_g || 'N/A'}g</div>
+                    <div className="text-sm font-medium text-green-600">Protein</div>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                    <div className="text-2xl font-bold text-blue-700">{recipe.nutrition_info?.carbs_g || 'N/A'}g</div>
+                    <div className="text-sm font-medium text-blue-600">Carbs</div>
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                  <div className="text-2xl font-bold text-blue-700">{recipe.nutrition_info.carbs_g}g</div>
-                  <div className="text-sm font-medium text-blue-600">Carbs</div>
+
+                {/* Secondary Macros - smaller boxes */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className={`text-center p-3 rounded-lg ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-50'}`}>
+                    <div className="text-lg font-semibold">{recipe.nutrition_info?.fat_g || 0}g</div>
+                    <div className={`${isDark ? 'text-gray-300' : 'text-gray-500'} text-sm`}>Fat</div>
+                  </div>
+                  <div className={`text-center p-3 rounded-lg ${isDark ? 'bg-gray-700 text-gray-2 00' : 'bg-gray-50'}`}>
+                    <div className="text-lg font-semibold">{recipe.nutrition_info?.fiber_g || 0}g</div>
+                    <div className={`${isDark ? 'text-gray-300' : 'text-gray-500'} text-sm`}>Fiber</div>
+                  </div>
+                  <div className={`text-center p-3 rounded-lg ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-50'}`}>
+                    <div className="text-lg font-semibold">{recipe.nutrition_info?.sodium_mg || 0}mg</div>
+                    <div className={`${isDark ? 'text-gray-300' : 'text-gray-500'} text-sm`}>Sodium</div>
+                  </div>
                 </div>
               </div>
 
-              {/* Secondary Macros - smaller boxes underneath */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.fat_g}g</div>
-                  <div className="text-sm text-gray-500">Fat</div>
+              {/* Total Recipe Section - Only show if we have total data */}
+              {(recipe.nutrition_info?.total_calories || recipe.nutrition_info?.total_protein_g) && (
+                <div className={`pt-4 ${isDark ? 'border-t border-gray-700' : 'border-t'}`}>
+                  <h5 className="text-sm font-semibold text-gray-600 mb-3">TOTAL RECIPE</h5>
+                  
+                  {/* Total Macros */}
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                      <div className="text-xl font-bold text-purple-700">
+                        {recipe.nutrition_info?.total_calories || ((recipe.nutrition_info?.calories || 0) * (recipe.nutrition_info?.servings || 1))}
+                      </div>
+                      <div className="text-xs font-medium text-purple-600">Total Calories</div>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                      <div className="text-xl font-bold text-green-700">
+                        {recipe.nutrition_info?.total_protein_g?.toFixed(1) || ((recipe.nutrition_info?.protein_g || 0) * (recipe.nutrition_info?.servings || 1)).toFixed(1)}g
+                      </div>
+                      <div className="text-xs font-medium text-green-600">Total Protein</div>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                      <div className="text-xl font-bold text-blue-700">
+                        {recipe.nutrition_info?.total_carbs_g?.toFixed(1) || ((recipe.nutrition_info?.carbs_g || 0) * (recipe.nutrition_info?.servings || 1)).toFixed(1)}g
+                      </div>
+                      <div className="text-xs font-medium text-blue-600">Total Carbs</div>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                      <div className="text-xl font-bold text-orange-700">
+                        {recipe.nutrition_info?.total_fat_g?.toFixed(1) || ((recipe.nutrition_info?.fat_g || 0) * (recipe.nutrition_info?.servings || 1)).toFixed(1)}g
+                      </div>
+                      <div className="text-xs font-medium text-orange-600">Total Fat</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.fiber_g || 0}g</div>
-                  <div className="text-sm text-gray-500">Fiber</div>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-lg font-semibold text-gray-700">{recipe.nutrition_info.sodium_mg || 0}mg</div>
-                  <div className="text-sm text-gray-500">Sodium</div>
-                </div>
-              </div>
+              )}
 
-              <div className="text-xs text-gray-500 mt-4 p-3 bg-gray-50 rounded-lg">
+              {/* Additional Nutrition Details */}
+              {(recipe.nutrition_info?.sugar_g || recipe.nutrition_info?.cholesterol_mg || recipe.nutrition_info?.saturated_fat_g) && (
+                <div className={`mt-4 pt-4 ${isDark ? 'border-t border-gray-700' : 'border-t'}`}>
+                  <h5 className={`text-sm font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>ADDITIONAL DETAILS (Per Serving)</h5>
+                  <div className="grid grid-cols-3 gap-3">
+                    {recipe.nutrition_info?.sugar_g !== undefined && (
+                      <div className={`text-center p-2 rounded ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-50'}`}>
+                        <div className="text-sm font-semibold">{recipe.nutrition_info?.sugar_g}g</div>
+                        <div className={`${isDark ? 'text-gray-300' : 'text-gray-500'} text-xs`}>Sugar</div>
+                      </div>
+                    )}
+                    {recipe.nutrition_info?.cholesterol_mg !== undefined && (
+                      <div className={`text-center p-2 rounded ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-50'}`}>
+                        <div className="text-sm font-semibold">{recipe.nutrition_info?.cholesterol_mg}mg</div>
+                        <div className={`${isDark ? 'text-gray-300' : 'text-gray-500'} text-xs`}>Cholesterol</div>
+                      </div>
+                    )}
+                    {recipe.nutrition_info?.saturated_fat_g !== undefined && (
+                      <div className={`text-center p-2 rounded ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-50'}`}>
+                        <div className="text-sm font-semibold">{recipe.nutrition_info?.saturated_fat_g}g</div>
+                        <div className={`${isDark ? 'text-gray-300' : 'text-gray-500'} text-xs`}>Saturated Fat</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className={`text-xs mt-4 p-3 rounded-lg ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-500'}`}>
                 <strong>Data Source:</strong> Nutrition values calculated from USDA FoodData Central database using authentic ingredient data and standard serving sizes based on USDA dietary guidelines.
               </div>
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className="text-gray-500">Nutrition information not available for this recipe.</div>
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-500'} mb-3`}>Nutrition information not available for this recipe.</div>
+              <div className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                Try one of the "Stir Fry" or "Lasagna" recipes above - they have full nutrition data!
+              </div>
             </div>
           )}
         </TabsContent>
       </Tabs>
+      
+      {/* Community Share Modal */}
+      <CommunityShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        recipe={recipe}
+        shareType="recipe"
+      />
     </div>
   );
 };

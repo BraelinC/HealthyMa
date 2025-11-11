@@ -1,0 +1,130 @@
+chunk-276SZO74.js?v=a449be1c:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+Checkout.tsx:16 Stripe Public Key: Key loaded
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: Object
+postsCache.ts:100 🔧 Posts Cache: Initialized
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"user":{"id":"68abea53-7698-4b97-a0fd-a5838b278e08","email":"creator@healthymama.com","firstName":"Braelin","lastName":"","profileImageUrl":null,"phone":null,"full_name":"Braelin","google_id":null,"is_creator":true,"account_type":"lifetime","trial_ends_at":null,"subscription_status":"active","stripe_customer_id":null,"createdAt":"2025-08-31T01:20:15.665Z","updatedAt":"2025-08-31T01:20:15.665Z"}}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:136 Query function called for: /api/profile
+queryClient.ts:30 API Request: Object
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"id":1,"user_id":"68abea53-7698-4b97-a0fd-a5838b278e08","profile_name":"Braelin","primary_goal":"Quick & Simple Meals","family_size":4,"members":[],"profile_type":"family","preferences":["Healthy Living","Family Meals","Budget-Friendly","Quick Recipes"],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":["American","Asian","Mediterranean"],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-31T01:20:49.705Z","updated_at":"2025-08-31T01:26:39.025Z"}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"id":1,"name":"La Familia","description":"Hello everyone hope you enjoy sharing your meals","creator_id":"68abea53-7698-4b97-a0fd-a5838b278e08","cover_image":null,"category":"family","member_count":2,"is_public":true,"settings":{},"created_at":"2025-08-31T01:25:00.656Z","updated_at":"2025-09-02T01:21:48.634Z","memberInfo":{"id":1,"community_id":1,"user_id":"68abea53-7698-4b97-a0fd-a5838b278e08","role":"creator","points":40,"level":1,"joined_at":"2025-08-31T01:25:00.682Z"},"topContributors":[{"id":1,"community_id":1,"user_id":"68abea53-7698-4b97-a0fd-a5838b278e08","role":"creator","points":40,"level":1,"joined_at":"2025-08-31T01:25:00.682Z"},{"id":2,"community_id":1,"user_id":"user_1756775399476_524","role":"member","points":0,"level":1,"joined_at":"2025-09-02T01:21:48.599Z"}]}
+queryClient.ts:88 API Parsed Response: Object
+postsCache.ts:55 📦 Posts Cache: Added 3 new posts for community 1
+postsCache.ts:56 📦 Posts Cache: Total cached posts: 3
+CommunityDetailNew.tsx:1172 === DEBUG: Full meal plan data === Object
+CommunityDetailNew.tsx:1181 === DEBUG: Extracted meal === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 0 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 1 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 2 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 3 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 4 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 5 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 6 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 7 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 8 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 9 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 10 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 11 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 12 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 13 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 14 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 15 === Object
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 16 === Object
+CommunityDetailNew.tsx:1237 === DEBUG: Processed ingredients === Array(17)
+CommunityDetailNew.tsx:1255 === DEBUG: Final recipe data === Object
+MealPlanEditor.tsx:384 MealPlanEditor mounted with communityId: 1
+MealPlanEditor.tsx:390 Fetching courses for community: 1
+MealPlanEditor.tsx:392 Auth token exists: true
+MealPlanEditor.tsx:400 Courses fetch response status: 200
+MealPlanEditor.tsx:409 Fetched courses: (5) [{…}, {…}, {…}, {…}, {…}]
+MealPlanEditor.tsx:384 MealPlanEditor mounted with communityId: 1
+chunk-276SZO74.js?v=a449be1c:521 Warning: Connect(Droppable): Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.
+    at Provider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=a449be1c:968:20)
+    at App (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=a449be1c:7464:25)
+    at ErrorBoundary2 (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=a449be1c:1961:35)
+    at DragDropContext (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=a449be1c:7584:19)
+    at div
+    at div
+    at div
+    at MealPlanEditor (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/community/MealPlanEditor.tsx:562:34)
+    at div
+    at MealPlansClassroom (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/pages/CommunityDetailNew.tsx:81:31)
+    at div
+    at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVHSTOKX.js?v=a449be1c:42:13
+    at Presence (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DX2OJG3L.js?v=a449be1c:24:11)
+    at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=a449be1c:176:13
+    at _c5 (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/components/ui/tabs.tsx:72:12)
+    at div
+    at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVHSTOKX.js?v=a449be1c:42:13
+    at Provider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-3RXG37ZK.js?v=a449be1c:38:15)
+    at https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=a449be1c:54:7
+    at div
+    at CommunityDetailNew (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/pages/CommunityDetailNew.tsx:670:18)
+    at Route (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=a449be1c:323:16)
+    at Switch (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=a449be1c:379:17)
+    at main
+    at component
+    at Route (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=a449be1c:323:16)
+    at Switch (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=a449be1c:379:17)
+    at div
+    at Router (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/App.tsx?v=8v6tJ6eeVtbzn-7L8HIqb:264:42)
+    at Provider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-3RXG37ZK.js?v=a449be1c:38:15)
+    at TooltipProvider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=a449be1c:64:5)
+    at QueryClientProvider (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=a449be1c:2805:3)
+    at App (https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev/src/App.tsx?v=8v6tJ6eeVtbzn-7L8HIqb:573:3)
+printWarning @ chunk-276SZO74.js?v=a449be1c:521
+error @ chunk-276SZO74.js?v=a449be1c:505
+updateMemoComponent @ chunk-276SZO74.js?v=a449be1c:14382
+beginWork @ chunk-276SZO74.js?v=a449be1c:15977
+beginWork$1 @ chunk-276SZO74.js?v=a449be1c:19753
+performUnitOfWork @ chunk-276SZO74.js?v=a449be1c:19198
+workLoopSync @ chunk-276SZO74.js?v=a449be1c:19137
+renderRootSync @ chunk-276SZO74.js?v=a449be1c:19116
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=a449be1c:18874
+flushSyncCallbacks @ chunk-276SZO74.js?v=a449be1c:9119
+(anonymous) @ chunk-276SZO74.js?v=a449be1c:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=a449be1c:555
+flush @ @tanstack_react-query.js?v=a449be1c:569
+batch @ @tanstack_react-query.js?v=a449be1c:587
+dispatch_fn @ @tanstack_react-query.js?v=a449be1c:996
+setData @ @tanstack_react-query.js?v=a449be1c:696
+onSuccess @ @tanstack_react-query.js?v=a449be1c:897
+resolve @ @tanstack_react-query.js?v=a449be1c:456
+Promise.then
+run @ @tanstack_react-query.js?v=a449be1c:498
+start @ @tanstack_react-query.js?v=a449be1c:536
+fetch @ @tanstack_react-query.js?v=a449be1c:926
+executeFetch_fn @ @tanstack_react-query.js?v=a449be1c:2211
+onSubscribe @ @tanstack_react-query.js?v=a449be1c:1898
+subscribe @ @tanstack_react-query.js?v=a449be1c:24
+(anonymous) @ @tanstack_react-query.js?v=a449be1c:3022
+subscribeToStore @ chunk-276SZO74.js?v=a449be1c:11984
+commitHookEffectListMount @ chunk-276SZO74.js?v=a449be1c:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=a449be1c:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=a449be1c:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=a449be1c:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=a449be1c:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=a449be1c:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=a449be1c:19447
+commitRootImpl @ chunk-276SZO74.js?v=a449be1c:19416
+commitRoot @ chunk-276SZO74.js?v=a449be1c:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=a449be1c:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=a449be1c:9119
+(anonymous) @ chunk-276SZO74.js?v=a449be1c:18627
+MealPlanEditor.tsx:770 Rendering course: 1 Start Here 🌟
+MealPlanEditor.tsx:770 Rendering course: 5 Food 📚
+MealPlanEditor.tsx:770 Rendering course: 2 30-Day Meal Transformation 🔥
+MealPlanEditor.tsx:770 Rendering course: 3 Budget Nutrition Secrets 💰
+MealPlanEditor.tsx:770 Rendering course: 4 Recipe Vault 📚

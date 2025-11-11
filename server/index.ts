@@ -1,9 +1,17 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Load environment variables from .env file BEFORE any other imports that use them
-dotenv.config();
+// Look for .env in parent directory (project root)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
+
 
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -11,9 +19,52 @@ import { exec } from "child_process";
 import { passport } from "./googleAuth";
 
 const app = express();
+
+// Configure CORS to allow requests from Whop and development environments
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      /^https:\/\/.*\.apps\.whop\.com$/,  // Any Whop app subdomain
+      /^https:\/\/whop\.com$/,             // Main Whop domain
+      /^http:\/\/localhost:\d+$/,          // Local development
+      /^https:\/\/.*\.replit\.dev$/,       // Replit domains
+      /^https:\/\/.*\.repl\.co$/           // Replit alternative domains
+    ];
+    
+    // Check if the origin matches any allowed pattern
+    const allowed = allowedOrigins.some(pattern => 
+      pattern.test(origin)
+    );
+    
+    if (allowed) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true, // Allow cookies and authentication
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['set-cookie'],
+  maxAge: 86400 // Cache preflight response for 24 hours
+};
+
+app.use(cors(corsOptions));
+
 // Replit Auth enabled
 // Increase payload size limit for image uploads (10MB)
-app.use(express.json({ limit: '10mb' }));
+// Skip JSON parsing for Stripe webhook (it needs raw body)
+app.use((req, res, next) => {
+  if (req.path === '/api/stripe/webhook') {
+    next();
+  } else {
+    express.json({ limit: '10mb' })(req, res, next);
+  }
+});
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // Configure session middleware (required for passport and fallback auth)
@@ -25,10 +76,12 @@ app.use(session({
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for better persistence
-    sameSite: 'lax' // Helps with CSRF protection
+    sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax', // 'none' for cross-site in production
+    domain: process.env.NODE_ENV === "production" ? undefined : undefined // Let browser handle domain
   },
   name: 'healthy-mama-session', // Custom session name
-  rolling: true // Reset expiry on activity
+  rolling: true, // Reset expiry on activity
+  proxy: true // Trust proxy for secure cookies behind reverse proxy
 }));
 
 app.use(passport.initialize());
@@ -65,7 +118,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  console.log('🔧 [SERVER DEBUG] Registering API routes...');
   const server = await registerRoutes(app);
+  console.log('✅ [SERVER DEBUG] API routes registered successfully');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -79,9 +134,12 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
+    console.log('🔧 [SERVER DEBUG] Setting up Vite development middleware...');
     await setupVite(app, server);
   } else {
+    console.log('🔧 [SERVER DEBUG] Setting up static file serving...');
     serveStatic(app);
+    console.log('✅ [SERVER DEBUG] Static file serving configured');
   }
 
   // Use PORT env variable or default to 5000
@@ -102,10 +160,6 @@ app.use((req, res, next) => {
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
     
-    // Log API key status
-    console.log("🔑 API Keys Status:");
-    console.log(`   - Instacart: ${process.env.INSTACART_API_KEY ? '✅ Available' : '❌ Not found'}`);
-    console.log(`   - YouTube: ${process.env.YOUTUBE_API_KEY ? '✅ Available' : '❌ Not found'}`);
-    console.log(`   - OpenAI: ${process.env.OPENAI_API_KEY ? '✅ Available' : '❌ Not found'}`);
+
   });
 })();

@@ -48,9 +48,9 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return await bcrypt.compare(password, hashedPassword);
 }
 
-// Generate JWT token
-export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+// Generate JWT token with creator status
+export function generateToken(userId: string, isCreator: boolean = false): string {
+  return jwt.sign({ userId, isCreator }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 // Verify JWT token with support for old secrets
@@ -58,10 +58,13 @@ export function verifyToken(token: string): { userId: string; needsRefresh?: boo
   // First try with current secret
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    console.log(`✅ [AUTH DEBUG] Token verified with current secret for:`, decoded.userId);
     return decoded;
   } catch (error: any) {
+    console.log(`⚠️ [AUTH DEBUG] Token verification failed with current secret:`, error.name, error.message);
     // If it's not a signature error, token is invalid
     if (error.name !== 'JsonWebTokenError' || error.message !== 'invalid signature') {
+      console.log(`❌ [AUTH DEBUG] Non-signature error, token is invalid`);
       return null;
     }
     
@@ -85,14 +88,23 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+  console.log(`🔍 [AUTH DEBUG] Authorization header:`, authHeader ? 'Present' : 'Missing');
+  
   if (!token) {
+    console.log(`❌ [AUTH DEBUG] No token found`);
     return res.status(401).json({ message: "Access token required" });
   }
 
+  console.log(`🔍 [AUTH DEBUG] Token length:`, token.length);
+  console.log(`🔍 [AUTH DEBUG] Token preview:`, token.substring(0, 20) + '...');
+  
   const decoded = verifyToken(token);
   if (!decoded) {
+    console.log(`❌ [AUTH DEBUG] Token verification failed`);
     return res.status(403).json({ message: "Invalid token" });
   }
+  
+  console.log(`✅ [AUTH DEBUG] Token verified for user:`, decoded.userId);
 
   try {
     const user = await storage.getUser(decoded.userId);
@@ -104,7 +116,7 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
     
     // If token needs refresh, add new token to response header
     if (decoded.needsRefresh) {
-      const newToken = generateToken(decoded.userId);
+      const newToken = generateToken(decoded.userId, user.is_creator || false);
       res.setHeader('X-New-Token', newToken);
       res.setHeader('Access-Control-Expose-Headers', 'X-New-Token');
       console.log(`🔄 Auto-refreshed token for user ${decoded.userId}`);
@@ -132,7 +144,7 @@ export async function authenticateFlexible(req: AuthRequest, res: Response, next
           
           // If token needs refresh, add new token to response header
           if (decoded.needsRefresh) {
-            const newToken = generateToken(decoded.userId);
+            const newToken = generateToken(decoded.userId, user.is_creator || false);
             res.setHeader('X-New-Token', newToken);
             res.setHeader('Access-Control-Expose-Headers', 'X-New-Token');
             console.log(`🔄 Auto-refreshed token for user ${decoded.userId}`);
@@ -154,7 +166,7 @@ export async function authenticateFlexible(req: AuthRequest, res: Response, next
         req.user = user;
         
         // Generate a new JWT token for the session user
-        const newToken = generateToken(user.id.toString());
+        const newToken = generateToken(user.id.toString(), user.is_creator || false);
         res.setHeader('X-New-Token', newToken);
         res.setHeader('Access-Control-Expose-Headers', 'X-New-Token');
         console.log(`🔐 Generated new token for session user ${user.id}`);
@@ -184,18 +196,25 @@ export async function registerUser(req: Request, res: Response) {
     // Hash password
     const hashedPassword = await hashPassword(validatedData.password);
 
-    // Create user
+    // Calculate trial end date (30 days from now)
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+    // Create user with free trial
     const user = await storage.createUser({
       email: validatedData.email,
       phone: validatedData.phone,
       password_hash: hashedPassword,
       full_name: validatedData.full_name,
+      account_type: 'free_trial',
+      trial_ends_at: trialEndsAt,
+      subscription_status: 'active',
     });
 
-    // Generate token
-    const token = generateToken(user.id.toString());
+    // Generate token with creator status
+    const token = generateToken(user.id.toString(), user.is_creator || false);
 
-    // Return user data (without password) and token
+    // Return user data (without password) and token (including is_creator)
     const { password_hash, ...userWithoutPassword } = user;
     res.status(201).json({
       user: userWithoutPassword,
@@ -232,19 +251,19 @@ export async function loginUser(req: Request, res: Response) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Generate token
-    const token = generateToken(user.id.toString());
+    // Generate token with creator status
+    const token = generateToken(user.id.toString(), user.is_creator || false);
 
-    // Also store user ID in session as fallback
+    // Also store user ID in session as fallback  
     if (req.session) {
-      req.session.userId = user.id;
+      (req.session as any).userId = user.id;
       req.session.save((err) => {
         if (err) console.error('Session save error:', err);
         else console.log(`✅ Session created for user ${user.id}`);
       });
     }
 
-    // Return user data (without password) and token
+    // Return user data (without password) and token (including is_creator)
     const { password_hash, ...userWithoutPassword } = user;
     res.json({
       user: userWithoutPassword,
@@ -269,10 +288,23 @@ export async function loginUser(req: Request, res: Response) {
 export async function getCurrentUser(req: AuthRequest, res: Response) {
   try {
     if (!req.user) {
+      console.log("🔍 [getCurrentUser] No user in request");
       return res.status(401).json({ message: "User not authenticated" });
     }
 
+    console.log("🔍 [getCurrentUser] Full user object from req.user:");
+    console.log("🔍 [getCurrentUser] User ID:", req.user.id);
+    console.log("🔍 [getCurrentUser] User Email:", req.user.email);
+    console.log("🔍 [getCurrentUser] User is_creator:", req.user.is_creator);
+    console.log("🔍 [getCurrentUser] User full_name:", req.user.full_name);
+    console.log("🔍 [getCurrentUser] Complete user object:", JSON.stringify(req.user, null, 2));
+
     const { password_hash, ...userWithoutPassword } = req.user;
+    
+    console.log("🔍 [getCurrentUser] Sending back user object:");
+    console.log("🔍 [getCurrentUser] userWithoutPassword.is_creator:", userWithoutPassword.is_creator);
+    console.log("🔍 [getCurrentUser] Complete response object:", JSON.stringify({ user: userWithoutPassword }, null, 2));
+    
     res.json({ user: userWithoutPassword });
   } catch (error) {
     console.error("Get current user error:", error);

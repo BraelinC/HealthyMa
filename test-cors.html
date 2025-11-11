@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test for Whop Integration</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        h1 {
+            color: #333;
+        }
+        h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        .url-info {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 NutriMa - Whop Integration CORS Test</h1>
+    
+    <div class="test-section">
+        <h2>Current Environment</h2>
+        <div class="url-info">
+            <strong>Current Page URL:</strong> <span id="currentUrl"></span><br>
+            <strong>API Backend URL:</strong> https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>1. Test CORS Connection</h2>
+        <p>This tests if your browser can connect to the Replit backend from this domain.</p>
+        <button onclick="testCORS()">Test CORS</button>
+        <div id="corsResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Registration</h2>
+        <p>Create a new account to test the registration endpoint.</p>
+        <input type="email" id="regEmail" placeholder="test@example.com" style="padding: 8px; margin-right: 10px;">
+        <input type="password" id="regPassword" placeholder="password123" style="padding: 8px; margin-right: 10px;">
+        <button onclick="testRegister()">Register</button>
+        <div id="registerResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Login</h2>
+        <p>Login with an existing account to get an auth token.</p>
+        <input type="email" id="loginEmail" placeholder="test@example.com" style="padding: 8px; margin-right: 10px;">
+        <input type="password" id="loginPassword" placeholder="password123" style="padding: 8px; margin-right: 10px;">
+        <button onclick="testLogin()">Login</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Authenticated Request</h2>
+        <p>Test an authenticated API call using the token from login.</p>
+        <button onclick="testAuthRequest()">Get User Profile</button>
+        <div id="authResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://c3104879-9615-439c-96a3-7f96d3037ce8-00-3c226nw72trsq.spock.replit.dev';
+        let authToken = null;
+
+        // Show current URL
+        document.getElementById('currentUrl').textContent = window.location.href;
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('corsResult');
+            resultDiv.innerHTML = '<div class="result info">Testing CORS connection...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/test-cors`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="result success">✅ CORS Test Successful!\n\nResponse:\n${JSON.stringify(data, null, 2)}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ CORS Test Failed!\n\nError: ${error.message}\n\nThis means CORS is not properly configured. Check the browser console for more details.</div>`;
+                console.error('CORS Error:', error);
+            }
+        }
+
+        async function testRegister() {
+            const resultDiv = document.getElementById('registerResult');
+            const email = document.getElementById('regEmail').value || 'test@example.com';
+            const password = document.getElementById('regPassword').value || 'password123';
+            
+            resultDiv.innerHTML = '<div class="result info">Registering user...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    authToken = data.token;
+                    resultDiv.innerHTML = `<div class="result success">✅ Registration Successful!\n\nUser Created: ${data.user.email}\nToken received: ${authToken ? 'Yes' : 'No'}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">Registration failed: ${data.message || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Registration Error!\n\n${error.message}</div>`;
+                console.error('Registration Error:', error);
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('loginResult');
+            const email = document.getElementById('loginEmail').value || 'test@example.com';
+            const password = document.getElementById('loginPassword').value || 'password123';
+            
+            resultDiv.innerHTML = '<div class="result info">Logging in...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    authToken = data.token;
+                    localStorage.setItem('auth_token', authToken);
+                    resultDiv.innerHTML = `<div class="result success">✅ Login Successful!\n\nUser: ${data.user.email}\nToken saved: Yes\n\nYou can now test authenticated requests!</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">Login failed: ${data.message || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Login Error!\n\n${error.message}</div>`;
+                console.error('Login Error:', error);
+            }
+        }
+
+        async function testAuthRequest() {
+            const resultDiv = document.getElementById('authResult');
+            
+            if (!authToken) {
+                authToken = localStorage.getItem('auth_token');
+            }
+            
+            if (!authToken) {
+                resultDiv.innerHTML = '<div class="result error">No auth token found. Please login first!</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="result info">Fetching user profile...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/user`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Authenticated Request Successful!\n\nUser Profile:\n${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">Auth request failed: ${data.message || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Auth Request Error!\n\n${error.message}</div>`;
+                console.error('Auth Error:', error);
+            }
+        }
+
+        // Auto-test CORS on page load
+        window.addEventListener('load', () => {
+            setTimeout(testCORS, 500);
+        });
+    </script>
+</body>
+</html>

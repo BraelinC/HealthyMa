@@ -1,16 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CalendarDays, Clock, ChefHat, ShoppingCart, Target, ChevronDown, ChevronRight, ExternalLink, Utensils } from "lucide-react";
+import { CalendarDays, Clock, ChefHat, ShoppingCart, Target, ChevronDown, ChevronRight, ExternalLink, Utensils, UserPlus, AlertCircle, Plus, BookOpen, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 import { useProfileSystem } from "@/hooks/useProfileSystem";
 import ProfileSystemIndicator from "@/components/ProfileSystemIndicator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Recipe {
   title: string;
@@ -34,6 +38,41 @@ interface PlanResponse {
 export default function MealPlanner() {
   // Profile system detection
   const { isSmartProfileEnabled } = useProfileSystem();
+  const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  
+  
+  // Debug floating button logic - COMPREHENSIVE
+  console.log('🔍 FLOATING BUTTON DEBUG - COMPREHENSIVE:');
+  console.log('  - Raw user object:', user);
+  console.log('  - user type:', typeof user);
+  console.log('  - user.user:', (user as any)?.user);
+  console.log('  - user.user type:', typeof (user as any)?.user);
+  console.log('  - is_creator value:', (user as any)?.user?.is_creator);
+  console.log('  - is_creator type:', typeof (user as any)?.user?.is_creator);
+  
+  const isCreator = (user as any)?.user?.is_creator === true;
+  console.log('  - isCreator result:', isCreator);
+  console.log('  - isCreator type:', typeof isCreator);
+  console.log('  - Should show button:', isCreator);
+  
+  // Debug React rendering conditions
+  console.log('  - Component rendered at:', new Date().toISOString());
+  console.log('  - Window location:', window.location.pathname);
+  
+  // Check if user has a profile
+  const { data: profileData, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['/api/profile'],
+    queryFn: () => apiRequest('/api/profile').catch(() => null),
+    retry: false
+  });
+  
+  // Determine if user has a complete profile
+  const hasCompleteProfile = profileData && (
+    profileData.profile_name || 
+    profileData.members?.length > 0 ||
+    profileData.family_size > 0
+  );
   
   const [cookTime, setCookTime] = useState([30]);
   const [difficulty, setDifficulty] = useState([3.0]);
@@ -45,6 +84,19 @@ export default function MealPlanner() {
   const [generatedPlan, setGeneratedPlan] = useState<any>(null);
   const [openDays, setOpenDays] = useState<Set<number>>(new Set());
   const [shoppingUrl, setShoppingUrl] = useState<string>("");
+  const [showAddMenu, setShowAddMenu] = useState(false);
+
+  // Close add menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showAddMenu && !(event.target as Element).closest('.floating-add-button')) {
+        setShowAddMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showAddMenu]);
 
   const handleGeneratePlan = async () => {
     setIsGenerating(true);
@@ -321,14 +373,36 @@ export default function MealPlanner() {
               />
             </div>
 
-            <Button 
-              onClick={handleGeneratePlan} 
-              disabled={isGenerating}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-              size="lg"
-            >
-              {isGenerating ? "Generating Plan..." : "Generate Weekly Plan"}
-            </Button>
+            {/* Profile Creation Alert */}
+            {!isLoadingProfile && !hasCompleteProfile && (
+              <Alert className="border-orange-200 bg-orange-50">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-sm">
+                  <strong>Create your profile first!</strong> Setting up your profile helps us personalize meal plans to your family's preferences, dietary needs, and cooking style.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Conditional Buttons */}
+            {!isLoadingProfile && !hasCompleteProfile ? (
+              <Button 
+                onClick={() => setLocation('/profile')}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                size="lg"
+              >
+                <UserPlus className="mr-2 h-5 w-5" />
+                Create Your Profile First
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleGeneratePlan} 
+                disabled={isGenerating || isLoadingProfile}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                size="lg"
+              >
+                {isGenerating ? "Generating Plan..." : "Generate Weekly Plan"}
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -524,6 +598,65 @@ export default function MealPlanner() {
         </div>
       </div>
       </div>
+      {/* Floating Add Button - Creator Only */}
+      {(() => {
+        console.log('🚀 RENDER DEBUG: About to evaluate floating button render condition');
+        console.log('  - isCreator value:', isCreator);
+        console.log('  - Boolean(isCreator):', Boolean(isCreator));
+        console.log('  - Will render button:', isCreator);
+        if (isCreator) {
+          console.log('✅ RENDER DEBUG: Floating button WILL be rendered');
+        } else {
+          console.log('❌ RENDER DEBUG: Floating button will NOT be rendered');
+        }
+        return null;
+      })()}
+      {isCreator && (
+        <div className="fixed bottom-24 right-6 z-50 floating-add-button"
+             ref={(el) => {
+               if (el) {
+                 console.log('✅ FLOATING BUTTON DOM: Element rendered and mounted!');
+                 console.log('  - Element position:', el.getBoundingClientRect());
+                 console.log('  - Element styles:', window.getComputedStyle(el));
+                 console.log('  - Element visible:', el.offsetParent !== null);
+               }
+             }}>
+          {/* Expanded Menu */}
+          {showAddMenu && (
+            <div className="absolute bottom-16 right-0 mb-2 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 min-w-[200px] animate-in slide-in-from-bottom-2 duration-200">
+              <div className="px-4 py-2 border-b border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-700">Add Meal & Course</h3>
+              </div>
+
+              <Button variant="ghost" className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50">
+                <BookOpen className="h-5 w-5 mr-3 text-emerald-600" />
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">Create New Meal</div>
+                  <div className="text-xs text-gray-500">Add meal to plan</div>
+                </div>
+              </Button>
+
+              <Button variant="ghost" className="w-full justify-start px-4 py-3 h-auto hover:bg-purple-50">
+                <Calendar className="h-5 w-5 mr-3 text-purple-600" />
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">Add Course</div>
+                  <div className="text-xs text-gray-500">Create meal course</div>
+                </div>
+              </Button>
+            </div>
+          )}
+
+          {/* Main Plus Button */}
+          <Button
+            onClick={() => setShowAddMenu(!showAddMenu)}
+            className={`relative h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 border-0 group ${showAddMenu ? 'rotate-45' : 'rotate-0'}`}
+          >
+            <Plus className="h-6 w-6 text-white transition-transform duration-200" />
+            <div className="absolute inset-0 rounded-full bg-white opacity-0 group-active:opacity-20 transition-opacity duration-150"></div>
+            <div className="absolute inset-0 rounded-full bg-purple-400 opacity-0 group-hover:opacity-20 blur-md transition-opacity duration-200"></div>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

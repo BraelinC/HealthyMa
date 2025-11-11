@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Calendar styles for date highlighting - Multiple selectors for maximum compatibility */
 .rdp-day_selected,
 .rdp-day_range_start,
@@ -224,4 +233,108 @@ button[role="gridcell"]:hover:not([aria-selected="true"]):not([disabled]) {
 
 .animate-float {
   animation: float linear infinite;
+}
+
+/* Meal Plan Editor Sidebar Collapse Styles */
+[data-meal-plan-editor] .w-80 {
+  transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+  transform: translateX(-100%); /* Start collapsed */
+}
+
+[data-meal-plan-editor]:not(.sidebar-collapsed) .w-80 {
+  transform: translateX(0); /* Show when not collapsed */
+}
+
+[data-meal-plan-editor].sidebar-collapsed .w-80 {
+  transform: translateX(-100%);
+}
+
+[data-meal-plan-editor].sidebar-collapsed .flex-1 {
+  margin-left: 0;
+}
+
+/* Button animation when sidebar collapses */
+[data-meal-plan-editor] button[title="Toggle course list"] {
+  transition: transform 0.3s ease-in-out;
+}
+
+[data-meal-plan-editor]:not(.sidebar-collapsed) button[title="Toggle course list"] {
+  transform: rotate(180deg);
+}
+
+/* Mobile responsiveness for meal plan editor */
+@media (max-width: 768px) {
+  [data-meal-plan-editor] .w-80 {
+    width: 320px;
+    max-width: 320px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 20;
+  }
+  
+  [data-meal-plan-editor] .flex-1 {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Desktop responsiveness */
+@media (min-width: 769px) {
+  [data-meal-plan-editor] .w-80 {
+    width: 320px;
+    max-width: 320px;
+    position: relative;
+    z-index: 20;
+  }
+  
+  [data-meal-plan-editor] .flex-1 {
+    margin-left: 0;
+    width: calc(100% - 320px);
+  }
+  
+  [data-meal-plan-editor]:not(.sidebar-collapsed) .flex-1 {
+    margin-left: 320px;
+    width: calc(100% - 320px);
+  }
+}
+
+/* Add overlay when sidebar is open on mobile */
+@media (max-width: 768px) {
+  [data-meal-plan-editor]:not(.sidebar-collapsed)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 320px;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    pointer-events: auto;
+  }
+  
+  /* Initially hide overlay since sidebar starts collapsed */
+  [data-meal-plan-editor]::before {
+    display: none;
+  }
+  
+  [data-meal-plan-editor]:not(.sidebar-collapsed)::before {
+    display: block;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
 }

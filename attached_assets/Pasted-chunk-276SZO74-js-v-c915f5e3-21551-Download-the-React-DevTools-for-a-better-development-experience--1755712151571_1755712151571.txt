@@ -1,0 +1,91 @@
+chunk-276SZO74.js?v=c915f5e3:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":false,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-20T17:39:30.635Z"}}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:136 Query function called for: /api/profile
+queryClient.ts:30 API Request: Object
+queryClient.ts:30 API Request: Object
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"id":33,"user_id":"user_1755468147872_11","profile_name":"My Profile","primary_goal":"Save Money","family_size":1,"members":[],"profile_type":"individual","preferences":[],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":[],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-18T15:43:04.693Z","updated_at":"2025-08-19T00:50:04.899Z"}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"totalFollowers":0,"totalCommunities":0,"totalSharedPlans":0,"totalEarnings":0,"engagementRate":78,"averageRating":4.5,"thisMonthGrowth":12,"activeMemberships":0}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: []
+queryClient.ts:88 API Parsed Response: Array(0)
+CreatorHub.tsx:329 🔥 START YOUR CREATOR JOURNEY CLICKED!
+CreatorHub.tsx:330 🔍 Current user: Object
+CreatorHub.tsx:331 🔍 Current is_creator: undefined
+CreatorHub.tsx:334 🔍 Checking current user creator status: false
+CreatorHub.tsx:337 🔄 Need to enable creator mode first...
+queryClient.ts:30 API Request: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"message":"Creator mode enabled","is_creator":true,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3NTU0NjgxNDc4NzJfMTEiLCJpc0NyZWF0b3IiOnRydWUsImlhdCI6MTc1NTcxMjEzNCwiZXhwIjoxNzU4MzA0MTM0fQ.0yAp-vGObjB8HPbN4w5JDlHgFCd1wtmRU6EzGmxpGJY"}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: Object
+CreatorHub.tsx:134 ✅ Creator mode mutation success, data: Object
+CreatorHub.tsx:144 🔍 Document referrer: https://replit.com/
+CreatorHub.tsx:340 ✅ Creator mode enabled, result: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-20T17:48:54.628Z"}}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: Object
+CreatorHub.tsx:347 🔍 Checking creator status, attempt 1/10
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: Object
+CreatorHub.tsx:139 🔄 User data refetched after creator mode toggle
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-20T17:48:54.628Z"}}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+queryClient.ts:49 API Response: Object
+queryClient.ts:66 API Response Text: {"user":{"id":"user_1755468147872_11","email":"tyler@gmail.com","firstName":"tyler","lastName":null,"profileImageUrl":null,"phone":"4304564444","full_name":"tyler","google_id":null,"is_creator":true,"createdAt":"2025-08-17T22:02:27.880Z","updatedAt":"2025-08-20T17:48:54.628Z"}}
+queryClient.ts:88 API Parsed Response: Object
+queryClient.ts:139 Query result: Object
+CreatorHub.tsx:353 🔍 Fresh user data: Object
+CreatorHub.tsx:354 🔍 Fresh user is_creator: true
+CreatorHub.tsx:357 ✅ Creator status confirmed! Navigating to /create
+CreateCommunity.tsx:69 🚀 CreateCommunity component loaded
+CreateCommunity.tsx:76 🔍 CreateCommunity - isAuthenticated: true
+CreateCommunity.tsx:77 🔍 CreateCommunity - user: Object
+CreateCommunity.tsx:81 🔍 CreateCommunity - actualUser: Object
+CreateCommunity.tsx:82 🔍 CreateCommunity - actualUser.is_creator: true
+CreateCommunity.tsx:83 🔍 CreateCommunity - typeof actualUser.is_creator: boolean
+CreateCommunity.tsx:99 🔍 CreateCommunity - Checking creator status: true
+CreateCommunity.tsx:100 🔍 CreateCommunity - Will show creator required? false
+CreateCommunity.tsx:196 ✅ User authenticated and is creator, showing create community form
+CreatorHub.tsx:329 🔥 START YOUR CREATOR JOURNEY CLICKED!
+CreatorHub.tsx:330 🔍 Current user: Object
+CreatorHub.tsx:331 🔍 Current is_creator: undefined
+CreatorHub.tsx:334 🔍 Checking current user creator status: true
+CreatorHub.tsx:381 ✅ Already a creator, navigating directly to /create
+CreateCommunity.tsx:69 🚀 CreateCommunity component loaded
+CreateCommunity.tsx:76 🔍 CreateCommunity - isAuthenticated: true
+CreateCommunity.tsx:77 🔍 CreateCommunity - user: Object
+CreateCommunity.tsx:81 🔍 CreateCommunity - actualUser: Object
+CreateCommunity.tsx:82 🔍 CreateCommunity - actualUser.is_creator: true
+CreateCommunity.tsx:83 🔍 CreateCommunity - typeof actualUser.is_creator: boolean
+CreateCommunity.tsx:99 🔍 CreateCommunity - Checking creator status: true
+CreateCommunity.tsx:100 🔍 CreateCommunity - Will show creator required? false
+CreateCommunity.tsx:196 ✅ User authenticated and is creator, showing create community form
+CreateCommunity.tsx:69 🚀 CreateCommunity component loaded
+CreateCommunity.tsx:76 🔍 CreateCommunity - isAuthenticated: true
+CreateCommunity.tsx:77 🔍 CreateCommunity - user: Object
+CreateCommunity.tsx:81 🔍 CreateCommunity - actualUser: Object
+CreateCommunity.tsx:82 🔍 CreateCommunity - actualUser.is_creator: true
+CreateCommunity.tsx:83 🔍 CreateCommunity - typeof actualUser.is_creator: boolean
+CreateCommunity.tsx:99 🔍 CreateCommunity - Checking creator status: true
+CreateCommunity.tsx:100 🔍 CreateCommunity - Will show creator required? false
+CreateCommunity.tsx:196 ✅ User authenticated and is creator, showing create community form

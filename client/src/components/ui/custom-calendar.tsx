@@ -18,7 +18,7 @@ interface CustomCalendarProps {
 export function CustomCalendar({ 
   selected, 
   onSelect, 
-  numberOfMonths = 2, 
+  numberOfMonths = 1, 
   disabled = () => false 
 }: CustomCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());

@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, recipes, mealPlans, profiles, userAchievements, mealCompletions, groceryListCache, foodLogs, foodDatabase, type User, type UpsertUser, type Recipe, type InsertRecipe, type MealPlan, type Profile, type InsertProfile, type UserAchievement, type InsertUserAchievement, type MealCompletion, type InsertMealCompletion, type GroceryListCache, type InsertGroceryListCache, type FoodLog, type InsertFoodLog, type FoodDatabaseItem, type InsertFoodDatabaseItem, type IStorage } from "@shared/schema";
+import { users, recipes, userRecipes, mealPlans, profiles, userAchievements, mealCompletions, groceryListCache, foodLogs, foodDatabase, userFavorites, type User, type UpsertUser, type Recipe, type InsertRecipe, type UserRecipe, type InsertUserRecipe, type MealPlan, type Profile, type InsertProfile, type UserAchievement, type InsertUserAchievement, type MealCompletion, type InsertMealCompletion, type GroceryListCache, type InsertGroceryListCache, type FoodLog, type InsertFoodLog, type FoodDatabaseItem, type InsertFoodDatabaseItem, type UserFavorite, type InsertUserFavorite, type IStorage } from "@shared/schema";
 import { eq, desc, and, sql, like, gte, lte } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
@@ -20,6 +20,10 @@ export class DatabaseStorage implements IStorage {
     phone: string;
     password_hash: string;
     full_name: string;
+    account_type?: string;
+    trial_ends_at?: Date;
+    subscription_status?: string;
+    stripe_customer_id?: string;
   }): Promise<User> {
     // Generate a simple sequential ID for standard auth
     const timestamp = Date.now();
@@ -36,6 +40,10 @@ export class DatabaseStorage implements IStorage {
         full_name: userData.full_name,
         firstName: userData.full_name.split(' ')[0],
         lastName: userData.full_name.split(' ').slice(1).join(' ') || null,
+        account_type: userData.account_type || 'free_trial',
+        trial_ends_at: userData.trial_ends_at,
+        subscription_status: userData.subscription_status || 'active',
+        stripe_customer_id: userData.stripe_customer_id,
       })
       .returning();
     
@@ -51,6 +59,18 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(users.id, id))
       .returning();
+    return user;
+  }
+
+  async updateUserGoogleId(id: string, googleId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ google_id: googleId, updatedAt: new Date() })
+      .where(eq(users.id, id));
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripe_customer_id, customerId));
     return user;
   }
 
@@ -145,6 +165,7 @@ export class DatabaseStorage implements IStorage {
       .insert(recipes)
       .values(recipe)
       .returning();
+    
     return createdRecipe;
   }
 
@@ -203,6 +224,29 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(recipes)
       .where(eq(recipes.is_saved, false))
       .orderBy(desc(recipes.created_at));
+  }
+
+  async getUserCreatedRecipes(userId: string): Promise<UserRecipe[]> {
+    return await db.select().from(userRecipes)
+      .where(eq(userRecipes.user_id, userId))
+      .orderBy(desc(userRecipes.created_at));
+  }
+
+  async createUserRecipe(recipe: InsertUserRecipe): Promise<UserRecipe> {
+    const [createdRecipe] = await db
+      .insert(userRecipes)
+      .values(recipe)
+      .returning();
+    
+    return createdRecipe;
+  }
+
+  async deleteUserRecipe(recipeId: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(userRecipes)
+      .where(and(eq(userRecipes.id, recipeId), eq(userRecipes.user_id, userId)));
+    
+    return result.rowCount > 0;
   }
 
   async getRecipeById(recipeId: number): Promise<any> {
@@ -270,10 +314,12 @@ export class DatabaseStorage implements IStorage {
   // Meal plan operations
   async getSavedMealPlans(userId: string): Promise<MealPlan[]> {
     try {
+      // Optimize query with limit for better performance
       const plans = await db.select()
         .from(mealPlans)
         .where(eq(mealPlans.userId, userId))
-        .orderBy(desc(mealPlans.updatedAt));
+        .orderBy(desc(mealPlans.updatedAt))
+        .limit(50); // Limit to most recent 50 meal plans
 
       console.log('Database returned meal plans:', plans?.length || 0);
       // Ensure we always return an array
@@ -834,6 +880,69 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating food database item:', error);
       throw error;
+    }
+  }
+
+  // Favorites methods
+  async getUserFavorites(userId: string): Promise<UserFavorite[]> {
+    try {
+      // Optimize query with limit to prevent large result sets from slowing down the response
+      return await db.select()
+        .from(userFavorites)
+        .where(eq(userFavorites.user_id, userId))
+        .orderBy(desc(userFavorites.created_at))
+        .limit(100); // Limit to most recent 100 favorites for better performance
+    } catch (error) {
+      console.error('Error getting user favorites:', error);
+      return [];
+    }
+  }
+
+  async addToFavorites(data: InsertUserFavorite): Promise<UserFavorite> {
+    try {
+      const [favorite] = await db.insert(userFavorites)
+        .values(data)
+        .returning();
+      
+      console.log('✅ Added to favorites:', favorite.title);
+      return favorite;
+    } catch (error) {
+      console.error('Error adding to favorites:', error);
+      throw error;
+    }
+  }
+
+  async removeFromFavorites(userId: string, itemType: string, itemId: string): Promise<boolean> {
+    try {
+      await db.delete(userFavorites)
+        .where(and(
+          eq(userFavorites.user_id, userId),
+          eq(userFavorites.item_type, itemType),
+          eq(userFavorites.item_id, itemId)
+        ));
+      console.log('✅ Removed from favorites:', itemType, itemId);
+      return true;
+    } catch (error) {
+      console.error('Error removing from favorites:', error);
+      return false;
+    }
+  }
+
+  async isFavorited(userId: string, itemType: string, itemId: string): Promise<boolean> {
+    try {
+      const [favorite] = await db.select()
+        .from(userFavorites)
+        .where(and(
+          eq(userFavorites.user_id, userId),
+          eq(userFavorites.item_type, itemType),
+          eq(userFavorites.item_id, itemId)
+        ))
+        .limit(1);
+      
+      return !!favorite;
+    } catch (error) {
+      console.error('Error checking if favorited:', error);
+      return false;
     }
   }
 }

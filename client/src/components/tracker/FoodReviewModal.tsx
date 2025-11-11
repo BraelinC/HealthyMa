@@ -259,17 +259,8 @@ export default function FoodReviewModal({ data, onClose, onSave }: FoodReviewMod
             </div>
           </div>
 
-          {/* Image and Ingredients */}
-          <div className="flex-1 flex gap-4 p-4 overflow-hidden">
-            {/* Image Preview */}
-            <div className="w-1/3 flex-shrink-0">
-              <img 
-                src={data.image} 
-                alt="Captured food" 
-                className="w-full h-full object-cover rounded-lg"
-              />
-            </div>
-
+          {/* Manual Ingredients Entry */}
+          <div className="flex-1 flex p-4 overflow-hidden">
             {/* Ingredients List */}
             <div className="flex-1 flex flex-col">
               <ScrollArea className="flex-1">

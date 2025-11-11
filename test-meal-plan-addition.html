@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Plan Addition Feature - Test Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            animation: slideDown 0.5s ease;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .test-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            animation: slideUp 0.6s ease;
+        }
+        
+        .test-card h2 {
+            color: #764ba2;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-steps {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .test-steps h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .test-steps ol {
+            padding-left: 25px;
+        }
+        
+        .test-steps li {
+            margin: 10px 0;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        
+        .feature-highlight {
+            background: linear-gradient(135deg, #e6f7ff 0%, #f0e6ff 100%);
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .feature-highlight h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .feature-highlight ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-highlight li {
+            padding: 8px 0;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .feature-highlight li:before {
+            content: "✅";
+            font-size: 1.2em;
+        }
+        
+        .button-demo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .success-badge {
+            background: #10b981;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        
+        .warning-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .warning-box h4 {
+            color: #d97706;
+            margin-bottom: 10px;
+        }
+        
+        .warning-box p {
+            color: #92400e;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-preview {
+            background: #f8f9fa;
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .modal-preview img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .tabs-demo {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .tab {
+            padding: 8px 16px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>🍽️</span>
+                Meal Plan Addition Feature
+                <span class="success-badge">NEW</span>
+            </h1>
+            <p class="subtitle">Add recipes to meal plans directly from Favorites and Search pages</p>
+        </div>
+
+        <div class="test-card">
+            <h2><span>✨</span> Feature Overview</h2>
+            <div class="feature-highlight">
+                <h4>What's New:</h4>
+                <ul>
+                    <li>Green Plus (+) button on recipe cards</li>
+                    <li>Beautiful modal for selecting meal plan slots</li>
+                    <li>Add to existing days or create new days</li>
+                    <li>Visual preview of recipe being added</li>
+                    <li>Support for up to 7-day meal plans</li>
+                    <li>Instant feedback and success notifications</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h2><span>🧪</span> Test Case 1: Adding from Favorites</h2>
+            <div class="test-steps">
+                <h3>Steps to Test:</h3>
+                <ol>
+                    <li>Navigate to the <strong>Favorites</strong> page</li>
+                    <li>Find any favorited recipe card</li>
+                    <li>Look for the green <span class="button-demo">+ Plus</span> button on the card</li>
+                    <li>Click the Plus button to open the meal plan modal</li>
+                    <li>Observe the modal with two tabs:
+                        <div class="tabs-demo">
+                            <div class="tab active">Existing Days</div>
+                            <div class="tab">Add New Day</div>
+                        </div>
+                    </li>
+                    <li>Select a meal slot (Breakfast, Lunch, or Dinner)</li>
+                    <li>Click "Add to Meal Plan" button</li>
+                    <li>Verify success toast notification appears</li>
+                </ol>
+            </div>
+            
+            <div class="feature-highlight">
+                <h4>Expected Behavior:</h4>
+                <ul>
+                    <li>Modal shows recipe preview with image and title</li>
+                    <li>Empty slots show as "Empty Slot" in green</li>
+                    <li>Occupied slots show the current recipe name</li>
+                    <li>Selected slot has purple border and checkmark</li>
+                    <li>Success message: "Recipe Added! 🎉"</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h2><span>🔍</span> Test Case 2: Adding from Search</h2>
+            <div class="test-steps">
+                <h3>Steps to Test:</h3>
+                <ol>
+                    <li>Navigate to the <strong>Search</strong> page</li>
+                    <li>Search for any recipe or generate a new one</li>
+                    <li>When a recipe card appears, locate the green Plus button</li>
+                    <li>Click the Plus button</li>
+                    <li>If no meal plan exists, use "Add New Day" tab</li>
+                    <li>Select meal type (Breakfast/Lunch/Dinner)</li>
+                    <li>Confirm the addition</li>
+                    <li>Navigate to home page to verify recipe was added</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h2><span>📋</span> Test Case 3: Modal Features</h2>
+            <div class="test-steps">
+                <h3>Modal Components to Verify:</h3>
+                <ol>
+                    <li><strong>Recipe Preview Card:</strong>
+                        <ul>
+                            <li>Shows recipe image (80x80px thumbnail)</li>
+                            <li>Displays recipe title</li>
+                            <li>Shows cooking time badge</li>
+                            <li>Shows cuisine type badge</li>
+                        </ul>
+                    </li>
+                    <li><strong>Existing Days Tab:</strong>
+                        <ul>
+                            <li>Lists all current meal plan days (Day 1, Day 2, etc.)</li>
+                            <li>Shows 3 meal slots per day</li>
+                            <li>Icons: ☕ Breakfast, ☀️ Lunch, 🌙 Dinner</li>
+                            <li>Grayed out if slot is occupied</li>
+                        </ul>
+                    </li>
+                    <li><strong>New Day Tab:</strong>
+                        <ul>
+                            <li>Creates next sequential day number</li>
+                            <li>Disabled if 7 days already exist</li>
+                            <li>Shows confirmation text</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h2><span>⚠️</span> Edge Cases to Test</h2>
+            <div class="warning-box">
+                <h4>Important Scenarios:</h4>
+                <p>1. <strong>No Existing Meal Plan:</strong> System should create a new meal plan automatically</p>
+                <p>2. <strong>Maximum Days Reached:</strong> "Add New Day" tab should be disabled after 7 days</p>
+                <p>3. <strong>Replacing Existing Recipe:</strong> Should overwrite the slot with new recipe</p>
+                <p>4. <strong>API Errors:</strong> Should show error toast with retry option</p>
+                <p>5. <strong>Missing Recipe Data:</strong> Should handle gracefully with default values</p>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h2><span>✅</span> Success Criteria</h2>
+            <div class="feature-highlight">
+                <h4>The feature is working correctly if:</h4>
+                <ul>
+                    <li>Plus button appears on all recipe cards in Favorites and Search</li>
+                    <li>Modal opens smoothly with recipe preview</li>
+                    <li>Can select any empty slot and add recipe</li>
+                    <li>Can create new days up to 7 total</li>
+                    <li>Success notification appears after adding</li>
+                    <li>Recipe appears in meal plan on home page</li>
+                    <li>Modal closes after successful addition</li>
+                    <li>Can add multiple recipes in sequence</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h2><span>🚀</span> Quick Test Flow</h2>
+            <div class="test-steps" style="background: linear-gradient(135deg, #e6f7ff 0%, #f0e6ff 100%);">
+                <h3>5-Minute Test Sequence:</h3>
+                <ol>
+                    <li>Login to the app</li>
+                    <li>Go to Favorites → Click Plus → Add to Day 1 Lunch</li>
+                    <li>Go to Search → Generate recipe → Click Plus → Add to Day 1 Dinner</li>
+                    <li>Try to add another recipe to Day 2 Breakfast (new day)</li>
+                    <li>Go to Home page → Verify all 3 recipes appear in meal plan</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);">
+            <h2><span>🎉</span> Feature Complete!</h2>
+            <p style="color: #166534; font-size: 1.1em; margin-top: 10px;">
+                The meal plan addition feature is now fully integrated with both the Favorites and Search pages. 
+                Users can easily build their meal plans by clicking the green plus button on any recipe card.
+            </p>
+            <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px;">
+                <strong>Next Steps:</strong>
+                <ul style="list-style: none; padding: 10px 0;">
+                    <li>📱 Test on mobile devices for responsive design</li>
+                    <li>🔄 Test with different user accounts</li>
+                    <li>📊 Monitor API performance with multiple additions</li>
+                    <li>🎨 Consider adding drag-and-drop in future update</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

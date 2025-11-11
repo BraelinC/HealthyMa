@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import fetch from "node-fetch";
 import jwt from "jsonwebtoken";
@@ -11,9 +11,36 @@ import { parseIngredientsWithGPT } from "./gptIngredientParser";
 import { authenticateToken } from "./auth"; // Import JWT auth middleware
 import { rateLimiter } from "./rateLimiter";
 import { handleLogMealDetection } from "./logmealEndpoint";
+import { communityService } from "./communityService";
+import { communityCommentsService } from "./communityCommentsService";
+import { creatorService } from "./creatorService";
+import { mealPlanSharingService } from "./mealPlanSharingService";
+import { groqValidator } from "./groqValidator";
+import { recipeNutritionCalculator } from "./recipeNutritionCalculator";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 import Stripe from "stripe";
-import { insertProfileSchema, type InsertProfile } from "@shared/schema";
+import { 
+  insertProfileSchema, 
+  type InsertProfile, 
+  users,
+  communities,
+  communityMembers,
+  sharedMealPlans,
+  creatorFollowers,
+  communityMealCourses,
+  communityMealCourseModules,
+  communityMealLessons,
+  communityPosts,
+  communityMealLessonSections,
+  userMealCourseProgress,
+  type InsertCommunityMealCourse,
+  type InsertCommunityMealCourseModule,
+  type InsertCommunityMealLesson,
+  type InsertCommunityMealLessonSection
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, and, isNull, desc } from "drizzle-orm";
 
 // YouTube API utilities
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -24,7 +51,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-06-30.basil",
+  apiVersion: "2025-07-30.basil",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -88,6 +115,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
+  // CORS test endpoint (no auth required)
+  app.get("/api/test-cors", (_req, res) => {
+    res.json({ 
+      status: "CORS is working correctly!", 
+      timestamp: new Date().toISOString(),
+      message: "If you can see this from Whop, CORS is configured properly"
+    });
+  });
+
   // Standard email/password auth routes
   const { registerUser, loginUser, getCurrentUser, authenticateToken } = await import("./auth");
   
@@ -95,15 +131,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", loginUser);
   app.get("/api/auth/user", authenticateToken, getCurrentUser);
 
+  // Toggle creator status endpoint (for testing)
+  app.post("/api/user/toggle-creator", authenticateToken, async (req: any, res) => {
+    try {
+      console.log(`🔍 [DEBUG] toggle-creator called`);
+      console.log(`🔍 [DEBUG] Request headers:`, req.headers.authorization ? 'Auth header present' : 'No auth header');
+      console.log(`🔍 [DEBUG] req.user:`, req.user);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`❌ [DEBUG] No user ID in toggle-creator request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Get current user to check creator status
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Toggle is_creator status
+      const newCreatorStatus = !(user.is_creator || false);
+      await db.update(users).set({ 
+        is_creator: newCreatorStatus,
+        updatedAt: new Date() 
+      }).where(eq(users.id, userId));
+
+      // Generate new token with updated creator status
+      const { generateToken } = await import("./auth");
+      const newToken = generateToken(userId, newCreatorStatus);
+
+
+
+      res.json({ 
+        message: `Creator mode ${newCreatorStatus ? 'enabled' : 'disabled'}`,
+        is_creator: newCreatorStatus,
+        token: newToken
+      });
+    } catch (error) {
+      console.error("Error toggling creator status:", error);
+      res.status(500).json({ message: "Failed to toggle creator status" });
+    }
+  });
+
   // Google OAuth routes
   const { passport, isGoogleOAuthConfigured, handleGoogleCallback } = await import("./googleAuth");
   
   if (isGoogleOAuthConfigured) {
     // Initiate Google OAuth login
     app.get("/api/auth/google", (req, res, next) => {
-      console.log("Google OAuth initiated");
-      console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
-      console.log("Callback URL:", `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`);
       passport.authenticate("google", {
         scope: ["profile", "email"]
       })(req, res, next);
@@ -125,7 +200,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const userData = encodeURIComponent(JSON.stringify(userWithoutPassword));
           res.redirect(`/?token=${token}&user=${userData}&success=google`);
         } catch (error) {
-          console.error("Google callback error:", error);
           res.redirect("/?error=callback_failed");
         }
       }
@@ -179,7 +253,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error: any) {
-      console.error("Test login error:", error);
       res.status(500).json({ message: "Test login failed" });
     }
   });
@@ -216,17 +289,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe payment routes
-  app.post("/api/create-payment-intent", async (req, res) => {
+  app.get('/api/stripe-publishable-key', (req, res) => {
+    try {
+      const pk = process.env.STRIPE_PUBLISHABLE_KEY || '';
+      if (!pk) {
+        return res.status(404).json({ message: 'Publishable key not configured' });
+      }
+      return res.json({ publishableKey: pk });
+    } catch (err) {
+      return res.status(500).json({ message: 'Failed to retrieve publishable key' });
+    }
+  });
+
+  app.post("/api/create-payment-intent", authenticateToken, async (req: any, res) => {
     try {
       const { amount, paymentType } = req.body;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
       // Set amount based on payment type
       let paymentAmount;
       let description;
 
       if (paymentType === 'founders') {
-        paymentAmount = 9900; // $99.00 in cents
+        paymentAmount = 10000; // $100.00 in cents
         description = "Healthy Mama Founders Offer - Lifetime Access";
+      } else if (paymentType === 'monthly') {
+        paymentAmount = 2000; // $20.00 in cents
+        description = "Healthy Mama Monthly Subscription";
       } else if (paymentType === 'trial') {
         paymentAmount = 0; // $0 for trial setup
         description = "Healthy Mama 21-Day Premium Trial Setup";
@@ -235,9 +331,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description = "Healthy Mama Payment";
       }
 
+      // Ensure a Stripe customer and link it to this user
+      let customerId = user.stripe_customer_id as string | undefined;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          name: user.full_name || undefined,
+          metadata: { appUserId: String(user.id) },
+        });
+        customerId = customer.id;
+        await storage.updateUser(String(user.id), { stripe_customer_id: customerId });
+      }
+
       const paymentIntent = await stripe.paymentIntents.create({
         amount: paymentAmount,
         currency: "usd",
+        customer: customerId,
         description: description,
         metadata: {
           paymentType: paymentType || 'general'
@@ -249,9 +358,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: paymentAmount / 100 // Send back amount in dollars
       });
     } catch (error: any) {
-      console.error('Error creating payment intent:', error);
       res.status(500).json({ 
         message: "Error creating payment intent: " + error.message 
+      });
+    }
+  });
+
+  // Create monthly subscription ($20/month)
+  app.post('/api/create-monthly-subscription', async (req, res) => {
+    try {
+      const { paymentMethodId, email, name } = req.body;
+
+      if (!email || !paymentMethodId) {
+        return res.status(400).json({ message: 'Email and payment method are required' });
+      }
+
+      // Create or retrieve customer
+      const customer = await stripe.customers.create({
+        email: email,
+        name: name || '',
+        payment_method: paymentMethodId,
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
+      });
+
+      // Create subscription for $20/month
+      const subscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Healthy Mama Monthly',
+              description: 'Monthly subscription for meal planning',
+            },
+            unit_amount: 2000, // $20.00 in cents
+            recurring: {
+              interval: 'month',
+            },
+          },
+        }],
+        payment_settings: {
+          payment_method_types: ['card'],
+          save_default_payment_method: 'on_subscription',
+        },
+        expand: ['latest_invoice.payment_intent'],
+      });
+
+      res.json({
+        subscriptionId: subscription.id,
+        customerId: customer.id,
+        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+        message: 'Monthly subscription created successfully'
+      });
+    } catch (error: any) {
+      console.error('Error creating monthly subscription:', error);
+      res.status(500).json({ 
+        message: "Error setting up monthly subscription: " + error.message 
+      });
+    }
+  });
+
+  // Create setup intent for collecting payment method (monthly or trial)
+  app.post('/api/create-setup-intent', authenticateToken, async (req: any, res) => {
+    try {
+      const { paymentType } = req.body;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Ensure customer exists for this user
+      let customerId = user.stripe_customer_id as string | undefined;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          name: user.full_name || undefined,
+          metadata: { appUserId: String(user.id) }
+        });
+        customerId = customer.id;
+        await storage.updateUser(String(user.id), { stripe_customer_id: customerId });
+      }
+
+      // Create setup intent for collecting payment method
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        usage: 'off_session',
+        metadata: {
+          type: paymentType || 'trial',
+          appUserId: String(user.id)
+        }
+      });
+
+      // If monthly, we'll create the subscription after payment method is confirmed
+      // Store the plan details in metadata for later use
+      if (paymentType === 'monthly') {
+        await stripe.customers.update(customerId, {
+          metadata: {
+            paymentType: 'monthly',
+            pendingSubscription: 'true',
+            priceAmount: '2000', // $20 in cents
+            appUserId: String(user.id)
+          }
+        });
+      }
+
+      res.json({
+        customerId,
+        clientSecret: setupIntent.client_secret,
+        paymentType: paymentType,
+        message: `${paymentType === 'monthly' ? 'Monthly subscription' : 'Trial'} setup created successfully`
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: "Error creating setup intent: " + error.message 
       });
     }
   });
@@ -290,11 +516,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: 'Trial setup created successfully'
       });
     } catch (error: any) {
-      console.error('Error creating trial subscription:', error);
       res.status(500).json({ 
         message: "Error setting up trial: " + error.message 
       });
     }
+  });
+
+  // Stripe webhook handler
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    let event;
+
+    try {
+      const sig = req.headers['stripe-signature'] as string;
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        console.log('Warning: Stripe webhook secret not configured');
+        // In development, we can process without signature verification
+        event = JSON.parse(req.body.toString());
+      } else {
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      }
+    } catch (err: any) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'setup_intent.succeeded':
+        const setupIntent = event.data.object as any;
+        console.log('SetupIntent succeeded:', setupIntent.id);
+        
+        // Check if this is for a monthly subscription
+        if (setupIntent.metadata?.type === 'monthly') {
+          try {
+            // Get the customer
+            const customer = await stripe.customers.retrieve(setupIntent.customer as string) as any;
+            
+            if (customer.metadata?.pendingSubscription === 'true') {
+              // Create the subscription
+              const subscription = await stripe.subscriptions.create({
+                customer: customer.id,
+                items: [{
+                  price_data: {
+                    currency: 'usd',
+                    product_data: {
+                      name: 'Healthy Mama Monthly',
+                      description: 'Monthly subscription for meal planning',
+                    },
+                    unit_amount: 2000, // $20 in cents
+                    recurring: {
+                      interval: 'month',
+                    },
+                  },
+                }],
+                default_payment_method: setupIntent.payment_method,
+              });
+              
+              console.log('Subscription created:', subscription.id);
+              
+              // Update customer metadata
+              await stripe.customers.update(customer.id, {
+                metadata: {
+                  subscriptionId: subscription.id,
+                  subscriptionStatus: 'active',
+                  pendingSubscription: 'false'
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error creating subscription from webhook:', error);
+          }
+        } else if (setupIntent.metadata?.type === 'trial') {
+          // For trial, create subscription with 30-day trial
+          try {
+            const customer = await stripe.customers.retrieve(setupIntent.customer as string) as any;
+            
+            const subscription = await stripe.subscriptions.create({
+              customer: customer.id,
+              items: [{
+                price_data: {
+                  currency: 'usd',
+                  product_data: {
+                    name: 'Healthy Mama Monthly',
+                    description: 'Monthly subscription after 30-day trial',
+                  },
+                  unit_amount: 2000, // $20 in cents
+                  recurring: {
+                    interval: 'month',
+                  },
+                },
+              }],
+              default_payment_method: setupIntent.payment_method,
+              trial_period_days: 30, // 30-day free trial
+            });
+            
+            console.log('Trial subscription created:', subscription.id);
+            
+            // Update customer metadata
+            await stripe.customers.update(customer.id, {
+              metadata: {
+                subscriptionId: subscription.id,
+                subscriptionStatus: 'trialing',
+                trialEndsAt: new Date(subscription.trial_end! * 1000).toISOString()
+              }
+            });
+          } catch (error) {
+            console.error('Error creating trial subscription from webhook:', error);
+          }
+        }
+        break;
+        
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object as any;
+        console.log('PaymentIntent succeeded:', paymentIntent.id);
+        
+        // Handle successful one-time payment (founders offer)
+        if (paymentIntent.metadata?.paymentType === 'founders') {
+          console.log('Founders payment successful for amount:', paymentIntent.amount / 100);
+          // You could update user account type in database here
+        }
+        break;
+        
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as any;
+        console.log(`Subscription ${event.type}:`, subscription.id);
+        const customerId = subscription.customer as string;
+        try {
+          const user = await storage.getUserByStripeCustomerId(customerId as string);
+          if (user) {
+            await storage.updateUser(String(user.id), {
+              subscription_status: subscription.status,
+            });
+          }
+        } catch (e) {
+          console.error('Failed to persist subscription status:', e);
+        }
+        break;
+      }
+        
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({ received: true });
   });
 
   // Recipe generation API
@@ -437,11 +805,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (youtubeRecipe) {
             console.log("Successfully extracted recipe data from YouTube");
             console.log(`Recipe has ${youtubeRecipe.ingredients.length} ingredients and ${youtubeRecipe.instructions.length} instructions`);
-
+            
             // Add any additional user preferences and ensure image URL is set
             youtubeRecipe.cuisine = cuisine || youtubeRecipe.cuisine;
             youtubeRecipe.diet = dietRestrictions || youtubeRecipe.diet;
             youtubeRecipe.image_url = youtubeRecipe.thumbnailUrl || youtubeRecipe.image_url;
+
+            // If ingredients look like a placeholder (single string without measurements), try GROQ transcript extraction
+            const lacksStructuredIngredients = Array.isArray(youtubeRecipe.ingredients)
+              && youtubeRecipe.ingredients.length <= 2
+              && youtubeRecipe.ingredients.every((ing: any) => typeof ing === 'string');
+
+            if (lacksStructuredIngredients && (youtubeRecipe.transcript || youtubeRecipe.description)) {
+              try {
+                const { groqIngredientExtractor } = await import('./groqIngredientExtractor');
+                const extracted = await groqIngredientExtractor.extractFromTranscript(
+                  youtubeRecipe.transcript || youtubeRecipe.description,
+                  youtubeRecipe.title
+                );
+                if (Array.isArray(extracted) && extracted.length > 0) {
+                  console.log(`✅ [ING PARSER] Replaced loose ingredients with ${extracted.length} structured items from transcript`);
+                  youtubeRecipe.ingredients = extracted;
+                } else {
+                  console.log('⚠️ [ING PARSER] Transcript extraction returned no items; keeping original list');
+                }
+              } catch (e) {
+                console.error('[ING PARSER] transcript extraction failed:', e);
+              }
+            }
+
+            // Ensure instructions are generated AFTER ingredient finalization
+            if (!youtubeRecipe.instructions || (Array.isArray(youtubeRecipe.instructions) && youtubeRecipe.instructions.length === 0)) {
+              try {
+                const { groqInstructionGenerator } = await import('./groqInstructionGenerator');
+                const textToUse = youtubeRecipe.transcript || youtubeRecipe.description || '';
+                const ingredientNames = (youtubeRecipe.ingredients || []).map((ing: any) =>
+                  typeof ing === 'string' ? ing : ing.name || ing.display_text
+                );
+                if (textToUse.length > 50) {
+                  const generated = await groqInstructionGenerator.generateInstructionsFromTranscript(
+                    textToUse,
+                    youtubeRecipe.title,
+                    ingredientNames
+                  );
+                  if (generated.length > 0) {
+                    console.log(`✅ [INSTR GEN] Generated ${generated.length} instructions after ingredient finalization`);
+                    youtubeRecipe.instructions = generated;
+                  } else {
+                    youtubeRecipe.instructions = [];
+                  }
+                }
+              } catch (e) {
+                console.error('[INSTR GEN] post-ingredient generation failed:', e);
+                youtubeRecipe.instructions = youtubeRecipe.instructions || [];
+              }
+            }
 
             recipe = youtubeRecipe;
           } else {
@@ -474,79 +892,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Save and return the recipe (for both fast and detailed modes)
       if (recipe) {
-        // Add nutrition calculation for detailed recipes
-        if (generationMode === 'detailed' && recipe.ingredients && recipe.ingredients.length > 0) {
+        // Add nutrition calculation using our new integrated calculator
+        if (!skipNutrition && recipe.ingredients && recipe.ingredients.length > 0) {
           try {
-            const { calculateRecipeNutrition } = await import('./nutritionCalculator');
-
-            // Helper function to get USDA nutrition data
-            const getUSDANutrition = async (foodName: string) => {
-              try {
-                console.log(`Looking up USDA nutrition for: "${foodName}"`);
-                const searchResponse = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${process.env.USDA_API_KEY}&pageSize=1`);
-
-                if (searchResponse.ok) {
-                  const searchData: any = await searchResponse.json();
-                  if (searchData.foods && searchData.foods.length > 0) {
-                    const foodId = searchData.foods[0].fdcId;
-                    console.log(`Found USDA food ID ${foodId} for "${foodName}"`);
-                    const nutritionResponse = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${foodId}?api_key=${process.env.USDA_API_KEY}`);
-
-                    if (nutritionResponse.ok) {
-                      const nutritionData: any = await nutritionResponse.json();
-                      const nutrients = nutritionData.foodNutrients || [];
-
-                      let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 };
-
-                      nutrients.forEach((nutrient: any) => {
-                        const name = nutrient.nutrient?.name?.toLowerCase() || '';
-                        const value = parseFloat(nutrient.amount) || 0;
-
-                        if (name.includes('energy')) nutrition.calories = value;
-                        else if (name.includes('protein')) nutrition.protein = value;
-                        else if (name.includes('carbohydrate')) nutrition.carbs = value;
-                        else if (name.includes('total lipid') || name.includes('fat')) nutrition.fat = value;
-                        else if (name.includes('fiber')) nutrition.fiber = value;
-                        else if (name.includes('sugars')) nutrition.sugar = value;
-                        else if (name.includes('sodium')) nutrition.sodium = value;
-                      });
-
-                      console.log(`USDA nutrition for "${foodName}": ${nutrition.calories}cal, ${nutrition.protein}g protein`);
-                      return nutrition;
-                    } else {
-                      console.log(`Failed to get nutrition data for food ID ${foodId}`);
-                    }
-                  } else {
-                    console.log(`No USDA foods found for "${foodName}"`);
-                  }
-                } else {
-                  console.log(`USDA search failed for "${foodName}": ${searchResponse.status}`);
-                }
-                return null;
-              } catch (error) {
-                console.error(`Error fetching USDA nutrition for ${foodName}:`, error);
-                return null;
+            console.log('🍎 Starting nutrition calculation for recipe:', recipe.title);
+            
+            // Extract ingredient strings from recipe
+            const ingredientStrings = recipe.ingredients.map((ing: any) => {
+              if (typeof ing === 'string') {
+                return ing;
+              } else if (ing.display_text) {
+                return ing.display_text;
+              } else if (ing.measurements && ing.measurements.length > 0) {
+                const measurement = ing.measurements[0];
+                return `${measurement.quantity} ${measurement.unit} ${ing.name}`;
               }
-            };
+              return ing.name || '';
+            }).filter((s: string) => s.length > 0);
 
-            // Calculate nutrition with proper serving breakdown
-            const nutritionData = await calculateRecipeNutrition(recipe, getUSDANutrition);
+            console.log(`📝 Processing ${ingredientStrings.length} ingredients`);
+            
+            // Calculate nutrition using the new calculator
+            const servings = recipe.servings || 4;
+            const nutritionResult = await recipeNutritionCalculator.calculateRecipeNutrition(
+              ingredientStrings,
+              servings
+            );
 
-            recipe.nutrition_info = {
-              calories: nutritionData.perServing.calories,
-              protein_g: nutritionData.perServing.protein,
-              carbs_g: nutritionData.perServing.carbs,
-              fat_g: nutritionData.perServing.fat,
-              fiber_g: nutritionData.perServing.fiber,
-              sugar_g: nutritionData.perServing.sugar,
-              sodium_mg: nutritionData.perServing.sodium,
-              servings: nutritionData.servings,
-              total_calories: nutritionData.calories
-            };
+            if (nutritionResult) {
+              // Add nutrition info to recipe
+              recipe.nutrition_info = {
+                // Per serving nutrition
+                calories: nutritionResult.perServing.calories,
+                protein_g: nutritionResult.perServing.protein,
+                carbs_g: nutritionResult.perServing.carbs,
+                fat_g: nutritionResult.perServing.fat,
+                fiber_g: nutritionResult.perServing.fiber,
+                sugar_g: nutritionResult.perServing.sugar,
+                sodium_mg: nutritionResult.perServing.sodium,
+                cholesterol_mg: nutritionResult.perServing.cholesterol,
+                saturated_fat_g: nutritionResult.perServing.saturatedFat,
+                trans_fat_g: nutritionResult.perServing.transFat,
+                // Servings and totals
+                servings: nutritionResult.servings,
+                total_calories: nutritionResult.total.calories,
+                total_protein_g: nutritionResult.total.protein,
+                total_carbs_g: nutritionResult.total.carbs,
+                total_fat_g: nutritionResult.total.fat,
+                total_fiber_g: nutritionResult.total.fiber,
+                total_sugar_g: nutritionResult.total.sugar,
+                total_sodium_mg: nutritionResult.total.sodium,
+                // Include the ingredient breakdown for transparency
+                ingredient_nutrition: nutritionResult.ingredientBreakdown.map(item => ({
+                  ingredient: item.ingredient,
+                  amount: item.amount,
+                  calories: item.nutrition.calories,
+                  protein: item.nutrition.protein,
+                  carbs: item.nutrition.carbs,
+                  fat: item.nutrition.fat
+                }))
+              };
 
-            console.log(`Added per-serving nutrition: ${nutritionData.perServing.calories}cal per serving (${nutritionData.servings} servings total, ${nutritionData.calories} total calories)`);
+              console.log(`✅ Nutrition calculated successfully:`);
+              console.log(`   Per serving: ${nutritionResult.perServing.calories} cal`);
+              console.log(`   Macros: ${nutritionResult.perServing.protein}g protein, ${nutritionResult.perServing.carbs}g carbs, ${nutritionResult.perServing.fat}g fat`);
+            } else {
+              console.log('⚠️ Nutrition calculation returned null, proceeding without nutrition data');
+            }
           } catch (nutritionError: any) {
-            console.log('Nutrition calculation failed:', nutritionError.message);
+            console.error('❌ Nutrition calculation failed:', nutritionError.message);
             console.log('Proceeding without nutrition data');
           }
         }
@@ -587,6 +1001,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Continue with original title
         }
 
+        // INSTRUCTION VALIDATION: Validate instructions with GPT-OSS-20B
+        console.log('🔍 [RECIPE GENERATION] Starting instruction validation for recipe:', recipeToSave.title);
+        console.log('📝 [RECIPE GENERATION] Original instructions type:', typeof recipeToSave.instructions);
+        console.log('📝 [RECIPE GENERATION] Original instructions:', 
+          Array.isArray(recipeToSave.instructions) 
+            ? `Array with ${recipeToSave.instructions.length} items: ${JSON.stringify(recipeToSave.instructions.slice(0, 2))}...`
+            : typeof recipeToSave.instructions === 'string'
+            ? recipeToSave.instructions.substring(0, 200) + '...' 
+            : recipeToSave.instructions
+        );
+        
+        const isInstructionsValid = await groqValidator.validateInstructions(recipeToSave.instructions);
+        
+        if (!isInstructionsValid) {
+          console.log('❌ [RECIPE GENERATION] Instructions FAILED validation');
+          
+          // Try to generate proper instructions using GPT-OSS-120B
+          if (recipeToSave.transcript || recipeToSave.description) {
+            console.log('🤖 [RECIPE GENERATION] Attempting to generate instructions with GPT-OSS-120B');
+            try {
+              const { groqInstructionGenerator } = await import('./groqInstructionGenerator');
+              const generatedInstructions = await groqInstructionGenerator.generateInstructionsFromTranscript(
+                recipeToSave.transcript || recipeToSave.description || '',
+                recipeToSave.title,
+                recipeToSave.ingredients?.map((ing: any) => 
+                  typeof ing === 'string' ? ing : ing.name || ing.display_text
+                )
+              );
+              
+              if (generatedInstructions.length > 0) {
+                console.log(`✅ [RECIPE GENERATION] Generated ${generatedInstructions.length} instructions with GPT-OSS-120B`);
+                recipeToSave.instructions = generatedInstructions;
+              } else {
+                console.log('⚠️ [RECIPE GENERATION] Could not generate instructions, using fallback message');
+                recipeToSave.instructions = ["No instructions available"];
+              }
+            } catch (genError) {
+              console.error('Error generating instructions:', genError);
+              recipeToSave.instructions = ["No instructions available"];
+            }
+          } else {
+            console.log('⚠️ [RECIPE GENERATION] No transcript/description available for generation');
+            recipeToSave.instructions = ["No instructions available"];
+          }
+        } else {
+          console.log('✅ [RECIPE GENERATION] Instructions PASSED validation');
+          // If valid but empty array (shouldn't happen), fix it
+          if (Array.isArray(recipeToSave.instructions) && recipeToSave.instructions.length === 0) {
+            console.log('⚠️ [RECIPE GENERATION] Valid but empty array detected, replacing with message');
+            recipeToSave.instructions = ["No instructions available"];
+          }
+        }
+        
+        console.log('📝 [RECIPE GENERATION] Final instructions:', recipeToSave.instructions);
+
         // DIETARY VALIDATION: Check recipe compliance before saving
         let finalRecipe = { ...recipeToSave, title: familiarTitle, user_id: userId };
         if (dietRestrictions) {
@@ -624,6 +1093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const savedRecipe = await storage.createRecipe(finalRecipe);
+        
         console.log("Returning recipe with video data:", {
           id: savedRecipe.id,
           title: savedRecipe.title,
@@ -681,6 +1151,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching generated recipes:", error);
       res.status(500).json({ message: "Failed to fetch generated recipes" });
+    }
+  });
+
+  // Create a new user recipe
+  app.post("/api/recipes/create", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+
+      const {
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        ingredients,
+        instructions,
+        nutrition_info
+      } = req.body;
+
+      if (!title?.trim()) {
+        return res.status(400).json({ message: "Recipe title is required" });
+      }
+
+      if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+        return res.status(400).json({ message: "At least one ingredient is required" });
+      }
+
+      if (!instructions || !Array.isArray(instructions) || instructions.length === 0) {
+        return res.status(400).json({ message: "At least one instruction is required" });
+      }
+
+      // Create user recipe in database
+      const newRecipe = await storage.createUserRecipe({
+        user_id: userId,
+        title: title.trim(),
+        description: description?.trim() || "",
+        image_url: image_url || null,
+        time_minutes: parseInt(time_minutes) || 0,
+        cuisine: cuisine?.trim() || "homemade",
+        diet: diet?.trim() || "",
+        ingredients: ingredients,
+        instructions: instructions,
+        nutrition_info: nutrition_info || {}
+      });
+
+      console.log(`✅ Created user recipe ${newRecipe.id}: "${title}"`);
+      res.json(newRecipe);
+    } catch (error) {
+      console.error("Error creating user recipe:", error);
+      res.status(500).json({ message: "Failed to create recipe" });
+    }
+  });
+
+  // Save recipe as meal plan for community display
+  app.post("/api/community-recipes/save-as-meal-plan", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const {
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        ingredients,
+        instructions,
+        nutrition_info
+      } = req.body;
+
+      if (!title?.trim()) {
+        return res.status(400).json({ message: "Recipe title is required" });
+      }
+
+      if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+        return res.status(400).json({ message: "At least one ingredient is required" });
+      }
+
+      if (!instructions || !Array.isArray(instructions) || instructions.length === 0) {
+        return res.status(400).json({ message: "At least one instruction is required" });
+      }
+
+      // Transform recipe data to meal plan format
+      const mealPlanData = {
+        userId: userId,
+        name: title.trim(),
+        description: description?.trim() || `Delicious ${title.trim()} recipe`,
+        mealPlan: {
+          "Day 1": {
+            "meal": {
+              title: title.trim(),
+              ingredients: ingredients,
+              instructions: instructions,
+              image_url: image_url || null,
+              prep_time: parseInt(time_minutes) || 30,
+              cook_time: parseInt(time_minutes) || 30,
+              servings: 4,
+              cuisine: cuisine?.trim() || "homemade",
+              diet: diet?.trim() || "",
+              nutrition_info: nutrition_info || {
+                calories: 0,
+                protein_g: 0,
+                carbs_g: 0,
+                fat_g: 0
+              }
+            }
+          }
+        },
+        isAutoSaved: false
+      };
+
+      // Save using the existing meal plan save functionality
+      const savedMealPlan = await storage.saveMealPlan(mealPlanData);
+
+      console.log(`✅ Created meal plan from recipe "${title}" with ID: ${savedMealPlan.id}`);
+      res.json({
+        ...savedMealPlan,
+        message: "Recipe saved as meal plan successfully"
+      });
+    } catch (error) {
+      console.error("Error saving recipe as meal plan:", error);
+      res.status(500).json({ message: "Failed to save recipe as meal plan" });
+    }
+  });
+
+  // Get user's created recipes
+  app.get("/api/recipes/user", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+
+      const userRecipes = await storage.getUserCreatedRecipes(userId);
+      res.json(userRecipes);
+    } catch (error) {
+      console.error("Error fetching user recipes:", error);
+      res.status(500).json({ message: "Failed to fetch user recipes" });
+    }
+  });
+
+  // Delete a user's created recipe
+  app.delete("/api/recipes/user/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+
+      const recipeId = parseInt(req.params.id);
+      if (isNaN(recipeId)) {
+        return res.status(400).json({ message: "Invalid recipe ID" });
+      }
+
+      const success = await storage.deleteUserRecipe(recipeId, userId);
+      if (success) {
+        console.log(`✅ Deleted user recipe ${recipeId} for user ${userId}`);
+        res.json({ success: true, message: "Recipe deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Recipe not found or not owned by user" });
+      }
+    } catch (error) {
+      console.error("Error deleting user recipe:", error);
+      res.status(500).json({ message: "Failed to delete recipe" });
     }
   });
 
@@ -945,7 +1586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`💰 Removed ${consolidationResult.savings.duplicatesRemoved} duplicates`);
       
       // Format ingredients for Instacart API
-      const formattedIngredients = formatForInstacart(consolidationResult.consolidatedIngredients);
+      const formattedIngredients = await formatForInstacart(consolidationResult.consolidatedIngredients);
       
       const recipeData = {
         title: `Grocery List for ${mealPlan.name}`,
@@ -1437,7 +2078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }]
       };
       
-      console.log('🧪 Testing Vision API with minimal request...');
+
       
       const response = await fetch(testUrl, {
         method: 'POST',
@@ -1492,11 +2133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const VISION_API_KEY = 'AIzaSyBZNfvaAwCwgZHi4a9MKs8CkaRaMAxUPm4';
       const VISION_API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`;
       
-      console.log('🔑 Using API key:', VISION_API_KEY.substring(0, 10) + '...');
-      
       // Remove data URL prefix if present
       const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
-      console.log('📦 Base64 image size after cleanup:', base64Image.length);
       
       // Create Vision API request
       const visionRequest = {
@@ -1522,7 +2160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       console.log('📡 Calling Google Vision API...');
-      console.log('🔗 Vision API URL:', VISION_API_URL);
+
       
       // Call Vision API
       let visionResponse;
@@ -1535,8 +2173,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           body: JSON.stringify(visionRequest)
         });
       } catch (fetchError: any) {
-        console.error('❌ Network error calling Vision API:', fetchError.message);
-        console.error('Full error:', fetchError);
         return res.status(500).json({ 
           error: 'Network error calling Vision API',
           details: fetchError.message 
@@ -1697,7 +2333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Limit to top 10 detections
       const finalIngredients = detectedIngredients.slice(0, 10);
       
-      console.log(`📊 Final detection: ${finalIngredients.length} ingredients`);
+
       
       res.json({
         ingredients: finalIngredients,
@@ -2263,10 +2899,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable proxy buffering for real-time streaming
     
     // Helper function to send SSE data
     const sendData = (data: string) => {
       res.write(`data: ${data}\n\n`);
+      // Force flush to ensure data is sent immediately
+      // This is crucial for real-time streaming
+      if (typeof (res as any).flush === 'function') {
+        (res as any).flush();
+      }
     };
 
     try {
@@ -2433,6 +3075,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         max_tokens: 4096
       });
 
+      // 🎯 DYNAMIC MEAL COUNTING: Calculate expected meals based on user's selection
+      const expectedTotalMeals = numDays * mealsPerDay;
+      console.log(`🧮 DYNAMIC CALCULATION: ${numDays} days × ${mealsPerDay} meals = ${expectedTotalMeals} total expected meals`);
+      
       // Parse meals in real-time from the stream
       let buffer = '';
       let mealCount = 0;
@@ -2449,11 +3095,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for await (const chunk of openaiStream) {
         const content = chunk.choices[0]?.delta?.content || '';
         if (content) {
+          console.log('🌊 STREAM CHUNK received:', content.length, 'chars:', content.substring(0, 100));
           buffer += content;
           
-          // Only log when we see a title being streamed
+          // Log when we see important content
           if (content.includes('"title"')) {
-            console.log('📡 Title found in stream:', content);
+            console.log('📡 TITLE DETECTED in chunk:', content);
           }
           
           // Track current day from the JSON structure
@@ -2462,24 +3109,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currentDay = parseInt(dayMatches[dayMatches.length - 1][1]);
           }
           
-          // Look for complete meal objects with "title" field
-          const mealRegex = /"title":\s*"([^"]+)"[^}]*"cook_time_minutes":\s*(\d+)[^}]*"difficulty":\s*(\d+)/g;
+          // 🚀 REAL-TIME PARSING: Search entire buffer for complete titles
+          console.log('🔍 BUFFER SIZE:', buffer.length, 'chars - searching for complete titles');
           
-          // Only search for meals in new content since last processed position
-          let lastSearchPosition = buffer.length - content.length;
-          mealRegex.lastIndex = Math.max(0, lastSearchPosition - 200); // Search a bit before new content
+          // Look for meal titles in real-time - stream as soon as we see a complete title!
+          const titleRegex = /"title":\s*"([^"]+)"/g;
+          
+          // Search the entire buffer for complete titles
+          console.log('🕵️ SEARCHING entire buffer for titles...');
           
           let match;
-          while ((match = mealRegex.exec(buffer)) !== null) {
-            const [fullMatch, mealTitle, cookTime, difficulty] = match;
+          titleRegex.lastIndex = 0; // Reset regex position
+          while ((match = titleRegex.exec(buffer)) !== null) {
+            const mealTitle = match[1];
+            console.log('🎯 REGEX MATCH found title:', mealTitle);
             
-            // Create a unique key based on meal title and position in buffer
-            const mealPosition = buffer.indexOf(fullMatch);
-            const mealKey = `${mealTitle}_${mealPosition}`;
+            // Create a simple unique key based on meal title
+            const mealKey = `${mealTitle.trim()}`;
             
-            // Skip if we've already processed this exact meal at this position
+            // Skip if we've already processed this meal title
             if (processedMeals.has(mealKey)) {
-              console.log(`⏭️ Skipping duplicate meal: ${mealTitle} at position ${mealPosition}`);
+              console.log(`⏭️ DUPLICATE DETECTED: ${mealTitle} (already processed)`);
               continue;
             }
             
@@ -2489,43 +3139,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
             processedMeals.add(mealKey);
             mealCount++;
             
-            console.log(`🍽️ NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount}`);
+            console.log(`🍽️ NEW MEAL FOUND: ${mealTitle} (${mealType}) - Count: ${mealCount} 🚀 SCHEDULING STREAMING!`);
             
-            // Send individual meal as SSE event immediately
+            // Send individual meal as SSE event with natural timing delays
             const mealData = {
               title: mealTitle,
               name: mealTitle, // For compatibility
-              cook_time_minutes: parseInt(cookTime),
-              cook_time: parseInt(cookTime), // For compatibility
+              cook_time_minutes: 25, // Default cook time
+              cook_time: 25, // For compatibility
               prep_time: 10, // Default prep time
-              difficulty: parseInt(difficulty),
+              difficulty: 2, // Default difficulty
               mealType: mealType,
               day: currentDay || 1,
-              totalTime: parseInt(cookTime) + 10,
+              totalTime: 35,
               id: `${mealType}_${mealCount}_${Date.now()}`
             };
             
-            sendData(JSON.stringify({
+            // 🚀 IMMEDIATE STREAMING: Send meal as soon as detected, no artificial delays
+            console.log(`📤 SENDING SSE data IMMEDIATELY for meal ${mealCount}/${expectedTotalMeals}:`, mealTitle);
+            const sseData = JSON.stringify({
               type: 'meal',
-              data: mealData
-            }));
+              data: mealData,
+              mealNumber: mealCount,
+              totalMeals: expectedTotalMeals
+            });
+            console.log('📦 SSE payload:', sseData);
+            
+            sendData(sseData);
+            
+            // 🚀 FORCE IMMEDIATE FLUSH to ensure real-time delivery
+            try {
+              if (res.flush) {
+                res.flush();
+              }
+              // Additional flush for some Node.js versions
+              if (res.socket && res.socket.flush) {
+                res.socket.flush();
+              }
+            } catch (flushError) {
+              console.log('Flush attempt failed (not critical):', flushError.message);
+            }
+            
+            console.log(`✨ STREAMED IMMEDIATELY: Meal ${mealCount}/${expectedTotalMeals} - ${mealTitle} sent to frontend at ${new Date().toISOString()}!`);
+          }
+          
+          // Log if no matches found
+          if (!titleRegex.test(buffer)) {
+            console.log('❌ NO TITLES found in this chunk');
           }
         }
       }
       
-      // Send the complete meal plan at the end
-      try {
-        // Clean and parse the complete response
-        const cleanBuffer = buffer.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const completeMealPlan = JSON.parse(cleanBuffer);
-        
-        sendData(JSON.stringify({
-          type: 'complete',
-          data: completeMealPlan
+      // 🎯 ROBUST LOGIC: Only send complete meal plan when ALL meals have been streamed
+      console.log(`🔍 COMPLETION CHECK: Streamed ${mealCount} meals out of ${expectedTotalMeals} expected`);
+      
+      if (mealCount >= expectedTotalMeals) {
+        console.log(`✅ ALL ${expectedTotalMeals} MEALS STREAMED! Now sending complete meal plan...`);
+        try {
+          // Clean and parse the complete response
+          const cleanBuffer = buffer.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          const completeMealPlan = JSON.parse(cleanBuffer);
+          
+          sendData(JSON.stringify({
+            type: 'complete',
+            data: completeMealPlan,
+            allMealsStreamed: true,
+            totalMealsStreamed: mealCount,
+            expectedTotalMeals: expectedTotalMeals
+          }));
+          console.log(`📋 COMPLETE MEAL PLAN SENT after all ${expectedTotalMeals} meals streamed!`);
+        } catch (e) {
+          console.log('❌ Failed to parse complete meal plan, sending done signal');
+          sendData(JSON.stringify({ type: 'done' }));
+        }
+      } else {
+        console.log(`⏳ WAITING for more meals... Only ${mealCount}/${expectedTotalMeals} streamed so far. NOT sending complete plan yet.`);
+        // Don't send complete plan until all meals are streamed
+        sendData(JSON.stringify({ 
+          type: 'partial_complete',
+          streamedMeals: mealCount,
+          totalExpected: expectedTotalMeals,
+          message: 'Waiting for all meals to stream before showing complete plan'
         }));
-      } catch (e) {
-        // If parsing fails, just send done signal
-        sendData(JSON.stringify({ type: 'done' }));
       }
       
       res.end();
@@ -2982,6 +3677,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple Perplexity Recipe Search Test
+  app.post("/api/recipes/intelligent-search", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
+
+      const { query } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      console.log(`🔍 [PERPLEXITY TEST] Starting search for: "${query}"`);
+      console.log(`🔑 [PERPLEXITY TEST] API Key exists: ${!!process.env.PERPLEXITY_API_KEY}`);
+
+      // Test Perplexity API only first - Fix the request format
+      const requestBody = {
+        model: 'llama-3.1-sonar-small-128k-online',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a recipe search expert. Find detailed recipes with ingredients, instructions, and cooking times.'
+          },
+          {
+            role: 'user', 
+            content: `Find 3 simple recipes for: ${query}. Include ingredients, instructions, cooking time, and difficulty level for each recipe.`
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.3,
+        top_p: 0.9,
+        return_citations: true,
+        return_images: false,
+        return_related_questions: false,
+        search_recency_filter: "month",
+        top_k: 0,
+        stream: false,
+        presence_penalty: 0,
+        frequency_penalty: 1
+      };
+
+      console.log(`📤 [PERPLEXITY TEST] Request body:`, JSON.stringify(requestBody, null, 2));
+
+      const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log(`🌐 [PERPLEXITY] Response status: ${perplexityResponse.status}`);
+
+      if (!perplexityResponse.ok) {
+        const errorText = await perplexityResponse.text();
+        console.error(`🚨 [PERPLEXITY] Error response:`, errorText);
+        throw new Error(`Perplexity API error: ${perplexityResponse.status} - ${errorText}`);
+      }
+
+      const perplexityData = await perplexityResponse.json();
+      const recipeContent = perplexityData.choices[0]?.message?.content || '';
+      const citations = perplexityData.citations || [];
+
+      console.log(`🌐 [PERPLEXITY] Success! Found ${citations.length} citations`);
+      console.log(`📝 [PERPLEXITY] Content length: ${recipeContent.length} characters`);
+      console.log(`📝 [PERPLEXITY] Content preview:`, recipeContent.substring(0, 200) + '...');
+
+      // Return simple response for testing
+      res.json({
+        success: true,
+        query,
+        perplexityContent: recipeContent,
+        citations,
+        contentLength: recipeContent.length,
+        searchMetadata: {
+          perplexitySearched: true,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    } catch (error: any) {
+      console.error("🚨 [PERPLEXITY TEST] Error:", error);
+      res.status(500).json({ 
+        message: "Failed to perform perplexity search",
+        error: error.message,
+        query: req.body.query 
+      });
+    }
+  });
+
   // Dietary-cultural conflict resolution endpoint
   app.post("/api/recipes/resolve-conflicts", async (req, res) => {
     try {
@@ -3310,7 +4098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, profileType, questionnaire_answers, questionnaire_selections } = req.body;
 
       console.log('💾 Creating weight-based profile with data:', {
         profileName,
@@ -3333,7 +4121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         primary_goal: 'Weight-Based Planning',
         family_size: familySize,
         members: [], // Empty for weight-based approach
-        profile_type: 'individual' as const,
+        profile_type: (profileType || 'individual') as 'individual' | 'family',
         preferences: dietaryRestrictions,
         goals: goalsArray,
         cultural_background: culturalBackground
@@ -3372,7 +4160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, questionnaire_answers, questionnaire_selections } = req.body;
+      const { profileName, familySize, goalWeights, dietaryRestrictions, culturalBackground, profileType, questionnaire_answers, questionnaire_selections } = req.body;
 
       console.log('💾 Saving weight-based profile with data:', {
         profileName,
@@ -3399,7 +4187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           primary_goal: 'Weight-Based Planning',
           family_size: familySize || existingProfile.family_size || 2,
           members: existingProfile.members || [],
-          profile_type: 'individual' as const,
+          profile_type: (profileType || existingProfile.profile_type || 'individual') as 'individual' | 'family',
           preferences: dietaryRestrictions || existingProfile.preferences || [],
           goals: goalsArray,
           cultural_background: culturalBackground || existingProfile.cultural_background || []
@@ -3415,7 +4203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           primary_goal: 'Weight-Based Planning',
           family_size: familySize || 2,
           members: [],
-          profile_type: 'individual' as const,
+          profile_type: (profileType || 'individual') as 'individual' | 'family',
           preferences: dietaryRestrictions || [],
           goals: goalsArray,
           cultural_background: culturalBackground || []
@@ -3964,6 +4752,1949 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: 'Internal server error during intelligent meal selection',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
+    }
+  });
+
+  // ============================================
+  // COMMUNITY & MEAL PLAN SHARING ROUTES
+  // ============================================
+
+  // Object Storage Routes for Community Image Uploads
+  app.post('/api/objects/upload', authenticateToken, async (req: any, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error('Error getting upload URL:', error);
+      res.status(500).json({ error: 'Failed to get upload URL' });
+    }
+  });
+
+  app.get('/objects/:objectPath(*)', async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error('Error serving object:', error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  // Get all communities
+  app.get("/api/communities", authenticateToken, async (req: any, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const userId = req.user?.id;
+      
+      const communities = await communityService.getCommunities(category, userId);
+      res.json(communities);
+    } catch (error) {
+      console.error("Error fetching communities:", error);
+      res.status(500).json({ message: "Failed to fetch communities" });
+    }
+  });
+
+  // Get user's communities (for sharing modal) - MUST come before /:id route
+  app.get("/api/communities/my-communities", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Get communities where user is a member
+      const userCommunities = await db.select({
+        id: communities.id,
+        name: communities.name,
+        description: communities.description,
+        member_count: communities.member_count,
+        cover_image: communities.cover_image,
+      })
+      .from(communities)
+      .innerJoin(communityMembers, eq(communityMembers.community_id, communities.id))
+      .where(eq(communityMembers.user_id, userId));
+
+      res.json(userCommunities);
+    } catch (error) {
+      console.error("Error fetching user communities:", error);
+      res.status(500).json({ message: "Failed to fetch user communities" });
+    }
+  });
+
+  // Get community details
+  app.get("/api/communities/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      // Check if communityId is a valid number
+      if (isNaN(communityId)) {
+        return res.status(400).json({ message: "Invalid community ID" });
+      }
+      
+      const community = await communityService.getCommunityDetails(communityId, userId);
+      res.json(community);
+    } catch (error) {
+      console.error("Error fetching community details:", error);
+      res.status(500).json({ message: "Failed to fetch community details" });
+    }
+  });
+
+  // Get community stats for management dashboard
+  app.get("/api/communities/:id/stats", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      // For now, return placeholder stats - can be enhanced later with real data
+      const stats = {
+        newMembersThisWeek: 0,
+        engagementRate: 85,
+        activeToday: 0,
+        totalPosts: 0,
+        totalComments: 0
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching community stats:", error);
+      res.status(500).json({ message: "Failed to fetch community stats" });
+    }
+  });
+
+  // Create a new community
+  app.post("/api/communities", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { name, description, category, cover_image } = req.body;
+
+      if (!name || !description || !category) {
+        return res.status(400).json({ message: "Name, description, and category are required" });
+      }
+
+      const community = await communityService.createCommunity(userId, {
+        name,
+        description,
+        category,
+        cover_image,
+      });
+
+      res.json(community);
+    } catch (error) {
+      console.error("Error creating community:", error);
+      res.status(500).json({ message: "Failed to create community" });
+    }
+  });
+
+  // Join a community
+  app.post("/api/communities/:id/join", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const communityId = Number(req.params.id);
+      const member = await communityService.joinCommunity(userId, communityId);
+      res.json(member);
+    } catch (error: any) {
+      console.error("Error joining community:", error);
+      if (error.message === "Already a member of this community") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to join community" });
+    }
+  });
+
+  // Leave a community
+  app.post("/api/communities/:id/leave", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const communityId = Number(req.params.id);
+      await communityService.leaveCommunity(userId, communityId);
+      res.json({ message: "Successfully left community" });
+    } catch (error: any) {
+      console.error("Error leaving community:", error);
+      if (error.message === "Creator cannot leave their own community") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to leave community" });
+    }
+  });
+
+  // ============================================
+  // COMMUNITY POSTS API ROUTES
+  // ============================================
+
+  // Get community posts
+  app.get("/api/communities/:id/posts", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const type = req.query.type as string;
+
+      const posts = await communityService.getCommunityPosts(communityId, {
+        limit,
+        offset,
+        type,
+        userId,
+      });
+
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching community posts:", error);
+      res.status(500).json({ message: "Failed to fetch community posts" });
+    }
+  });
+
+  // Create a new community post
+  app.post("/api/communities/:id/posts", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { content, post_type = "discussion", meal_plan_id, images } = req.body;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Post content is required" });
+      }
+
+      if (content.length > 5000) {
+        return res.status(400).json({ message: "Post content is too long (max 5000 characters)" });
+      }
+
+      const post = await communityService.createCommunityPost(userId, communityId, {
+        content: content.trim(),
+        post_type,
+        meal_plan_id,
+        images: images && Array.isArray(images) && images.length > 0 ? images : null,
+      });
+
+      res.json(post);
+    } catch (error: any) {
+      console.error("Error creating community post:", error);
+      if (error.message === "You must be a member to perform this action") {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to create community post" });
+    }
+  });
+
+  // Delete a community post (creator only)
+  app.delete("/api/communities/:id/posts/:postId", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Check if user is a creator of the community
+      const community = await communityService.getCommunityById(communityId);
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+
+      if (community.creator_id !== userId) {
+        return res.status(403).json({ message: "Only creators can delete posts" });
+      }
+
+      // Delete the post
+      const result = await communityService.deletePost(postId, communityId);
+      
+      if (!result) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      res.json({ message: "Post deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting community post:", error);
+      res.status(500).json({ message: "Failed to delete community post" });
+    }
+  });
+
+  // Toggle like on a community post
+  app.post("/api/communities/:communityId/posts/:postId/like", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.communityId);
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const result = await communityService.togglePostLike(userId, postId, communityId);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error toggling post like:", error);
+      if (error.message === "Post not found" || error.message === "Not a member of this community") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to toggle post like" });
+    }
+  });
+
+  // Toggle like on a community comment
+  app.post("/api/communities/:communityId/posts/:postId/comments/:commentId/like", authenticateToken, async (req: any, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const result = await communityService.toggleCommentLike(userId, commentId);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error toggling comment like:", error);
+      if (error.message === "Comment not found" || error.message === "Post not found" || error.message === "You must be a member to perform this action") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to toggle comment like" });
+    }
+  });
+
+  // Share a meal plan to community
+  app.post("/api/communities/:id/share-meal-plan", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const communityId = Number(req.params.id);
+      const { meal_plan_id, title, description } = req.body;
+
+      if (!meal_plan_id || !title) {
+        return res.status(400).json({ message: "meal_plan_id and title are required" });
+      }
+
+      const sharedPlan = await mealPlanSharingService.shareMealPlan(
+        userId,
+        communityId,
+        meal_plan_id,
+        title,
+        description
+      );
+
+      res.json(sharedPlan);
+    } catch (error) {
+      console.error("Error sharing meal plan:", error);
+      res.status(500).json({ message: "Failed to share meal plan" });
+    }
+  });
+
+  // Get community meal plans
+  app.get("/api/communities/:id/meal-plans", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Check if user is a member of the community
+      const membership = await communityService.getUserMembership(userId, communityId);
+      if (!membership) {
+        return res.status(403).json({ message: "You must be a member to view meal plans" });
+      }
+
+      const mealPlans = await communityService.getCommunityMealPlans(communityId);
+      res.json(mealPlans);
+    } catch (error) {
+      console.error("Error fetching community meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch meal plans" });
+    }
+  });
+
+  // Create community meal plan (creators only)
+  app.post("/api/communities/:id/meal-plans", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Check if user is creator of the community
+      const community = await communityService.getCommunityDetails(communityId, userId);
+      if (!community || community.creator_id !== userId) {
+        return res.status(403).json({ message: "Only creators can add meal plans" });
+      }
+
+      const { 
+        title, 
+        description, 
+        image_url, 
+        youtube_video_id,
+        ingredients, 
+        instructions, 
+        prep_time, 
+        cook_time, 
+        servings 
+      } = req.body;
+
+      if (!title || !ingredients || !instructions) {
+        return res.status(400).json({ message: "Title, ingredients, and instructions are required" });
+      }
+
+      const mealPlan = await communityService.createCommunityMealPlan(userId, communityId, {
+        title,
+        description,
+        image_url,
+        youtube_video_id,
+        ingredients,
+        instructions,
+        prep_time,
+        cook_time,
+        servings,
+      });
+
+      res.json(mealPlan);
+    } catch (error) {
+      console.error("Error creating community meal plan:", error);
+      res.status(500).json({ message: "Failed to create meal plan" });
+    }
+  });
+
+  // ============================================
+  // COMMUNITY COMMENTS API ROUTES
+  // ============================================
+
+  // Get comments for a specific post
+  app.get("/api/communities/:id/posts/:postId/comments", authenticateToken, async (req: any, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const nested = req.query.nested === 'true';
+      const userId = req.user?.id; // Get current user ID for like status
+
+      if (nested) {
+        const comments = await communityCommentsService.getNestedComments(postId, userId);
+        res.json(comments);
+      } else {
+        // Use the communityService method that includes like status
+        const comments = await communityService.getPostComments(postId, userId);
+        res.json(comments);
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  // Create a new comment
+  app.post("/api/communities/:id/posts/:postId/comments", authenticateToken, async (req: any, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { content, parent_id, images } = req.body;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+
+      if (content.length > 2000) {
+        return res.status(400).json({ message: "Comment is too long (max 2000 characters)" });
+      }
+
+      const comment = await communityCommentsService.createComment({
+        post_id: postId,
+        author_id: userId,
+        content: content.trim(),
+        parent_id: parent_id || null,
+        images: images && Array.isArray(images) && images.length > 0 ? images : null,
+      });
+
+      res.json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  // Update a comment
+  app.put("/api/communities/:id/posts/:postId/comments/:commentId", authenticateToken, async (req: any, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { content, images } = req.body;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+
+      if (content.length > 2000) {
+        return res.status(400).json({ message: "Comment is too long (max 2000 characters)" });
+      }
+
+      const comment = await communityCommentsService.updateComment(commentId, userId, {
+        content: content.trim(),
+        images: images && Array.isArray(images) && images.length > 0 ? images : null,
+      });
+
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      res.json(comment);
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      res.status(500).json({ message: "Failed to update comment" });
+    }
+  });
+
+  // Delete a comment
+  app.delete("/api/communities/:id/posts/:postId/comments/:commentId", authenticateToken, async (req: any, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const success = await communityCommentsService.deleteComment(commentId, userId);
+
+      if (!success) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      res.json({ message: "Comment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
+  // Get community meal plans
+  app.get("/api/communities/:id/meal-plans", async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const { featured, tags } = req.query;
+
+      const filter: any = {};
+      if (featured === 'true') filter.featured = true;
+      if (tags) filter.tags = tags.split(',');
+
+      const plans = await communityService.getCommunityMealPlans(communityId, filter);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching community meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch community meal plans" });
+    }
+  });
+
+  // Get trending meal plans
+  app.get("/api/trending-meal-plans", async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const trending = await mealPlanSharingService.getTrendingMealPlans(limit);
+      res.json(trending);
+    } catch (error) {
+      console.error("Error fetching trending meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch trending meal plans" });
+    }
+  });
+
+  // Get recommended meal plans
+  app.get("/api/recommended-meal-plans", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 10;
+      const recommendations = await mealPlanSharingService.getRecommendedMealPlans(userId, limit);
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error fetching recommended meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch recommended meal plans" });
+    }
+  });
+
+  // Review a shared meal plan
+  app.post("/api/meal-plans/:id/review", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const sharedPlanId = Number(req.params.id);
+      const { rating, comment, tried_it, modifications, images } = req.body;
+
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      }
+
+      const review = await communityService.reviewMealPlan(userId, sharedPlanId, {
+        rating,
+        comment,
+        tried_it,
+        modifications,
+        images,
+      });
+
+      res.json(review);
+    } catch (error: any) {
+      console.error("Error reviewing meal plan:", error);
+      if (error.message === "You have already reviewed this meal plan") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to review meal plan" });
+    }
+  });
+
+  // Mark meal plan as tried
+  app.post("/api/meal-plans/:id/try", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const sharedPlanId = Number(req.params.id);
+      await communityService.markPlanAsTried(userId, sharedPlanId);
+      res.json({ message: "Marked as tried successfully" });
+    } catch (error) {
+      console.error("Error marking meal plan as tried:", error);
+      res.status(500).json({ message: "Failed to mark meal plan as tried" });
+    }
+  });
+
+  // Like a meal plan
+  app.post("/api/meal-plans/:id/like", authenticateToken, async (req: any, res) => {
+    try {
+      const sharedPlanId = Number(req.params.id);
+      await mealPlanSharingService.likeMealPlan(sharedPlanId);
+      res.json({ message: "Liked successfully" });
+    } catch (error) {
+      console.error("Error liking meal plan:", error);
+      res.status(500).json({ message: "Failed to like meal plan" });
+    }
+  });
+
+  // Search meal plans
+  app.get("/api/search-meal-plans", async (req: any, res) => {
+    try {
+      const { q, tags, maxCost, maxTime, minRating } = req.query;
+
+      const filters: any = {};
+      if (tags) filters.tags = tags.split(',');
+      if (maxCost) filters.maxCost = parseFloat(maxCost);
+      if (maxTime) filters.maxTime = parseInt(maxTime);
+      if (minRating) filters.minRating = parseInt(minRating);
+
+      const results = await mealPlanSharingService.searchMealPlans(q || '', filters);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching meal plans:", error);
+      res.status(500).json({ message: "Failed to search meal plans" });
+    }
+  });
+
+  // ============================================
+  // CREATOR ROUTES
+  // ============================================
+
+  // Get top creators - MUST BE BEFORE /:id route
+  app.get("/api/creators/top", async (req: any, res) => {
+    console.log("🚀 TOP CREATORS ENDPOINT HIT - DEBUG!");
+    try {
+      console.log(`🔍 [DEBUG] /api/creators/top called with query:`, req.query);
+      const metric = (req.query.metric as 'followers' | 'plans' | 'rating') || 'followers';
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      console.log(`📊 [DEBUG] About to call getTopCreators with metric: ${metric}, limit: ${limit}`);
+      const creators = await creatorService.getTopCreators(metric, limit);
+      console.log(`✅ [DEBUG] getTopCreators returned ${creators?.length || 0} creators`);
+      res.json(creators);
+    } catch (error) {
+      console.error("❌ [DEBUG] Error fetching top creators:", error);
+      res.status(500).json({ message: "Failed to fetch top creators" });
+    }
+  });
+
+  // Get or create creator profile
+  app.get("/api/creators/:id", async (req: any, res) => {
+    try {
+      const creatorId = req.params.id;
+      const viewerId = req.user?.id;
+      
+      const profile = await creatorService.getCreatorProfile(creatorId, viewerId);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Creator profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching creator profile:", error);
+      res.status(500).json({ message: "Failed to fetch creator profile" });
+    }
+  });
+
+  // Update creator profile
+  app.put("/api/creators/profile", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { bio, specialties, certifications, social_links } = req.body;
+
+      const profile = await creatorService.upsertCreatorProfile(userId, {
+        bio,
+        specialties,
+        certifications,
+        social_links,
+      });
+
+      res.json(profile);
+    } catch (error) {
+      console.error("Error updating creator profile:", error);
+      res.status(500).json({ message: "Failed to update creator profile" });
+    }
+  });
+
+  // Follow a creator
+  app.post("/api/creators/:id/follow", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const creatorId = req.params.id;
+      const follow = await creatorService.followCreator(userId, creatorId);
+      res.json(follow);
+    } catch (error: any) {
+      console.error("Error following creator:", error);
+      if (error.message === "Already following this creator") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to follow creator" });
+    }
+  });
+
+  // Unfollow a creator
+  app.post("/api/creators/:id/unfollow", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const creatorId = req.params.id;
+      await creatorService.unfollowCreator(userId, creatorId);
+      res.json({ message: "Unfollowed successfully" });
+    } catch (error: any) {
+      console.error("Error unfollowing creator:", error);
+      res.status(500).json({ message: "Failed to unfollow creator" });
+    }
+  });
+
+  // Get followed creators
+  app.get("/api/creators/following", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const creators = await creatorService.getFollowedCreators(userId);
+      res.json(creators);
+    } catch (error) {
+      console.error("Error fetching followed creators:", error);
+      res.status(500).json({ message: "Failed to fetch followed creators" });
+    }
+  });
+
+  // Get meal plans from followed creators
+  app.get("/api/creators/following/meal-plans", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 20;
+      const plans = await creatorService.getFollowedCreatorsMealPlans(userId, limit);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching followed creators meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch followed creators meal plans" });
+    }
+  });
+
+
+
+  // Get creator's meal plans
+  app.get("/api/creators/:id/meal-plans", async (req: any, res) => {
+    try {
+      const creatorId = req.params.id;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const plans = await mealPlanSharingService.getCreatorMealPlans(creatorId, limit);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching creator meal plans:", error);
+      res.status(500).json({ message: "Failed to fetch creator meal plans" });
+    }
+  });
+
+  // Get creator stats
+  app.get("/api/creator/stats", authenticateToken, async (req: any, res) => {
+    try {
+      console.log(`🔍 [DEBUG] /api/creator/stats called for user:`, req.user?.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`❌ [DEBUG] No user ID found in request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      // Get follower count
+      const followers = await db.select()
+        .from(creatorFollowers)
+        .where(eq(creatorFollowers.creator_id, userId));
+      
+      // Get communities
+      const userCommunities = await db.select()
+        .from(communities)
+        .where(eq(communities.creator_id, userId));
+      
+      // Get shared meal plans
+      const sharedPlans = await db.select()
+        .from(sharedMealPlans)
+        .where(eq(sharedMealPlans.sharer_id, userId));
+      
+      // Calculate engagement and earnings (mock data for now)
+      const stats = {
+        totalFollowers: followers.length,
+        totalCommunities: userCommunities.length,
+        totalSharedPlans: sharedPlans.length,
+        totalEarnings: 0, // Will implement with Stripe
+        engagementRate: 78, // Mock percentage
+        averageRating: 4.5, // Mock rating
+        thisMonthGrowth: 12, // Mock growth percentage
+        activeMemberships: 0, // Will implement with membership system
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching creator stats:", error);
+      res.status(500).json({ message: "Failed to fetch creator stats" });
+    }
+  });
+
+  // ==================== COMMUNITY MEAL COURSES (CREATOR ONLY) ====================
+  
+  // Get all courses for a community
+  app.get("/api/communities/:id/courses", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      console.log(`[COURSES API] Fetching courses for community ${communityId}, user: ${userId}`);
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Get courses with modules and lessons
+      const courses = await db.select()
+        .from(communityMealCourses)
+        .where(eq(communityMealCourses.community_id, communityId))
+        .orderBy(communityMealCourses.display_order);
+      
+      console.log(`[COURSES API] Found ${courses.length} courses`);
+      
+      // If no courses exist and user is creator, create default courses
+      if (courses.length === 0) {
+        // Check if user is creator of this community
+        const [member] = await db.select()
+          .from(communityMembers)
+          .where(and(
+            eq(communityMembers.community_id, communityId),
+            eq(communityMembers.user_id, userId),
+            eq(communityMembers.role, "creator")
+          ));
+        
+        if (member) {
+          console.log(`[COURSES API] Creator detected, creating default courses`);
+          
+          // Create default courses
+          const defaultCourses = [
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Start Here",
+              emoji: "🌟",
+              description: "Essential information to get started with our meal planning community",
+              category: "beginner",
+              is_published: true,
+              display_order: 0,
+              lesson_count: 4,
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "30-Day Meal Transformation",
+              emoji: "🔥",
+              description: "Transform your eating habits with our comprehensive 30-day program",
+              category: "intermediate",
+              is_published: true,
+              display_order: 1,
+              lesson_count: 5,
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Budget Nutrition Secrets",
+              emoji: "💰",
+              description: "Learn how to eat healthy on a budget with smart shopping strategies",
+              category: "beginner",
+              is_published: true,
+              display_order: 2,
+              lesson_count: 4,
+            },
+            {
+              community_id: communityId,
+              creator_id: userId,
+              title: "Recipe Vault",
+              emoji: "📚",
+              description: "Access our collection of quick, healthy, and delicious recipes",
+              category: "beginner",
+              is_published: true,
+              display_order: 3,
+              lesson_count: 4,
+            },
+          ];
+          
+          const insertedCourses = await db.insert(communityMealCourses)
+            .values(defaultCourses)
+            .returning();
+          
+          console.log(`[COURSES API] Created ${insertedCourses.length} default courses`);
+          
+          // Return the newly created courses
+          const newCourses = await db.select()
+            .from(communityMealCourses)
+            .where(eq(communityMealCourses.community_id, communityId))
+            .orderBy(communityMealCourses.display_order);
+          
+          return res.json(newCourses);
+        }
+      }
+
+      // Get modules for each course
+      const coursesWithModules = await Promise.all(
+        courses.map(async (course) => {
+          const modules = await db.select()
+            .from(communityMealCourseModules)
+            .where(eq(communityMealCourseModules.course_id, course.id))
+            .orderBy(communityMealCourseModules.module_order);
+
+          // Get lessons for each module
+          const modulesWithLessons = await Promise.all(
+            modules.map(async (module) => {
+              const lessons = await db.select()
+                .from(communityMealLessons)
+                .where(eq(communityMealLessons.module_id, module.id))
+                .orderBy(communityMealLessons.lesson_order);
+              return { ...module, lessons };
+            })
+          );
+
+          // Also get lessons without modules
+          const standaloneLessons = await db.select()
+            .from(communityMealLessons)
+            .where(and(
+              eq(communityMealLessons.course_id, course.id),
+              isNull(communityMealLessons.module_id)
+            ))
+            .orderBy(communityMealLessons.lesson_order);
+
+          return { ...course, modules: modulesWithLessons, lessons: standaloneLessons };
+        })
+      );
+
+      // If still no courses after all processing, return empty array
+      res.json(coursesWithModules || []);
+    } catch (error) {
+      console.error("[COURSES API] Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Create a new course (creator only)
+  app.post("/api/communities/:id/courses", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the community
+      const [member] = await db.select()
+        .from(communityMembers)
+        .where(and(
+          eq(communityMembers.community_id, communityId),
+          eq(communityMembers.user_id, userId),
+          eq(communityMembers.role, "creator")
+        ));
+
+      if (!member) {
+        return res.status(403).json({ message: "Only creators can create courses" });
+      }
+
+      const courseData: InsertCommunityMealCourse = {
+        community_id: communityId,
+        creator_id: userId,
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        category: req.body.category,
+        cover_image: req.body.cover_image || null,
+        is_published: false,
+        display_order: req.body.display_order || 0,
+        drip_enabled: req.body.drip_enabled || false,
+        drip_days: req.body.drip_days || [],
+      };
+
+      const [newCourse] = await db.insert(communityMealCourses)
+        .values(courseData)
+        .returning();
+
+      res.json(newCourse);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Failed to create course" });
+    }
+  });
+
+  // Update a course (creator only)
+  app.put("/api/communities/:id/courses/:courseId", authenticateToken, async (req: any, res) => {
+    try {
+      const communityId = Number(req.params.id);
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can update this course" });
+      }
+
+      const [updatedCourse] = await db.update(communityMealCourses)
+        .set({
+          title: req.body.title || course.title,
+          emoji: req.body.emoji || course.emoji,
+          description: req.body.description || course.description,
+          category: req.body.category || course.category,
+          is_published: req.body.is_published ?? course.is_published,
+          display_order: req.body.display_order ?? course.display_order,
+          drip_enabled: req.body.drip_enabled ?? course.drip_enabled,
+          drip_days: req.body.drip_days || course.drip_days,
+          updated_at: new Date(),
+        })
+        .where(eq(communityMealCourses.id, courseId))
+        .returning();
+
+      res.json(updatedCourse);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Failed to update course" });
+    }
+  });
+
+  // Delete a course (creator only)
+  app.delete("/api/communities/:id/courses/:courseId", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can delete this course" });
+      }
+
+      await db.delete(communityMealCourses)
+        .where(eq(communityMealCourses.id, courseId));
+
+      res.json({ message: "Course deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+
+  // ==================== MODULE ENDPOINTS ====================
+
+  // Create a module for a course (creator only)
+  app.post("/api/communities/:id/courses/:courseId/modules", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the course
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can add modules to this course" });
+      }
+
+      // Get the next module order
+      const modules = await db.select()
+        .from(communityMealCourseModules)
+        .where(eq(communityMealCourseModules.course_id, courseId))
+        .orderBy(desc(communityMealCourseModules.module_order));
+      
+      const nextOrder = modules.length > 0 ? modules[0].module_order + 1 : 0;
+
+      const moduleData = {
+        course_id: courseId,
+        title: req.body.title || "New Module",
+        emoji: req.body.emoji || "📁",
+        description: req.body.description || "",
+        cover_image: req.body.cover_image || null,
+        module_order: req.body.module_order ?? nextOrder,
+        is_expanded: req.body.is_expanded ?? false,
+      };
+
+      const [newModule] = await db.insert(communityMealCourseModules)
+        .values(moduleData)
+        .returning();
+
+      res.json(newModule);
+    } catch (error) {
+      console.error("Error creating module:", error);
+      res.status(500).json({ message: "Failed to create module" });
+    }
+  });
+
+  // Update a module (creator only)
+  app.put("/api/communities/:id/courses/:courseId/modules/:moduleId", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const moduleId = Number(req.params.moduleId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the course
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can update modules in this course" });
+      }
+
+      const [updatedModule] = await db.update(communityMealCourseModules)
+        .set({
+          title: req.body.title,
+          emoji: req.body.emoji,
+          description: req.body.description,
+          module_order: req.body.module_order,
+          is_expanded: req.body.is_expanded,
+          updated_at: new Date(),
+        })
+        .where(eq(communityMealCourseModules.id, moduleId))
+        .returning();
+
+      res.json(updatedModule);
+    } catch (error) {
+      console.error("Error updating module:", error);
+      res.status(500).json({ message: "Failed to update module" });
+    }
+  });
+
+  // Delete a module (creator only)
+  app.delete("/api/communities/:id/courses/:courseId/modules/:moduleId", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const moduleId = Number(req.params.moduleId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the course
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can delete modules from this course" });
+      }
+
+      // Move lessons in this module to standalone (null module_id)
+      await db.update(communityMealLessons)
+        .set({ module_id: null })
+        .where(eq(communityMealLessons.module_id, moduleId));
+
+      // Delete the module
+      await db.delete(communityMealCourseModules)
+        .where(eq(communityMealCourseModules.id, moduleId));
+
+      res.json({ message: "Module deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting module:", error);
+      res.status(500).json({ message: "Failed to delete module" });
+    }
+  });
+
+  // Create a lesson (creator only)
+  app.post("/api/communities/:id/courses/:courseId/lessons", authenticateToken, async (req: any, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator of the course
+      const [course] = await db.select()
+        .from(communityMealCourses)
+        .where(and(
+          eq(communityMealCourses.id, courseId),
+          eq(communityMealCourses.creator_id, userId)
+        ));
+
+      if (!course) {
+        return res.status(403).json({ message: "Only the creator can add lessons to this course" });
+      }
+
+      const lessonData: InsertCommunityMealLesson = {
+        course_id: courseId,
+        module_id: req.body.module_id,
+        title: req.body.title,
+        emoji: req.body.emoji,
+        description: req.body.description,
+        video_url: req.body.video_url,
+        youtube_video_id: req.body.youtube_video_id,
+        image_url: req.body.image_url,
+        ingredients: req.body.ingredients || [],
+        instructions: req.body.instructions || [],
+        prep_time: req.body.prep_time || 0,
+        cook_time: req.body.cook_time || 0,
+        servings: req.body.servings || 4,
+        difficulty_level: req.body.difficulty_level || 1,
+        nutrition_info: req.body.nutrition_info || {},
+        lesson_order: req.body.lesson_order || 0,
+        is_published: false,
+      };
+
+      const [newLesson] = await db.insert(communityMealLessons)
+        .values(lessonData)
+        .returning();
+
+      // Create default sections if provided
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        const sections = req.body.sections.map((section: any, index: number) => ({
+          lesson_id: newLesson.id,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index,
+          is_visible: section.is_visible ?? true,
+        }));
+
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+
+      // Update course lesson count
+      await db.update(communityMealCourses)
+        .set({ 
+          lesson_count: course.lesson_count + 1,
+          updated_at: new Date()
+        })
+        .where(eq(communityMealCourses.id, courseId));
+
+      res.json(newLesson);
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res.status(500).json({ message: "Failed to create lesson" });
+    }
+  });
+
+  // Update a lesson (creator only) - Alternative route that includes courseId
+  app.put("/api/communities/:id/courses/:courseId/lessons/:lessonId", authenticateToken, async (req: any, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const courseId = Number(req.params.courseId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator by checking the course
+      const [lesson] = await db.select({
+        lesson: communityMealLessons,
+        course: communityMealCourses,
+      })
+        .from(communityMealLessons)
+        .innerJoin(communityMealCourses, eq(communityMealLessons.course_id, communityMealCourses.id))
+        .where(and(
+          eq(communityMealLessons.id, lessonId),
+          eq(communityMealLessons.course_id, courseId)
+        ));
+
+      if (!lesson || lesson.course.creator_id !== userId) {
+        return res.status(403).json({ message: "Only the creator can update this lesson" });
+      }
+
+      // Update lesson
+      const [updatedLesson] = await db.update(communityMealLessons)
+        .set({
+          title: req.body.title || lesson.lesson.title,
+          emoji: req.body.emoji || lesson.lesson.emoji,
+          description: req.body.description || lesson.lesson.description,
+          video_url: req.body.video_url || lesson.lesson.video_url,
+          youtube_video_id: req.body.youtube_video_id || lesson.lesson.youtube_video_id,
+          image_url: req.body.image_url || lesson.lesson.image_url,
+          ingredients: req.body.ingredients || lesson.lesson.ingredients,
+          instructions: req.body.instructions || lesson.lesson.instructions,
+          prep_time: req.body.prep_time || lesson.lesson.prep_time,
+          cook_time: req.body.cook_time || lesson.lesson.cook_time,
+          servings: req.body.servings || lesson.lesson.servings,
+          difficulty_level: req.body.difficulty_level || lesson.lesson.difficulty_level,
+          is_published: req.body.is_published !== undefined ? req.body.is_published : lesson.lesson.is_published,
+          lesson_order: req.body.lesson_order || lesson.lesson.lesson_order,
+          updated_at: new Date(),
+        })
+        .where(eq(communityMealLessons.id, lessonId))
+        .returning();
+
+      // Update sections if provided
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        // Delete existing sections
+        await db.delete(communityMealLessonSections)
+          .where(eq(communityMealLessonSections.lesson_id, lessonId));
+
+        // Insert new sections
+        const sections = req.body.sections.map((section: any, index: number) => ({
+          lesson_id: lessonId,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index,
+          is_visible: section.is_visible ?? true,
+        }));
+
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+
+      res.json(updatedLesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Failed to update lesson" });
+    }
+  });
+
+  // Update a lesson (creator only)
+  app.put("/api/communities/:id/lessons/:lessonId", authenticateToken, async (req: any, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user is creator by checking the course
+      const [lesson] = await db.select({
+        lesson: communityMealLessons,
+        course: communityMealCourses,
+      })
+        .from(communityMealLessons)
+        .innerJoin(communityMealCourses, eq(communityMealLessons.course_id, communityMealCourses.id))
+        .where(eq(communityMealLessons.id, lessonId));
+
+      if (!lesson || lesson.course.creator_id !== userId) {
+        return res.status(403).json({ message: "Only the creator can update this lesson" });
+      }
+
+      // Update lesson
+      const [updatedLesson] = await db.update(communityMealLessons)
+        .set({
+          title: req.body.title || lesson.lesson.title,
+          emoji: req.body.emoji || lesson.lesson.emoji,
+          description: req.body.description || lesson.lesson.description,
+          video_url: req.body.video_url || lesson.lesson.video_url,
+          youtube_video_id: req.body.youtube_video_id || lesson.lesson.youtube_video_id,
+          image_url: req.body.image_url || lesson.lesson.image_url,
+          ingredients: req.body.ingredients || lesson.lesson.ingredients,
+          instructions: req.body.instructions || lesson.lesson.instructions,
+          prep_time: req.body.prep_time ?? lesson.lesson.prep_time,
+          cook_time: req.body.cook_time ?? lesson.lesson.cook_time,
+          servings: req.body.servings ?? lesson.lesson.servings,
+          difficulty_level: req.body.difficulty_level ?? lesson.lesson.difficulty_level,
+          nutrition_info: req.body.nutrition_info || lesson.lesson.nutrition_info,
+          is_published: req.body.is_published ?? lesson.lesson.is_published,
+          updated_at: new Date(),
+        })
+        .where(eq(communityMealLessons.id, lessonId))
+        .returning();
+
+      // Update sections if provided
+      if (req.body.sections && Array.isArray(req.body.sections)) {
+        // Delete existing sections
+        await db.delete(communityMealLessonSections)
+          .where(eq(communityMealLessonSections.lesson_id, lessonId));
+
+        // Insert new sections
+        const sections = req.body.sections.map((section: any, index: number) => ({
+          lesson_id: lessonId,
+          section_type: section.section_type,
+          title: section.title,
+          content: section.content,
+          template_id: section.template_id,
+          display_order: section.display_order ?? index,
+          is_visible: section.is_visible ?? true,
+        }));
+
+        await db.insert(communityMealLessonSections).values(sections);
+      }
+
+      res.json(updatedLesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Failed to update lesson" });
+    }
+  });
+
+  // Get lesson details with sections
+  app.get("/api/communities/:id/lessons/:lessonId", authenticateToken, async (req: any, res) => {
+    try {
+      const lessonId = Number(req.params.lessonId);
+      const userId = req.user?.id;
+
+      // Get lesson with course info
+      const [lesson] = await db.select()
+        .from(communityMealLessons)
+        .where(eq(communityMealLessons.id, lessonId));
+
+      if (!lesson) {
+        return res.status(404).json({ message: "Lesson not found" });
+      }
+
+      // Get sections
+      const sections = await db.select()
+        .from(communityMealLessonSections)
+        .where(eq(communityMealLessonSections.lesson_id, lessonId))
+        .orderBy(communityMealLessonSections.display_order);
+
+      // Get user progress if authenticated
+      let userProgress = null;
+      if (userId) {
+        const [progress] = await db.select()
+          .from(userMealCourseProgress)
+          .where(and(
+            eq(userMealCourseProgress.user_id, userId),
+            eq(userMealCourseProgress.course_id, lesson.course_id)
+          ));
+        userProgress = progress;
+      }
+
+      res.json({
+        ...lesson,
+        sections,
+        userProgress,
+      });
+    } catch (error) {
+      console.error("Error fetching lesson:", error);
+      res.status(500).json({ message: "Failed to fetch lesson" });
+    }
+  });
+
+  // Get creator's communities
+  app.get("/api/creator/communities", authenticateToken, async (req: any, res) => {
+    try {
+      console.log(`🔍 [DEBUG] /api/creator/communities called for user:`, req.user?.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log(`❌ [DEBUG] No user ID in creator/communities request`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      const creatorCommunities = await db.select()
+        .from(communities)
+        .where(eq(communities.creator_id, userId));
+      
+      // Add member counts and revenue data
+      const communitiesWithStats = await Promise.all(
+        creatorCommunities.map(async (community) => {
+          const members = await db.select()
+            .from(communityMembers)
+            .where(eq(communityMembers.community_id, community.id));
+          
+          return {
+            ...community,
+            memberCount: members.length,
+            monthlyRevenue: 0, // Will implement with Stripe
+            engagementRate: Math.floor(Math.random() * 30) + 60, // Mock percentage
+          };
+        })
+      );
+      
+      res.json(communitiesWithStats);
+    } catch (error) {
+      console.error("Error fetching creator communities:", error);
+      res.status(500).json({ message: "Failed to fetch creator communities" });
+    }
+  });
+
+
+  // Create community post (for sharing)
+  app.post("/api/community-posts", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { 
+        community_id, 
+        content, 
+        post_type = 'meal_share', 
+        recipe_data, 
+        meal_plan_id, 
+        images 
+      } = req.body;
+
+      if (!community_id || !content?.trim()) {
+        return res.status(400).json({ message: "Missing required fields: community_id, content" });
+      }
+
+      // Check if user is member of the community
+      const membership = await db.select()
+        .from(communityMembers)
+        .where(and(
+          eq(communityMembers.community_id, community_id),
+          eq(communityMembers.user_id, userId)
+        ))
+        .limit(1);
+
+      if (membership.length === 0) {
+        return res.status(403).json({ message: "Not a member of this community" });
+      }
+
+      // Create the post
+      const [newPost] = await db.insert(communityPosts).values({
+        community_id: community_id,
+        author_id: userId,
+        content: content.trim(),
+        post_type: post_type,
+        meal_plan_id: meal_plan_id || null,
+        images: images ? JSON.stringify(images) : null,
+        recipe_data: recipe_data ? JSON.stringify(recipe_data) : null,
+      }).returning();
+
+      // If recipe data is provided, create a proper meal plan structure
+      if (recipe_data && post_type === 'meal_share') {
+        // Debug: Log the received recipe data
+        console.log('=== SERVER: Received recipe_data for sharing ===', {
+          hasVideoId: !!recipe_data.video_id,
+          video_id: recipe_data.video_id,
+          video_title: recipe_data.video_title,
+          video_channel: recipe_data.video_channel,
+          title: recipe_data.title,
+          hasIngredients: !!recipe_data.ingredients
+        });
+        
+        // Create a proper meal plan structure from recipe data to ensure tabs work
+        const tempMealPlan = {
+          id: `recipe_${newPost.id}`, // Use post ID for unique identifier
+          name: recipe_data.title || 'Shared Recipe',
+          description: recipe_data.description || '',
+          meal_plan: {
+            day_1: {
+              breakfast: {
+                name: recipe_data.title || 'Shared Recipe',
+                description: recipe_data.description || '',
+                ingredients: recipe_data.ingredients || [],
+                instructions: recipe_data.instructions || [],
+                prep_time: recipe_data.time_minutes || 30,
+                cuisine: recipe_data.cuisine || '',
+                difficulty: 'Medium',
+                // Add nutrition if available
+                nutrition: recipe_data.nutrition || recipe_data.nutrition_info || null,
+                // Add image if available
+                image_url: recipe_data.image_url || null,
+                // Add video fields if available
+                video_id: recipe_data.video_id || null,
+                video_title: recipe_data.video_title || null,
+                video_channel: recipe_data.video_channel || null
+              }
+            }
+          }
+        };
+
+        // Update the post with the meal plan data in the recipe_data column
+        await db.update(communityPosts)
+          .set({ 
+            recipe_data: JSON.stringify(tempMealPlan)
+          })
+          .where(eq(communityPosts.id, newPost.id));
+      }
+
+      res.status(201).json({ message: "Post created successfully", post: newPost });
+    } catch (error) {
+      console.error("Error creating community post:", error);
+      res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+
+  // Favorites API routes
+  // Get user's favorites
+  app.get("/api/favorites", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const favorites = await storage.getUserFavorites(userId);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      res.status(500).json({ message: "Failed to fetch favorites" });
+    }
+  });
+
+  // Add item to favorites
+  app.post("/api/favorites", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { item_type, item_id, title, description, image_url, time_minutes, cuisine, diet, video_id, video_title, video_channel, metadata } = req.body;
+
+      if (!item_type || !item_id || !title) {
+        return res.status(400).json({ message: "Missing required fields: item_type, item_id, title" });
+      }
+
+      // Check if already favorited
+      const isAlreadyFavorited = await storage.isFavorited(userId, item_type, item_id);
+      if (isAlreadyFavorited) {
+        return res.status(409).json({ message: "Item already favorited" });
+      }
+
+      const favorite = await storage.addToFavorites({
+        user_id: userId,
+        item_type,
+        item_id,
+        title,
+        description,
+        image_url,
+        time_minutes,
+        cuisine,
+        diet,
+        video_id,
+        video_title,
+        video_channel,
+        metadata
+      });
+
+      res.status(201).json(favorite);
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      res.status(500).json({ message: "Failed to add to favorites" });
+    }
+  });
+
+  // Remove item from favorites
+  app.delete("/api/favorites/:itemType/:itemId", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { itemType, itemId } = req.params;
+
+      const success = await storage.removeFromFavorites(userId, itemType, itemId);
+      if (success) {
+        res.json({ message: "Removed from favorites" });
+      } else {
+        res.status(404).json({ message: "Favorite not found" });
+      }
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+      res.status(500).json({ message: "Failed to remove from favorites" });
+    }
+  });
+
+  // Smart Meal Plan Extractor API endpoint with intelligent routing
+  app.post("/api/extract-meal-plan", authenticateToken, async (req: any, res) => {
+    try {
+      console.log("🔥 [BACKEND DEBUG] Extract meal plan endpoint hit");
+      const { url } = req.body;
+      const userId = req.user?.id;
+      
+      console.log("🔥 [BACKEND DEBUG] Request details:", {
+        url: url,
+        userId: userId,
+        hasAuth: !!userId,
+        body: req.body
+      });
+      
+      if (!userId) {
+        console.log("❌ [BACKEND DEBUG] User not authenticated");
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      if (!url) {
+        console.log("❌ [BACKEND DEBUG] URL is missing from request");
+        return res.status(400).json({ message: "URL is required" });
+      }
+      
+      console.log(`🎯 [BACKEND DEBUG] Starting smart extraction for: ${url}`);
+      
+      // Use the smart router to determine extraction strategy
+      console.log("📦 [BACKEND DEBUG] Importing SmartExtractionRouter...");
+      const { default: SmartExtractionRouter } = await import('./services/smartExtractionRouter.js');
+      console.log("📦 [BACKEND DEBUG] SmartExtractionRouter imported successfully");
+      
+      const smartRouter = new SmartExtractionRouter();
+      console.log("🔧 [BACKEND DEBUG] SmartRouter instance created");
+      
+      console.log("🚀 [BACKEND DEBUG] Calling extractFromUrl...");
+      const result = await smartRouter.extractFromUrl(url, { maxRecipes: 10 });
+      console.log("📤 [BACKEND DEBUG] SmartRouter result:", result);
+      
+      if (!result.success) {
+        console.log("❌ [BACKEND DEBUG] SmartRouter failed:", result.error);
+        console.log("❌ [BACKEND DEBUG] Failure metadata:", result.metadata);
+        return res.status(500).json({
+          success: false,
+          error: result.error,
+          metadata: result.metadata
+        });
+      }
+
+      // Handle different result types
+      if (result.type === 'single-recipe') {
+        // Single recipe extraction (direct recipe URL)
+        console.log(`✅ Single recipe extracted: "${result.recipe.title}"`);
+        
+        res.json({
+          success: true,
+          recipe: result.recipe,
+          metadata: result.metadata
+        });
+        
+      } else if (result.type === 'multi-recipe') {
+        // Multiple recipes from homepage/category page
+        console.log(`✅ Multiple recipes extracted: ${result.recipes.length} recipes`);
+        
+        // For backwards compatibility, return the best quality recipe as primary
+        // (recipe with most ingredients and instructions)
+        const bestRecipe = result.recipes.reduce((best, current) => {
+          const currentScore = (current.recipe.ingredients?.length || 0) + (current.recipe.instructions?.length || 0);
+          const bestScore = (best.recipe.ingredients?.length || 0) + (best.recipe.instructions?.length || 0);
+          return currentScore > bestScore ? current : best;
+        });
+        
+        const primaryRecipe = bestRecipe?.recipe;
+        
+        if (!primaryRecipe) {
+          return res.status(500).json({
+            success: false,
+            error: 'No recipes could be extracted from the discovered URLs'
+          });
+        }
+        
+        res.json({
+          success: true,
+          recipe: primaryRecipe,
+          allRecipes: result.recipes.map(r => r.recipe), // Include all full recipes
+          metadata: {
+            ...bestRecipe?.metadata,
+            multipleRecipesFound: true,
+            totalRecipesExtracted: result.recipes.length,
+            allRecipes: result.recipes.map(r => ({
+              title: r.recipe.title,
+              url: r.url,
+              ingredients: r.recipe.ingredients?.length || 0,
+              instructions: r.recipe.instructions?.length || 0
+            })),
+            extractionSummary: result.summary
+          }
+        });
+      }
+      
+    } catch (error) {
+      console.error('🚨 [BACKEND DEBUG] Meal extraction critical error:', error);
+      console.error('🚨 [BACKEND DEBUG] Error stack:', error.stack);
+      console.error('🚨 [BACKEND DEBUG] Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to extract meal plan data',
+        details: error.message 
+      });
+    }
+  });
+
+  // Batch extract multiple recipes from a website
+  app.post("/api/batch-extract-recipes", authenticateToken, async (req: any, res) => {
+    try {
+      const { homepageUrl, maxRecipes = 50 } = req.body;
+      
+      if (!homepageUrl) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Homepage URL is required' 
+        });
+      }
+
+      console.log(`🚀 Starting batch extraction from: ${homepageUrl}`);
+      console.log(`📊 Max recipes: ${maxRecipes}`);
+
+      // Dynamic import for batch extraction service
+      const { default: BatchExtractionService } = await import('./services/batchExtractionService.js');
+      const batchExtractor = new BatchExtractionService();
+
+      // Start batch extraction
+      const result = await batchExtractor.extractRecipesFromSite(homepageUrl, maxRecipes);
+
+      if (result.success) {
+        console.log(`✅ Batch extraction completed: ${result.summary.successfulExtractions} recipes extracted`);
+        res.json(result);
+      } else {
+        console.log(`❌ Batch extraction failed: ${result.error}`);
+        res.status(500).json(result);
+      }
+
+    } catch (error) {
+      console.error('🚨 Batch extraction error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to start batch extraction',
+        details: error.message 
+      });
+    }
+  });
+
+  // Get batch extraction progress (for future real-time updates)
+  app.get("/api/batch-extract-progress/:sessionId", authenticateToken, async (req: any, res) => {
+    try {
+      // TODO: Implement session-based progress tracking
+      res.json({ 
+        message: "Progress tracking not yet implemented",
+        sessionId: req.params.sessionId 
+      });
+    } catch (error) {
+      console.error('Progress tracking error:', error);
+      res.status(500).json({ message: "Failed to get progress" });
+    }
+  });
+
+  // Check if item is favorited
+  app.get("/api/favorites/:itemType/:itemId/check", authenticateToken, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const { itemType, itemId } = req.params;
+      const isFavorited = await storage.isFavorited(userId, itemType, itemId);
+      
+      res.json({ isFavorited });
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
+      res.status(500).json({ message: "Failed to check favorite status" });
     }
   });
 

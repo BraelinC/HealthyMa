@@ -49,7 +49,9 @@ export function useCulturalCuisineData(cultures: string[]) {
 
       for (const culture of cultures) {
         try {
-          const response = await fetch(`/api/cultural-cuisine/${encodeURIComponent(culture)}`);
+          const response = await fetch(`/api/cultural-cuisine/${encodeURIComponent(culture)}`, {
+            credentials: 'include',
+          });
           
           if (response.ok) {
             const data = await response.json();

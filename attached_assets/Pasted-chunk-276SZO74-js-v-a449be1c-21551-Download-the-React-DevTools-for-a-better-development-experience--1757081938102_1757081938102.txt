@@ -1,0 +1,51 @@
+chunk-276SZO74.js?v=a449be1c:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api.ts:40 API Base URL configured: 
+achievementService.ts:198 🎮 Achievement service available in console as window.achievementService
+achievementService.ts:199 📚 Available methods: trackMealPlanCreated(), getAchievements()
+Checkout.tsx:16 Stripe Public Key: Key loaded
+queryClient.ts:136 Query function called for: /api/auth/user
+queryClient.ts:30 API Request: {url: '/api/auth/user', method: 'GET', hasBody: false}
+postsCache.ts:100 🔧 Posts Cache: Initialized
+queryClient.ts:49 API Response: {url: '/api/auth/user', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"user":{"id":"68abea53-7698-4b97-a0fd-a5838b278e08","email":"creator@healthymama.com","firstName":"Braelin","lastName":"","profileImageUrl":null,"phone":null,"full_name":"Braelin","google_id":null,"is_creator":true,"account_type":"lifetime","trial_ends_at":null,"subscription_status":"active","stripe_customer_id":null,"createdAt":"2025-08-31T01:20:15.665Z","updatedAt":"2025-08-31T01:20:15.665Z"}}
+queryClient.ts:88 API Parsed Response: {user: {…}}
+queryClient.ts:139 Query result: {user: {…}}
+queryClient.ts:136 Query function called for: /api/profile
+queryClient.ts:30 API Request: {url: '/api/profile', method: 'GET', hasBody: false}
+queryClient.ts:30 API Request: {url: '/api/communities/1', method: 'GET', hasBody: false}
+queryClient.ts:49 API Response: {url: '/api/profile', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"id":1,"user_id":"68abea53-7698-4b97-a0fd-a5838b278e08","profile_name":"Braelin","primary_goal":"Quick & Simple Meals","family_size":4,"members":[],"profile_type":"family","preferences":["Healthy Living","Family Meals","Budget-Friendly","Quick Recipes"],"goals":["cost:0.5333333333333333","health:0.3","cultural:0.5333333333333333","variety:0.3","time:0.8"],"cultural_background":["American","Asian","Mediterranean"],"questionnaire_answers":{},"questionnaire_selections":[],"created_at":"2025-08-31T01:20:49.705Z","updated_at":"2025-08-31T01:26:39.025Z"}
+queryClient.ts:88 API Parsed Response: {id: 1, user_id: '68abea53-7698-4b97-a0fd-a5838b278e08', profile_name: 'Braelin', primary_goal: 'Quick & Simple Meals', family_size: 4, …}
+queryClient.ts:139 Query result: {id: 1, user_id: '68abea53-7698-4b97-a0fd-a5838b278e08', profile_name: 'Braelin', primary_goal: 'Quick & Simple Meals', family_size: 4, …}
+queryClient.ts:49 API Response: {url: '/api/communities/1', status: 200, ok: true, contentType: 'application/json; charset=utf-8', hasNewToken: false}
+queryClient.ts:66 API Response Text: {"id":1,"name":"La Familia","description":"Hello everyone hope you enjoy sharing your meals","creator_id":"68abea53-7698-4b97-a0fd-a5838b278e08","cover_image":null,"category":"family","member_count":2,"is_public":true,"settings":{},"created_at":"2025-08-31T01:25:00.656Z","updated_at":"2025-09-02T01:21:48.634Z","memberInfo":{"id":1,"community_id":1,"user_id":"68abea53-7698-4b97-a0fd-a5838b278e08","role":"creator","points":40,"level":1,"joined_at":"2025-08-31T01:25:00.682Z"},"topContributors":[{"id":1,"community_id":1,"user_id":"68abea53-7698-4b97-a0fd-a5838b278e08","role":"creator","points":40,"level":1,"joined_at":"2025-08-31T01:25:00.682Z"},{"id":2,"community_id":1,"user_id":"user_1756775399476_524","role":"member","points":0,"level":1,"joined_at":"2025-09-02T01:21:48.599Z"}]}
+queryClient.ts:88 API Parsed Response: {id: 1, name: 'La Familia', description: 'Hello everyone hope you enjoy sharing your meals', creator_id: '68abea53-7698-4b97-a0fd-a5838b278e08', cover_image: null, …}
+postsCache.ts:55 📦 Posts Cache: Added 3 new posts for community 1
+postsCache.ts:56 📦 Posts Cache: Total cached posts: 3
+CommunityDetailNew.tsx:1172 === DEBUG: Full meal plan data === {meal_plan: {…}, mealPlan: {…}}
+CommunityDetailNew.tsx:1181 === DEBUG: Extracted meal === {firstDay: {…}, firstMeal: {…}, ingredients: Array(17), ingredientsType: 'array', hasVideoId: true, …}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 0 === {name: 'Onion choppings', display_text: '1 Onion choppings', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 1 === {name: 'Coriander Powder', display_text: '1 tbsp Coriander Powder', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 2 === {name: 'Ginger garlic paste', display_text: '1 tbsp Ginger garlic paste', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 3 === {name: 'Melon Seeds', display_text: '1 tbsp Melon Seeds', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 4 === {name: 'Poppy Seeds', display_text: '1 tbsp Poppy Seeds', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 5 === {name: 'Garam Masala', display_text: '1 tsp Garam Masala', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 6 === {name: 'Roasted Cumin Powder', display_text: '1 tsp Roasted Cumin Powder', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 7 === {name: 'Kilo Chicken', display_text: '1/2 Kilo Chicken', measurements: Array(0)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 8 === {name: 'Lemon juice', display_text: '1/2 Lemon juice', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 9 === {name: 'Chilli Powder', display_text: '1/2 tbsp Chilli Powder', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 10 === {name: 'Oil', display_text: '1/4 cup Oil', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 11 === {name: '- Cashews', display_text: '10-12 Cashews', measurements: Array(0)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 12 === {name: 'Water', display_text: '2 Cups Water', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 13 === {name: 'sprigs Curry Leaves', display_text: '2 sprigs Curry Leaves', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 14 === {name: 'Green Chilies', display_text: '3 Green Chilies', measurements: Array(1)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 15 === {name: 'Little Coriander', display_text: 'Little Coriander', measurements: Array(0)}
+CommunityDetailNew.tsx:1212 === DEBUG: Ingredient 16 === {name: 'Salt', display_text: 'Salt', measurements: Array(0)}
+CommunityDetailNew.tsx:1237 === DEBUG: Processed ingredients === (17) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+CommunityDetailNew.tsx:1255 === DEBUG: Final recipe data === {id: 'recipe_5', title: '100% Best Chicken Curry Recipe!!', description: '100% Best Chicken Curry Recipe!!\n\nHello Foodies!!!…ries #vismaifood #vismaifoodrecipes #hellofoodies', image_url: 'https://i.ytimg.com/vi/9JwATWPguwc/hqdefault.jpg', ingredients: Array(17), …}cuisine: "Any Cuisine"description: "100% Best Chicken Curry Recipe!!\n\nHello Foodies!!!\n\nTry our Homemade style 100% Best Chicken Curry Recipe. The Recipe is so simple to make and pairs with Rice Rotis and Rice. The tasty chicken requires a few ingredients which are available so easily. \n\nIngredients:\n\nFor Masala Paste:\n3 Green Chilies\n1 Onion choppings\n10-12 Cashews\n1 tbsp poppy Seeds\n1 tbsp Melon Seeds\n\nFor Curry:\n1/4 cup Oil\n1 tbsp Coriander Powder\n1/2 tbsp Chilli Powder\n1 tsp Roasted Cumin Powder\nSalt\n1 tbsp Ginger garlic paste\n2 Tomatoes Paste\n2 sprigs Curry Leaves\n1/2 Kilo Chicken\n2 Cups Water\n1 tsp Garam Masala\n1/2 Lemon juice\nLittle Coriander\n\n#chickencurry #andhrastylechickencurry #chickenmasala #vismaifoodchickencurry #chickenmasalaintelugu #telanganastylechickencurry #chicken #curry #vismaifoodchickencurry #southindianstylechickencurry #nonvegrecipes #nonvegcurries #vismaifood #vismaifoodrecipes #hellofoodies"diet: ""id: "recipe_5"image_url: "https://i.ytimg.com/vi/9JwATWPguwc/hqdefault.jpg"ingredients: (17) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]instructions: (4) ['Step 1: In a blender, combine 3 green chilies, 1 c… smooth paste adding a splash of water if needed.', 'Step 2: Heat 1/4 cup oil in a large pan over mediu…es and sauté for about 30 seconds until fragrant.', 'Step 3: Add the prepared masala paste to the pan; …re turns aromatic and the oil begins to separate.', 'Step 4: Stir in 1 tbsp coriander powder, 1/2 tbsp chilli powder, 1']nutrition_info: {calories: 1000, protein_g: 33, carbs_g: 362.3, fat_g: 20.7, fiber_g: 50.3, …}time_minutes: 30title: "100% Best Chicken Curry Recipe!!"video_channel: "Vismai Food"video_id: "9JwATWPguwc"video_title: "100% Best Chicken Curry Recipe!!"[[Prototype]]: Object
+MealPlanEditor.tsx:396 MealPlanEditor mounted with communityId: 1
+MealPlanEditor.tsx:402 Fetching courses for community: 1
+MealPlanEditor.tsx:404 Auth token exists: true
+MealPlanEditor.tsx:412 Courses fetch response status: 200
+MealPlanEditor.tsx:421 Fetched courses: (5) [{…}, {…}, {…}, {…}, {…}]
+MealPlanEditor.tsx:396 MealPlanEditor mounted with communityId: 1

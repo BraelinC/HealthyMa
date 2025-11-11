@@ -11,13 +11,11 @@ import { Loader2, ArrowLeft, Mail } from "lucide-react";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-}
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 interface CheckoutFormProps {
-  paymentType: 'founders' | 'trial';
+  paymentType: 'founders' | 'trial' | 'monthly';
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -32,33 +30,66 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel }: CheckoutFormProps) =
     e.preventDefault();
     
     if (!stripe || !elements) {
+      console.error('Stripe or Elements not loaded');
+      toast({
+        title: "Error",
+        description: "Payment system not initialized. Please refresh and try again.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsProcessing(true);
+    console.log('Processing payment...');
 
     try {
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: window.location.origin + '/dashboard',
-        },
-      });
+      // For monthly and trial, we're using SetupIntent
+      // For founders, we're using PaymentIntent
+      if (paymentType === 'monthly' || paymentType === 'trial') {
+        const { error } = await stripe.confirmSetup({
+          elements,
+          confirmParams: {
+            return_url: window.location.origin + '/dashboard?subscription=' + paymentType,
+          },
+        });
 
-      if (error) {
-        toast({
-          title: "Payment Failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error) {
+          toast({
+            title: "Setup Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Setup Successful",
+            description: paymentType === 'monthly'
+              ? "Your monthly subscription is being activated!"
+              : "Your 30-day free trial is now active!",
+          });
+          onSuccess();
+        }
       } else {
-        toast({
-          title: "Payment Successful",
-          description: paymentType === 'founders' 
-            ? "Welcome to Healthy Mama Founders! You now have lifetime access." 
-            : "Your 21-day premium trial is now active!",
+        // Founders payment (one-time payment)
+        const { error } = await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: window.location.origin + '/dashboard',
+          },
         });
-        onSuccess();
+
+        if (error) {
+          toast({
+            title: "Payment Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Payment Successful",
+            description: "Welcome to Healthy Mama Founders! You now have lifetime access.",
+          });
+          onSuccess();
+        }
       }
     } catch (err) {
       toast({
@@ -96,7 +127,9 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel }: CheckoutFormProps) =
               Processing...
             </>
           ) : (
-            paymentType === 'founders' ? 'Complete Payment ($99)' : 'Start 21-Day Trial'
+            paymentType === 'founders' ? 'Complete Payment ($100)' : 
+            paymentType === 'monthly' ? 'Start Monthly Subscription ($20/mo)' :
+            'Start 30-Day Free Trial'
           )}
         </Button>
       </div>
@@ -105,7 +138,7 @@ const CheckoutForm = ({ paymentType, onSuccess, onCancel }: CheckoutFormProps) =
 };
 
 interface CheckoutProps {
-  paymentType: 'founders' | 'trial';
+  paymentType: 'founders' | 'trial' | 'monthly';
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -119,32 +152,58 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
     const createPaymentIntent = async () => {
       try {
         setIsLoading(true);
+        console.log('Creating payment intent for:', paymentType);
         
         if (paymentType === 'founders') {
-          // Create payment intent for $99 founders offer
+          // Create payment intent for $100 founders offer
           const data = await apiRequest("/api/create-payment-intent", {
             method: 'POST',
             body: JSON.stringify({
               paymentType: 'founders',
-              amount: 99
+              amount: 100
             })
           });
+          console.log('Payment intent created:', data);
+          
+          if (!data.clientSecret) {
+            throw new Error('No client secret received from server');
+          }
           setClientSecret(data.clientSecret);
-        } else {
-          // Create setup intent for 21-day trial
-          const data = await apiRequest("/api/create-trial-subscription", {
+        } else if (paymentType === 'monthly') {
+          // For monthly subscription, we need to collect payment method first
+          // Using SetupIntent for initial card collection
+          const data = await apiRequest("/api/create-setup-intent", {
             method: 'POST',
             body: JSON.stringify({
-              email: "user@example.com", // This would come from user input
-              name: "User Name"
+              paymentType: 'monthly'
             })
           });
+          console.log('Monthly subscription setup intent created:', data);
+          
+          if (!data.clientSecret) {
+            throw new Error('No client secret received from server');
+          }
+          setClientSecret(data.clientSecret);
+        } else {
+          // Create setup intent for 30-day free trial
+          const data = await apiRequest("/api/create-setup-intent", {
+            method: 'POST',
+            body: JSON.stringify({
+              paymentType: 'trial'
+            })
+          });
+          console.log('Trial setup intent created:', data);
+          
+          if (!data.clientSecret) {
+            throw new Error('No client secret received from server');
+          }
           setClientSecret(data.clientSecret);
         }
-      } catch (error) {
+      } catch (error: any) {
+        console.error('Payment initialization error:', error);
         toast({
           title: "Error",
-          description: "Failed to initialize payment. Please try again.",
+          description: error.message || "Failed to initialize payment. Please try again.",
           variant: "destructive",
         });
         onCancel();
@@ -156,7 +215,7 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
     createPaymentIntent();
   }, [paymentType, onCancel, toast]);
 
-  if (isLoading || !clientSecret) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-emerald-50">
         <Card className="w-full max-w-md">
@@ -174,30 +233,44 @@ export default function Checkout({ paymentType, onSuccess, onCancel }: CheckoutP
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center">
-            {paymentType === 'founders' ? 'Complete Your Founders Purchase' : 'Set Up Your 21-Day Trial'}
+            {paymentType === 'founders' ? 'Complete Your Founders Purchase' : 
+             paymentType === 'monthly' ? 'Start Your Monthly Subscription' :
+             'Start Your 30-Day Free Trial'}
           </CardTitle>
           <div className="text-center">
             {paymentType === 'founders' ? (
               <div>
-                <div className="text-2xl font-bold text-purple-600">$99</div>
+                <div className="text-2xl font-bold text-purple-600">$100</div>
                 <div className="text-sm text-gray-600">One-time payment for lifetime access</div>
+              </div>
+            ) : paymentType === 'monthly' ? (
+              <div>
+                <div className="text-2xl font-bold text-blue-600">$20/month</div>
+                <div className="text-sm text-gray-600">Monthly subscription, cancel anytime</div>
               </div>
             ) : (
               <div>
                 <div className="text-2xl font-bold text-emerald-600">$0 Today</div>
-                <div className="text-sm text-gray-600">21-day premium trial</div>
+                <div className="text-sm text-gray-600">30-day free trial, then $20/month</div>
               </div>
             )}
           </div>
         </CardHeader>
         <CardContent>
-          <Elements stripe={stripePromise} options={{ clientSecret }}>
-            <CheckoutForm 
-              paymentType={paymentType} 
-              onSuccess={onSuccess} 
-              onCancel={onCancel} 
-            />
-          </Elements>
+          {clientSecret && stripePromise ? (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <CheckoutForm 
+                paymentType={paymentType} 
+                onSuccess={onSuccess} 
+                onCancel={onCancel} 
+              />
+            </Elements>
+          ) : (
+            <div className="text-center p-4">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+              <p className="text-sm text-gray-600">{STRIPE_PUBLISHABLE_KEY ? 'Initializing payment...' : 'Stripe publishable key missing. Set VITE_STRIPE_PUBLISHABLE_KEY and restart.'}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
